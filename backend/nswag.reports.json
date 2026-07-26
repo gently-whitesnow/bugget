@@ -10,12 +10,16 @@
     "    Bugget/Generated/ReportsControllerBase.g.cs",
     "",
     "Полный контракт reports мигрирует на contract-first отдельно — здесь",
-    "описан только PATCH /v2/reports/{id} с новым полем is_excluded_from_analytics."
+    "описан только PATCH /v2/reports/{id} с новым полем is_excluded_from_analytics.",
+    "",
+    "runtime: Default — генерация идёт из документа, а не из сборки, поэтому результат",
+    "не зависит от версии .NET, на которой запущен NSwag. Жёсткий Net90 ломал прогон",
+    "на машине с более новым SDK."
   ],
-  "runtime": "Net90",
+  "runtime": "Default",
   "documentGenerator": {
     "fromDocument": {
-      "url": "../../specs/contracts/reports/openapi.yaml"
+      "url": "../specs/contracts/reports/openapi.yaml"
     }
   },
   "codeGenerators": {

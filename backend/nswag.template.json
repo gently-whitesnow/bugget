@@ -8,7 +8,7 @@
     "  2. Заменить <module> на slug (kebab-case) и <Module> на PascalCase.",
     "  3. Создать sln-проекты Bugget.<Module>.Contracts (с папкой Generated/) и",
     "     убедиться, что Bugget.Api ссылается на него.",
-    "  4. Прогнать `bash bugget/scripts/quality/openapi-generate.sh`.",
+    "  4. Прогнать `bash scripts/quality/openapi-generate.sh`.",
     "",
     "Архитектура одного прохода:",
     "  - openApiToCSharpClient запущен с отключённым client-классом и эмитит",
@@ -18,12 +18,16 @@
     "    подключая DTO-namespace через additionalNamespaceUsages.",
     "",
     "Этот файл сам по себе НЕ исполняется: openapi-generate.sh намеренно",
-    "пропускает nswag.template.json."
+    "пропускает nswag.template.json.",
+    "",
+    "runtime: Default — генерация идёт из документа, а не из сборки, поэтому результат",
+    "не зависит от версии .NET, на которой запущен NSwag. Жёсткий Net90 ломал прогон",
+    "на машине с более новым SDK."
   ],
-  "runtime": "Net90",
+  "runtime": "Default",
   "documentGenerator": {
     "fromDocument": {
-      "url": "../../specs/contracts/<module>/openapi.yaml"
+      "url": "../specs/contracts/<module>/openapi.yaml"
     }
   },
   "codeGenerators": {

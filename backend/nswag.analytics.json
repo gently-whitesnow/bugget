@@ -10,12 +10,16 @@
     "    Bugget/Generated/AnalyticsControllerBase.g.cs",
     "",
     "DTO эмитятся в namespace Bugget.Analytics.Contracts.Generated и подключаются",
-    "в controller через additionalNamespaceUsages."
+    "в controller через additionalNamespaceUsages.",
+    "",
+    "runtime: Default — генерация идёт из документа, а не из сборки, поэтому результат",
+    "не зависит от версии .NET, на которой запущен NSwag. Жёсткий Net90 ломал прогон",
+    "на машине с более новым SDK."
   ],
-  "runtime": "Net90",
+  "runtime": "Default",
   "documentGenerator": {
     "fromDocument": {
-      "url": "../../specs/contracts/analytics/openapi.yaml"
+      "url": "../specs/contracts/analytics/openapi.yaml"
     }
   },
   "codeGenerators": {

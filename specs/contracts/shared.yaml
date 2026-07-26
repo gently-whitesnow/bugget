@@ -1,0 +1,67 @@
+openapi: 3.0.3
+
+# Общие компоненты контрактов Bugget.
+#
+# Файл не описывает эндпоинтов — только схемы, переиспользуемые несколькими
+# модулями. Модульные контракты ссылаются сюда относительным $ref:
+#   $ref: '../shared.yaml#/components/schemas/ErrorResponse'
+#
+# Правило reuse-first: прежде чем заводить новую схему в модуле, проверь, нет ли
+# подходящей здесь. Новый общий тип добавляется сюда, а не копируется в модули.
+
+info:
+  title: Bugget shared contracts
+  version: 1.0.0
+  description: Общие схемы контрактов Bugget.
+
+paths: {}
+
+components:
+  schemas:
+
+    ErrorResponse:
+      type: object
+      description: |
+        Канонический формат ошибки для всех API в bugget/. Не RFC 7807 — намеренно (см. ADR-20260518).
+        Используется JSON wire-форма snake_case.
+      required:
+        - error
+        - reason
+      properties:
+        error:
+          type: string
+          description: Машинно-читаемый код ошибки. Стабильный.
+        reason:
+          type: string
+          description: Человекочитаемая причина для логов/UI.
+        error_list:
+          type: array
+          description: Опциональный список структурных ошибок (валидации полей и т.п.).
+          items:
+            type: string
+
+    Period:
+      type: object
+      description: Полузакрытый интервал времени [from; to). `label` — короткое имя для UI/логов.
+      required:
+        - from
+        - to
+        - label
+      properties:
+        from:
+          type: string
+          format: date-time
+          description: Нижняя граница (включительно).
+        to:
+          type: string
+          format: date-time
+          description: Верхняя граница (исключительно).
+        label:
+          type: string
+          description: Человекочитаемый ярлык периода.
+
+    UserId:
+      type: string
+      description: |-
+        Идентификатор пользователя. Строка, а не число: источник — внешний
+        провайдер аутентификации, формат идентификатора им и определяется.

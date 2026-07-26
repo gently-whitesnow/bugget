@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { useUnit } from "effector-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 
 import { buildAuthRedirectUrl } from "@/shared/lib/auth";
 import {

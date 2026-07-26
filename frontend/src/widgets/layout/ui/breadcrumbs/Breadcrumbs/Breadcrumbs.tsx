@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Fragment, type ReactNode } from "react";
 import { ChevronRight, MoreHorizontal } from "lucide-react";
 import type { Breadcrumb } from "@/shared/lib/types";

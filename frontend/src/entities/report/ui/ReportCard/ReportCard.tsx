@@ -1,5 +1,5 @@
 import { BugStatuses, reportStatusMap } from "@/shared/config";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { buildFullAppUrl } from "@/shared/lib/buildFullUrl";
 import { Bug, MessageCircle } from "lucide-react";
 

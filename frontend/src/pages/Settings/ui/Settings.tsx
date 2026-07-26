@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { useUnit } from "effector-react";
 import { AlertTriangle } from "lucide-react";
 import {

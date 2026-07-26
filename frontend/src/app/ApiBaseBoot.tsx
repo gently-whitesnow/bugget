@@ -1,5 +1,5 @@
 import { useLayoutEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { parseAppContextFromPath, setAppContext } from "@/shared/api";
 
 export default function ApiBaseBoot() {

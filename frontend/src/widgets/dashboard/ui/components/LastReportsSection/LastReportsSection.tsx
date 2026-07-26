@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useUnit } from "effector-react";
 
 import { $reportsUsersStore } from "@/entities/report-list";

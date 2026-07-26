@@ -25,6 +25,7 @@ const ReturnReportButton = () => {
   const lastResponsibleUserName = useUnit($lastResponsibleUserNameStore);
   const pastResponsibleUserId = useUnit($pastResponsibleUserIdStore);
   const user = useUnit($authUserStore);
+  const changeResponsibleUserId = useUnit(changeResponsibleUserIdEvent);
 
   const previousResponsibleLabel = formatName(lastResponsibleUserName);
   const canReturn =
@@ -79,7 +80,7 @@ const ReturnReportButton = () => {
   const handleClick = () => {
     if (!pastResponsibleUserId) return;
     setState(ButtonState.CLICKED);
-    changeResponsibleUserIdEvent(pastResponsibleUserId);
+    changeResponsibleUserId(pastResponsibleUserId);
   };
 
   if (state === ButtonState.HIDDEN) {

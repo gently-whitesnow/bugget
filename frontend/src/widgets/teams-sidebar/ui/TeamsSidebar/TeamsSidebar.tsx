@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useUnit } from "effector-react";
 import { useEffect } from "react";
 import { $workspaces } from "@/shared/model";

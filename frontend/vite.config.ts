@@ -23,7 +23,7 @@ export default defineConfig(() => {
         "react-dom",
         "effector",
         "effector-react",
-        "react-router-dom",
+        "react-router",
       ],
     },
     plugins: [react(), tailwindcss()],

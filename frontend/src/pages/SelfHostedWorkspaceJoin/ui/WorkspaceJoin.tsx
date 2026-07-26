@@ -4,7 +4,10 @@ import { joinWorkspaceFx } from "@/shared/model";
 import { useSelfHostedAutoJoin } from "@/shared/lib/selfHostedAutoJoin";
 
 export const WorkspaceJoin = () => {
-  const joinPending = useUnit(joinWorkspaceFx.pending);
+  const [joinWorkspace, joinPending] = useUnit([
+    joinWorkspaceFx,
+    joinWorkspaceFx.pending,
+  ]);
   const [error, setError] = useState<string | null>(null);
   const { isAutoJoining, autoJoinParams } = useSelfHostedAutoJoin();
   const autoJoinAttempted = useRef(false);
@@ -12,15 +15,15 @@ export const WorkspaceJoin = () => {
   useEffect(() => {
     if (autoJoinParams || autoJoinAttempted.current) return;
     autoJoinAttempted.current = true;
-    joinWorkspaceFx(1).catch(() => {
+    joinWorkspace(1).catch(() => {
       setError("Не удалось присоединиться к рабочей области");
     });
-  }, [autoJoinParams]);
+  }, [autoJoinParams, joinWorkspace]);
 
   const handleJoinWorkspace = async () => {
     setError(null);
     try {
-      await joinWorkspaceFx(1);
+      await joinWorkspace(1);
     } catch {
       setError("Не удалось присоединиться к рабочей области");
     }

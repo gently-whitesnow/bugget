@@ -1,0 +1,23 @@
+status: 200
+content-type: application/json
+body:
+$: object
+$.teams_member: array
+$.workspaces: array
+$.workspaces[]: object
+$.workspaces[].created_at: string
+$.workspaces[].id: string
+$.workspaces[].name: string
+$.workspaces[].teams: array
+$.workspaces[].teams[]: object
+$.workspaces[].teams[].created_at: string
+$.workspaces[].teams[].id: string
+$.workspaces[].teams[].name: string
+$.workspaces[].teams[].updated_at: string
+$.workspaces[].updated_at: string
+$.workspaces_member: array
+$.workspaces_member[]: object
+$.workspaces_member[].created_at: string
+$.workspaces_member[].role: string
+$.workspaces_member[].user_id: string
+$.workspaces_member[].workspace_id: string

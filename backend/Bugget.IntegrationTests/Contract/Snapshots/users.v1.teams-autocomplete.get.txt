@@ -1,0 +1,11 @@
+status: 200
+content-type: application/json
+body:
+$: object
+$.teams: array
+$.teams[]: object
+$.teams[].created_at: string
+$.teams[].id: string
+$.teams[].name: string
+$.teams[].updated_at: string
+$.total: number

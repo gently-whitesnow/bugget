@@ -1,0 +1,9 @@
+status: 200
+content-type: application/json
+body:
+$: array
+$[]: object
+$[].created_at: string
+$[].id: string
+$[].name: string
+$[].updated_at: string

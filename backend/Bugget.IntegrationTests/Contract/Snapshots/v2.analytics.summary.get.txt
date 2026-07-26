@@ -1,0 +1,21 @@
+status: 200
+content-type: application/json
+body:
+$: object
+$.avg_full_cycle_days: null
+$.avg_phase_duration_days: object
+$.avg_phase_duration_days.fix: null
+$.avg_phase_duration_days.test_initial: number
+$.avg_phase_duration_days.test_retest: null
+$.avg_regression_cycles_when_present: null
+$.period: object
+$.period.from: string
+$.period.label: string
+$.period.to: string
+$.phase_time_distribution: object
+$.phase_time_distribution.fix_pct: number
+$.phase_time_distribution.test_pct: number
+$.phase_trends_weekly: array
+$.reports_closed: number
+$.rework_rate: number
+$.top_regression_reports: array

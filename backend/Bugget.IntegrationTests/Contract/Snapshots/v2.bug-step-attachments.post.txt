@@ -1,0 +1,11 @@
+status: 201
+content-type: application/json
+body:
+$: object
+$.attach_type: number
+$.created_at: string
+$.creator_user_id: string
+$.entity_id: number
+$.file_name: string
+$.has_preview: bool
+$.id: number

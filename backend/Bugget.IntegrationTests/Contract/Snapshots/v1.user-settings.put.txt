@@ -1,0 +1,6 @@
+status: 404
+content-type: application/json
+body:
+$: object
+$.error: string
+$.reason: string

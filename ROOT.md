@@ -23,6 +23,7 @@ Bugget — инструмент для баг-репортов: тестиров
 | Что вообще проверяется перед сдачей | [.quality/quality.config.json](.quality/quality.config.json) |
 | Раннер проверок | `scripts/quality/verify.sh` |
 | Перегенерация кода из контрактов | `scripts/quality/openapi-generate.sh` |
+| Какие HTTP-пути публичны и чем покрыты | [docs/public-contract-inventory.md](docs/public-contract-inventory.md) |
 | Как контрибьютить, безопасность, кодекс | [docs/](docs/) |
 
 Код: `backend/` — .NET, решение `backend/Bugget.sln`; `frontend/` — Vite + React + TypeScript;
@@ -56,6 +57,15 @@ Bugget — инструмент для баг-репортов: тестиров
 
 **`*.g.cs` руками не правим.** Источник правды — `specs/contracts/**/openapi.yaml`,
 перегенерация — `scripts/quality/openapi-generate.sh`. Причина — ADR-0005.
+
+**Публичный HTTP-контракт зафиксирован снимками.** Статус, media type и форма тела
+каждого пути, который зовёт фронт или nginx, лежат текстом в
+`backend/Bugget.IntegrationTests/Contract/Snapshots/`. Переименовали поле или сменили
+статус — снимок падает; если изменение осознанное, пересоберите снимки
+(`UPDATE_CONTRACT_SNAPSHOTS=1 dotnet test backend/Bugget.IntegrationTests`) и покажите
+дифф в PR. Новый эндпоинт обязан появиться в
+[docs/public-contract-inventory.md](docs/public-contract-inventory.md) — иначе падает
+инвентарь.
 
 **Новый код пишется по DDD.** Rich-модель и агрегаты для нового; легаси мигрируем только
 при касании. Причина — ADR-0003.

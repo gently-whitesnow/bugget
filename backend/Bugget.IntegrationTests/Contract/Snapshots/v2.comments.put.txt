@@ -1,0 +1,12 @@
+status: 200
+content-type: application/json
+body:
+$: object
+$.audience: number
+$.bug_id: number
+$.created_at: string
+$.creator_type: number
+$.creator_user_id: string
+$.id: number
+$.text: string
+$.updated_at: string

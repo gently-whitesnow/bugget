@@ -17,7 +17,7 @@ using Xunit;
 using Xunit.Abstractions;
 using MsOptions = Microsoft.Extensions.Options.Options;
 
-namespace Authorization.Tests.OidcAuth;
+namespace Authorization.IntegrationTests.OidcAuth;
 
 /// <summary>
 /// Shared Keycloak container fixture for all tests.
@@ -42,8 +42,13 @@ public class KeycloakContainerFixture : IAsyncLifetime
             .WithEnvironment("KEYCLOAK_ADMIN", "admin")
             .WithEnvironment("KEYCLOAK_ADMIN_PASSWORD", "admin")
             .WithPortBinding(8080, true)
+            // Строка «Listening on» в логе появляется раньше, чем admin-API начинает
+            // отвечать, поэтому ждём готовность именно по HTTP, а не паузой в тесте.
             .WithWaitStrategy(Wait.ForUnixContainer()
-                .UntilMessageIsLogged("Listening on: http://0.0.0.0:8080"))
+                .UntilMessageIsLogged("Listening on: http://0.0.0.0:8080")
+                .UntilHttpRequestIsSucceeded(request => request
+                    .ForPath("/realms/master/.well-known/openid-configuration")
+                    .ForPort(8080)))
             .Build();
 
         await Container.StartAsync();
@@ -56,9 +61,6 @@ public class KeycloakContainerFixture : IAsyncLifetime
             BaseAddress = new Uri(KeycloakUrl),
             Timeout = TimeSpan.FromSeconds(30)
         };
-
-        // Wait a bit for Keycloak to be fully ready
-        await Task.Delay(1000);
 
         // Setup realm, client, and user
         await SetupKeycloakAsync();

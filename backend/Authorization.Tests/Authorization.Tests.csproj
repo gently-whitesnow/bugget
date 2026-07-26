@@ -17,9 +17,6 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Moq" />
-    <PackageReference Include="Testcontainers" />
-    <PackageReference Include="Testcontainers.Redis" />
-    <PackageReference Include="Testcontainers.Keycloak" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="RichardSzalay.MockHttp" />
   </ItemGroup>

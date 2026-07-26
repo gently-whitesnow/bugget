@@ -46,11 +46,21 @@
       "scope": "backend",
       "enabled": true,
       "slow": false,
-      "description": "Юнит-тесты без I/O: Bugget.Tests, Users.UnitTests, Authorization.Tests. Интеграционные тесты на Testcontainers сюда не входят — им нужен Docker, они подключаются отдельным гейтом.",
+      "workdir": ".",
+      "description": "Юнит-тесты без I/O — все тестовые проекты, кроме *.IntegrationTests. Список проектов не ведётся: они находятся поиском по IsTestProject, поэтому новый тестовый проект запускается сам. Ссылка на Testcontainers в этой категории валит гейт: Docker в быстром прогоне не нужен.",
       "commands": [
-        "dotnet test Bugget.Tests/Bugget.Tests.csproj -c Release --no-restore",
-        "dotnet test Users.UnitTests/Users.UnitTests.csproj -c Release --no-restore",
-        "dotnet test Authorization.Tests/Authorization.Tests.csproj -c Release --no-restore"
+        "scripts/quality/dotnet-test.sh unit"
+      ]
+    },
+    {
+      "id": "backend-test-integration",
+      "scope": "backend",
+      "enabled": true,
+      "slow": true,
+      "workdir": ".",
+      "description": "Интеграционные тесты на реальных зависимостях в Docker (Testcontainers) — все проекты *.IntegrationTests: Postgres с накатанными миграциями DbUp и Keycloak. Помечен slow — исключается из --fast, но входит в полный прогон и в CI. Без Docker падает, а не пропускается молча.",
+      "commands": [
+        "scripts/quality/dotnet-test.sh integration"
       ]
     },
     {

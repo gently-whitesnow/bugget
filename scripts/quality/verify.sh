@@ -99,6 +99,11 @@ done < <(jq -r '.gates[].id' "$CONFIG")
 
 [ ${#ALL_IDS[@]} -gt 0 ] || die "в конфиге нет ни одного гейта: $CONFIG"
 
+# Гейты ищутся по id, поэтому дубль id — это не «два гейта», а склеенные поля обоих
+# и мусор в выводе. Ловим сразу.
+DUP_IDS="$(printf '%s\n' "${ALL_IDS[@]}" | sort | uniq -d)"
+[ -z "$DUP_IDS" ] || die "в конфиге повторяются id гейтов: $(printf '%s' "$DUP_IDS" | tr '\n' ' ')"
+
 # Поля гейта по id.
 gate_field() { jq -r --arg id "$1" --arg f "$2" '.gates[] | select(.id == $id) | .[$f] // ""' "$CONFIG"; }
 gate_commands() { jq -r --arg id "$1" '.gates[] | select(.id == $id) | .commands[]' "$CONFIG"; }

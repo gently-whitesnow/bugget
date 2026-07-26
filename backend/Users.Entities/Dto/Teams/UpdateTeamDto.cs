@@ -1,6 +1,6 @@
-namespace Users.Entities.Dto.Teams;
-
 using System.ComponentModel.DataAnnotations;
+
+namespace Users.Entities.Dto.Teams;
 
 public sealed class UpdateTeamDto
 {

@@ -1,3 +1,22 @@
+#-----------------------------------------------------------------------------------------
+#
+# Стиль backend-кода Bugget.
+#
+# Этот файл — единственный источник правды о формате C#. Его читают IDE и гейт
+# `backend-format` (`dotnet format --verify-no-changes`, см. .quality/quality.config.json),
+# поэтому «у меня в редакторе иначе» здесь невозможно.
+#
+# Правила разделены по строгости намеренно:
+#   * без суффикса severity  — чистое форматирование (отступы, пробелы, переносы).
+#     Их чинит `dotnet format whitespace`, и они обязательны.
+#   * `:warning`             — правила, которые `dotnet format` (по умолчанию --severity warn)
+#     применяет автоматически. Добавлять сюда только то, что безопасно
+#     автоисправляется и не меняет поведение.
+#   * `:suggestion`          — договорённость команды, которую массово не переписываем:
+#     подсказка в IDE, но гейт из-за неё не краснеет.
+#
+#-----------------------------------------------------------------------------------------
+
 root = true
 
 [*]
@@ -13,16 +32,120 @@ indent_size = 4
 [*.{json,yml,yaml,md,sh}]
 indent_size = 2
 
-[*.cs]
-# Code style
-dotnet_sort_system_directives_first = true
-csharp_new_line_before_open_brace = all
-csharp_prefer_braces = true:warning
+# Сгенерированные nswag-контракты и контроллеры не форматируем: их переписывает генератор.
+[**/Generated/**.cs]
+generated_code = true
 
-# Nullability — рекомендации, не блокируют build (см. Directory.Build.props,
-# CS8602/CS8604 в WarningsNotAsErrors до планомерной чистки).
+[*.cs]
+
+#-----------------------------------------------------------------------------------------
+# Директивы using
+#-----------------------------------------------------------------------------------------
+
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+#-----------------------------------------------------------------------------------------
+# Отступы
+#-----------------------------------------------------------------------------------------
+
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_case_contents = true
+csharp_indent_case_contents_when_block = false
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+
+#-----------------------------------------------------------------------------------------
+# Переносы строк. Стиль Allman: открывающая скобка всегда с новой строки.
+#-----------------------------------------------------------------------------------------
+
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = false
+
+#-----------------------------------------------------------------------------------------
+# Пробелы
+#-----------------------------------------------------------------------------------------
+
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_after_comma = true
+csharp_space_after_dot = false
+csharp_space_after_semicolon_in_for_statement = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_around_declaration_statements = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_before_comma = false
+csharp_space_before_dot = false
+csharp_space_before_open_square_brackets = false
+csharp_space_before_semicolon_in_for_statement = false
+csharp_space_between_empty_square_brackets = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+csharp_space_between_square_brackets = false
+
+#-----------------------------------------------------------------------------------------
+# Язык: обязательные правила (автоисправляются, поведение не меняют)
+#-----------------------------------------------------------------------------------------
+
+# 538 из 569 файлов уже file-scoped; правило добивает остаток и закрывает вопрос навсегда.
+csharp_style_namespace_declarations = file_scoped:warning
+
+csharp_prefer_braces = true:warning
 dotnet_style_null_propagation = true:warning
 dotnet_style_coalesce_expression = true:warning
+
+#-----------------------------------------------------------------------------------------
+# Язык: договорённости без массовой переписи (:suggestion — гейт от них не краснеет)
+#
+# Поднимать до :warning можно только вместе с отдельным форматирующим коммитом,
+# иначе правка стиля размажется по содержательным PR.
+#-----------------------------------------------------------------------------------------
+
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+csharp_style_expression_bodied_constructors = false:suggestion
+
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_prefer_primary_constructors = false:suggestion
+
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
+dotnet_style_prefer_conditional_expression_over_return = true:suggestion
+dotnet_style_readonly_field = true:suggestion
+
+# Квалификация членов через this. в коде не встречается — фиксируем как есть.
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+#-----------------------------------------------------------------------------------------
+# Нейминг
+#-----------------------------------------------------------------------------------------
 
 # Naming: private instance fields — _camelCase
 # severity=suggestion (не warning): на legacy-коде много полей без префикса,
@@ -54,7 +177,10 @@ dotnet_naming_symbols.private_static_readonly_fields.applicable_kinds = field
 dotnet_naming_symbols.private_static_readonly_fields.applicable_accessibilities = private
 dotnet_naming_symbols.private_static_readonly_fields.required_modifiers = static,readonly
 
+#-----------------------------------------------------------------------------------------
 # Тесты используют snake_case method names (xUnit идиома) — отключаем CA1707.
+#-----------------------------------------------------------------------------------------
+
 [**/Bugget.Tests/**/*.cs]
 dotnet_diagnostic.CA1707.severity = none
 

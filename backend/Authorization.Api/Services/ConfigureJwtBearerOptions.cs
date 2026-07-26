@@ -216,14 +216,16 @@ public class ConfigureJwtBearerOptions(
             {
                 logger.LogInformation("OnTokenValidated: {SecurityToken}", ctx.SecurityToken);
                 var principal = ctx.Principal;
-                if (principal == null) { ctx.Fail("principal is null"); return; }
+                if (principal == null)
+                { ctx.Fail("principal is null"); return; }
 
                 var idClaim = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier || c.Type == "sub");
                 if (idClaim == null || !long.TryParse(idClaim.Value, out var userId))
                 { ctx.Fail("invalid token"); return; }
 
                 var user = await usersService.GetUserAsync(userId);
-                if (user == null) { ctx.Fail("user not found"); return; }
+                if (user == null)
+                { ctx.Fail("user not found"); return; }
 
                 ctx.HttpContext.SetAuthHeaders(user);
             },
@@ -245,7 +247,8 @@ public class ConfigureJwtBearerOptions(
                 }
 
                 var http = ctx.HttpContext;
-                if (!http.Request.Cookies.TryGetValue("refresh_token", out var refresh)) { ctx.Fail("expired and no refresh"); return; }
+                if (!http.Request.Cookies.TryGetValue("refresh_token", out var refresh))
+                { ctx.Fail("expired and no refresh"); return; }
 
                 try
                 {
@@ -254,10 +257,12 @@ public class ConfigureJwtBearerOptions(
                     var userIdStr = principal.FindFirstValue(ClaimTypes.NameIdentifier)
                                   ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub)
                                   ?? principal.FindFirst("nameid")?.Value;
-                    if (userIdStr is null || !long.TryParse(userIdStr, out var userId)) { ctx.Fail("invalid refresh token"); return; }
+                    if (userIdStr is null || !long.TryParse(userIdStr, out var userId))
+                    { ctx.Fail("invalid refresh token"); return; }
 
                     var user = await usersService.GetUserAsync(userId);
-                    if (user == null) { ctx.Fail("user not found"); return; }
+                    if (user == null)
+                    { ctx.Fail("user not found"); return; }
 
                     var jwtOpts = http.RequestServices.GetRequiredService<IOptions<JwtOptions>>().Value;
                     var pair = await _tokensService.GenerateTokensAsync(userId, refresh);

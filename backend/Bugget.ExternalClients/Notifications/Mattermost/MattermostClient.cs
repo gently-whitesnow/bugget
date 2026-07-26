@@ -3,82 +3,81 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Bugget.ExternalClients.Notifications.Mattermost.HttpModels;
 
-namespace Bugget.ExternalClients.Notifications.Mattermost
+namespace Bugget.ExternalClients.Notifications.Mattermost;
+
+public class MattermostClient(IHttpClientFactory httpClientFactory)
 {
-    public class MattermostClient(IHttpClientFactory httpClientFactory)
+    private const string PostMessageUrl = "/api/v4/posts";
+    private const string DirectChannelUrl = "/api/v4/channels/direct";
+
+    private readonly HttpClient _httpClient = httpClientFactory.CreateClient(MattermostConstants.MattermostHttpClientKey);
+
+    private readonly string? _botAccessToken =
+        Environment.GetEnvironmentVariable(MattermostConstants.MattermostBotAccessTokenKey)
+        ?? throw new ApplicationException($"Не задан токен mattermost, env=[{MattermostConstants.MattermostBotAccessTokenKey}]");
+
+    private JsonSerializerOptions _jsonSerializerOptions = new()
     {
-        private const string PostMessageUrl = "/api/v4/posts";
-        private const string DirectChannelUrl = "/api/v4/channels/direct";
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    };
 
-        private readonly HttpClient _httpClient = httpClientFactory.CreateClient(MattermostConstants.MattermostHttpClientKey);
+    public async Task<MattermostMessageResponse?> SendMessageAsync(string recipientId, string text, bool isDirectMessage = true,
+        string? threadId = null)
+    {
+        string channelId = recipientId;
 
-        private readonly string? _botAccessToken =
-            Environment.GetEnvironmentVariable(MattermostConstants.MattermostBotAccessTokenKey)
-            ?? throw new ApplicationException($"Не задан токен mattermost, env=[{MattermostConstants.MattermostBotAccessTokenKey}]");
-
-        private JsonSerializerOptions _jsonSerializerOptions = new()
+        if (isDirectMessage)
         {
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            var channelResponse = await CreateDirectChannelAsync(recipientId);
+            channelId = channelResponse?.Id ?? throw new Exception("Не удалось создать или получить личный канал.");
+        }
+
+        var messageRequest = new CreateMattermostMessageRequest
+        {
+            ChannelId = channelId,
+            Message = text
         };
 
-        public async Task<MattermostMessageResponse?> SendMessageAsync(string recipientId, string text, bool isDirectMessage = true,
-            string? threadId = null)
+        var request = new HttpRequestMessage(HttpMethod.Post, PostMessageUrl)
         {
-            string channelId = recipientId;
+            Content = JsonContent.Create(messageRequest, options: _jsonSerializerOptions)
+        };
 
-            if (isDirectMessage)
-            {
-                var channelResponse = await CreateDirectChannelAsync(recipientId);
-                channelId = channelResponse?.Id ?? throw new Exception("Не удалось создать или получить личный канал.");
-            }
+        request.Headers.Add("Authorization", $"Bearer {_botAccessToken}");
 
-            var messageRequest = new CreateMattermostMessageRequest
-            {
-                ChannelId = channelId,
-                Message = text
-            };
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
 
-            var request = new HttpRequestMessage(HttpMethod.Post, PostMessageUrl)
-            {
-                Content = JsonContent.Create(messageRequest, options: _jsonSerializerOptions)
-            };
+        return await response.Content.ReadFromJsonAsync<MattermostMessageResponse>(_jsonSerializerOptions);
+    }
 
-            request.Headers.Add("Authorization", $"Bearer {_botAccessToken}");
+    private async Task<ChannelResponse?> CreateDirectChannelAsync(string userId)
+    {
+        var botUserId = await GetBotUserIdAsync();
 
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            return await response.Content.ReadFromJsonAsync<MattermostMessageResponse>(_jsonSerializerOptions);
-        }
-
-        private async Task<ChannelResponse?> CreateDirectChannelAsync(string userId)
+        var request = new HttpRequestMessage(HttpMethod.Post, DirectChannelUrl)
         {
-            var botUserId = await GetBotUserIdAsync();
+            Content = JsonContent.Create(new[] { botUserId, userId }, options: _jsonSerializerOptions)
+        };
 
-            var request = new HttpRequestMessage(HttpMethod.Post, DirectChannelUrl)
-            {
-                Content = JsonContent.Create(new[] { botUserId, userId }, options: _jsonSerializerOptions)
-            };
+        request.Headers.Add("Authorization", $"Bearer {_botAccessToken}");
 
-            request.Headers.Add("Authorization", $"Bearer {_botAccessToken}");
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
 
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ChannelResponse>(_jsonSerializerOptions);
+    }
 
-            return await response.Content.ReadFromJsonAsync<ChannelResponse>(_jsonSerializerOptions);
-        }
+    private async Task<string> GetBotUserIdAsync()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v4/users/me");
+        request.Headers.Add("Authorization", $"Bearer {_botAccessToken}");
 
-        private async Task<string> GetBotUserIdAsync()
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, "/api/v4/users/me");
-            request.Headers.Add("Authorization", $"Bearer {_botAccessToken}");
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
 
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var user = await response.Content.ReadFromJsonAsync<UserResponse>(_jsonSerializerOptions);
-            return user?.Id ?? throw new Exception("Не удалось получить идентификатор пользователя бота.");
-        }
+        var user = await response.Content.ReadFromJsonAsync<UserResponse>(_jsonSerializerOptions);
+        return user?.Id ?? throw new Exception("Не удалось получить идентификатор пользователя бота.");
     }
 }

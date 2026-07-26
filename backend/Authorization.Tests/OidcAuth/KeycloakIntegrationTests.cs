@@ -465,8 +465,12 @@ public class KeycloakIntegrationTests
         var output = input.Replace('-', '+').Replace('_', '/');
         switch (output.Length % 4)
         {
-            case 2: output += "=="; break;
-            case 3: output += "="; break;
+            case 2:
+                output += "==";
+                break;
+            case 3:
+                output += "=";
+                break;
         }
         var bytes = Convert.FromBase64String(output);
         return System.Text.Encoding.UTF8.GetString(bytes);

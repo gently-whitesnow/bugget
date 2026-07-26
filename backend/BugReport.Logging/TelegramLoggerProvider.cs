@@ -44,9 +44,15 @@ public sealed class TelegramLoggerProvider : ILoggerProvider
 
     public void Dispose()
     {
-        try { _cts.Cancel(); } catch { }
-        try { _queue.Writer.TryComplete(); } catch { }
-        try { _senderLoop.Wait(TimeSpan.FromSeconds(2)); } catch { }
+        try
+        { _cts.Cancel(); }
+        catch { }
+        try
+        { _queue.Writer.TryComplete(); }
+        catch { }
+        try
+        { _senderLoop.Wait(TimeSpan.FromSeconds(2)); }
+        catch { }
         _http.Dispose();
         _cts.Dispose();
     }
@@ -92,7 +98,9 @@ public sealed class TelegramLoggerProvider : ILoggerProvider
                 {
                     batch.Add(more);
                 }
-                try { await batchWindowTask; } catch { /* ignore */ }
+                try
+                { await batchWindowTask; }
+                catch { /* ignore */ }
 
                 if (batch.Count == 0)
                 {
@@ -165,7 +173,9 @@ public sealed class TelegramLoggerProvider : ILoggerProvider
                             delay = _options.RetryMaxDelay;
                         }
 
-                        try { await Task.Delay(delay, _cts.Token); } catch { }
+                        try
+                        { await Task.Delay(delay, _cts.Token); }
+                        catch { }
                         var next = TimeSpan.FromMilliseconds(backoff.TotalMilliseconds * 2);
                         backoff = next <= _options.RetryMaxDelay ? next : _options.RetryMaxDelay;
                     }
@@ -234,7 +244,8 @@ public sealed class TelegramLoggerProvider : ILoggerProvider
             // +1 на перевод строки
             if (sb.Length + line.Length + 1 > maxLen)
             {
-                if (sb.Length > 0) { yield return sb.ToString(); sb.Clear(); }
+                if (sb.Length > 0)
+                { yield return sb.ToString(); sb.Clear(); }
                 if (line.Length > maxLen)
                 {
                     // если одна строка слишком длинная — нарежем на части

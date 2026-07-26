@@ -1,4 +1,3 @@
-namespace Bugget.Entities.BO.AttachmentBo
-{
-    public record FileMeta(string FileName, long LengthBytes, string TrustedMimeType);
-}
+namespace Bugget.Entities.BO.AttachmentBo;
+
+public record FileMeta(string FileName, long LengthBytes, string TrustedMimeType);

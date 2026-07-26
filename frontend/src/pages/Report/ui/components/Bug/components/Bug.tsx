@@ -7,9 +7,7 @@ import {
   BugStatuses,
   AttachmentTypes,
   bugStatusMap,
-  CreatorTypes,
 } from "@/shared/config";
-import { getAppContext } from "@/shared/api";
 import {
   deleteAttachmentEvent,
   renameAttachmentFx,
@@ -35,7 +33,6 @@ import BugHeader from "./components/BugHeader/BugHeader";
 import Result from "./components/Result/Result";
 import Comments from "./components/Comments/Comments";
 import BugSteps from "./components/BugSteps/BugSteps";
-import Dialog from "./components/Dialog";
 
 import "./Bug.css";
 
@@ -259,15 +256,6 @@ const Bug = ({ bug, totalBugsCount }: Props) => {
             bug.status !== BugStatuses.OPEN && bug.status !== BugStatuses.FIXED
           }
         />
-        {bug.creatorType === CreatorTypes.TG_BETA_TESTER &&
-          !bug.isLocalOnly &&
-          reportId && (
-            <Dialog
-              reportId={reportId}
-              bugId={bug.id}
-              workspaceId={getAppContext().workspaceId}
-            />
-          )}
       </div>
     </div>
   );

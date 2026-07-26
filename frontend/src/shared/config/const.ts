@@ -113,7 +113,6 @@ export enum SettingTypes {
 export enum CreatorTypes {
   USER = 0,
   SYSTEM = 1,
-  TG_BETA_TESTER = 2,
 }
 
 export enum CommentAudiences {

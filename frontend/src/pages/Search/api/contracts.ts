@@ -56,5 +56,4 @@ export type SearchRequestQueryParams = {
   sort?: string;
   skip?: number;
   take?: number;
-  creatorTypes?: number[];
 };

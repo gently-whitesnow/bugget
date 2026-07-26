@@ -12,4 +12,3 @@ export {
   getAppContext,
   getAppWebSocketUrl,
 } from "./app";
-export { botApi } from "./botApi";

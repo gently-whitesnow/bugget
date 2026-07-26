@@ -24,11 +24,6 @@ export const searchFx = createEffect<SearchRequestQueryParams, SearchResponse>(
         searchParams.append("reportStatuses", String(status));
       }
     }
-    if (params.creatorTypes) {
-      for (const creatorType of params.creatorTypes) {
-        searchParams.append("creatorTypes", String(creatorType));
-      }
-    }
     const result = await searchReports(searchParams.toString());
     return result || { reports: [], total: 0 };
   }
@@ -39,15 +34,12 @@ export const searchPageOpened = createEvent();
 export const searchPageClosed = createEvent();
 export const loadMore = createEvent();
 
-export type BetaReportsFilter = "include" | "exclude" | "only";
-
 export const updateQuery = createEvent<string>();
 export const updateSortField = createEvent<string>();
 export const updateSortDirection = createEvent<"asc" | "desc">();
 export const updateStatuses = createEvent<number[] | null>();
 export const updateUserFilter = createEvent<string | null>();
 export const updateTeamFilter = createEvent<Team | null>();
-export const updateBetaReportsFilter = createEvent<BetaReportsFilter>();
 
 export const $query = createStore<string>("").on(updateQuery, (_, q) => q);
 export const $sortField = createStore<string>("created").on(
@@ -73,25 +65,6 @@ export const $teamFilter = createStore<Team | null>(null).on(
   (_, team) => team
 );
 
-export const $betaReportsFilter = createStore<BetaReportsFilter>("include").on(
-  updateBetaReportsFilter,
-  (_, value) => value
-);
-
-const betaFilterToCreatorTypes = (
-  value: BetaReportsFilter
-): number[] | undefined => {
-  switch (value) {
-    case "only":
-      return [2];
-    case "exclude":
-      return [0, 1];
-    case "include":
-    default:
-      return undefined;
-  }
-};
-
 export const $skip = createStore<number>(0)
   .on(loadMore, (skip) => skip + 10)
   .reset([
@@ -101,7 +74,6 @@ export const $skip = createStore<number>(0)
     updateStatuses,
     updateUserFilter,
     updateTeamFilter,
-    updateBetaReportsFilter,
   ]);
 
 const itemsPerPage = 10;
@@ -128,7 +100,6 @@ export const $searchResult = createStore<SearchResponse>({
     updateStatuses,
     updateUserFilter,
     updateTeamFilter,
-    updateBetaReportsFilter,
   ]);
 
 // Загрузка пользователей
@@ -206,7 +177,6 @@ sample({
     reportStatuses: $statuses,
     userFilter: $userFilter,
     teamFilter: $teamFilter,
-    betaReportsFilter: $betaReportsFilter,
     skip: $skip,
   },
   clock: [
@@ -216,7 +186,6 @@ sample({
     $statuses.updates,
     updateUserFilter,
     $teamFilter.updates,
-    $betaReportsFilter.updates,
     $skip.updates,
   ],
   fn: ({
@@ -226,7 +195,6 @@ sample({
     reportStatuses,
     userFilter,
     teamFilter,
-    betaReportsFilter,
     skip,
   }) => ({
     query,
@@ -234,7 +202,6 @@ sample({
     reportStatuses: reportStatuses ?? undefined,
     userId: userFilter ?? undefined,
     teamId: teamFilter?.id ?? undefined,
-    creatorTypes: betaFilterToCreatorTypes(betaReportsFilter),
     skip,
     take: itemsPerPage,
   }),

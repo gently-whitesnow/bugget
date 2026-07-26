@@ -12,24 +12,31 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Bugget — баг-репорты, в которых всё на месте',
-    template: '%s · Bugget',
+    default: 'bugreport — баг-репорты, в которых всё на месте',
+    template: '%s · bugreport',
   },
   description: 'Open-source инструмент для структурированных баг-репортов. Self-hosted, MIT.',
   alternates: { canonical: '/' },
-  icons: { icon: '/icon.svg' },
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
   openGraph: {
     type: 'website',
     locale: 'ru_RU',
     url: siteUrl,
-    siteName: 'Bugget',
-    title: 'Bugget — баг-репорты, в которых всё на месте',
+    siteName: 'bugreport',
+    title: 'bugreport — баг-репорты, в которых всё на месте',
     description: 'Open-source инструмент для структурированных баг-репортов. Self-hosted, MIT.',
-    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'Bugget' }],
+    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'bugreport' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Bugget — баг-репорты, в которых всё на месте',
+    title: 'bugreport — баг-репорты, в которых всё на месте',
     description: 'Open-source инструмент для структурированных баг-репортов. Self-hosted, MIT.',
     images: ['/og-image.svg'],
   },

@@ -21,7 +21,7 @@ name: ci
 on:
   pull_request:
   push:
-    branches: [master]
+    branches: [main]
 
 jobs:
   backend:

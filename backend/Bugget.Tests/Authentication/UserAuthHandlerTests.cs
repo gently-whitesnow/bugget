@@ -1,0 +1,210 @@
+using System.Security.Claims;
+using System.Text.Encodings.Web;
+using Bugget.Authentication;
+using Bugget.DA.Interfaces;
+using Bugget.Entities.BO;
+using Bugget.Entities.Options;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Moq;
+
+namespace Bugget.Tests.Authentication;
+
+public class UserAuthHandlerTests
+{
+    private static UserAuthHandler CreateHandler(
+        DefaultHttpContext context,
+        AuthHeadersOptions headersOptions)
+    {
+        // Mock AuthenticationSchemeOptions
+        var authSchemeOptions = new Mock<IOptionsMonitor<AuthenticationSchemeOptions>>();
+        authSchemeOptions
+            .Setup(o => o.Get(It.IsAny<string?>()))
+            .Returns(new AuthenticationSchemeOptions());
+
+        // Mock AuthHeadersOptions
+        var headersOptionsMonitor = new Mock<IOptionsMonitor<AuthHeadersOptions>>();
+        headersOptionsMonitor
+            .Setup(o => o.CurrentValue)
+            .Returns(headersOptions);
+
+        var handler = new UserAuthHandler(
+            authSchemeOptions.Object,
+            LoggerFactory.Create(_ => { }),
+            UrlEncoder.Default,
+            headersOptionsMonitor.Object);
+
+        handler.InitializeAsync(
+            new AuthenticationScheme("headers", null, typeof(UserAuthHandler)),
+            context).Wait();
+        return handler;
+    }
+
+    [Fact]
+    public async Task Succeeds_WhenAllHeadersAreValid()
+    {
+        // Arrange
+        var headersOptions = new AuthHeadersOptions
+        {
+            UserIdHeaderName = "X-User-Id",
+            TeamIdHeaderName = "X-Team-Id",
+            OrganizationIdHeaderName = "X-Org-Id"
+        };
+        var context = new DefaultHttpContext();
+        context.Request.Headers[headersOptions.UserIdHeaderName] = "user-123";
+        context.Request.Headers[headersOptions.TeamIdHeaderName] = "team-456";
+        context.Request.Headers[headersOptions.OrganizationIdHeaderName] = "org-789";
+        context.Request.Headers["X-Signal-R-Connection-Id"] = "conn-abc";
+
+        var usersClient = new Mock<IUsersClient>();
+        var handler = CreateHandler(context, headersOptions);
+
+        // Act
+        var result = await handler.AuthenticateAsync();
+
+        // Assert
+        Assert.True(result.Succeeded);
+        var claims = result.Principal!.Claims.ToDictionary(c => c.Type, c => c.Value);
+        Assert.Equal("user-123", claims[ClaimTypes.NameIdentifier]);
+        Assert.Equal("team-456", claims["team_id"]);
+        Assert.Equal("org-789", claims["organization_id"]);
+        Assert.Equal("conn-abc", claims["signalr_connection_id"]);
+    }
+
+    [Fact]
+    public async Task Fails_WhenUserHeaderConfiguredButMissing()
+    {
+        // Arrange: only user header configured
+        var headersOptions = new AuthHeadersOptions
+        {
+            UserIdHeaderName = "X-User-Id"
+        };
+        var context = new DefaultHttpContext(); // no headers
+
+        var handler = CreateHandler(context, headersOptions);
+
+        // Act
+        var result = await handler.AuthenticateAsync();
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Equal("User ID not found", result.Failure?.Message);
+    }
+
+    [Fact]
+    public async Task Succeeds_WhenUserHeaderMissingButNotConfigured()
+    {
+        // Arrange: no headers configured
+        var headersOptions = new AuthHeadersOptions();
+        var context = new DefaultHttpContext();
+
+        var handler = CreateHandler(context, headersOptions);
+
+        // Act
+        var result = await handler.AuthenticateAsync();
+
+        // Assert
+        Assert.True(result.Succeeded);
+        Assert.Equal("default-user", result.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+    }
+
+    [Fact]
+    public async Task Fails_WhenTeamHeaderConfiguredButEmpty()
+    {
+        // Arrange
+        var headersOptions = new AuthHeadersOptions
+        {
+            UserIdHeaderName = "X-User-Id",
+            TeamIdHeaderName = "X-Team-Id"
+        };
+        var context = new DefaultHttpContext();
+        context.Request.Headers[headersOptions.UserIdHeaderName] = "user-123";
+        context.Request.Headers[headersOptions.TeamIdHeaderName] = string.Empty;
+
+        var handler = CreateHandler(context, headersOptions);
+
+        // Act
+        var result = await handler.AuthenticateAsync();
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Equal("Team ID not found", result.Failure?.Message);
+    }
+
+    [Fact]
+    public async Task InternalRoute_Fails_WhenClientNameHeaderMissing()
+    {
+        var headersOptions = new AuthHeadersOptions { UserIdHeaderName = "X-User-Id" };
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/v2/_internal/bugs";
+
+        var handler = CreateHandler(context, headersOptions);
+
+        var result = await handler.AuthenticateAsync();
+
+        Assert.False(result.Succeeded);
+        Assert.Contains("X-Client-Name", result.Failure?.Message);
+    }
+
+    [Fact]
+    public async Task InternalRoute_Succeeds_AndEmitsClientNameClaim()
+    {
+        var headersOptions = new AuthHeadersOptions { UserIdHeaderName = "X-User-Id" };
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/v2/_internal/bugs";
+        context.Request.Headers["X-Client-Name"] = "beta-bot";
+
+        var handler = CreateHandler(context, headersOptions);
+
+        var result = await handler.AuthenticateAsync();
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("beta-bot", result.Principal?.FindFirst("client_name")?.Value);
+        Assert.Equal("beta-bot", result.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+    }
+
+    [Fact]
+    public async Task InternalRoute_BypassesUserHeaderValidation()
+    {
+        var headersOptions = new AuthHeadersOptions
+        {
+            UserIdHeaderName = "X-User-Id",
+            TeamIdHeaderName = "X-Team-Id",
+            OrganizationIdHeaderName = "X-Org-Id"
+        };
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/v2/_internal/reports";
+        context.Request.Headers["X-Client-Name"] = "beta-bot";
+
+        var handler = CreateHandler(context, headersOptions);
+
+        var result = await handler.AuthenticateAsync();
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task Fails_WhenOrgHeaderConfiguredButEmpty()
+    {
+        // Arrange
+        var headersOptions = new AuthHeadersOptions
+        {
+            UserIdHeaderName = "X-User-Id",
+            OrganizationIdHeaderName = "X-Org-Id"
+        };
+        var context = new DefaultHttpContext();
+        context.Request.Headers[headersOptions.UserIdHeaderName] = "user-123";
+        context.Request.Headers[headersOptions.OrganizationIdHeaderName] = string.Empty;
+
+        var handler = CreateHandler(context, headersOptions);
+
+        // Act
+        var result = await handler.AuthenticateAsync();
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Equal("Organization ID not found", result.Failure?.Message);
+    }
+}

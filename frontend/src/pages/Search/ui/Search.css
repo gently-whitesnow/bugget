@@ -1,0 +1,15 @@
+.search-layout {
+  container: search-layout / inline-size;
+}
+
+.search-layout-filters {
+  flex-basis: 100%;
+  width: 100%;
+}
+
+@container search-layout (min-width: 43rem) {
+  .search-layout-filters {
+    flex-basis: var(--responsive-sidebar-basis, 18rem);
+    width: auto;
+  }
+}

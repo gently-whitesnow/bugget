@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\Monade\Monade.csproj" />
+        <ProjectReference Include="..\TaskQueue\TaskQueue.csproj" />
+        <ProjectReference Include="..\Bugget.DA\Bugget.DA.csproj" />
+        <ProjectReference Include="..\Bugget.Analytics.Contracts\Bugget.Analytics.Contracts.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Mime" />
+      <PackageReference Include="SixLabors.ImageSharp" />
+      <PackageReference Include="Xabe.FFmpeg" />
+      <PackageReference Include="Xabe.FFmpeg.Downloader" />
+    </ItemGroup>
+    
+</Project>

@@ -1,0 +1,110 @@
+-- Расширяем create_report_v3 и create_bug_internal опциональным параметром _creator_type
+-- (default 0 = User) для прокидывания TgBetaTester=2 из _internal endpoint'а beta-bot'а
+-- (TECHSPEC §4.3.1, ADR-20260423-external-author-internal-api).
+-- Существующие 5-арги вызовы продолжают работать через DEFAULT.
+
+DROP FUNCTION IF EXISTS public.create_report_v3(text, text, text, text);
+CREATE OR REPLACE FUNCTION public.create_report_v3(
+    _user_id text,
+    _title text,
+    _team_id text DEFAULT NULL,
+    _organization_id text DEFAULT NULL,
+    _creator_type smallint DEFAULT 0)
+    RETURNS TABLE(
+        id int,
+        team_report_id int,
+        public_id uuid,
+        title text,
+        status int,
+        created_at timestamp with time zone,
+        updated_at timestamp with time zone,
+        creator_user_id text,
+        creator_team_id text,
+        responsible_user_id text,
+        past_responsible_user_id text,
+        creator_type smallint)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    new_report_id integer;
+    new_team_report_id integer;
+BEGIN
+    IF _team_id IS NOT NULL THEN
+        INSERT INTO public.report_team_counters(team_id, last_report_id)
+            VALUES (_team_id, 1)
+        ON CONFLICT (team_id) DO UPDATE
+            SET last_report_id = public.report_team_counters.last_report_id + 1
+        RETURNING last_report_id INTO new_team_report_id;
+    END IF;
+
+    INSERT INTO public.reports(responsible_user_id, title, status, creator_user_id, creator_team_id, creator_organization_id, past_responsible_user_id, team_report_id, creator_type)
+        VALUES (_user_id, _title, 0, _user_id, _team_id, _organization_id, _user_id, new_team_report_id, _creator_type)
+    RETURNING
+        public.reports.id INTO new_report_id;
+    INSERT INTO public.report_participants(report_id, user_id)
+        VALUES (new_report_id, _user_id);
+    RETURN QUERY
+    SELECT
+        r.id,
+        r.team_report_id,
+        r.public_id,
+        r.title,
+        r.status,
+        r.created_at,
+        r.updated_at,
+        r.creator_user_id,
+        r.creator_team_id,
+        r.responsible_user_id,
+        r.past_responsible_user_id,
+        r.creator_type
+    FROM
+        public.reports AS r
+    WHERE
+        r.id = new_report_id;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS public.create_bug_internal(text, int, text, text, text);
+CREATE OR REPLACE FUNCTION public.create_bug_internal(
+    _user_id text,
+    _report_id int,
+    _receive text,
+    _expect text,
+    _title text DEFAULT NULL,
+    _creator_type smallint DEFAULT 0)
+    RETURNS TABLE(
+        id int,
+        title text,
+        receive text,
+        expect text,
+        status int,
+        creator_user_id text,
+        created_at timestamp with time zone,
+        updated_at timestamp with time zone,
+        creator_type smallint)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    new_bug_id integer;
+BEGIN
+    INSERT INTO public.bugs(report_id, receive, expect, title, creator_user_id, status, creator_type)
+        VALUES (_report_id, _receive, _expect, _title, _user_id, 0, _creator_type)
+    RETURNING
+        public.bugs.id INTO new_bug_id;
+    RETURN QUERY
+    SELECT
+        b.id,
+        b.title,
+        b.receive,
+        b.expect,
+        b.status,
+        b.creator_user_id,
+        b.created_at,
+        b.updated_at,
+        b.creator_type
+    FROM
+        public.bugs b
+    WHERE
+        b.id = new_bug_id;
+END;
+$$;

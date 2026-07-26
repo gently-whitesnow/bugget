@@ -1,0 +1,12 @@
+.bug-card {
+  --bug-card-column-min: max(20rem, calc((100% - 1rem) / 2));
+
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--bug-card-column-min)), 1fr)
+  );
+}
+
+.bug-card-actions {
+  grid-column: 1 / -1;
+}

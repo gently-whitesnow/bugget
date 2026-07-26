@@ -1,0 +1,17 @@
+# сборка
+bin/
+obj/
+dist/
+node_modules/
+
+# локальные данные dev-контура
+file-storage/
+users-file-storage/
+ffmpeg/
+keys/
+
+# среда
+.env
+.env.local
+.DS_Store
+.idea/

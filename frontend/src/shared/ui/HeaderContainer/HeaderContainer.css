@@ -1,0 +1,14 @@
+.app-header {
+  container: app-header / inline-size;
+}
+
+.header-sidebar-action {
+  display: none;
+  flex-shrink: 0;
+}
+
+@container app-header (max-width: 53.999rem) {
+  .header-sidebar-action {
+    display: flex;
+  }
+}

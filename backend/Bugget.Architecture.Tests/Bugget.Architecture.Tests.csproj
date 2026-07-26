@@ -7,31 +7,38 @@
 
     <ItemGroup>
         <PackageReference Include="coverlet.collector">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <PackageReference Include="Moq" />
         <PackageReference Include="xunit" />
         <PackageReference Include="xunit.runner.visualstudio">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="FluentAssertions" />
+        <PackageReference Include="NetArchTest.Rules" />
     </ItemGroup>
 
     <ItemGroup>
         <Using Include="Xunit" />
     </ItemGroup>
-    
+
+    <!--
+        Ссылки нужны, чтобы сборки проверяемых проектов оказались рядом с тестом и их
+        можно было загрузить рефлексией. Правила уровня графа проектов читают .csproj
+        с диска и в этих ссылках не нуждаются.
+    -->
     <ItemGroup>
         <ProjectReference Include="..\Bugget\Bugget.csproj" />
+        <ProjectReference Include="..\Bugget.BO\Bugget.BO.csproj" />
         <ProjectReference Include="..\Bugget.DA\Bugget.DA.csproj" />
+        <ProjectReference Include="..\Bugget.DbUp\Bugget.DbUp.csproj" />
         <ProjectReference Include="..\Bugget.Entities\Bugget.Entities.csproj" />
         <ProjectReference Include="..\Bugget.ExternalClients\Bugget.ExternalClients.csproj" />
-        <ProjectReference Include="..\Bugget.DbUp\Bugget.DbUp.csproj" />
         <ProjectReference Include="..\Monade\Monade.csproj" />
         <ProjectReference Include="..\TaskQueue\TaskQueue.csproj" />
+        <ProjectReference Include="..\Users.BO\Users.BO.csproj" />
     </ItemGroup>
 
 </Project>

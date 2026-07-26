@@ -47,6 +47,7 @@ npm run dev             # vite на :5173, проксирует /api на nginx
 cd backend
 dotnet build Bugget.sln
 dotnet test Bugget.Tests/Bugget.Tests.csproj          # unit
+dotnet test Bugget.Architecture.Tests/Bugget.Architecture.Tests.csproj   # границы слоёв
 dotnet test Bugget.IntegrationTests/Bugget.IntegrationTests.csproj   # нужен docker (Testcontainers)
 ```
 

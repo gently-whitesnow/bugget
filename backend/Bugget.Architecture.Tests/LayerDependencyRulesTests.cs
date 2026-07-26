@@ -2,7 +2,7 @@ using System.Reflection;
 using FluentAssertions;
 using NetArchTest.Rules;
 
-namespace Bugget.Tests.Architecture;
+namespace Bugget.Architecture.Tests;
 
 /// <summary>
 /// Архитектурные правила для bugget-api (см. ROOT.md → «Карта проекта», «Инварианты»).

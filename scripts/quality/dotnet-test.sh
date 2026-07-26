@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 #
-# Запуск тестов бекенда одной из двух категорий: unit или integration.
+# Запуск тестов бекенда одной из трёх категорий: unit, integration или architecture.
 #
 # Категория определяется именем проекта: `*.IntegrationTests` — интеграционные (поднимают
-# реальные зависимости в Docker через Testcontainers), всё остальное с
+# реальные зависимости в Docker через Testcontainers), `*.Architecture.Tests` —
+# архитектурные (читают граф проектов и ссылки сборок), всё остальное с
 # `<IsTestProject>true</IsTestProject>` — юнит. Списка проектов нигде нет: они находятся
 # поиском по backend/, поэтому новый тестовый проект не может молча не запускаться нигде.
+#
+# Архитектурные вынесены в свою категорию не из-за скорости, а из-за читаемости отчёта:
+# «упал backend-test-architecture» — это нарушенная граница слоёв, а не сломанное поведение,
+# и чинится оно по-другому.
 #
 # Юнит-проект со ссылкой на Testcontainers валит запуск: по имени он попал в быструю
 # категорию, а по содержимому требует Docker. Так уже было — восемь тестов с контейнером
@@ -16,6 +21,7 @@
 #
 #   dotnet-test.sh unit
 #   dotnet-test.sh integration
+#   dotnet-test.sh architecture
 #
 set -uo pipefail
 
@@ -24,9 +30,9 @@ BACKEND="$ROOT/backend"
 
 CATEGORY="${1:-}"
 case "$CATEGORY" in
-  unit|integration) ;;
-  -h|--help) sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
-  *) printf 'error: нужна категория: unit или integration\n' >&2; exit 2 ;;
+  unit|integration|architecture) ;;
+  -h|--help) sed -n '2,23p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  *) printf 'error: нужна категория: unit, integration или architecture\n' >&2; exit 2 ;;
 esac
 
 [ -d "$BACKEND" ] || { printf 'error: нет директории %s\n' "$BACKEND" >&2; exit 2; }
@@ -36,8 +42,9 @@ projects=()
 while IFS= read -r proj; do
   [ -n "$proj" ] || continue
   case "$proj" in
-    *.IntegrationTests/*) [ "$CATEGORY" = "integration" ] && projects+=("$proj") ;;
-    *)                    [ "$CATEGORY" = "unit" ]        && projects+=("$proj") ;;
+    *.IntegrationTests/*)   [ "$CATEGORY" = "integration" ]  && projects+=("$proj") ;;
+    *.Architecture.Tests/*) [ "$CATEGORY" = "architecture" ] && projects+=("$proj") ;;
+    *)                      [ "$CATEGORY" = "unit" ]         && projects+=("$proj") ;;
   esac
 done < <(grep -rl --include='*.csproj' '<IsTestProject>true</IsTestProject>' . | sed 's|^\./||' | sort)
 

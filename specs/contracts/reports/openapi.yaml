@@ -1,0 +1,186 @@
+openapi: 3.0.3
+
+# Контракт модуля Reports. Источник правды для Bugget/Generated/ReportsControllerBase.g.cs
+# и Bugget.Reports.Contracts/Generated/ReportsContracts.g.cs.
+#
+# Контракт частичный: описан PATCH /v2/reports/{id} (только поле
+# is_excluded_from_analytics) и GET /v2/reports/{id}/analytics. Полная миграция
+# reports на contract-first — отдельная задача.
+#
+# Правится этот файл, а не .g.cs: перегенерация — scripts/quality/openapi-generate.sh.
+# Порядок схем в components/schemas определяет порядок типов в сгенерированном файле.
+
+info:
+  title: Bugget Reports API
+  version: 1.0.0
+  description: |-
+    Часть контракта репортов, переведённая на contract-first: частичное
+    обновление репорта и детальная фазовая аналитика по нему.
+
+paths:
+
+  /v2/reports/{id}:
+    patch:
+      operationId: PatchReport
+      summary: Частичное обновление репорта.
+      description: |-
+        T09 описывает только новое поле `is_excluded_from_analytics`.
+        Остальные поля PATCH-эндпоинта будут добавлены в контракт в
+        отдельной задаче миграции reports на contract-first.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор репорта.
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportPatchRequest'
+      responses:
+        '200':
+          description: Репорт обновлён.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{id}/analytics:
+    get:
+      operationId: GetReportAnalytics
+      summary: Детальная фазовая аналитика конкретного репорта.
+      description: |-
+        Полный таймлайн фаз (Test/Fix), счётчик regression-циклов и
+        распределение багов по статусам на момент запроса.
+        Sub-resource на репорте: семантически аналитика принадлежит
+        конкретному репорту, потому живёт под `/v2/reports/{id}/`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор репорта.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Аналитика по репорту собрана.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+components:
+
+  schemas:
+
+    ReportPatchRequest:
+      type: object
+      description: |
+        Поля, помеченные `null`, не интерпретируются как «обнулить значение» —
+        это «не трогать». В T09 описано только новое поле; остальные PATCH-поля
+        существующего эндпоинта пока не описаны в контракте и принимаются
+        ad-hoc (см. TODO миграции reports).
+      properties:
+        is_excluded_from_analytics:
+          type: boolean
+          nullable: true
+          description: |
+            Если `true` — репорт исключён из агрегатов аналитического модуля
+            (отдельные счётчики, средние, distributions). `false` — учитывается
+            (поведение по умолчанию). `null` — не менять текущее значение.
+
+    PhaseName:
+      type: string
+      description: Имя фазы жизненного цикла репорта.
+      enum:
+        - Test
+        - Fix
+
+    AnalyticsReportPhaseEntry:
+      type: object
+      description: Один интервал фазы в таймлайне репорта.
+      required:
+        - phase
+        - entered_at
+      properties:
+        phase:
+          $ref: '#/components/schemas/PhaseName'
+        entered_at:
+          type: string
+          format: date-time
+          description: Момент входа в фазу.
+        exited_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Момент выхода из фазы. `null` — если фаза ещё активна.
+        duration_days:
+          type: number
+          nullable: true
+          description: |
+            Длительность фазы в днях. `null` для активной фазы (`exited_at == null`).
+        regression_cycle_index:
+          type: integer
+          description: |
+            Индекс цикла, к которому относится фаза (0 — первичный проход,
+            1 — первый retest и т.д.).
+
+    AnalyticsReportBugsByStatus:
+      type: object
+      description: Снимок распределения багов репорта по статусам на момент запроса.
+      properties:
+        open:
+          type: integer
+          description: Багов в статусе `open`.
+        fixed:
+          type: integer
+          description: Багов в статусе `fixed`.
+        verified:
+          type: integer
+          description: Багов в статусе `verified`.
+        rejected:
+          type: integer
+          description: Багов в статусе `rejected`.
+
+    AnalyticsReport:
+      type: object
+      description: Детальная фазовая аналитика одного репорта.
+      required:
+        - phase_timeline
+        - bugs_by_status
+      properties:
+        report_id:
+          type: integer
+          format: int64
+          description: ID репорта.
+        phase_timeline:
+          type: array
+          description: Полный таймлайн фаз в порядке возрастания `entered_at`.
+          items:
+            $ref: '#/components/schemas/AnalyticsReportPhaseEntry'
+        regression_cycles:
+          type: integer
+          description: |
+            Кол-во полных regression-циклов (Test → Fix → Test). 0 — репорт
+            прошёл по «прямому» пути.
+        bugs_by_status:
+          $ref: '#/components/schemas/AnalyticsReportBugsByStatus'
+        bugs_added_during_regression:
+          type: integer
+          description: |
+            Сколько багов добавлено в репорт во время повторных Test-фаз
+            (regression_cycle_index ≥ 1).
+
+  responses:
+
+    BadRequest:
+      description: Некорректные параметры запроса.
+      content:
+        application/json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ErrorResponse'

@@ -67,6 +67,15 @@ dotnet test Bugget.IntegrationTests/Bugget.IntegrationTests.csproj   # нуже�
 а не в workflow. Гейты прогоняются все, даже если что-то упало: в конце печатается сводка
 со статусом и временем. Нужен `jq`.
 
+## Контракты и архитектурные решения
+
+Контракты API описаны в `specs/contracts/<module>/openapi.yaml`, общие схемы —
+в `specs/contracts/shared.yaml`. Это источник правды: файлы `*.g.cs` только генерируются
+(`./scripts/quality/openapi-generate.sh`) и правке руками не подлежат.
+
+Архитектурные решения и причины — [specs/ADR/REGISTRY.md](specs/ADR/REGISTRY.md).
+Точка входа для агента — [ROOT.md](ROOT.md).
+
 ## Структура backend
 
 Один процесс и один образ, внутри — три модуля с сохранёнными границами:

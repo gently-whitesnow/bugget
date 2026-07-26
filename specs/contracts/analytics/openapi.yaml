@@ -1,0 +1,299 @@
+openapi: 3.0.3
+
+# Контракт модуля Analytics. Источник правды для Bugget/Generated/AnalyticsControllerBase.g.cs
+# и Bugget.Analytics.Contracts/Generated/AnalyticsContracts.g.cs.
+#
+# Правится этот файл, а не .g.cs: перегенерация — scripts/quality/openapi-generate.sh.
+# Порядок схем в components/schemas определяет порядок типов в сгенерированном файле.
+
+info:
+  title: Bugget Analytics API
+  version: 1.0.0
+  description: |-
+    Аналитика по фазам жизненного цикла репортов: агрегаты по workspace,
+    сводка по ответственному пользователю.
+
+paths:
+
+  /v2/analytics/summary:
+    get:
+      operationId: GetAnalyticsSummary
+      summary: Сводная аналитика по workspace за период, опционально с фильтром по команде.
+      description: |-
+        Возвращает агрегаты фаз / rework / regression-cycles для всех репортов
+        workspace, попавших в окно `period`. Окно интерпретируется по
+        `closed_at` — репорты, не достигшие финального статуса, исключаются.
+
+        Опциональный `teamId` фильтрует выборку по `creator_team_id`. Shape ответа
+        не меняется (`AnalyticsSummary`), независимо от наличия фильтра.
+      parameters:
+        - name: period
+          in: query
+          required: true
+          description: |-
+            Период агрегации. Допустимые значения — фиксированный список
+            (`7d`, `30d`, `60d`, `180d`, `360d`, `all`). Конкретные границы
+            `from`/`to` возвращаются в ответе (`Period`).
+
+            Wire-формат — простая строка, чтобы не плодить enum со «странными»
+            C#-идентификаторами (`_30d`) после кодогенерации NSwag.
+          schema:
+            type: string
+        - name: teamId
+          in: query
+          required: false
+          description: |-
+            Опциональный фильтр по команде-создателю (`creator_team_id`). Без него —
+            аналитика по всему workspace.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Сводка успешно собрана.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/analytics/responsible/{userId}:
+    get:
+      operationId: GetAnalyticsByResponsible
+      summary: Аналитика по конкретному ответственному пользователю.
+      description: |-
+        Списки репортов, в которых пользователь участвовал / завершил, плюс
+        средняя длительность fix-фазы. UserId — строка (см. shared.yaml UserId).
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: Идентификатор пользователя (строка, см. shared.yaml UserId).
+          schema:
+            $ref: '../shared.yaml#/components/schemas/UserId'
+        - name: period
+          in: query
+          required: true
+          description: |-
+            Период агрегации. Допустимые значения — фиксированный список
+            (`7d`, `30d`, `60d`, `180d`, `360d`, `all`). Конкретные границы
+            `from`/`to` возвращаются в ответе (`Period`).
+
+            Wire-формат — простая строка, чтобы не плодить enum со «странными»
+            C#-идентификаторами (`_30d`) после кодогенерации NSwag.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Аналитика по пользователю собрана.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsResponsible'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+components:
+
+  schemas:
+
+    PhaseName:
+      type: string
+      description: Имя фазы жизненного цикла репорта.
+      enum:
+        - Test
+        - Fix
+
+    ResponsibleOutcome:
+      type: string
+      description: Финальный исход репорта для метрики `reports_completed`.
+      enum:
+        - Resolved
+        - Rejected
+
+    AvgPhaseDurationDays:
+      type: object
+      description: |
+        Средняя длительность фаз в днях (десятичные значения).
+        Поля `test_retest` и `fix` могут быть `null`, если в окне периода
+        не оказалось данных по соответствующей фазе.
+      properties:
+        test_initial:
+          type: number
+          description: Среднее время первичной фазы Test (от первой записи до перехода в Fix).
+        test_retest:
+          type: number
+          nullable: true
+          description: Среднее время повторных Test-фаз после Fix (regression retest).
+        fix:
+          type: number
+          nullable: true
+          description: Среднее время фаз Fix.
+
+    PhaseTimeDistribution:
+      type: object
+      description: |
+        Доля общего времени жизни репортов, проведённая в Test/Fix.
+        Значения нормализованы (`test_pct + fix_pct ≈ 1.0`).
+      properties:
+        test_pct:
+          type: number
+          description: Доля времени в фазе Test (0..1).
+        fix_pct:
+          type: number
+          description: Доля времени в фазе Fix (0..1).
+
+    TopRegressionReport:
+      type: object
+      description: Один элемент top-10 регрессионных репортов.
+      required:
+        - title
+      properties:
+        report_id:
+          type: integer
+          format: int64
+          description: ID репорта.
+        title:
+          type: string
+          description: Заголовок репорта.
+        regression_cycles:
+          type: integer
+          description: Кол-во regression-циклов (Test → Fix → Test).
+
+    PhaseTrendWeekly:
+      type: object
+      description: Один пункт еженедельного тренда по фазам.
+      required:
+        - iso_week
+      properties:
+        iso_week:
+          type: string
+          description: ISO-неделя в формате `YYYY-Www` (см. ISO 8601).
+        test_days:
+          type: number
+          description: Совокупное время фазы Test за неделю в днях.
+        fix_days:
+          type: number
+          description: Совокупное время фазы Fix за неделю в днях.
+        reports_closed:
+          type: integer
+          description: Сколько репортов закрыто за неделю.
+
+    AnalyticsSummary:
+      type: object
+      description: |
+        Сводная аналитика по workspace (или по команде — фильтр `creator_team_id`).
+        Все длительности — в днях (десятичные). Все timestamps — UTC date-time.
+      required:
+        - period
+        - avg_phase_duration_days
+        - phase_time_distribution
+        - top_regression_reports
+        - phase_trends_weekly
+      properties:
+        period:
+          $ref: '../shared.yaml#/components/schemas/Period'
+        avg_phase_duration_days:
+          $ref: '#/components/schemas/AvgPhaseDurationDays'
+        avg_full_cycle_days:
+          type: number
+          nullable: true
+          description: |
+            Среднее время полного цикла репорта (от создания до закрытия),
+            в днях. `null` — если в окне нет закрытых репортов.
+        rework_rate:
+          type: number
+          description: |
+            Доля репортов, ушедших на хотя бы один regression-цикл (0..1).
+        avg_regression_cycles_when_present:
+          type: number
+          nullable: true
+          description: |
+            Среднее число regression-циклов среди репортов, где они > 0.
+            `null` — если в окне нет таких репортов.
+        reports_closed:
+          type: integer
+          description: Количество закрытых репортов в окне.
+        phase_time_distribution:
+          $ref: '#/components/schemas/PhaseTimeDistribution'
+        top_regression_reports:
+          type: array
+          maxItems: 10
+          description: Топ-10 репортов с максимальным числом regression-циклов.
+          items:
+            $ref: '#/components/schemas/TopRegressionReport'
+        phase_trends_weekly:
+          type: array
+          description: Понедельный тренд по фазам в окне периода.
+          items:
+            $ref: '#/components/schemas/PhaseTrendWeekly'
+
+    AnalyticsResponsibleParticipatedReport:
+      type: object
+      description: Репорт, в котором пользователь сейчас участвует.
+      required:
+        - title
+        - current_phase
+      properties:
+        report_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        current_phase:
+          $ref: '#/components/schemas/PhaseName'
+
+    AnalyticsResponsibleCompletedReport:
+      type: object
+      description: Завершённый репорт пользователя.
+      required:
+        - title
+        - closed_at
+        - outcome
+      properties:
+        report_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        closed_at:
+          type: string
+          format: date-time
+        outcome:
+          $ref: '#/components/schemas/ResponsibleOutcome'
+
+    AnalyticsResponsible:
+      type: object
+      description: Сводка по конкретному ответственному пользователю.
+      required:
+        - period
+        - reports_participated
+        - reports_completed
+      properties:
+        period:
+          $ref: '../shared.yaml#/components/schemas/Period'
+        reports_participated:
+          type: array
+          description: Активные репорты пользователя на момент запроса.
+          items:
+            $ref: '#/components/schemas/AnalyticsResponsibleParticipatedReport'
+        reports_completed:
+          type: array
+          description: Репорты, завершённые пользователем в окне периода.
+          items:
+            $ref: '#/components/schemas/AnalyticsResponsibleCompletedReport'
+        avg_fix_phase_days:
+          type: number
+          nullable: true
+          description: |
+            Средняя длительность fix-фаз пользователя в днях.
+            `null` — если в окне нет fix-фаз с его участием.
+
+  responses:
+
+    BadRequest:
+      description: Некорректные параметры запроса.
+      content:
+        application/json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ErrorResponse'

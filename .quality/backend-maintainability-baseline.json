@@ -1,0 +1,228 @@
+{
+  "$comment": "Снимок нарушений бюджета поддерживаемости на момент ввода гейта. Читается scripts/quality/backend-maintainability.py. Записи не блокируют, но значение может только уменьшаться. Пересобрать после рефакторинга: python3 scripts/quality/backend-maintainability.py --update. Рост записи или новая запись — это ослабление гейта, оно требует обоснования в теле коммита (ADR-0002).",
+  "profile": "legacy",
+  "violations": [
+    {
+      "code": "METHOD_CC",
+      "path": "backend/Authorization.Abstractions/SanitizeHelper.cs",
+      "subject": "SanitizeHelper.SanitizeLocalPath",
+      "actual": 12
+    },
+    {
+      "code": "METHOD_CC",
+      "path": "backend/Authorization.Api/Services/ConfigureJwtBearerOptions.cs",
+      "subject": "ConfigureJwtBearerOptions.Configure",
+      "actual": 39
+    },
+    {
+      "code": "METHOD_LOC",
+      "path": "backend/Authorization.Api/Services/ConfigureJwtBearerOptions.cs",
+      "subject": "ConfigureJwtBearerOptions.Configure",
+      "actual": 158
+    },
+    {
+      "code": "METHOD_CC",
+      "path": "backend/BugReport.Logging/TelegramLoggerProvider.cs",
+      "subject": "TelegramLoggerProvider.SenderLoopAsync",
+      "actual": 20
+    },
+    {
+      "code": "METHOD_LOC",
+      "path": "backend/BugReport.Logging/TelegramLoggerProvider.cs",
+      "subject": "TelegramLoggerProvider.SenderLoopAsync",
+      "actual": 103
+    },
+    {
+      "code": "METHOD_CC",
+      "path": "backend/BugReport.Logging/TelegramLoggerProvider.cs",
+      "subject": "TelegramLoggerProvider.TryExtractRetryAfter",
+      "actual": 11
+    },
+    {
+      "code": "CTOR_DEPS",
+      "path": "backend/Bugget.BO/Services/Attachments/AttachmentEventsService.cs",
+      "subject": "AttachmentEventsService (первичный конструктор)",
+      "actual": 8
+    },
+    {
+      "code": "METHOD_LOC",
+      "path": "backend/Bugget.BO/Services/Attachments/AttachmentOptimizator.cs",
+      "subject": "AttachmentOptimizator.OptimizeAttachmentAsync",
+      "actual": 73
+    },
+    {
+      "code": "FILE_LOC",
+      "path": "backend/Bugget.BO/Services/Attachments/AttachmentService.cs",
+      "subject": "backend/Bugget.BO/Services/Attachments/AttachmentService.cs",
+      "actual": 577
+    },
+    {
+      "code": "CTOR_DEPS",
+      "path": "backend/Bugget.BO/Services/Attachments/AttachmentService.cs",
+      "subject": "AttachmentService (первичный конструктор)",
+      "actual": 9
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "backend/Bugget.BO/Services/Attachments/AttachmentService.cs",
+      "subject": "AttachmentService",
+      "actual": 550
+    },
+    {
+      "code": "METHOD_LOC",
+      "path": "backend/Bugget.BO/Services/Attachments/VideoOptimizeWriter.cs",
+      "subject": "VideoOptimizeWriter.OptimizeWriteAsync",
+      "actual": 79
+    },
+    {
+      "code": "METHOD_LOC",
+      "path": "backend/Bugget.BO/Services/Attachments/VideoOptimizeWriter.cs",
+      "subject": "VideoOptimizeWriter.RunFfmpegAsync",
+      "actual": 74
+    },
+    {
+      "code": "CTOR_DEPS",
+      "path": "backend/Bugget.BO/Services/Comments/CommentsService.cs",
+      "subject": "CommentsService (первичный конструктор)",
+      "actual": 8
+    },
+    {
+      "code": "METHOD_LOC",
+      "path": "backend/Bugget.BO/Services/Internal/InternalBugsService.cs",
+      "subject": "InternalBugsService.CreateInternalAsync",
+      "actual": 66
+    },
+    {
+      "code": "METHOD_LOC",
+      "path": "backend/Bugget.BO/Services/Internal/InternalCommentsService.cs",
+      "subject": "InternalCommentsService.CreateAsync",
+      "actual": 70
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "backend/Bugget.DA/Postgres/ReportsDbClient.cs",
+      "subject": "ReportsDbClient",
+      "actual": 334
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "backend/Bugget.IntegrationTests/AnalyticsControllerTests.cs",
+      "subject": "AnalyticsControllerTests",
+      "actual": 358
+    },
+    {
+      "code": "METHOD_LOC",
+      "path": "backend/Bugget.IntegrationTests/AnalyticsControllerTests.cs",
+      "subject": "AnalyticsControllerTests.Responsible_ParticipatedRequiresParticipation",
+      "actual": 63
+    },
+    {
+      "code": "FILE_LOC",
+      "path": "backend/Bugget.IntegrationTests/AttachmentDbClientTests.cs",
+      "subject": "backend/Bugget.IntegrationTests/AttachmentDbClientTests.cs",
+      "actual": 578
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "backend/Bugget.IntegrationTests/AttachmentDbClientTests.cs",
+      "subject": "AttachmentDbClientTests",
+      "actual": 566
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "backend/Bugget.IntegrationTests/BugStepsDbClientTests.cs",
+      "subject": "BugStepsDbClientTests",
+      "actual": 346
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "backend/Bugget.IntegrationTests/BugsDbClientTests.cs",
+      "subject": "BugsDbClientTests",
+      "actual": 332
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "backend/Bugget.IntegrationTests/InternalAttachmentsControllerTests.cs",
+      "subject": "InternalAttachmentsControllerTests",
+      "actual": 324
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "backend/Bugget.IntegrationTests/ReportPhaseProjectionHandlerTests.cs",
+      "subject": "ReportPhaseProjectionHandlerTests",
+      "actual": 322
+    },
+    {
+      "code": "FILE_LOC",
+      "path": "backend/Bugget.IntegrationTests/ReportsDbClient_GetReportTests.cs",
+      "subject": "backend/Bugget.IntegrationTests/ReportsDbClient_GetReportTests.cs",
+      "actual": 541
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "backend/Bugget.IntegrationTests/ReportsDbClient_GetReportTests.cs",
+      "subject": "ReportsDbClient_GetReportTests",
+      "actual": 528
+    },
+    {
+      "code": "FILE_LOC",
+      "path": "backend/Bugget.IntegrationTests/ReportsDbClient_SearchReportsTests.cs",
+      "subject": "backend/Bugget.IntegrationTests/ReportsDbClient_SearchReportsTests.cs",
+      "actual": 546
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "backend/Bugget.IntegrationTests/ReportsDbClient_SearchReportsTests.cs",
+      "subject": "ReportsDbClient_SearchReportsTests",
+      "actual": 535
+    },
+    {
+      "code": "METHOD_CC",
+      "path": "backend/Bugget/Authentication/UserAuthHandler.cs",
+      "subject": "UserAuthHandler.Authenticate",
+      "actual": 11
+    },
+    {
+      "code": "METHOD_CC",
+      "path": "backend/Bugget/Configurations/SwaggerConfiguration.cs",
+      "subject": "SwaggerConfiguration.AddSwaggerConfiguration",
+      "actual": 12
+    },
+    {
+      "code": "METHOD_LOC",
+      "path": "backend/Bugget/Configurations/SwaggerConfiguration.cs",
+      "subject": "SwaggerConfiguration.AddSwaggerConfiguration",
+      "actual": 106
+    },
+    {
+      "code": "FILE_FANOUT",
+      "path": "backend/Bugget/Extensions/ServiceCollectionExtensions.cs",
+      "subject": "backend/Bugget/Extensions/ServiceCollectionExtensions.cs",
+      "actual": 38
+    },
+    {
+      "code": "METHOD_CC",
+      "path": "backend/Users.Api/BackgroundServices/MattermostBotListener.cs",
+      "subject": "MattermostBotListener.HandleEventAsync",
+      "actual": 11
+    },
+    {
+      "code": "FILE_FANOUT",
+      "path": "backend/Users.Api/Extensions/ServiceCollectionExtensions.cs",
+      "subject": "backend/Users.Api/Extensions/ServiceCollectionExtensions.cs",
+      "actual": 20
+    },
+    {
+      "code": "FILE_LOC",
+      "path": "backend/Users.IntegrationTests/UsersDbClientTests.cs",
+      "subject": "backend/Users.IntegrationTests/UsersDbClientTests.cs",
+      "actual": 618
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "backend/Users.IntegrationTests/UsersDbClientTests.cs",
+      "subject": "UsersDbClientTests",
+      "actual": 607
+    }
+  ]
+}

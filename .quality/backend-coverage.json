@@ -1,0 +1,107 @@
+{
+  "$comment": "Ratchet покрытия бекенда тестами. Читается scripts/quality/backend-coverage.py (гейт backend-coverage). Абсолютной планки нет: гейт следит только за тем, чтобы покрытие не падало ниже снимка — по решению целиком и по каждой сборке отдельно. Снимок пересобирается командой backend-coverage.py --update --skip-tests и коммитится отдельно; понижение снимка требует обоснования в теле коммита (ADR-0002). Что исключено из замера — backend/coverlet.runsettings.",
+  "tolerance": 0.5,
+  "$comment-tolerance": "Допуск в процентных пунктах. Нужен из-за естественного дребезга: часть кода выполняется не на каждом прогоне (гонки в фоновых задачах, таймауты Testcontainers, ветки по окружению). Без допуска гейт был бы флаки.",
+  "skipTestProjects": [
+    "*.Architecture.Tests"
+  ],
+  "$comment-skipTestProjects": "Тестовые проекты, которые не участвуют в замере. Архитектурные тесты читают ссылки собранных сборок, а coverlet на время прогона дописывает в каждую инструментированную сборку свой Coverlet.Core.Instrumentation.Tracker — белые списки зависимостей (Monade, TaskQueue, *.Entities) от этого краснеют. Продуктового кода эти тесты почти не выполняют, поэтому на цифру покрытия их отсутствие не влияет. Полноценно они гоняются гейтом backend-test-architecture.",
+  "notMeasured": [
+    "*.DbUp",
+    "*.Contracts"
+  ],
+  "$comment-notMeasured": "Сборки, отсутствие покрытия у которых не считается дырой и не попадает в список «нет данных»: раннеры миграций DbUp и сгенерированные из OpenAPI контракты (ADR-0005).",
+  "gapsFocus": [
+    "Bugget.BO",
+    "Users.BO"
+  ],
+  "$comment-gapsFocus": "Сборки, по которым backend-coverage.py --gaps строит список приоритетных дыр: бизнес-логика, где непокрытая ветка стоит дороже всего.",
+  "baseline": {
+    "total": {
+      "line": 53.0,
+      "branch": 28.3
+    },
+    "assemblies": {
+      "Authentication": {
+        "line": 20.8,
+        "branch": 22.5
+      },
+      "Authorization.Abstractions": {
+        "line": 65.5,
+        "branch": 55.0
+      },
+      "Authorization.Api": {
+        "line": 64.7,
+        "branch": 16.7
+      },
+      "BugReport.Logging": {
+        "line": 0.0,
+        "branch": 0.0
+      },
+      "Bugget": {
+        "line": 72.1,
+        "branch": 33.0
+      },
+      "Bugget.BO": {
+        "line": 62.8,
+        "branch": 44.6
+      },
+      "Bugget.DA": {
+        "line": 89.7,
+        "branch": 40.0
+      },
+      "Bugget.Entities": {
+        "line": 59.5,
+        "branch": 45.0
+      },
+      "Bugget.ExternalClients": {
+        "line": 11.3,
+        "branch": 5.6
+      },
+      "Caching.Local": {
+        "line": 0.0,
+        "branch": 0.0
+      },
+      "FakeAuth": {
+        "line": 30.0,
+        "branch": 0.0
+      },
+      "Flow": {
+        "line": 15.1,
+        "branch": 0.0
+      },
+      "MattermostOAuth": {
+        "line": 0.0,
+        "branch": null
+      },
+      "Monade": {
+        "line": 70.6,
+        "branch": null
+      },
+      "OidcAuth": {
+        "line": 78.8,
+        "branch": 78.6
+      },
+      "TaskQueue": {
+        "line": 0.0,
+        "branch": null
+      },
+      "Users.Api": {
+        "line": 25.3,
+        "branch": 57.1
+      },
+      "Users.BO": {
+        "line": 37.1,
+        "branch": 0.0
+      },
+      "Users.DA": {
+        "line": 42.1,
+        "branch": 16.7
+      },
+      "Users.Entities": {
+        "line": 0.0,
+        "branch": null
+      }
+    }
+  }
+}

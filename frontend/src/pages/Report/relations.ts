@@ -1,7 +1,5 @@
 import { sample } from "effector";
 
-import { CreatorTypes } from "@/shared/config";
-
 import {
   createReportFx,
   $creatorUserIdStore,
@@ -151,10 +149,7 @@ sample({
     const ids = new Set<string>();
     report.bugs?.forEach((bug) => {
       bug.comments?.forEach((comment) => {
-        if (
-          comment.creatorUserId &&
-          comment.creatorType !== CreatorTypes.TG_BETA_TESTER
-        ) {
+        if (comment.creatorUserId) {
           ids.add(comment.creatorUserId);
         }
       });
@@ -169,9 +164,7 @@ sample({
   clock: createCommentSocketEvent,
   source: $usersStore,
   filter: (users, comment) =>
-    !!comment.creatorUserId &&
-    comment.creatorType !== CreatorTypes.TG_BETA_TESTER &&
-    !users[comment.creatorUserId],
+    !!comment.creatorUserId && !users[comment.creatorUserId],
   fn: (_, comment) => [comment.creatorUserId],
   target: fetchUsersFx,
 });

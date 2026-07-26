@@ -6,7 +6,6 @@ export {
   usersPath,
   usersPathWithContext,
   appApi,
-  botApi,
   parseAppContextFromPath,
   setAppContext,
   getAppContext,

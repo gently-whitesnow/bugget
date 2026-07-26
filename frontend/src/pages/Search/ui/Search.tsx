@@ -7,20 +7,14 @@ import { useUnit } from "effector-react";
 import {
   $sortField,
   $sortDirection,
-  $betaReportsFilter,
   updateSortField,
   updateSortDirection,
-  updateBetaReportsFilter,
   searchPageClosed,
   searchPageOpened,
-  type BetaReportsFilter,
 } from "../model";
 import { useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 
 import "./Search.css";
-
-const validBetaValues: BetaReportsFilter[] = ["include", "exclude", "only"];
 
 const Search = () => {
   const [
@@ -30,8 +24,6 @@ const Search = () => {
     setSortDirection,
     onSearchPageClosed,
     onSearchPageOpened,
-    betaReportsFilter,
-    setBetaReportsFilter,
   ] = useUnit([
     $sortField,
     $sortDirection,
@@ -39,11 +31,7 @@ const Search = () => {
     updateSortDirection,
     searchPageClosed,
     searchPageOpened,
-    $betaReportsFilter,
-    updateBetaReportsFilter,
   ]);
-
-  const [searchParams, setSearchParams] = useSearchParams();
 
   const options: SortOption[] = [
     { label: "Дата создания", value: "created" },
@@ -51,34 +39,13 @@ const Search = () => {
     { label: "Лучшее совпадение", value: "rank" },
   ];
 
-  // Однократно при монтировании читаем ?betaReports= и инициализируем стор.
   useEffect(() => {
-    const raw = searchParams.get("betaReports");
-    if (raw && (validBetaValues as string[]).includes(raw)) {
-      setBetaReportsFilter(raw as BetaReportsFilter);
-    }
     onSearchPageOpened();
     return () => {
       onSearchPageClosed();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Sync стора в URL.
-  useEffect(() => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        if (betaReportsFilter === "include") {
-          next.delete("betaReports");
-        } else {
-          next.set("betaReports", betaReportsFilter);
-        }
-        return next;
-      },
-      { replace: true }
-    );
-  }, [betaReportsFilter, setSearchParams]);
 
   const onToggleDirectionHandler = () => {
     setSortDirection(sortDirection === "asc" ? "desc" : "asc");

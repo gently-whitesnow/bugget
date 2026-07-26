@@ -32,6 +32,16 @@
       ]
     },
     {
+      "id": "backend-format",
+      "scope": "backend",
+      "enabled": true,
+      "slow": false,
+      "description": "Формат C# по backend/.editorconfig (dotnet format --verify-no-changes). Смысл гейта — не пускать косметику в диффы содержательных правок. Локально чинится одной командой: dotnet format Bugget.sln (из backend). Версия SDK закреплена в global.json — вывод dotnet format зависит от версии Roslyn.",
+      "commands": [
+        "dotnet format Bugget.sln --verify-no-changes --no-restore"
+      ]
+    },
+    {
       "id": "backend-test-unit",
       "scope": "backend",
       "enabled": true,
@@ -41,6 +51,16 @@
         "dotnet test Bugget.Tests/Bugget.Tests.csproj -c Release --no-restore",
         "dotnet test Users.UnitTests/Users.UnitTests.csproj -c Release --no-restore",
         "dotnet test Authorization.Tests/Authorization.Tests.csproj -c Release --no-restore"
+      ]
+    },
+    {
+      "id": "frontend-format",
+      "scope": "frontend",
+      "enabled": true,
+      "slow": false,
+      "description": "Формат исходников фронтенда по frontend/.prettierrc (prettier --check). Сгенерированные клиенты API исключены через frontend/.prettierignore. Локально чинится командой npm run format в frontend.",
+      "commands": [
+        "npm run format:check"
       ]
     },
     {

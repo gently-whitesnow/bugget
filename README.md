@@ -67,6 +67,13 @@ dotnet test Bugget.IntegrationTests/Bugget.IntegrationTests.csproj   # нуже�
 а не в workflow. Гейты прогоняются все, даже если что-то упало: в конце печатается сводка
 со статусом и временем. Нужен `jq`.
 
+Полный прогон поднимает Postgres и Keycloak в Docker (Testcontainers) — без демона Docker
+гейт `backend-test-integration` падает. `--fast` его пропускает и Docker не требует.
+
+Тестовые проекты бекенда делятся по имени: `*.IntegrationTests` идут в медленный гейт,
+остальные — в быстрый. Списки нигде не ведутся, проекты находятся поиском, так что новый
+тестовый проект запускается сам.
+
 ## Контракты и архитектурные решения
 
 Контракты API описаны в `specs/contracts/<module>/openapi.yaml`, общие схемы —

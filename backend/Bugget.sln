@@ -58,6 +58,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Caching.Local", "Caching.Lo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Authorization.Tests", "Authorization.Tests\Authorization.Tests.csproj", "{E3A33A61-5213-48DC-9CB4-EB09C3FD1603}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Authorization.IntegrationTests", "Authorization.IntegrationTests\Authorization.IntegrationTests.csproj", "{C177B487-0878-400D-886E-6D63244A74BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -416,6 +418,18 @@ Global
 		{E3A33A61-5213-48DC-9CB4-EB09C3FD1603}.Release|x64.Build.0 = Release|Any CPU
 		{E3A33A61-5213-48DC-9CB4-EB09C3FD1603}.Release|x86.ActiveCfg = Release|Any CPU
 		{E3A33A61-5213-48DC-9CB4-EB09C3FD1603}.Release|x86.Build.0 = Release|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Debug|x64.Build.0 = Debug|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Debug|x86.Build.0 = Debug|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Release|x64.ActiveCfg = Release|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Release|x64.Build.0 = Release|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Release|x86.ActiveCfg = Release|Any CPU
+		{C177B487-0878-400D-886E-6D63244A74BA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

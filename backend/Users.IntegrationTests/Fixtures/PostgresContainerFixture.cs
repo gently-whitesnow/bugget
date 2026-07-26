@@ -12,7 +12,9 @@ public class PostgresContainerFixture : IAsyncLifetime
 {
     public readonly PostgreSqlContainer Container =
         new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
+            // Тот же образ, что в deploy/docker-compose.yml и в Bugget.IntegrationTests:
+            // одна версия Postgres на все интеграционные тесты, один образ в прогоне.
+            .WithImage("postgres:17")
             .Build();
 
     public async Task InitializeAsync()

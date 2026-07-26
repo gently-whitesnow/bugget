@@ -58,7 +58,9 @@ public class TeamInvitesDbClientTests : IClassFixture<AppWithPostgresFixture>
         Assert.Equal(workspace.Id, invite.WorkspaceId);
         Assert.Equal(Encoding.UTF8.GetString(tokenHash), Encoding.UTF8.GetString(invite.TokenHash));
         Assert.True(invite.CreatedAt > DateTimeOffset.MinValue);
-        Assert.Equal(expiresAt, invite.ExpiresAt);
+        // timestamptz в Postgres хранит микросекунды, а DateTimeOffset.UtcNow даёт тики по
+        // 100 нс, поэтому round-trip округляет значение. Сравниваем с точностью хранилища.
+        Assert.Equal(expiresAt, invite.ExpiresAt, TimeSpan.FromMicroseconds(1));
     }
 
     [Fact(DisplayName = "Создание инвайта для той же команды обновляет существующий (ON CONFLICT)")]
@@ -88,7 +90,7 @@ public class TeamInvitesDbClientTests : IClassFixture<AppWithPostgresFixture>
         // Assert
         Assert.NotNull(invite2);
         Assert.Equal(Encoding.UTF8.GetString(tokenHash2), Encoding.UTF8.GetString(invite2.TokenHash));
-        Assert.Equal(expiresAt2, invite2.ExpiresAt);
+        Assert.Equal(expiresAt2, invite2.ExpiresAt, TimeSpan.FromMicroseconds(1));
     }
 
     [Fact(DisplayName = "Получение инвайта для команды с инвайтом")]
@@ -165,7 +167,7 @@ public class TeamInvitesDbClientTests : IClassFixture<AppWithPostgresFixture>
         Assert.Equal(createdInvite.Id, updatedInvite!.Id);
         Assert.Equal(team.Id, updatedInvite.TeamId);
         Assert.Equal(Encoding.UTF8.GetString(newTokenHash), Encoding.UTF8.GetString(updatedInvite.TokenHash));
-        Assert.Equal(newExpiresAt, updatedInvite.ExpiresAt);
+        Assert.Equal(newExpiresAt, updatedInvite.ExpiresAt, TimeSpan.FromMicroseconds(1));
     }
 
     [Fact(DisplayName = "Обновление несуществующего инвайта возвращает null")]

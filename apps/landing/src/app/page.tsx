@@ -37,7 +37,6 @@ export default function Home() {
 
     <div className="content" id="top">
       <section className="hero" id="content">
-        <p className="overline">Open source · Self-hosted · MIT</p>
         <h1>Просто баг-репорт</h1>
         <p className="intro">Мы создаём процесс работы с багами, делая упор на удобство и эффективность.</p>
         <div className="cta-row"><GitHubLink className="button button-primary">Открыть репозиторий</GitHubLink><a className="button button-secondary" href={`${repositoryUrl}#быстрый-старт`} target="_blank" rel="noreferrer">Инструкция установки</a></div>

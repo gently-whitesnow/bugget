@@ -14,6 +14,10 @@
 # Docker уже стоит, а образы (postgres:17 — тот же, что в deploy, и keycloak) тянет сам
 # Testcontainers. Отдельного шага под Docker и кеша образов здесь нет.
 #
+# Тяжёлые job запускаются по областям: job changes классифицирует изменённые пути и
+# включает только затронутые области. Смешанный diff даёт объединение областей, а если
+# база diff не вычисляется — включаются обе (fail-open).
+#
 #-----------------------------------------------------------------------------------------
 
 name: ci
@@ -24,7 +28,96 @@ on:
     branches: [main]
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.classify.outputs.backend }}
+      frontend: ${{ steps.classify.outputs.frontend }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Классификация сравнивает HEAD с базой diff, поэтому нужна полная история.
+          fetch-depth: 0
+
+      - name: Classify changed paths
+        id: classify
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CI_PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -uo pipefail
+
+          backend=false
+          frontend=false
+
+          # База diff: для pull_request — merge-base с базовой веткой (весь diff PR,
+          # а не последний коммит), для push — состояние ветки до пуша.
+          case "$CI_EVENT_NAME" in
+            pull_request|pull_request_target) base="${CI_PR_BASE_SHA:-}" ;;
+            *) base="${CI_PUSH_BEFORE_SHA:-}" ;;
+          esac
+
+          # Пустая, нулевая (первый пуш ветки) или недоступная база — fail-open.
+          case "$base" in
+            ''|*[!0]*) ;;
+            *) base='' ;;
+          esac
+
+          if [ -n "$base" ] && ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            git fetch --no-tags --quiet origin "$base" 2>/dev/null || true
+            git cat-file -e "${base}^{commit}" 2>/dev/null || base=''
+          fi
+
+          if [ -n "$base" ] && [ "$CI_EVENT_NAME" != "push" ]; then
+            base="$(git merge-base "$base" HEAD 2>/dev/null || true)"
+          fi
+
+          if [ -z "$base" ]; then
+            echo "База diff не вычислена — fail-open, запускаем обе области."
+            backend=true
+            frontend=true
+          else
+            files="$(git diff --name-only "$base" HEAD)"
+            echo "База diff: $base"
+            echo "Изменённые файлы:"
+            echo "$files"
+
+            while IFS= read -r file; do
+              [ -n "$file" ] || continue
+              case "$file" in
+                # Общие пути: затрагивают обе области.
+                specs/contracts/*|scripts/*|.github/workflows/ci.yml|.quality/quality.config.json)
+                  backend=true
+                  frontend=true
+                  ;;
+                backend/*|global.json|.config/dotnet-tools.json|.quality/backend-*)
+                  backend=true
+                  ;;
+                frontend/*|.quality/frontend-*)
+                  frontend=true
+                  ;;
+                # Неизвестный файл .quality/** без известного префикса — общий, fail-open.
+                .quality/*)
+                  backend=true
+                  frontend=true
+                  ;;
+                # Остальное (docs, deploy, landing, README и т.п.) тяжёлые job не запускает.
+                *) ;;
+              esac
+            done <<EOF
+          $files
+          EOF
+          fi
+
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
+          echo "Области: backend=$backend frontend=$frontend"
+
   backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -39,6 +132,8 @@ jobs:
         run: ./scripts/quality/verify.sh --scope backend
 
   frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

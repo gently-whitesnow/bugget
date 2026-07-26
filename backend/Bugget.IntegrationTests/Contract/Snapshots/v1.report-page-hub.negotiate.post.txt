@@ -1,0 +1,12 @@
+status: 200
+content-type: application/json
+body:
+$: object
+$.availableTransports: array
+$.availableTransports[]: object
+$.availableTransports[].transferFormats: array
+$.availableTransports[].transferFormats[]: string
+$.availableTransports[].transport: string
+$.connectionId: string
+$.connectionToken: string
+$.negotiateVersion: number

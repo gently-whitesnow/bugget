@@ -1,0 +1,11 @@
+status: 200
+content-type: application/json
+body:
+$: object
+$.avg_fix_phase_days: null
+$.period: object
+$.period.from: string
+$.period.label: string
+$.period.to: string
+$.reports_completed: array
+$.reports_participated: array

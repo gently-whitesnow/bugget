@@ -1,0 +1,14 @@
+status: 200
+content-type: application/json
+body:
+$: object
+$.created_at: string
+$.creator_team_id: string
+$.creator_type: number
+$.creator_user_id: string
+$.id: string
+$.past_responsible_user_id: string
+$.responsible_user_id: string
+$.status: number
+$.title: string
+$.updated_at: string

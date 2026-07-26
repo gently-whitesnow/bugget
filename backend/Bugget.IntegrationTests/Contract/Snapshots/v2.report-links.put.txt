@@ -1,0 +1,10 @@
+status: 200
+content-type: application/json
+body:
+$: object
+$.created_at: string
+$.id: number
+$.link: string
+$.name: string
+$.report_id: number
+$.updated_at: string

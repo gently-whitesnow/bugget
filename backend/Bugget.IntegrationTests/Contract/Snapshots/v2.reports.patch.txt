@@ -1,0 +1,10 @@
+status: 200
+content-type: application/json
+body:
+$: object
+$.id: string
+$.past_responsible_user_id: string
+$.responsible_user_id: string
+$.status: number
+$.title: string
+$.updated_at: string

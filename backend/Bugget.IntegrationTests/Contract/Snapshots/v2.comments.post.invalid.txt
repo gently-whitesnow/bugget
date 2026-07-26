@@ -1,0 +1,10 @@
+status: 400
+content-type: application/json
+body:
+$: object
+$.error: string
+$.errorList: array
+$.errorList[]: object
+$.errorList[].error: string
+$.errorList[].reason: string
+$.reason: string

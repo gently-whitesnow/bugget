@@ -1,0 +1,8 @@
+status: 200
+content-type: application/json
+body:
+$: object
+$.id: string
+$.team_id: null
+$.workspace_id: null
+$.workspace_role: string

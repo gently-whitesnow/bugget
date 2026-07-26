@@ -1,0 +1,10 @@
+status: 200
+content-type: application/json
+body:
+$: object
+$.expect: string
+$.id: number
+$.receive: string
+$.status: number
+$.title: string
+$.updated_at: string

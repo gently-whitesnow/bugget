@@ -64,6 +64,39 @@
       ]
     },
     {
+      "id": "backend-maintainability",
+      "scope": "backend",
+      "enabled": true,
+      "slow": false,
+      "workdir": ".",
+      "description": "Бюджет поддерживаемости C#-кода: строки в файле, в типе и в методе, цикломатическая сложность, зависимости конструктора, fan-out по using. Действует профиль legacy из .quality/backend-maintainability.json; целевой strict пока справочный (python3 scripts/quality/backend-maintainability.py --profile strict). Существующие превышения зафиксированы в .quality/backend-maintainability-baseline.json: они не блокируют, но расти им нельзя, а новых быть не должно. Пересобрать снимок после рефакторинга: --update. Нужен python3.",
+      "commands": [
+        "python3 scripts/quality/backend-maintainability.py"
+      ]
+    },
+    {
+      "id": "backend-duplicates",
+      "scope": "backend",
+      "enabled": true,
+      "slow": false,
+      "workdir": ".",
+      "description": "Кросс-файловое дублирование по нормализованным окнам: одинаковый код в разных файлах виден, даже если переименованы переменные. Гейт advisory — печатает группы и всегда возвращает 0; блокирующим станет, когда дублирование перестанет быть массовым. Настройки — .quality/backend-duplicates.json. Нужен python3.",
+      "commands": [
+        "python3 scripts/quality/backend-duplicates.py"
+      ]
+    },
+    {
+      "id": "backend-suppressions",
+      "scope": "backend",
+      "enabled": true,
+      "slow": false,
+      "workdir": ".",
+      "description": "Ratchet поверх послаблений: проекты с выключенным TreatWarningsAsErrors, коды в <NoWarn> и #pragma warning disable. Снимок — .quality/backend-suppress-baseline.json, он может только уменьшаться. Новое послабление требует ссылки на ADR или на задачу в комментарии выше и отдельного коммита с --update. Нужен python3.",
+      "commands": [
+        "python3 scripts/quality/backend-suppressions.py"
+      ]
+    },
+    {
       "id": "frontend-format",
       "scope": "frontend",
       "enabled": true,

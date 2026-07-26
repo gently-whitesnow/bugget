@@ -1,0 +1,119 @@
+{
+  "$comment": "Снимок послаблений компилятора и анализаторов бекенда. Читается scripts/quality/backend-suppressions.py. Список может только уменьшаться: новая запись или рост count — красный гейт. Пересобрать: python3 scripts/quality/backend-suppressions.py --update, отдельным коммитом с обоснованием в его теле (ADR-0002).",
+  "entries": [
+    {
+      "kind": "nowarn",
+      "location": "backend/Authorization.Api/Authorization.Api.csproj",
+      "rule": "CS1591",
+      "count": 1
+    },
+    {
+      "kind": "nowarn",
+      "location": "backend/Bugget.Analytics.Contracts/Bugget.Analytics.Contracts.csproj",
+      "rule": "CS1591",
+      "count": 1
+    },
+    {
+      "kind": "nowarn",
+      "location": "backend/Bugget.Entities/Bugget.Entities.csproj",
+      "rule": "CS1591",
+      "count": 1
+    },
+    {
+      "kind": "nowarn",
+      "location": "backend/Bugget.Reports.Contracts/Bugget.Reports.Contracts.csproj",
+      "rule": "CS1591",
+      "count": 1
+    },
+    {
+      "kind": "nowarn",
+      "location": "backend/Bugget/Bugget.csproj",
+      "rule": "CS1591",
+      "count": 1
+    },
+    {
+      "kind": "nowarn",
+      "location": "backend/Caching.Local/Caching.Local.csproj",
+      "rule": "CS1591",
+      "count": 1
+    },
+    {
+      "kind": "nowarn",
+      "location": "backend/FakeAuth/FakeAuth.csproj",
+      "rule": "CS1591",
+      "count": 1
+    },
+    {
+      "kind": "nowarn",
+      "location": "backend/OidcAuth/OidcAuth.csproj",
+      "rule": "CS1591",
+      "count": 1
+    },
+    {
+      "kind": "nowarn",
+      "location": "backend/Users.Api/Users.Api.csproj",
+      "rule": "CS1591",
+      "count": 1
+    },
+    {
+      "kind": "nowarn",
+      "location": "backend/Users.Entities/Users.Entities.csproj",
+      "rule": "CS1591",
+      "count": 1
+    },
+    {
+      "kind": "warnaserror",
+      "location": "backend/Directory.Build.props",
+      "rule": "Authentication",
+      "count": 1
+    },
+    {
+      "kind": "warnaserror",
+      "location": "backend/Directory.Build.props",
+      "rule": "Authorization.*",
+      "count": 1
+    },
+    {
+      "kind": "warnaserror",
+      "location": "backend/Directory.Build.props",
+      "rule": "BugReport.Logging",
+      "count": 1
+    },
+    {
+      "kind": "warnaserror",
+      "location": "backend/Directory.Build.props",
+      "rule": "Caching.Local",
+      "count": 1
+    },
+    {
+      "kind": "warnaserror",
+      "location": "backend/Directory.Build.props",
+      "rule": "FakeAuth",
+      "count": 1
+    },
+    {
+      "kind": "warnaserror",
+      "location": "backend/Directory.Build.props",
+      "rule": "Flow",
+      "count": 1
+    },
+    {
+      "kind": "warnaserror",
+      "location": "backend/Directory.Build.props",
+      "rule": "MattermostOAuth",
+      "count": 1
+    },
+    {
+      "kind": "warnaserror",
+      "location": "backend/Directory.Build.props",
+      "rule": "OidcAuth",
+      "count": 1
+    },
+    {
+      "kind": "warnaserror",
+      "location": "backend/Directory.Build.props",
+      "rule": "Users.*",
+      "count": 1
+    }
+  ]
+}

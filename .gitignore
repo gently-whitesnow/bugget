@@ -3,6 +3,7 @@ bin/
 obj/
 dist/
 node_modules/
+__pycache__/
 
 # локальные данные dev-контура
 file-storage/

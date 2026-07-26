@@ -1,0 +1,51 @@
+{
+  "$comment": "Бюджет поддерживаемости бекенда. Читается scripts/quality/backend-maintainability.py (гейт backend-maintainability). Блокирует профиль defaultProfile; снимок текущих превышений — .quality/backend-maintainability-baseline.json. Поднятие лимита, расширение exclude и смена профиля требуют обоснования в теле коммита (ADR-0002).",
+
+  "defaultProfile": "legacy",
+
+  "roots": [
+    "backend"
+  ],
+
+  "exclude": [
+    "**/DbUp/Scripts/**"
+  ],
+
+  "$comment-fanOut": "fan-out меряет, со сколькими чужими пространствами имён связан файл. Инфраструктурный шум (BCL, DI, логирование, тестовый фреймворк) из счёта убран: он не говорит о связности предметной области.",
+  "fanOutIgnorePrefixes": [
+    "System",
+    "Microsoft.Extensions.Logging",
+    "Microsoft.Extensions.DependencyInjection",
+    "Microsoft.Extensions.Options",
+    "Microsoft.Extensions.Hosting",
+    "Microsoft.Extensions.Configuration",
+    "Xunit",
+    "Testcontainers",
+    "DotNet.Testcontainers"
+  ],
+
+  "profiles": {
+    "legacy": {
+      "description": "Действующий профиль. Лимиты выбраны по фактическому распределению метрик на master: под них попадает существующий код, кроме заведомых выбросов, которые зафиксированы в бейзлайне. Новый код обязан укладываться в лимиты сразу.",
+      "limits": {
+        "fileMaxLoc": 400,
+        "typeMaxLoc": 300,
+        "methodMaxLoc": 60,
+        "methodMaxCyclomaticComplexity": 10,
+        "constructorMaxDependencies": 7,
+        "fileMaxFanOut": 15
+      }
+    },
+    "strict": {
+      "description": "Целевой профиль после перехода на квартет Bugget.{Api,Application,Domain,Infrastructure} (ADR-0001). Пока не включён: на текущем графе проектов он красный и бейзлайн под него не ведётся. Посмотреть картину: python3 scripts/quality/backend-maintainability.py --profile strict — такой прогон справочный и гейт не валит.",
+      "limits": {
+        "fileMaxLoc": 300,
+        "typeMaxLoc": 200,
+        "methodMaxLoc": 50,
+        "methodMaxCyclomaticComplexity": 8,
+        "constructorMaxDependencies": 5,
+        "fileMaxFanOut": 12
+      }
+    }
+  }
+}

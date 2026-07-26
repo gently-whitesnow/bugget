@@ -65,7 +65,8 @@ dotnet test Bugget.IntegrationTests/Bugget.IntegrationTests.csproj   # нуже�
 
 Набор гейтов лежит в `.quality/quality.config.json` — новая проверка добавляется туда,
 а не в workflow. Гейты прогоняются все, даже если что-то упало: в конце печатается сводка
-со статусом и временем. Нужен `jq`.
+со статусом и временем. Нужны `jq` и `python3` (на нём написаны бекендовые гейты
+поддерживаемости, дубликатов и послаблений).
 
 Полный прогон поднимает Postgres и Keycloak в Docker (Testcontainers) — без демона Docker
 гейт `backend-test-integration` падает. `--fast` его пропускает и Docker не требует.
@@ -73,6 +74,24 @@ dotnet test Bugget.IntegrationTests/Bugget.IntegrationTests.csproj   # нуже�
 Тестовые проекты бекенда делятся по имени: `*.IntegrationTests` идут в медленный гейт,
 остальные — в быстрый. Списки нигде не ведутся, проекты находятся поиском, так что новый
 тестовый проект запускается сам.
+
+### Ratchet-гейты и снимки
+
+Часть гейтов сравнивает код не с идеалом, а со снимком в `.quality/`: существующий долг
+зафиксирован и не блокирует, но расти ему нельзя, а новое нарушение — красный гейт
+(ADR-0002). Так работают `frontend-maintainability`, `backend-maintainability` и
+`backend-suppressions`.
+
+```sh
+python3 scripts/quality/backend-maintainability.py --update            # пересобрать снимок бюджета
+python3 scripts/quality/backend-maintainability.py --profile strict    # посмотреть целевой профиль
+python3 scripts/quality/backend-suppressions.py --list                 # все послабления и их обоснования
+python3 scripts/quality/backend-suppressions.py --update               # пересобрать снимок послаблений
+python3 scripts/quality/backend-duplicates.py --max 0                  # все группы дубликатов
+```
+
+Снимок вниз (отрефакторили — стало меньше) пересобирается свободно. Снимок вверх — это
+ослабление гейта: отдельный коммит, в теле которого сказано, зачем и когда снимется.
 
 ## Контракты и архитектурные решения
 

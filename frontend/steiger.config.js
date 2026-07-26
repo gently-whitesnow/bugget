@@ -13,6 +13,8 @@ export default defineConfig([
     // слайс сейчас одна (pages/Report), из-за чего срабатывает insignificant-slice, но
     // слияние сущности в страницу сломало бы границу слоёв и разорвало cross-import.
     // Правило отключено точечно для этого слайса, глобально оно остаётся включённым.
+    // Исключение временное: beta-test — SaaS-only фича, её выпил и снятие этого блока —
+    // MAIN-25.
     files: ["./src/entities/beta-test/**"],
     rules: {
       "fsd/insignificant-slice": "off",

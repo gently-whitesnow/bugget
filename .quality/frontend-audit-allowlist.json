@@ -1,27 +1,29 @@
 {
-  "$comment": "Явно принятые уязвимости npm фронтенда. Читается scripts/quality/frontend-audit.sh (гейт frontend-audit). Всё, чего здесь нет, валит гейт. Запись добавляется, только если исправленной версии нет или обновление ломает проект; причина и дата пересмотра обязательны, обоснование — в коммите. Как только advisory исчезает из отчёта, гейт сам напоминает удалить запись.",
-
+  "$comment": "Явно принятые уязвимости npm фронтенда. Читается scripts/quality/frontend-audit.sh (гейт frontend-audit). Всё, чего здесь нет, валит гейт. Запись добавляется, только если исправленной версии нет или обновление ломает проект; причина и дата пересмотра обязательны, обоснование — в коммите. Как только advisory исчезает из отчёта, гейт сам напоминает удалить запись. Закрытие всех текущих записей — MAIN-26.",
   "accepted": [
     {
       "advisory": "https://github.com/advisories/GHSA-mh99-v99m-4gvg",
       "package": "brace-expansion",
       "severity": "high",
       "reason": "DoS при разборе glob-паттернов. Приходит транзитивно из minimatch внутри eslint, typescript-eslint и @redocly/openapi-core. Исправленных версий для веток 1.x и 2.x не опубликовано, а override на 5.x ломает разрешение зависимостей eslint. В рантайм не попадает: пакет только сборочный, паттерны приходят из наших же конфигов, не из пользовательского ввода.",
-      "review_by": "2026-10-01"
+      "review_by": "2026-10-01",
+      "issue": "MAIN-26"
     },
     {
       "advisory": "https://github.com/advisories/GHSA-52cp-r559-cp3m",
       "package": "js-yaml",
       "severity": "high",
       "reason": "Квадратичный разбор YAML с цепочками merge-key. Приходит транзитивно из @eslint/eslintrc, @redocly/openapi-core и cosmiconfig (steiger). Исправление только в 5.x — мажорное обновление, которое эти пакеты пока не поддерживают. В рантайм не попадает: YAML читают только сборочные утилиты и только из репозитория.",
-      "review_by": "2026-10-01"
+      "review_by": "2026-10-01",
+      "issue": "MAIN-26"
     },
     {
       "advisory": "https://github.com/advisories/GHSA-qwww-vcr4-c8h2",
       "package": "react-router",
       "severity": "high",
       "reason": "Обход CSRF в RSC-режиме react-router. Уязвимы 7.12.0–8.2.0, исправление только в 8.3.0, а react-router-dom из ветки 7 на него не переводится — это миграция на react-router v8 с переписыванием импортов, отдельная задача. Bugget использует классический BrowserRouter без RSC и без серверных actions, так что уязвимый код-пат не задействован.",
-      "review_by": "2026-10-01"
+      "review_by": "2026-10-01",
+      "issue": "MAIN-26"
     }
   ]
 }

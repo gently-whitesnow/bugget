@@ -1,0 +1,22 @@
+{
+  "$comment": "LOC-бюджет фронтенда. Читается scripts/quality/frontend-loc.sh (гейт frontend-maintainability). Лимит — предел для одного файла .ts/.tsx. baseline — уже существующие превышения на момент ввода гейта: они не блокируют, но расти им нельзя. Пересобрать после рефакторинга: scripts/quality/frontend-loc.sh --update. Поднятие limit или ручное расширение baseline требует обоснования в коммите.",
+  "limit": 350,
+  "roots": [
+    "frontend/src"
+  ],
+  "exclude": [
+    "frontend/src/shared/api/generated",
+    "*.test.ts",
+    "*.test.tsx",
+    "*.spec.ts",
+    "*.spec.tsx"
+  ],
+  "baseline": {
+    "frontend/src/entities/report/model.ts": 517,
+    "frontend/src/pages/Report/model-bug-step.ts": 460,
+    "frontend/src/pages/Report/model-comment.ts": 482,
+    "frontend/src/shared/ui/FilePreview/FilePreview.tsx": 892,
+    "frontend/src/shared/ui/MarkdownTextarea/MarkdownTextarea.tsx": 351,
+    "frontend/src/widgets/custom-left-sidebar/ui/CustomLeftSidebar/CustomLeftSidebar.tsx": 578
+  }
+}

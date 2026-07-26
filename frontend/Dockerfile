@@ -27,6 +27,11 @@ RUN npm run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:stable-alpine
+
+# Привязывает пакет в GHCR к репозиторию: без метки пакет висит отдельно
+# и не наследует его видимость.
+LABEL org.opencontainers.image.source="https://github.com/gently-whitesnow/bugget"
+
 WORKDIR /usr/share/nginx/html
 COPY --from=builder /app/dist .
 

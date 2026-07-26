@@ -32,6 +32,11 @@ RUN mkdir /ffmpeg \
  && chmod 777 /ffmpeg
 
 FROM mcr.microsoft.com/dotnet/aspnet:${RUNTIME_TAG} AS runtime
+
+# Привязывает пакет в GHCR к репозиторию: без метки пакет висит отдельно
+# и не наследует его видимость.
+LABEL org.opencontainers.image.source="https://github.com/gently-whitesnow/bugget"
+
 WORKDIR /app
 
 COPY --from=build /app/publish .

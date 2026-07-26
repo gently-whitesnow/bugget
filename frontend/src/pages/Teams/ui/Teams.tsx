@@ -14,7 +14,7 @@ import { ReportCard } from "@/entities/report";
 import { DashboardContent } from "@/widgets/dashboard";
 import { $workspaces, fetchWorkspacesFx } from "@/entities/saas/workspace";
 import type { ReportListItem } from "@/entities/report-list";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router";
 
 type TeamsView = "dashboard" | "team";
 

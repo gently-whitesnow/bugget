@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { authType } from "@/shared/config";
 import { hasOidcAutoAttempted, markOidcAutoAttempted } from "@/shared/lib/auth";
 import { useLoginNext } from "../lib/useLoginNext";

@@ -6,7 +6,7 @@ import {
   useMemo,
   useRef,
 } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { buildItemIdSet, parseHashNumbers } from "./hashScrollUtils";
 
 type Options<T> = {

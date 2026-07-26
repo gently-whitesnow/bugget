@@ -6,7 +6,7 @@ import {
   Route,
   useRoutes,
   type RouteObject,
-} from "react-router-dom";
+} from "react-router";
 import { useUnit } from "effector-react";
 import { Layout, SelfHostedHeader } from "@/widgets/layout";
 import { ReportPage as Report } from "@/pages/Report";

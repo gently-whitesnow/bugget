@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { useUnit } from "effector-react";
 import { clearReport } from "@/entities/report";
 

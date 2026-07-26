@@ -2,7 +2,10 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    // ES2022 нужен ради Error(message, { cause }) — правило preserve-caught-error
+    // из eslint 10 требует прокидывать исходную ошибку. Браузеры, которые мы
+    // поддерживаем, ES2022 умеют; эмита здесь нет (noEmit), бандлит Vite.
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "baseUrl": "./",

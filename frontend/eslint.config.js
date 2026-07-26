@@ -36,6 +36,15 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // eslint-plugin-react-hooks 7 добавил в recommended правила React Compiler.
+      // Они находят реальный долг (22 setState в эффектах и три точечных места),
+      // но чинится он переписыванием компонентов, а не обновлением зависимости,
+      // ради которого плагин подняли. Отключены здесь, чтобы долг не смешивался с
+      // security-обновлением; включать обратно по одному правилу за проход.
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/refs": "off",
+      "react-hooks/static-components": "off",
       "react-refresh/only-export-components": [
         "warn",
         { allowConstantExport: true },

@@ -48,7 +48,9 @@ export async function copyToClipboard(text: string): Promise<void> {
       document.body.removeChild(textArea);
     } catch (fallbackErr) {
       console.error("Fallback copy failed:", fallbackErr);
-      throw new Error("Не удалось скопировать ссылку");
+      throw new Error("Не удалось скопировать ссылку", {
+        cause: fallbackErr,
+      });
     }
   }
 }

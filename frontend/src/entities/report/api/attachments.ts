@@ -41,7 +41,7 @@ export const uploadAttachment = async (params: UploadAttachmentParameters) => {
     return data;
   } catch (error) {
     console.error("Ошибка при загрузке файла:", error);
-    throw new Error("Не удалось загрузить файл");
+    throw new Error("Не удалось загрузить файл", { cause: error });
   }
 };
 

@@ -75,6 +75,17 @@
       ]
     },
     {
+      "id": "backend-coverage",
+      "scope": "backend",
+      "enabled": true,
+      "slow": true,
+      "workdir": ".",
+      "description": "Покрытие бекенда тестами с ratchet-бейзлайном. Абсолютной планки нет — гейт краснеет, когда покрытие падает ниже снимка .quality/backend-coverage.json: и по решению целиком, и по каждой сборке отдельно, чтобы рост в одном модуле не маскировал провал в другом. Гоняет все тестовые проекты (кроме архитектурных — coverlet ломает их белые списки зависимостей) с coverlet.collector и сливает отчёты ReportGenerator'ом в artifacts/coverage/report: HTML публикуется артефактом CI, по нему видно, что покрывать дальше. Помечен slow: поднимает Testcontainers и повторно прогоняет весь набор тестов. Список приоритетных дыр: --gaps. Пересобрать снимок: --update --skip-tests. Нужны python3 и Docker.",
+      "commands": [
+        "python3 scripts/quality/backend-coverage.py"
+      ]
+    },
+    {
       "id": "backend-maintainability",
       "scope": "backend",
       "enabled": true,

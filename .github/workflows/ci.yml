@@ -131,6 +131,17 @@ jobs:
       - name: Verify
         run: ./scripts/quality/verify.sh --scope backend
 
+      # Отчёт о покрытии нужен и когда прогон красный: по нему выбирают, что покрывать
+      # дальше, а гейт backend-coverage краснеет ровно на падении покрытия.
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: artifacts/coverage/report
+          if-no-files-found: warn
+          retention-days: 14
+
   frontend:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'

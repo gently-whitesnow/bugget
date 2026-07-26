@@ -49,7 +49,10 @@ Bugget — инструмент для баг-репортов: тестиров
 послаблении (`#pragma warning disable`, `<NoWarn>`, выключенный `TreatWarningsAsErrors`),
 пока над ним нет ссылки на ADR или на задачу и пока снимок не пересобран отдельным
 коммитом. `backend-maintainability` так же держит размер файлов, типов и методов,
-цикломатику, зависимости конструктора и fan-out.
+цикломатику, зависимости конструктора и fan-out. `backend-coverage` держит покрытие
+тестами: ниже снимка `.quality/backend-coverage.json` — красный, и по решению целиком,
+и по каждой сборке. HTML-отчёт о покрытии CI публикует артефактом `backend-coverage`,
+локально он лежит в `artifacts/coverage/report`.
 
 **`*.g.cs` руками не правим.** Источник правды — `specs/contracts/**/openapi.yaml`,
 перегенерация — `scripts/quality/openapi-generate.sh`. Причина — ADR-0005.

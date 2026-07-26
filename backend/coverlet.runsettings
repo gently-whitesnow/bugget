@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Настройки сбора покрытия (coverlet.collector) для гейта backend-coverage.
+  Запускаются через scripts/quality/backend-coverage.py — вручную этот файл передаётся
+  в dotnet test флагом settings вместе со сборщиком "XPlat Code Coverage".
+
+  Что намеренно не измеряется:
+    *.Tests / *.UnitTests / *.IntegrationTests — сами тесты, покрытие тестов тестами
+      ничего не значит;
+    *.DbUp — раннеры миграций: код там сводится к перечислению SQL-скриптов, а сами
+      скрипты покрываются интеграционными тестами через накат на реальный Postgres;
+    сгенерированное из OpenAPI (*.g.cs, Generated/) — источник правды контракт,
+      руками этот код не пишется (ADR-0005), тестировать его нечего.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Exclude>[*.Tests]*,[*.UnitTests]*,[*.IntegrationTests]*,[*.DbUp]*</Exclude>
+          <ExcludeByFile>**/Generated/**/*.cs,**/*.g.cs</ExcludeByFile>
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          <SkipAutoProps>true</SkipAutoProps>
+          <UseSourceLink>false</UseSourceLink>
+          <DeterministicReport>false</DeterministicReport>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

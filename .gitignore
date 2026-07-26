@@ -5,6 +5,9 @@ dist/
 node_modules/
 __pycache__/
 
+# отчёты гейтов качества (покрытие) — в CI публикуются артефактом
+artifacts/
+
 # локальные данные dev-контура
 file-storage/
 users-file-storage/

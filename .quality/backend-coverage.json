@@ -18,45 +18,45 @@
   "$comment-gapsFocus": "Сборки, по которым backend-coverage.py --gaps строит список приоритетных дыр: бизнес-логика, где непокрытая ветка стоит дороже всего.",
   "baseline": {
     "total": {
-      "line": 53.0,
-      "branch": 28.3
+      "line": 71.6,
+      "branch": 42.2
     },
     "assemblies": {
       "Authentication": {
-        "line": 20.8,
-        "branch": 22.5
+        "line": 72.9,
+        "branch": 67.5
       },
       "Authorization.Abstractions": {
         "line": 65.5,
         "branch": 55.0
       },
       "Authorization.Api": {
-        "line": 64.7,
-        "branch": 16.7
+        "line": 75.7,
+        "branch": 45.6
       },
       "BugReport.Logging": {
         "line": 0.0,
         "branch": 0.0
       },
       "Bugget": {
-        "line": 72.1,
-        "branch": 33.0
+        "line": 81.7,
+        "branch": 35.7
       },
       "Bugget.BO": {
-        "line": 62.8,
-        "branch": 44.6
+        "line": 83.1,
+        "branch": 62.4
       },
       "Bugget.DA": {
-        "line": 89.7,
-        "branch": 40.0
+        "line": 92.6,
+        "branch": 60.0
       },
       "Bugget.Entities": {
-        "line": 59.5,
-        "branch": 45.0
+        "line": 64.9,
+        "branch": 60.0
       },
       "Bugget.ExternalClients": {
-        "line": 11.3,
-        "branch": 5.6
+        "line": 72.2,
+        "branch": 47.2
       },
       "Caching.Local": {
         "line": 0.0,
@@ -67,15 +67,15 @@
         "branch": 0.0
       },
       "Flow": {
-        "line": 15.1,
-        "branch": 0.0
+        "line": 47.7,
+        "branch": 30.0
       },
       "MattermostOAuth": {
         "line": 0.0,
         "branch": null
       },
       "Monade": {
-        "line": 70.6,
+        "line": 76.5,
         "branch": null
       },
       "OidcAuth": {
@@ -87,16 +87,16 @@
         "branch": null
       },
       "Users.Api": {
-        "line": 25.3,
-        "branch": 57.1
+        "line": 81.6,
+        "branch": 64.3
       },
       "Users.BO": {
-        "line": 37.1,
-        "branch": 0.0
+        "line": 90.3,
+        "branch": 50.0
       },
       "Users.DA": {
-        "line": 42.1,
-        "branch": 16.7
+        "line": 89.5,
+        "branch": 66.7
       },
       "Users.Entities": {
         "line": 0.0,

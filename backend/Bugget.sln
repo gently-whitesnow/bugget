@@ -60,6 +60,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Authorization.Tests", "Auth
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Authorization.IntegrationTests", "Authorization.IntegrationTests\Authorization.IntegrationTests.csproj", "{C177B487-0878-400D-886E-6D63244A74BA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bugget.Architecture.Tests", "Bugget.Architecture.Tests\Bugget.Architecture.Tests.csproj", "{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -430,6 +432,18 @@ Global
 		{C177B487-0878-400D-886E-6D63244A74BA}.Release|x64.Build.0 = Release|Any CPU
 		{C177B487-0878-400D-886E-6D63244A74BA}.Release|x86.ActiveCfg = Release|Any CPU
 		{C177B487-0878-400D-886E-6D63244A74BA}.Release|x86.Build.0 = Release|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Debug|x64.Build.0 = Debug|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Debug|x86.Build.0 = Debug|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Release|x64.ActiveCfg = Release|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Release|x64.Build.0 = Release|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Release|x86.ActiveCfg = Release|Any CPU
+		{F00ED8A9-A2BE-4A7A-8626-F42BF0BB4507}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

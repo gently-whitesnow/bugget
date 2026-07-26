@@ -53,6 +53,17 @@
       ]
     },
     {
+      "id": "backend-test-architecture",
+      "scope": "backend",
+      "enabled": true,
+      "slow": false,
+      "workdir": ".",
+      "description": "Архитектурные правила на NetArchTest и на графе проектов (backend/Bugget.Architecture.Tests): граф остаётся DAG, *.Entities не ссылаются на другие проекты, бизнес-логика (*.BO) не тянет ASP.NET, HTTP-клиенты и Npgsql/Dapper, драйвер БД живёт только в *.DA, InternalsVisibleTo открыт только тестам своего модуля. Правила написаны белым списком: незнакомая зависимость валит гейт, даже если её никто заранее не запретил. Отступления текущего графа от целевого (ADR-0001) перечислены поимённо в KnownDeviations.cs и проверяются на протухание — снятое отступление обязано исчезнуть из списка.",
+      "commands": [
+        "scripts/quality/dotnet-test.sh architecture"
+      ]
+    },
+    {
       "id": "backend-test-integration",
       "scope": "backend",
       "enabled": true,

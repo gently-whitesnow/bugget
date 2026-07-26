@@ -2,7 +2,7 @@ using System.Reflection;
 using FluentAssertions;
 using NetArchTest.Rules;
 
-namespace Bugget.Tests.Architecture;
+namespace Bugget.Architecture.Tests;
 
 /// <summary>
 /// Соглашения именования и контракты для агента, который генерит код в bugget-api.

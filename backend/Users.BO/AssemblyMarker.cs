@@ -1,4 +1,4 @@
-namespace Monade;
+namespace Users.BO;
 
 /// <summary>
 /// Якорь для NetArchTest и других reflection-based инструментов.

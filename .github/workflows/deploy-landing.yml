@@ -1,0 +1,54 @@
+name: Deploy landing (static)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-bugget-landing
+  cancel-in-progress: false
+
+env:
+  SITE_NAME: bugget
+  SSH_USER: web
+  KEEP_RELEASES: 5
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/landing/package-lock.json
+
+      - name: Build static export
+        working-directory: apps/landing
+        run: |
+          npm ci
+          npm run lint
+          npm run typecheck
+          npm run build
+          test -f out/index.html || { echo "Статический export не создан"; exit 1; }
+
+      - name: Deploy via rsync
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          BASE="/var/www/${SITE_NAME}"
+          REL="${BASE}/releases/${GITHUB_SHA}"
+          SSH="ssh -i ~/.ssh/id_ed25519 ${SSH_USER}@${HOST}"
+
+          $SSH "mkdir -p '${REL}'"
+          rsync -az --delete -e "ssh -i ~/.ssh/id_ed25519" apps/landing/out/ "${SSH_USER}@${HOST}:${REL}/"
+          $SSH "ln -sfn '${REL}' '${BASE}/current'"
+          $SSH "find '${BASE}/releases' -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\\n' | sort -nr | tail -n +$((KEEP_RELEASES + 1)) | cut -d' ' -f2- | xargs -r rm -rf"
+          echo "Deployed ${GITHUB_SHA} → ${BASE}/current"

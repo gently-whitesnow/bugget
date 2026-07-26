@@ -50,6 +50,23 @@ dotnet test Bugget.Tests/Bugget.Tests.csproj          # unit
 dotnet test Bugget.IntegrationTests/Bugget.IntegrationTests.csproj   # нужен docker (Testcontainers)
 ```
 
+### Проверки качества
+
+Одна команда для человека, агента и CI — она же крутится на pull request:
+
+```sh
+./scripts/quality/verify.sh                       # все гейты
+./scripts/quality/verify.sh --list                # что вообще проверяется
+./scripts/quality/verify.sh --dry-run             # план без запуска
+./scripts/quality/verify.sh --fast                # без медленных гейтов
+./scripts/quality/verify.sh --scope backend       # только бекенд
+./scripts/quality/verify.sh --only frontend-lint  # ровно один гейт
+```
+
+Набор гейтов лежит в `.quality/quality.config.json` — новая проверка добавляется туда,
+а не в workflow. Гейты прогоняются все, даже если что-то упало: в конце печатается сводка
+со статусом и временем. Нужен `jq`.
+
 ## Структура backend
 
 Один процесс и один образ, внутри — три модуля с сохранёнными границами:

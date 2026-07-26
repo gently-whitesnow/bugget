@@ -1,0 +1,77 @@
+{
+  "$comment": "Единственный источник правды о наборе проверок качества. Читается scripts/quality/verify.sh, который одинаково запускают агент, человек и CI. Отключение гейта (enabled: false) требует явного обоснования в коммите.",
+
+  "stopOnFirstFail": false,
+
+  "scopes": {
+    "backend": {
+      "workdir": "backend",
+      "description": "Серверная часть: .NET 9, решение backend/Bugget.sln.",
+      "prepare": [
+        "dotnet restore Bugget.sln"
+      ]
+    },
+    "frontend": {
+      "workdir": "frontend",
+      "description": "Клиентская часть: Vite + React + TypeScript.",
+      "prepare": [
+        "[ -d node_modules ] && [ ! package-lock.json -nt node_modules ] || npm ci"
+      ]
+    }
+  },
+
+  "gates": [
+    {
+      "id": "backend-build",
+      "scope": "backend",
+      "enabled": true,
+      "slow": false,
+      "description": "Сборка Bugget.sln в Release. Предупреждения компилятора и анализаторов — ошибки (TreatWarningsAsErrors в backend/Directory.Build.props), поэтому новый варнинг валит гейт.",
+      "commands": [
+        "dotnet build Bugget.sln -c Release --no-restore"
+      ]
+    },
+    {
+      "id": "backend-test-unit",
+      "scope": "backend",
+      "enabled": true,
+      "slow": false,
+      "description": "Юнит-тесты без I/O: Bugget.Tests, Users.UnitTests, Authorization.Tests. Интеграционные тесты на Testcontainers сюда не входят — им нужен Docker, они подключаются отдельным гейтом.",
+      "commands": [
+        "dotnet test Bugget.Tests/Bugget.Tests.csproj -c Release --no-restore",
+        "dotnet test Users.UnitTests/Users.UnitTests.csproj -c Release --no-restore",
+        "dotnet test Authorization.Tests/Authorization.Tests.csproj -c Release --no-restore"
+      ]
+    },
+    {
+      "id": "frontend-typecheck",
+      "scope": "frontend",
+      "enabled": true,
+      "slow": false,
+      "description": "Проверка типов TypeScript без эмита (tsc --noEmit). Ловит рассинхрон с контрактами бекенда раньше сборки.",
+      "commands": [
+        "npx tsc --noEmit"
+      ]
+    },
+    {
+      "id": "frontend-lint",
+      "scope": "frontend",
+      "enabled": true,
+      "slow": false,
+      "description": "ESLint по src с --max-warnings 0: любое предупреждение валит гейт.",
+      "commands": [
+        "npm run lint"
+      ]
+    },
+    {
+      "id": "frontend-test",
+      "scope": "frontend",
+      "enabled": true,
+      "slow": false,
+      "description": "Юнит-тесты фронтенда (vitest run) в jsdom-окружении.",
+      "commands": [
+        "npm run test"
+      ]
+    }
+  ]
+}

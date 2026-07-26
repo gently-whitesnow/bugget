@@ -72,6 +72,48 @@
       "commands": [
         "npm run test"
       ]
+    },
+    {
+      "id": "frontend-architecture",
+      "scope": "frontend",
+      "enabled": true,
+      "slow": false,
+      "description": "Steiger: соответствие src правилам Feature-Sliced Design. Любое предупреждение — ошибка (--fail-on-warnings). Точечные отключения правил живут в frontend/steiger.config.js, каждое с причиной.",
+      "commands": [
+        "npx steiger ./src --fail-on-warnings"
+      ]
+    },
+    {
+      "id": "frontend-build",
+      "scope": "frontend",
+      "enabled": true,
+      "slow": false,
+      "description": "Production-сборка Vite. Ловит то, что не видно типам и линтеру: битые импорты ассетов, циклы в рантайме, падения плагинов. Проверка типов вынесена в отдельный гейт frontend-typecheck, поэтому здесь запускается только бандлер.",
+      "commands": [
+        "npx vite build"
+      ]
+    },
+    {
+      "id": "frontend-maintainability",
+      "scope": "frontend",
+      "enabled": true,
+      "slow": false,
+      "workdir": ".",
+      "description": "LOC-бюджет на файл .ts/.tsx с ratchet-бейзлайном: новый файл сверх лимита валит гейт, уже существующие превышения зафиксированы в .quality/frontend-loc.json и могут только уменьшаться. Сгенерированное из OpenAPI и тесты не считаются.",
+      "commands": [
+        "scripts/quality/frontend-loc.sh"
+      ]
+    },
+    {
+      "id": "frontend-audit",
+      "scope": "frontend",
+      "enabled": true,
+      "slow": true,
+      "workdir": ".",
+      "description": "npm audit по фронтовым зависимостям: падает на любой уязвимости high/critical, кроме явно принятых в .quality/frontend-audit-allowlist.json с причиной и датой пересмотра. Ходит в сеть, поэтому slow — из --fast исключён.",
+      "commands": [
+        "scripts/quality/frontend-audit.sh"
+      ]
     }
   ]
 }

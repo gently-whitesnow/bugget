@@ -1,0 +1,30 @@
+{
+  "$comment": "LOC-бюджет фронтенда. Читается scripts/quality/frontend-loc.sh (гейт frontend-maintainability). Лимит — предел для одного файла .ts/.tsx. baseline — уже существующие превышения на момент ввода гейта: они не блокируют, но расти им нельзя. Пересобрать после рефакторинга: scripts/quality/frontend-loc.sh --update. Поднятие limit или ручное расширение baseline требует обоснования в коммите.",
+  "limit": 250,
+  "roots": [
+    "frontend/src"
+  ],
+  "exclude": [
+    "frontend/src/shared/api/generated",
+    "*.test.ts",
+    "*.test.tsx",
+    "*.spec.ts",
+    "*.spec.tsx"
+  ],
+  "baseline": {
+    "frontend/src/entities/report/model.ts": 517,
+    "frontend/src/pages/Report/model-attachment.ts": 273,
+    "frontend/src/pages/Report/model-bug-step.ts": 460,
+    "frontend/src/pages/Report/model-comment.ts": 482,
+    "frontend/src/pages/Report/ui/Report.tsx": 280,
+    "frontend/src/pages/Report/ui/components/Bug/components/Bug.tsx": 276,
+    "frontend/src/pages/SelfHostedTeamSelect/ui/TeamSelect.tsx": 291,
+    "frontend/src/pages/Settings/ui/components/UserProfileSection/UserProfileSection.tsx": 258,
+    "frontend/src/shared/model/socket/model.ts": 293,
+    "frontend/src/shared/ui/ComposerInput/components/AttachmentChip.tsx": 254,
+    "frontend/src/shared/ui/FilePreview/FilePreview.tsx": 892,
+    "frontend/src/shared/ui/MarkdownTextarea/MarkdownTextarea.tsx": 351,
+    "frontend/src/widgets/custom-left-sidebar/ui/CustomLeftSidebar/CustomLeftSidebar.tsx": 578,
+    "frontend/src/widgets/teams-sidebar/model.ts": 310
+  }
+}

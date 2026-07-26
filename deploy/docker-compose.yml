@@ -1,0 +1,101 @@
+services:
+  postgres:
+    image: postgres:17
+    # idle_in_transaction_session_timeout / idle_session_timeout — Postgres сам роняет
+    # забытые сессии (psql/IDE/висящий BEGIN). Значения > Npgsql Connection Idle Lifetime,
+    # поэтому app-пулы не страдают: Npgsql закрывает свои idle раньше, чем сервер.
+    command:
+      - postgres
+      - -c
+      - idle_in_transaction_session_timeout=60s
+      - -c
+      - idle_session_timeout=15min
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+    profiles: ["full", "back"]
+
+  redis:
+    image: redis:8
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+    profiles: ["full", "back"]
+
+  # Объединённый bugget-api: reports (app_db), users (users_db) и authorization (redis)
+  # в одном процессе. Маршруты /api/users/* и /api/authorization/* обслуживает он же.
+  app-api:
+    build:
+      context: ../backend
+      dockerfile: Bugget/Dockerfile
+    environment:
+      HTTP_PORTS: 7777
+      HTTPS_PORTS: ""
+      POSTGRES_CONNECTION_STRING: "Host=postgres;Port=5432;Database=app_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-};Maximum Pool Size=15;Connection Idle Lifetime=60;Connection Pruning Interval=30"
+      USERS_POSTGRES_CONNECTION_STRING: "Host=postgres;Port=5432;Database=users_db;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-};Maximum Pool Size=20;Connection Idle Lifetime=60;Connection Pruning Interval=30"
+      REDIS_CONNECTION_STRING: redis:6379
+      APP_DOMAIN: ${APP_DOMAIN:-}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [internal]
+    volumes:
+      - app-file-storage:/file-storage
+      - users-file-storage:/users-file-storage
+      # Ключи подписи JWT генерируются при первом старте. Том обязателен:
+      # без него после рестарта все сессии разлогинятся.
+      - jwt-keys:/keys
+      - ffmpeg:/ffmpeg
+      - ./external-settings/bugget-api/external_settings.json:/app/external_settings.json:ro
+    profiles: ["full", "back"]
+
+  app-ui:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    environment:
+      # AUTH_TYPE: oidc
+      AUTH_TYPE: fake
+      # MATTERMOST_USER_ID_REQUIRED: true
+      USER_NAME_REQUIRED: true
+    networks: [internal]
+    profiles: ["full", "front"]
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    depends_on:
+      # service_healthy недоступен: рантайм-образ app-api — chiseled, без shell и curl.
+      app-api:
+        condition: service_started
+    # app-ui в depends_on нет намеренно: в профиле back фронт поднимают локально
+    # (vite на host.docker.internal), а upstream резолвится динамически.
+    networks: [internal]
+    profiles: ["full", "back", "front"]
+
+networks:
+  internal:
+
+volumes:
+  app-file-storage:
+  users-file-storage:
+  postgres_data:
+  jwt-keys:
+  ffmpeg:

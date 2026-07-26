@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json.schemastore.org/nswag",
+  "_comment": [
+    "NSwag config модуля Reports (T09 — частичный, только PATCH-расширение).",
+    "",
+    "Один проход NSwag:",
+    "  - DTO (через openApiToCSharpClient с отключённым client classes) →",
+    "    Bugget.Reports.Contracts/Generated/ReportsContracts.g.cs",
+    "  - abstract controller (без inline DTO) →",
+    "    Bugget/Generated/ReportsControllerBase.g.cs",
+    "",
+    "Полный контракт reports мигрирует на contract-first отдельно — здесь",
+    "описан только PATCH /v2/reports/{id} с новым полем is_excluded_from_analytics."
+  ],
+  "runtime": "Net90",
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "../../specs/contracts/reports/openapi.yaml"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "generateClientClasses": false,
+      "generateClientInterfaces": false,
+      "generateDtoTypes": true,
+      "generateExceptionClasses": false,
+      "wrapDtoExceptions": false,
+      "useBaseUrl": false,
+      "namespace": "Bugget.Reports.Contracts.Generated",
+      "className": "{controller}",
+      "output": "Bugget.Reports.Contracts/Generated/ReportsContracts.g.cs",
+      "generateDataAnnotations": true,
+      "dateTimeType": "System.DateTimeOffset",
+      "dateType": "System.DateTimeOffset",
+      "anyType": "object",
+      "arrayBaseType": "System.Collections.Generic.List",
+      "arrayInstanceType": "System.Collections.Generic.List",
+      "arrayType": "System.Collections.Generic.IReadOnlyList",
+      "dictionaryBaseType": "System.Collections.Generic.Dictionary",
+      "dictionaryInstanceType": "System.Collections.Generic.Dictionary",
+      "dictionaryType": "System.Collections.Generic.IReadOnlyDictionary",
+      "generateImmutableArrayProperties": true,
+      "generateImmutableDictionaryProperties": true,
+      "jsonLibrary": "SystemTextJson",
+      "useSnakeCaseNaming": true
+    },
+    "openApiToCSharpController": {
+      "controllerBaseClass": "Microsoft.AspNetCore.Mvc.ControllerBase",
+      "controllerStyle": "Abstract",
+      "controllerTarget": "AspNetCore",
+      "useActionResultType": true,
+      "useCancellationToken": true,
+      "generateOptionalParameters": true,
+      "namespace": "Bugget.Api.Generated.Reports",
+      "className": "Reports",
+      "output": "Bugget/Generated/ReportsControllerBase.g.cs",
+      "jsonSerializerSettingsTransformationMethod": null,
+      "useLiquidTemplates": true,
+      "generateDataAnnotations": true,
+      "additionalNamespaceUsages": [
+        "Bugget.Reports.Contracts.Generated"
+      ],
+      "generateUpdateJsonSerializerSettingsMethod": false,
+      "useSnakeCaseNaming": true,
+      "generateDtoTypes": false
+    }
+  }
+}

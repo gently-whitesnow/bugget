@@ -1,0 +1,41 @@
+{
+  "profile": "legacy",
+  "version": 1,
+  "violations": [
+    {
+      "code": "TYPE_PUB",
+      "path": "Bugget.BO/Errors/BoErrors.cs",
+      "subject": "BoErrors"
+    },
+    {
+      "code": "CTOR_DEPS",
+      "path": "Bugget.BO/Services/Attachments/AttachmentService.cs",
+      "subject": "AttachmentService primary constructor"
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "Bugget.IntegrationTests/AttachmentDbClientTests.cs",
+      "subject": "AttachmentDbClientTests"
+    },
+    {
+      "code": "TYPE_PUB",
+      "path": "Bugget.IntegrationTests/AttachmentDbClientTests.cs",
+      "subject": "AttachmentDbClientTests"
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "Bugget.IntegrationTests/ReportsDbClient_GetReportTests.cs",
+      "subject": "ReportsDbClient_GetReportTests"
+    },
+    {
+      "code": "TYPE_LOC",
+      "path": "Bugget.IntegrationTests/ReportsDbClient_SearchReportsTests.cs",
+      "subject": "ReportsDbClient_SearchReportsTests"
+    },
+    {
+      "code": "FILE_FANOUT",
+      "path": "Bugget/Extensions/ServiceCollectionExtensions.cs",
+      "subject": "Bugget/Extensions/ServiceCollectionExtensions.cs"
+    }
+  ]
+}

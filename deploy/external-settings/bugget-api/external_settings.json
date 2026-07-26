@@ -1,0 +1,31 @@
+{
+    "ExternalSettings": {
+        "Authentication": {
+            "UserIdHeaderName": "Auth-Request-User-Id",
+            "TeamIdHeaderName": "Auth-Request-Team-Id",
+            "OrganizationIdHeaderName": "Auth-Request-Workspace-Id",
+            "WorkspaceIdHeaderName": "Auth-Request-Workspace-Id",
+            "WorkspaceRoleHeaderName": "Auth-Request-Workspace-Role"
+        }
+    },
+    "Serilog": {
+        "MinimumLevel": {
+            "Default": "Information"
+        },
+        "Enrich": [
+            "FromLogContext",
+            "WithMachineName"
+        ],
+        "Properties": {
+            "app": "bugget-api"
+        },
+        "WriteTo": [
+            {
+                "Name": "Console",
+                "Args": {
+                    "restrictedToMinimumLevel": "Information"
+                }
+            }
+        ]
+    }
+}

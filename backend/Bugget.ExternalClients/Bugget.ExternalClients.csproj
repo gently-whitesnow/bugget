@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Http" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Bugget.BO\Bugget.BO.csproj" />
+    </ItemGroup>
+</Project>

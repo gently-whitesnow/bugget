@@ -1,0 +1,58 @@
+{
+  "$schema": "https://example.invalid/bugget-quality.schema.json",
+  "version": 1,
+  "stopOnFirstFail": false,
+  "backend": {
+    "solution": "Bugget.sln",
+    "unitTestProject": "Bugget.Tests/Bugget.Tests.csproj",
+    "integrationTestProject": "Bugget.IntegrationTests/Bugget.IntegrationTests.csproj"
+  },
+  "gates": [
+    {
+      "id": "backend-format",
+      "scope": "backend",
+      "enabled": true,
+      "description": "dotnet format Bugget.sln --verify-no-changes. Правила в .editorconfig."
+    },
+    {
+      "id": "backend-build",
+      "scope": "backend",
+      "enabled": true,
+      "description": "dotnet build Bugget.sln -c Release -warnaserror. WarningsNotAsErrors-исключения для legacy кодов — в Directory.Build.props."
+    },
+    {
+      "id": "backend-suppressions",
+      "scope": "backend",
+      "enabled": true,
+      "description": "scripts/quality/suppression_audit.py check. Ratchet над #pragma warning disable и per-file dotnet_diagnostic.*.severity=none|suggestion. Baseline в .quality/suppressions-baseline.json; новые suppressions требуют intent:<id> в комментарии."
+    },
+    {
+      "id": "backend-maintainability",
+      "scope": "backend",
+      "enabled": true,
+      "config": ".quality/maintainability-budget.json",
+      "profile": "legacy",
+      "ratchet": ".quality/maintainability-baseline.json",
+      "description": "File/type/method LOC, ctor deps, cyclomatic, fan-out. Advisory + ratchet vs baseline snapshot. Целевой профиль strict (типы ≤200 LOC, методы ≤30, CC ≤10) лежит рядом — постепенно ужесточаем по областям."
+    },
+    {
+      "id": "backend-test-unit",
+      "scope": "backend",
+      "enabled": true,
+      "description": "dotnet test Bugget.Tests/Bugget.Tests.csproj. Чистые unit-тесты, без Docker."
+    },
+    {
+      "id": "backend-test-integration",
+      "scope": "backend",
+      "enabled": true,
+      "slow": true,
+      "description": "dotnet test Bugget.IntegrationTests/Bugget.IntegrationTests.csproj. Testcontainers.PostgreSql, требует Docker."
+    },
+    {
+      "id": "contracts",
+      "scope": "contracts",
+      "enabled": false,
+      "description": "Contract-first OpenAPI: выключен — спеки и скрипты генерации живут в spec-хабе, в этот репозиторий переехали только сгенерированные артефакты."
+    }
+  ]
+}

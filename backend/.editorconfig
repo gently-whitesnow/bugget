@@ -1,0 +1,62 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+trim_trailing_whitespace = true
+
+[*.{cs,csproj,props,targets}]
+indent_size = 4
+
+[*.{json,yml,yaml,md,sh}]
+indent_size = 2
+
+[*.cs]
+# Code style
+dotnet_sort_system_directives_first = true
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:warning
+
+# Nullability — рекомендации, не блокируют build (см. Directory.Build.props,
+# CS8602/CS8604 в WarningsNotAsErrors до планомерной чистки).
+dotnet_style_null_propagation = true:warning
+dotnet_style_coalesce_expression = true:warning
+
+# Naming: private instance fields — _camelCase
+# severity=suggestion (не warning): на legacy-коде много полей без префикса,
+# IDE1006 не имеет авто-фикса для batch rename. Поднять до warning после
+# планового переименования (отдельная задача).
+dotnet_naming_rule.private_instance_fields_underscore.severity = suggestion
+dotnet_naming_rule.private_instance_fields_underscore.symbols = private_instance_fields
+dotnet_naming_rule.private_instance_fields_underscore.style = underscore_camel
+dotnet_naming_symbols.private_instance_fields.applicable_kinds = field
+dotnet_naming_symbols.private_instance_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_instance_fields.required_modifiers =
+dotnet_naming_style.underscore_camel.required_prefix = _
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+
+# Naming: private const — PascalCase (suggestion, не блокирующее)
+dotnet_naming_rule.private_const_fields_pascal.severity = suggestion
+dotnet_naming_rule.private_const_fields_pascal.symbols = private_const_fields
+dotnet_naming_rule.private_const_fields_pascal.style = pascal_case_style
+dotnet_naming_symbols.private_const_fields.applicable_kinds = field
+dotnet_naming_symbols.private_const_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_const_fields.required_modifiers = const
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+# Naming: private static readonly — PascalCase
+dotnet_naming_rule.private_static_readonly_pascal.severity = suggestion
+dotnet_naming_rule.private_static_readonly_pascal.symbols = private_static_readonly_fields
+dotnet_naming_rule.private_static_readonly_pascal.style = pascal_case_style
+dotnet_naming_symbols.private_static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_readonly_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_static_readonly_fields.required_modifiers = static,readonly
+
+# Тесты используют snake_case method names (xUnit идиома) — отключаем CA1707.
+[**/Bugget.Tests/**/*.cs]
+dotnet_diagnostic.CA1707.severity = none
+
+[**/Bugget.IntegrationTests/**/*.cs]
+dotnet_diagnostic.CA1707.severity = none

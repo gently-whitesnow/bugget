@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\Bugget.Entities\Bugget.Entities.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Dapper" />
+      <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+      <PackageReference Include="Microsoft.Extensions.Http" />
+      <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+      <PackageReference Include="Npgsql" />
+    </ItemGroup>
+    
+</Project>

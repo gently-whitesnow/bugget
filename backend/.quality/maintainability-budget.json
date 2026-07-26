@@ -1,0 +1,69 @@
+{
+  "$schema": "https://example.invalid/dotnet-quality-harness/maintainability-budget.schema.json",
+  "defaultProfile": "legacy",
+  "scanRoots": [
+    "Bugget",
+    "Bugget.BO",
+    "Bugget.DA",
+    "Bugget.DbUp",
+    "Bugget.Entities",
+    "Bugget.ExternalClients",
+    "Monade",
+    "TaskQueue",
+    "Bugget.Tests",
+    "Bugget.IntegrationTests"
+  ],
+  "generatedFilePatterns": [
+    "**/Generated/**",
+    "**/generated/**",
+    "**/*.g.cs",
+    "**/*.generated.cs",
+    "**/*.designer.cs",
+    "**/Migrations/**",
+    "**/bin/**",
+    "**/obj/**"
+  ],
+  "fanOutIgnorePrefixes": [
+    "System",
+    "Microsoft.Extensions.Logging",
+    "Microsoft.Extensions.DependencyInjection",
+    "Microsoft.Extensions.Options",
+    "Microsoft.Extensions.Hosting",
+    "Microsoft.AspNetCore",
+    "Dapper",
+    "Npgsql",
+    "Xunit",
+    "Moq",
+    "Testcontainers"
+  ],
+  "profiles": {
+    "strict": {
+      "description": "Целевой профиль для очищенных областей. Можно делать blocking после baseline.",
+      "gateMode": "blocking",
+      "limits": {
+        "fileMaxLoc": 400,
+        "typeMaxLoc": 200,
+        "methodMaxLoc": 30,
+        "constructorMaxDependencies": 5,
+        "methodMaxCyclomaticComplexity": 10,
+        "typeMaxPublicMembers": 12,
+        "fileMaxFanOut": 15
+      },
+      "exclude": []
+    },
+    "legacy": {
+      "description": "Brownfield-профиль. Advisory + ratchet через baseline snapshot. Текущий дефолт для bugget-api.",
+      "gateMode": "advisory",
+      "limits": {
+        "fileMaxLoc": 800,
+        "typeMaxLoc": 500,
+        "methodMaxLoc": 120,
+        "constructorMaxDependencies": 8,
+        "methodMaxCyclomaticComplexity": 25,
+        "typeMaxPublicMembers": 25,
+        "fileMaxFanOut": 30
+      },
+      "exclude": []
+    }
+  }
+}

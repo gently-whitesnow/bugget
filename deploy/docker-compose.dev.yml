@@ -1,0 +1,30 @@
+services:
+  postgres:
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  app-api:
+    environment:
+      POSTGRES_CONNECTION_STRING: "Host=postgres;Port=5432;Database=app_db;Username=${POSTGRES_USER:-postgres};Maximum Pool Size=15;Connection Idle Lifetime=60;Connection Pruning Interval=30"
+      USERS_POSTGRES_CONNECTION_STRING: "Host=postgres;Port=5432;Database=users_db;Username=${POSTGRES_USER:-postgres};Maximum Pool Size=20;Connection Idle Lifetime=60;Connection Pruning Interval=30"
+    ports:
+      - "7777:7777"
+
+  app-ui:
+    ports:
+      - "1337:80"
+
+  nginx:
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+    ports:
+      - "80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

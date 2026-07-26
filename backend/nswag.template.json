@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json.schemastore.org/nswag",
+  "_comment": [
+    "Шаблон конфига NSwag для модуля contract-first OpenAPI (ADR-20260518).",
+    "",
+    "Как использовать:",
+    "  1. Скопировать в nswag.<module>.json (e.g. nswag.analytics.json).",
+    "  2. Заменить <module> на slug (kebab-case) и <Module> на PascalCase.",
+    "  3. Создать sln-проекты Bugget.<Module>.Contracts (с папкой Generated/) и",
+    "     убедиться, что Bugget.Api ссылается на него.",
+    "  4. Прогнать `bash bugget/scripts/quality/openapi-generate.sh`.",
+    "",
+    "Архитектура одного прохода:",
+    "  - openApiToCSharpClient запущен с отключённым client-классом и эмитит",
+    "    только DTO/enum-ы в Bugget.<Module>.Contracts/Generated/.",
+    "  - openApiToCSharpController эмитит abstract controller в",
+    "    Bugget/Generated/, отключая inline DTO (generateDtoTypes=false) и",
+    "    подключая DTO-namespace через additionalNamespaceUsages.",
+    "",
+    "Этот файл сам по себе НЕ исполняется: openapi-generate.sh намеренно",
+    "пропускает nswag.template.json."
+  ],
+  "runtime": "Net90",
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "../../specs/contracts/<module>/openapi.yaml"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "generateClientClasses": false,
+      "generateClientInterfaces": false,
+      "generateDtoTypes": true,
+      "generateExceptionClasses": false,
+      "wrapDtoExceptions": false,
+      "useBaseUrl": false,
+      "namespace": "Bugget.<Module>.Contracts.Generated",
+      "className": "{controller}",
+      "output": "Bugget.<Module>.Contracts/Generated/<Module>Contracts.g.cs",
+      "generateDataAnnotations": true,
+      "dateTimeType": "System.DateTimeOffset",
+      "dateType": "System.DateTimeOffset",
+      "anyType": "object",
+      "arrayBaseType": "System.Collections.Generic.List",
+      "arrayInstanceType": "System.Collections.Generic.List",
+      "arrayType": "System.Collections.Generic.IReadOnlyList",
+      "dictionaryBaseType": "System.Collections.Generic.Dictionary",
+      "dictionaryInstanceType": "System.Collections.Generic.Dictionary",
+      "dictionaryType": "System.Collections.Generic.IReadOnlyDictionary",
+      "generateImmutableArrayProperties": true,
+      "generateImmutableDictionaryProperties": true,
+      "jsonLibrary": "SystemTextJson",
+      "useSnakeCaseNaming": true
+    },
+    "openApiToCSharpController": {
+      "controllerBaseClass": "Microsoft.AspNetCore.Mvc.ControllerBase",
+      "controllerStyle": "Abstract",
+      "controllerTarget": "AspNetCore",
+      "useActionResultType": true,
+      "useCancellationToken": true,
+      "generateOptionalParameters": true,
+      "namespace": "Bugget.Api.Generated.<Module>",
+      "className": "<Module>",
+      "output": "Bugget/Generated/<Module>ControllerBase.g.cs",
+      "jsonSerializerSettingsTransformationMethod": null,
+      "useLiquidTemplates": true,
+      "generateDataAnnotations": true,
+      "additionalNamespaceUsages": [
+        "Bugget.<Module>.Contracts.Generated"
+      ],
+      "generateUpdateJsonSerializerSettingsMethod": false,
+      "useSnakeCaseNaming": true,
+      "generateDtoTypes": false
+    }
+  }
+}

@@ -1,0 +1,29 @@
+.autosuggest-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.autosuggest-clear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: currentColor;
+  opacity: 0.5;
+  border-radius: 9999px;
+}
+
+.autosuggest-clear:hover {
+  opacity: 0.8;
+}

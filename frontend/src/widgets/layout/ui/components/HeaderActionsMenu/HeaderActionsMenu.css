@@ -1,0 +1,28 @@
+.header-actions-inline {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+}
+
+.header-actions-menu {
+  display: none;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.header-actions-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  width: min(18rem, calc(100vw - 1rem));
+}
+
+@container app-header (max-width: 34rem) {
+  .header-actions-inline {
+    display: none;
+  }
+
+  .header-actions-menu {
+    display: block;
+  }
+}

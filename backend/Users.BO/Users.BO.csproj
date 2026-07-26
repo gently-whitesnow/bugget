@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\Flow\Flow.csproj" />
+        <ProjectReference Include="..\TaskQueue\TaskQueue.csproj" />
+        <ProjectReference Include="..\Users.DA\Users.DA.csproj" />
+    </ItemGroup>
+
+</Project> 

@@ -11,7 +11,6 @@ using Bugget.BO.Services.Attachments;
 using Bugget.BO.Services.Bugs;
 using Bugget.BO.Services.Comments;
 using Bugget.BO.Services.External;
-using Bugget.BO.Services.Idempotency;
 using Bugget.BO.Services.ReportLinks;
 using Bugget.BO.Services.Reports;
 using Bugget.BO.Services.Settings;
@@ -27,7 +26,6 @@ using Bugget.Entities.BO.AttachmentBo;
 using Bugget.Entities.Constants;
 using Bugget.Entities.Options;
 using Bugget.ExternalClients;
-using Bugget.HostedServices;
 using Bugget.Hubs;
 using Bugget.Middlewares;
 using Microsoft.AspNetCore.Authorization;
@@ -75,7 +73,6 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IDomainEventsConsumerRuntime, DomainEventsConsumerRuntime>()
             .AddSingleton<IReportPhaseIntervalsDbClient, ReportPhaseIntervalsDbClient>()
             .AddSingleton<IAnalyticsDbClient, AnalyticsDbClient>()
-            .AddSingleton<IIdempotencyCacheDbClient, IdempotencyCacheDbClient>()
             .AddSingleton<ISettingsDbClient, SettingsDbClient>()
             .AddSingleton<IBugStepsDbClient, BugStepsDbClient>()
             .AddSingleton<IUnitOfWork, NpgsqlUnitOfWork>()
@@ -117,12 +114,10 @@ public static class ServiceCollectionExtensions
             .AddSingleton<SettingsProcessorProvider>()
             .AddSingleton<CommentLogsService>()
             .AddSingleton<IDomainEventPublisher, DomainEventPublisher>()
-            .AddSingleton<IdempotencyCacheService>()
             .AddSingleton<AnalyticsService>()
             .AddSingleton(TimeProvider.System)
             ;
 
-        services.AddHostedService<IdempotencyCacheCleanupService>();
 
         // T06: локальный outbox-консьюмер. Конкретные handler'ы регистрируются ниже.
         services.AddHostedService<DomainEventsPoller>();

@@ -30,4 +30,11 @@
         <NoWarn>$(NoWarn);1591</NoWarn>
     </PropertyGroup>
 
+    <ItemGroup>
+        <!-- Тесты своего же модуля: мапперы в Contracts internal и public-контрактом
+             модуля не являются. Границу это не ослабляет — правило проверяется
+             Bugget.Architecture.Tests. -->
+        <InternalsVisibleTo Include="Bugget.Tests" />
+    </ItemGroup>
+
 </Project>

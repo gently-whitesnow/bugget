@@ -645,45 +645,6 @@ export interface components {
             /** @description Номер репорта внутри команды. */
             team_report_id: number;
         };
-        /**
-         * @description Вложение бага, шага или комментария. Форма описана как есть: наружу
-         *     сегодня уходят и служебные поля хранилища (`storage_key`, `storage_kind`).
-         */
-        Attachment: {
-            /** @description Идентификатор вложения. */
-            id: number;
-            /** @description Идентификатор сущности, к которой прикреплён файл. */
-            entity_id: number;
-            /**
-             * @description Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
-             *     2 — комментарий, 3 — шаг воспроизведения.
-             */
-            attach_type: number;
-            /** @description Относительный путь либо ключ в S3. */
-            storage_key: string | null;
-            /** @description Тип хранилища — 0 temp, 1 standard, 2 cold. */
-            storage_kind: number | null;
-            /**
-             * Format: date-time
-             * @description Момент загрузки.
-             */
-            created_at: string;
-            /** @description Кто загрузил вложение. */
-            creator_user_id: string;
-            /**
-             * Format: int64
-             * @description Размер вложения в байтах.
-             */
-            length_bytes: number | null;
-            /** @description Имя файла. */
-            file_name: string;
-            /** @description MIME-тип содержимого. */
-            mime_type: string;
-            /** @description Есть ли превью-версия. */
-            has_preview: boolean | null;
-            /** @description Сжато ли содержимое gzip. */
-            is_gzip_compressed: boolean | null;
-        };
         /** @description Шаг воспроизведения бага. */
         BugStep: {
             /** @description Идентификатор шага. */
@@ -707,7 +668,7 @@ export interface components {
              */
             updated_at: string;
             /** @description Вложения шага. `null` — не запрашивались. */
-            attachments: components["schemas"]["Attachment"][] | null;
+            attachments: components["schemas"]["AttachmentSummary"][] | null;
         };
         /** @description Комментарий к багу. */
         Comment: {
@@ -734,7 +695,7 @@ export interface components {
              */
             updated_at: string;
             /** @description Вложения комментария. `null` — не запрашивались. */
-            attachments: components["schemas"]["Attachment"][] | null;
+            attachments: components["schemas"]["AttachmentSummary"][] | null;
         };
         /**
          * @description Баг внутри репорта со всем вложенным содержимым.
@@ -773,11 +734,49 @@ export interface components {
             /** @description Тип автора — человек или бот. */
             creator_type: number;
             /** @description Вложения бага. `null` — не запрашивались. */
-            attachments: components["schemas"]["Attachment"][] | null;
+            attachments: components["schemas"]["AttachmentSummary"][] | null;
             /** @description Комментарии бага. `null` — не запрашивались. */
             comments: components["schemas"]["Comment"][] | null;
             /** @description Шаги воспроизведения. `null` — не запрашивались. */
             steps: components["schemas"]["BugStep"][] | null;
+        };
+        /**
+         * @description Баг в составе элемента списка репортов. От `Bug` отличается отсутствием
+         *     `attachments` и `steps`: LIST их не загружает — карточка репорта в списке
+         *     показывает только статусы багов и количество комментариев.
+         *
+         *     `title`, `receive` и `expect` — `required` и `nullable` по той же причине,
+         *     что и в `Bug`.
+         */
+        BugListItem: {
+            /** @description Идентификатор бага. */
+            id: number;
+            /** @description Репорт, которому принадлежит баг. */
+            report_id: number;
+            /** @description Заголовок бага. */
+            title: string | null;
+            /** @description Фактический результат. */
+            receive: string | null;
+            /** @description Ожидаемый результат. */
+            expect: string | null;
+            /**
+             * Format: date-time
+             * @description Момент создания.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+            /** @description Автор бага. */
+            creator_user_id: string;
+            /** @description Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected. */
+            status: number;
+            /** @description Тип автора — человек или бот. */
+            creator_type: number;
+            /** @description Комментарии бага. `null` — не запрашивались. */
+            comments: components["schemas"]["Comment"][] | null;
         };
         /**
          * @description Баг без вложенного содержимого — ответ на создание. Отличается от `Bug`
@@ -865,8 +864,12 @@ export interface components {
             updated_at: string;
         };
         /**
-         * @description Вложение так, как его отдают ручки загрузки и переименования: без полей
-         *     хранилища, в отличие от `Attachment` внутри репорта.
+         * @description Публичная форма вложения: только то, что нужно клиенту для отображения
+         *     и скачивания. Поля хранилища (`storage_key`, `storage_kind`,
+         *     `length_bytes`, `mime_type`, `is_gzip_compressed`) наружу не уходят.
+         *
+         *     Единая форма для всех вложений модуля: и для ручек загрузки и
+         *     переименования, и для вложений внутри репорта.
          */
         AttachmentSummary: {
             /** @description Идентификатор вложения. */
@@ -995,6 +998,44 @@ export interface components {
             /** @description Баги репорта. `null` — не запрашивались. */
             bugs: components["schemas"]["Bug"][] | null;
         };
+        /**
+         * @description Репорт в составе страницы списка. От `Report` отличается отсутствием
+         *     `links`: LIST их не загружает, и наружу они уходили только как `null`.
+         */
+        ReportListItem: {
+            /** @description Адрес репорта — тот же alias, что и в URL. */
+            id: string;
+            /** @description Заголовок репорта. */
+            title: string;
+            /** @description Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test. */
+            status: number;
+            /** @description Текущий ответственный. */
+            responsible_user_id: string;
+            /** @description Предыдущий ответственный. */
+            past_responsible_user_id: string;
+            /** @description Автор репорта. */
+            creator_user_id: string;
+            /** @description Команда автора. */
+            creator_team_id: string | null;
+            /**
+             * Format: date-time
+             * @description Момент создания.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+            /** @description Тип автора — человек или бот. */
+            creator_type: number;
+            /** @description Исключён ли репорт из агрегатов аналитики. */
+            is_excluded_from_analytics: boolean;
+            /** @description Все, кто участвовал в репорте. */
+            participants_user_ids: string[];
+            /** @description Баги репорта. `null` — не запрашивались. */
+            bugs: components["schemas"]["BugListItem"][] | null;
+        };
         /** @description Страница списка репортов. */
         ReportList: {
             /**
@@ -1003,7 +1044,7 @@ export interface components {
              */
             total: number;
             /** @description Репорты текущей страницы. */
-            reports: components["schemas"]["Report"][];
+            reports: components["schemas"]["ReportListItem"][];
         };
         /**
          * @description Имя фазы жизненного цикла репорта.

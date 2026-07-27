@@ -1,7 +1,8 @@
 import { combine, createEffect, createStore, sample } from "effector";
 
 // Импорты через публичный API других entities
-import { fetchReportsList, type ListReportsResponse } from "@/entities/report";
+import { fetchReportsList } from "@/entities/report";
+import type { ListReportsResponse } from "@/shared/api";
 import {
   loadReportsFx,
   fetchReportsUsersFx,

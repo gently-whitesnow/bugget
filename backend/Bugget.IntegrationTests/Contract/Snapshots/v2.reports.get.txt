@@ -13,11 +13,6 @@ $.bugs[].attachments[].entity_id: number
 $.bugs[].attachments[].file_name: string
 $.bugs[].attachments[].has_preview: bool
 $.bugs[].attachments[].id: number
-$.bugs[].attachments[].is_gzip_compressed: bool
-$.bugs[].attachments[].length_bytes: number
-$.bugs[].attachments[].mime_type: string
-$.bugs[].attachments[].storage_key: string
-$.bugs[].attachments[].storage_kind: number
 $.bugs[].comments: array
 $.bugs[].comments[]: object
 $.bugs[].comments[].attachments: array
@@ -29,11 +24,6 @@ $.bugs[].comments[].attachments[].entity_id: number
 $.bugs[].comments[].attachments[].file_name: string
 $.bugs[].comments[].attachments[].has_preview: bool
 $.bugs[].comments[].attachments[].id: number
-$.bugs[].comments[].attachments[].is_gzip_compressed: bool
-$.bugs[].comments[].attachments[].length_bytes: number
-$.bugs[].comments[].attachments[].mime_type: string
-$.bugs[].comments[].attachments[].storage_key: string
-$.bugs[].comments[].attachments[].storage_kind: number
 $.bugs[].comments[].audience: number
 $.bugs[].comments[].bug_id: number
 $.bugs[].comments[].created_at: string
@@ -61,11 +51,6 @@ $.bugs[].steps[].attachments[].entity_id: number
 $.bugs[].steps[].attachments[].file_name: string
 $.bugs[].steps[].attachments[].has_preview: bool
 $.bugs[].steps[].attachments[].id: number
-$.bugs[].steps[].attachments[].is_gzip_compressed: bool
-$.bugs[].steps[].attachments[].length_bytes: number
-$.bugs[].steps[].attachments[].mime_type: string
-$.bugs[].steps[].attachments[].storage_key: string
-$.bugs[].steps[].attachments[].storage_kind: number
 $.bugs[].steps[].bug_id: number
 $.bugs[].steps[].created_at: string
 $.bugs[].steps[].creator_user_id: string

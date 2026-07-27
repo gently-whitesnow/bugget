@@ -146,7 +146,7 @@ export const $allUserIdsStore = combine(
       });
       report.bugs?.forEach((bug) => {
         if (bug.creatorUserId) allIds.add(bug.creatorUserId);
-        bug.comments.forEach((comment) => {
+        bug.comments?.forEach((comment) => {
           if (comment.creatorUserId) allIds.add(comment.creatorUserId);
         });
       });

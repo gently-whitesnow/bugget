@@ -1,25 +1,14 @@
 import { createEffect, createStore, sample } from "effector";
 import { appApi, fetchUsers } from "@/shared/api";
 import { ReportStatuses } from "@/shared/config";
-import type { UserResponse } from "@/shared/api";
+import type {
+  ListReportsResponse,
+  ReportListItem,
+  UserResponse,
+} from "@/shared/api";
 
-export type ReportListItem = {
-  id: string;
-  title: string;
-  status: number;
-  responsibleUserId: string;
-  pastResponsibleUserId: string;
-  creatorUserId: string;
-  creatorTeamId?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  participantsUserIds: string[];
-};
-
-export type ListReportsResponse = {
-  total: number;
-  reports: ReportListItem[];
-};
+// Формы ответа списка выведены из контракта — см. shared/api/contracts/reports.ts
+export type { ListReportsResponse, ReportListItem };
 
 const defaultReportStatuses = [
   Number(ReportStatuses.BACKLOG),

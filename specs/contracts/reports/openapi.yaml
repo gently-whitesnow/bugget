@@ -7,10 +7,11 @@ openapi: 3.0.3
 # идёт по префиксу operationId (`Reports_`, `ReportCounts_`, `ReportLinks_`) — NSwag
 # генерирует по абстрактной базе на префикс, а DTO остаются общими на весь модуль.
 #
-# Контракт снят с работающего API 1:1: пути, имена query-параметров и формы ответов
-# описаны так, как их сегодня видит фронт. Отступления от канона AIP перечислены
+# Контракт снят с работающего API: пути, имена query-параметров и формы ответов
+# описаны так, как их видит фронт. Отступления от канона AIP перечислены
 # в specs/ADR/0005-contract-first-openapi.md — они чинятся отдельными задачами,
-# а не по ходу описания.
+# а не по ходу описания. Единственное осознанное сужение формы относительно снятой —
+# вложения и элемент списка репортов, см. там же «Сужение wire-контракта reports».
 #
 # Правится этот файл, а не .g.cs: перегенерация — scripts/quality/openapi-generate.sh.
 # Порядок схем в components/schemas определяет порядок типов в сгенерированном файле.
@@ -1153,71 +1154,6 @@ components:
           type: integer
           description: Номер репорта внутри команды.
 
-    Attachment:
-      type: object
-      description: |
-        Вложение бага, шага или комментария. Форма описана как есть: наружу
-        сегодня уходят и служебные поля хранилища (`storage_key`, `storage_kind`).
-      required:
-        - id
-        - entity_id
-        - attach_type
-        - storage_key
-        - storage_kind
-        - created_at
-        - creator_user_id
-        - length_bytes
-        - file_name
-        - mime_type
-        - has_preview
-        - is_gzip_compressed
-      properties:
-        id:
-          type: integer
-          description: Идентификатор вложения.
-        entity_id:
-          type: integer
-          description: Идентификатор сущности, к которой прикреплён файл.
-        attach_type:
-          type: integer
-          description: |-
-            Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
-            2 — комментарий, 3 — шаг воспроизведения.
-        storage_key:
-          type: string
-          nullable: true
-          description: Относительный путь либо ключ в S3.
-        storage_kind:
-          type: integer
-          nullable: true
-          description: Тип хранилища — 0 temp, 1 standard, 2 cold.
-        created_at:
-          type: string
-          format: date-time
-          description: Момент загрузки.
-        creator_user_id:
-          type: string
-          description: Кто загрузил вложение.
-        length_bytes:
-          type: integer
-          format: int64
-          nullable: true
-          description: Размер вложения в байтах.
-        file_name:
-          type: string
-          description: Имя файла.
-        mime_type:
-          type: string
-          description: MIME-тип содержимого.
-        has_preview:
-          type: boolean
-          nullable: true
-          description: Есть ли превью-версия.
-        is_gzip_compressed:
-          type: boolean
-          nullable: true
-          description: Сжато ли содержимое gzip.
-
     BugStep:
       type: object
       description: Шаг воспроизведения бага.
@@ -1259,7 +1195,7 @@ components:
           nullable: true
           description: Вложения шага. `null` — не запрашивались.
           items:
-            $ref: '#/components/schemas/Attachment'
+            $ref: '#/components/schemas/AttachmentSummary'
 
     Comment:
       type: object
@@ -1306,7 +1242,7 @@ components:
           nullable: true
           description: Вложения комментария. `null` — не запрашивались.
           items:
-            $ref: '#/components/schemas/Attachment'
+            $ref: '#/components/schemas/AttachmentSummary'
 
     Bug:
       type: object
@@ -1373,7 +1309,7 @@ components:
           nullable: true
           description: Вложения бага. `null` — не запрашивались.
           items:
-            $ref: '#/components/schemas/Attachment'
+            $ref: '#/components/schemas/AttachmentSummary'
         comments:
           type: array
           nullable: true
@@ -1386,6 +1322,70 @@ components:
           description: Шаги воспроизведения. `null` — не запрашивались.
           items:
             $ref: '#/components/schemas/BugStep'
+
+    BugListItem:
+      type: object
+      description: |
+        Баг в составе элемента списка репортов. От `Bug` отличается отсутствием
+        `attachments` и `steps`: LIST их не загружает — карточка репорта в списке
+        показывает только статусы багов и количество комментариев.
+
+        `title`, `receive` и `expect` — `required` и `nullable` по той же причине,
+        что и в `Bug`.
+      required:
+        - id
+        - report_id
+        - title
+        - receive
+        - expect
+        - created_at
+        - updated_at
+        - creator_user_id
+        - status
+        - creator_type
+        - comments
+      properties:
+        id:
+          type: integer
+          description: Идентификатор бага.
+        report_id:
+          type: integer
+          description: Репорт, которому принадлежит баг.
+        title:
+          type: string
+          nullable: true
+          description: Заголовок бага.
+        receive:
+          type: string
+          nullable: true
+          description: Фактический результат.
+        expect:
+          type: string
+          nullable: true
+          description: Ожидаемый результат.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+        creator_user_id:
+          type: string
+          description: Автор бага.
+        status:
+          type: integer
+          description: Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+        creator_type:
+          type: integer
+          description: Тип автора — человек или бот.
+        comments:
+          type: array
+          nullable: true
+          description: Комментарии бага. `null` — не запрашивались.
+          items:
+            $ref: '#/components/schemas/Comment'
 
     BugSummary:
       type: object
@@ -1523,8 +1523,12 @@ components:
     AttachmentSummary:
       type: object
       description: |
-        Вложение так, как его отдают ручки загрузки и переименования: без полей
-        хранилища, в отличие от `Attachment` внутри репорта.
+        Публичная форма вложения: только то, что нужно клиенту для отображения
+        и скачивания. Поля хранилища (`storage_key`, `storage_kind`,
+        `length_bytes`, `mime_type`, `is_gzip_compressed`) наружу не уходят.
+
+        Единая форма для всех вложений модуля: и для ручек загрузки и
+        переименования, и для вложений внутри репорта.
       required:
         - id
         - entity_id
@@ -1744,6 +1748,74 @@ components:
           items:
             $ref: '#/components/schemas/Bug'
 
+    ReportListItem:
+      type: object
+      description: |
+        Репорт в составе страницы списка. От `Report` отличается отсутствием
+        `links`: LIST их не загружает, и наружу они уходили только как `null`.
+      required:
+        - id
+        - title
+        - status
+        - responsible_user_id
+        - past_responsible_user_id
+        - creator_user_id
+        - creator_team_id
+        - created_at
+        - updated_at
+        - creator_type
+        - is_excluded_from_analytics
+        - participants_user_ids
+        - bugs
+      properties:
+        id:
+          type: string
+          description: Адрес репорта — тот же alias, что и в URL.
+        title:
+          type: string
+          description: Заголовок репорта.
+        status:
+          type: integer
+          description: Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test.
+        responsible_user_id:
+          type: string
+          description: Текущий ответственный.
+        past_responsible_user_id:
+          type: string
+          description: Предыдущий ответственный.
+        creator_user_id:
+          type: string
+          description: Автор репорта.
+        creator_team_id:
+          type: string
+          nullable: true
+          description: Команда автора.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+        creator_type:
+          type: integer
+          description: Тип автора — человек или бот.
+        is_excluded_from_analytics:
+          type: boolean
+          description: Исключён ли репорт из агрегатов аналитики.
+        participants_user_ids:
+          type: array
+          description: Все, кто участвовал в репорте.
+          items:
+            type: string
+        bugs:
+          type: array
+          nullable: true
+          description: Баги репорта. `null` — не запрашивались.
+          items:
+            $ref: '#/components/schemas/BugListItem'
+
     ReportList:
       type: object
       description: Страница списка репортов.
@@ -1759,7 +1831,7 @@ components:
           type: array
           description: Репорты текущей страницы.
           items:
-            $ref: '#/components/schemas/Report'
+            $ref: '#/components/schemas/ReportListItem'
 
     PhaseName:
       type: string

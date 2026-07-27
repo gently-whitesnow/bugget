@@ -1,58 +1,59 @@
-using Bugget.Authentication;
+using System.ComponentModel.DataAnnotations;
+using Bugget.Api.Generated.Reports;
 using Bugget.BO.Mappers;
 using Bugget.BO.Services.Reports;
 using Bugget.Entities.Authentication;
 using Bugget.Entities.Options;
 using Bugget.Entities.Views;
-using Microsoft.AspNetCore.Authorization;
+using Bugget.Mappers;
+using Bugget.Reports.Contracts.Generated;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 namespace Bugget.Controllers;
 
 /// <summary>
-/// Api для работы с репортами
+/// Поиск по репортам. Маршрут и форма ответа приходят из
+/// <c>specs/contracts/reports/openapi.yaml</c> через <see cref="SearchControllerBase"/> —
+/// ответ тот же <c>ReportList</c>, что и у списка репортов.
 /// </summary>
-[Route("/v1/reports")]
+[ApiController]
 public sealed class SearchController(
     ReportsService reportsService,
-    IOptions<ReportAliasOptions> reportAliasOptions) : ApiController
+    IOptions<ReportAliasOptions> reportAliasOptions) : SearchControllerBase
 {
-    /// <summary>
-    /// Поиск по репортам
-    /// </summary>
-    /// <returns></returns>
-    [HttpGet("search")]
-    [ProducesResponseType(typeof(ReportViews), 200)]
-    public async Task<ReportViews> SearchReportsAsync(
-        [FromQuery] string? query,
-        [FromQuery] int[]? reportStatuses,
-        [FromQuery] string? userId,
-        [FromQuery] string? teamId,
-        [FromQuery] string? sort,
-        [FromQuery] uint skip = 0,
-        [FromQuery] uint take = 10,
-        [FromQuery] short[]? creatorTypes = null
-        )
+    public override async Task<ActionResult<ReportList>> SearchReports(
+        string? query = null,
+        IEnumerable<int>? reportStatuses = null,
+        string? userId = null,
+        string? teamId = null,
+        string? sort = null,
+        // Неотрицательность skip/take генератор в атрибуты не переносит: до
+        // contract-first параметры были uint, и отрицательное значение отсекалось
+        // связыванием.
+        [Range(0, int.MaxValue)] int? skip = 0,
+        [Range(0, int.MaxValue)] int? take = 10,
+        IEnumerable<int>? creatorTypes = null,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         var (total, reports) = await reportsService.SearchReportsAsync(
             ReportMapper.ToSearchReports(
                 query,
-                reportStatuses,
+                reportStatuses?.ToArray(),
                 userId,
                 teamId,
                 user.OrganizationId,
                 sort,
-                skip,
-                take,
-                creatorTypes
+                (uint)(skip ?? 0),
+                (uint)(take ?? 10),
+                creatorTypes?.Select(type => (short)type).ToArray()
                 ));
 
         return new ReportViews
         {
             Total = total,
             Reports = reports.ToViewModel(reportAliasOptions.Value)
-        };
+        }.ToContract();
     }
 }

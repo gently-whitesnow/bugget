@@ -162,6 +162,31 @@ namespace Bugget.Api.Generated.Reports
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class SearchControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// Полнотекстовый поиск по репортам.
+        /// </summary>
+        /// <remarks>
+        /// Отдаёт ту же форму, что и список репортов, поэтому живёт в контракте
+        /// <br/>модуля reports, хотя путь остался в `/v1`. Имена параметров исторически
+        /// <br/>в camelCase, менять их нельзя: по ним ходит фронт.
+        /// </remarks>
+        /// <param name="query">Поисковая строка. Пустая — фильтрация без текстового поиска.</param>
+        /// <param name="reportStatuses">Фильтр по статусам репорта.</param>
+        /// <param name="userId">Фильтр по ответственному или участнику.</param>
+        /// <param name="teamId">Фильтр по команде-создателю.</param>
+        /// <param name="sort">Порядок сортировки результатов.</param>
+        /// <param name="skip">Сколько записей пропустить.</param>
+        /// <param name="take">Размер страницы.</param>
+        /// <param name="creatorTypes">Фильтр по типу создателя.</param>
+        /// <returns>Страница найденных репортов.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/reports/search")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ReportList>> SearchReports([Microsoft.AspNetCore.Mvc.FromQuery] string query = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<int> reportStatuses = null, [Microsoft.AspNetCore.Mvc.FromQuery] string userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string teamId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string sort = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? skip = 0, [Microsoft.AspNetCore.Mvc.FromQuery] int? take = 10, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<int> creatorTypes = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public abstract class BugsControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
     {
         /// <summary>

@@ -1,103 +1,30 @@
-using Bugget.Authentication;
+using Bugget.Api.Contracts.Settings.Generated;
+using Bugget.Api.Generated.Settings;
 using Bugget.BO.Errors;
 using Bugget.BO.Services;
 using Bugget.Entities.Authentication;
-using Bugget.Entities.Views.Settings;
 using Bugget.Extensions;
-using Microsoft.AspNetCore.Authorization;
+using Bugget.Mappers;
 using Microsoft.AspNetCore.Mvc;
-using Monade.Errors;
 
 namespace Bugget.Controllers;
 
 /// <summary>
 /// Api для управления пользовательскими, командными и рабочими настройками.
+/// Маршруты и формы приходят из <c>specs/contracts/settings/openapi.yaml</c>
+/// через <see cref="SettingsControllerBase"/>.
 /// </summary>
-public sealed class SettingsController(SettingsService settingsService) : ApiController
+/// <remarks>
+/// Авторизация по политикам (RequireOrganizationIdHeader и соседи) здесь
+/// намеренно не навешана — так было и до contract-first: в self-hosted-контуре
+/// заголовки приходят не всегда. Уровень доступа проверяется по identity в теле
+/// метода.
+/// </remarks>
+[ApiController]
+public sealed class SettingsController(SettingsService settingsService) : SettingsControllerBase
 {
-    /// <summary>
-    /// Обновить настройку рабочего пространства
-    /// </summary>
-    /// <param name="sectionId"></param>
-    /// <param name="settingId"></param>
-    /// <param name="values"></param>
-    /// <returns></returns>
-    [HttpPut("v1/workspace-settings-sections/{sectionId}/settings/{settingId}")]
-    [ProducesResponseType(typeof(WorkspaceSettingView), 200)]
-    [ProducesResponseType(typeof(BadRequestError), 400)]
-    [ProducesResponseType(typeof(NotFoundError), 404)]
-    // [Authorize(Policy = AuthPolicies.RequireOrganizationIdHeader)] TODO когда в self hosted пропадут костыли авторизации
-    public async Task<IActionResult> UpdateWorkspaceSettingAsync(
-        [FromRoute] string sectionId,
-        [FromRoute] string settingId,
-        [FromBody] string[] values)
-    {
-        var user = User.GetIdentity();
-
-        if (user.OrganizationId is null)
-        {
-            return BadRequest(BoErrors.OrganizationIdRequired);
-        }
-
-        return await settingsService.UpdateWorkspaceSettingAsync(user.OrganizationId, sectionId, settingId, values).AsActionResultAsync();
-    }
-
-    /// <summary>
-    /// Обновить настройку команды
-    /// </summary>
-    /// <param name="sectionId"></param>
-    /// <param name="settingId"></param>
-    /// <param name="values"></param>
-    /// <returns></returns>
-    [HttpPut("v1/team-settings-sections/{sectionId}/settings/{settingId}")]
-    [ProducesResponseType(typeof(TeamSettingView), 200)]
-    [ProducesResponseType(typeof(NotFoundError), 404)]
-    // [Authorize(Policy = AuthPolicies.RequireTeamIdHeader)] TODO когда в self hosted пропадут костыли авторизации 
-    public async Task<IActionResult> UpdateTeamSettingAsync(
-        [FromRoute] string sectionId,
-        [FromRoute] string settingId,
-        [FromBody] string[] values)
-    {
-        var user = User.GetIdentity();
-
-        if (user.TeamId is null)
-        {
-            return BadRequest(BoErrors.TeamIdRequired);
-        }
-
-        return await settingsService.UpdateTeamSettingAsync(user.TeamId, sectionId, settingId, values).AsActionResultAsync();
-    }
-
-    /// <summary>
-    /// Обновить настройку пользователя
-    /// </summary>
-    /// <param name="sectionId"></param>
-    /// <param name="settingId"></param>
-    /// <param name="values"></param>
-    /// <returns></returns>
-    [HttpPut("v1/user-settings-sections/{sectionId}/settings/{settingId}")]
-    [ProducesResponseType(typeof(UserSettingView), 200)]
-    [ProducesResponseType(typeof(NotFoundError), 404)]
-    // [Authorize(Policy = AuthPolicies.RequireUserIdHeader)] TODO когда в self hosted пропадут костыли авторизации
-    public Task<IActionResult> UpdateUserSettingAsync(
-        [FromRoute] string sectionId,
-        [FromRoute] string settingId,
-        [FromBody] string[] values)
-    {
-        var user = User.GetIdentity();
-
-        return settingsService.UpdateUserSettingAsync(user.Id, sectionId, settingId, values).AsActionResultAsync();
-    }
-
-    /// <summary>
-    /// Получить все секции настроек
-    /// </summary>
-    /// <returns></returns>
-    [HttpGet("v1/settings-sections")]
-    [ProducesResponseType(typeof(SettingsSectionsView), 200)]
-    [ProducesResponseType(typeof(BadRequestError), 400)]
-    // [Authorize(Policy = AuthPolicies.RequireUserIdHeader)] TODO когда в self hosted пропадут костыли авторизации
-    public async Task<IActionResult> GetSettingsSectionsAsync()
+    public override async Task<ActionResult<SettingsSections>> GetSettingsSections(
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
 
@@ -111,6 +38,56 @@ public sealed class SettingsController(SettingsService settingsService) : ApiCon
             return BadRequest(BoErrors.TeamIdRequired);
         }
 
-        return Ok(await settingsService.GetSettingsSectionsAsync(user.OrganizationId, user.TeamId, user.Id));
+        var sections = await settingsService.GetSettingsSectionsAsync(user.OrganizationId, user.TeamId, user.Id);
+        return Ok(sections.ToContract());
+    }
+
+    public override async Task<ActionResult<Setting>> UpdateWorkspaceSetting(
+        string sectionId,
+        string settingId,
+        IEnumerable<string> body,
+        CancellationToken cancellationToken = default)
+    {
+        var user = User.GetIdentity();
+
+        if (user.OrganizationId is null)
+        {
+            return BadRequest(BoErrors.OrganizationIdRequired);
+        }
+
+        return await settingsService
+            .UpdateWorkspaceSettingAsync(user.OrganizationId, sectionId, settingId, [.. body])
+            .AsContractResultAsync(view => view.ToContract());
+    }
+
+    public override async Task<ActionResult<Setting>> UpdateTeamSetting(
+        string sectionId,
+        string settingId,
+        IEnumerable<string> body,
+        CancellationToken cancellationToken = default)
+    {
+        var user = User.GetIdentity();
+
+        if (user.TeamId is null)
+        {
+            return BadRequest(BoErrors.TeamIdRequired);
+        }
+
+        return await settingsService
+            .UpdateTeamSettingAsync(user.TeamId, sectionId, settingId, [.. body])
+            .AsContractResultAsync(view => view.ToContract());
+    }
+
+    public override Task<ActionResult<Setting>> UpdateUserSetting(
+        string sectionId,
+        string settingId,
+        IEnumerable<string> body,
+        CancellationToken cancellationToken = default)
+    {
+        var user = User.GetIdentity();
+
+        return settingsService
+            .UpdateUserSettingAsync(user.Id, sectionId, settingId, [.. body])
+            .AsContractResultAsync(view => view.ToContract());
     }
 }

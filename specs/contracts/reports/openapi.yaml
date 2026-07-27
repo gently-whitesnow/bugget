@@ -286,6 +286,87 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
+  /v1/reports/search:
+    get:
+      operationId: Search_SearchReports
+      summary: Полнотекстовый поиск по репортам.
+      description: |-
+        Отдаёт ту же форму, что и список репортов, поэтому живёт в контракте
+        модуля reports, хотя путь остался в `/v1`. Имена параметров исторически
+        в camelCase, менять их нельзя: по ним ходит фронт.
+      parameters:
+        - name: query
+          in: query
+          required: false
+          description: Поисковая строка. Пустая — фильтрация без текстового поиска.
+          schema:
+            type: string
+            nullable: true
+        - name: reportStatuses
+          in: query
+          required: false
+          description: Фильтр по статусам репорта.
+          schema:
+            type: array
+            nullable: true
+            items:
+              type: integer
+        - name: userId
+          in: query
+          required: false
+          description: Фильтр по ответственному или участнику.
+          schema:
+            type: string
+            nullable: true
+        - name: teamId
+          in: query
+          required: false
+          description: Фильтр по команде-создателю.
+          schema:
+            type: string
+            nullable: true
+        - name: sort
+          in: query
+          required: false
+          description: Порядок сортировки результатов.
+          schema:
+            type: string
+            nullable: true
+        - name: skip
+          in: query
+          required: false
+          description: Сколько записей пропустить.
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: take
+          in: query
+          required: false
+          description: Размер страницы.
+          schema:
+            type: integer
+            default: 10
+            minimum: 0
+        - name: creatorTypes
+          in: query
+          required: false
+          description: Фильтр по типу создателя.
+          schema:
+            type: array
+            nullable: true
+            items:
+              type: integer
+      responses:
+        '200':
+          description: Страница найденных репортов.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
   /v2/reports/{aliasId}/bugs:
     post:
       operationId: Bugs_CreateBug

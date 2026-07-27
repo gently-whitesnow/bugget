@@ -1,3 +1,5 @@
+using Bugget.BO.ExternalSearch.Models;
+
 namespace Bugget.BO.Interfaces;
 
 public interface IExternalSearchRepository

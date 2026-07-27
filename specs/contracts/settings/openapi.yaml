@@ -1,0 +1,234 @@
+openapi: 3.0.3
+
+# Контракт модуля Settings. Источник правды для Bugget/Generated/SettingsControllerBase.g.cs
+# и Bugget/Generated/SettingsContracts.g.cs.
+#
+# DTO этого модуля генерируются прямо в проект Bugget: их потребитель — только слой
+# API. Отдельный Contracts-проект нужен там, где контрактные типы видит ещё и
+# бизнес-логика (так у analytics), — здесь этого нет.
+#
+# Контракт снят с работающего API 1:1. Правится этот файл, а не .g.cs:
+# перегенерация — scripts/quality/openapi-generate.sh.
+
+info:
+  title: Bugget Settings API
+  version: 1.0.0
+  description: |-
+    Настройки рабочего пространства, команды и пользователя. Секции и состав
+    настроек задаются кодом, наружу отдаётся текущее значение каждой из них.
+
+paths:
+
+  /v1/settings-sections:
+    get:
+      operationId: Settings_GetSettingsSections
+      summary: Все секции настроек с текущими значениями.
+      description: |-
+        Рабочее пространство, команда и пользователь берутся из identity —
+        параметров у запроса нет.
+      responses:
+        '200':
+          description: Секции настроек всех трёх уровней.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingsSections'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/workspace-settings-sections/{sectionId}/settings/{settingId}:
+    put:
+      operationId: Settings_UpdateWorkspaceSetting
+      summary: Обновить настройку рабочего пространства.
+      parameters:
+        - $ref: '#/components/parameters/SectionId'
+        - $ref: '#/components/parameters/SettingId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettingValues'
+      responses:
+        '200':
+          description: Настройка обновлена.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Setting'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/team-settings-sections/{sectionId}/settings/{settingId}:
+    put:
+      operationId: Settings_UpdateTeamSetting
+      summary: Обновить настройку команды.
+      parameters:
+        - $ref: '#/components/parameters/SectionId'
+        - $ref: '#/components/parameters/SettingId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettingValues'
+      responses:
+        '200':
+          description: Настройка обновлена.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Setting'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/user-settings-sections/{sectionId}/settings/{settingId}:
+    put:
+      operationId: Settings_UpdateUserSetting
+      summary: Обновить настройку пользователя.
+      parameters:
+        - $ref: '#/components/parameters/SectionId'
+        - $ref: '#/components/parameters/SettingId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettingValues'
+      responses:
+        '200':
+          description: Настройка обновлена.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Setting'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+
+  parameters:
+
+    SectionId:
+      name: sectionId
+      in: path
+      required: true
+      description: Идентификатор секции настроек, например `kaiten`.
+      schema:
+        type: string
+
+    SettingId:
+      name: settingId
+      in: path
+      required: true
+      description: Идентификатор настройки внутри секции, например `kaiten_url`.
+      schema:
+        type: string
+
+  schemas:
+
+    SettingValues:
+      type: array
+      description: |
+        Новое значение настройки. Всегда массив: настройка-скаляр — это массив
+        из одного элемента, булева — из строки `true`/`false`.
+      items:
+        type: string
+
+    Setting:
+      type: object
+      description: Настройка с текущим значением.
+      required:
+        - id
+        - title
+        - values
+      properties:
+        id:
+          type: string
+          description: Идентификатор настройки, например `kaiten_url`.
+        title:
+          type: string
+          description: Название настройки для UI.
+        description:
+          type: string
+          nullable: true
+          description: Пояснение к настройке.
+        is_array:
+          type: boolean
+          description: Ожидает ли настройка несколько значений.
+        is_bool:
+          type: boolean
+          description: Булева ли настройка.
+        values:
+          type: array
+          description: Текущие значения.
+          items:
+            type: string
+
+    SettingsSection:
+      type: object
+      description: Раздел настроек одного уровня.
+      required:
+        - id
+        - title
+        - settings
+      properties:
+        id:
+          type: string
+          description: Идентификатор раздела, например `kaiten`.
+        title:
+          type: string
+          description: Название раздела для UI.
+        settings:
+          type: array
+          description: Настройки раздела.
+          items:
+            $ref: '#/components/schemas/Setting'
+
+    SettingsSections:
+      type: object
+      description: |
+        Секции всех трёх уровней. Уровни разделены, потому что за каждым свой
+        владелец: рабочее пространство, команда и сам пользователь.
+      required:
+        - workspace_sections
+        - team_sections
+        - user_sections
+      properties:
+        workspace_sections:
+          type: array
+          description: Секции уровня рабочего пространства.
+          items:
+            $ref: '#/components/schemas/SettingsSection'
+        team_sections:
+          type: array
+          description: Секции уровня команды.
+          items:
+            $ref: '#/components/schemas/SettingsSection'
+        user_sections:
+          type: array
+          description: Секции уровня пользователя.
+          items:
+            $ref: '#/components/schemas/SettingsSection'
+
+  responses:
+
+    BadRequest:
+      description: Некорректные параметры запроса.
+      content:
+        application/json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Секция или настройка не найдена.
+      content:
+        application/json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ErrorResponse'

@@ -18,6 +18,13 @@
 # включает только затронутые области. Смешанный diff даёт объединение областей, а если
 # база diff не вычисляется — включаются обе (fail-open).
 #
+# Единственный ответ на вопрос «CI прошёл» даёт job ci-ok — его и стоит держать
+# required-контекстом в защите main. Прямо обязывать backend и frontend нельзя: они
+# зависят от changes, а пропущенный чек для required status checks считается пройденным,
+# то есть падение changes открывало бы мёрж вообще без проверок. ci-ok же смотрит на
+# фактические результаты зависимостей и краснеет на любом падении или отмене.
+# Новая тяжёлая область добавляется в его needs — настройки репозитория трогать не нужно.
+#
 #-----------------------------------------------------------------------------------------
 
 name: ci
@@ -159,3 +166,39 @@ jobs:
 
       - name: Verify
         run: ./scripts/quality/verify.sh --scope frontend
+
+  # Агрегирующий гейт: ровно один контекст, по которому судят весь прогон.
+  ci-ok:
+    needs: [changes, backend, frontend]
+    # always() — иначе job сам пропустится вслед за упавшей зависимостью и гейт
+    # окажется «пройденным».
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check dependency results
+        env:
+          # Проверяем needs.<job>.result, а не success(): при if: always() success()
+          # не отражает отменённые зависимости.
+          RESULT_CHANGES: ${{ needs.changes.result }}
+          RESULT_BACKEND: ${{ needs.backend.result }}
+          RESULT_FRONTEND: ${{ needs.frontend.result }}
+        run: |
+          set -uo pipefail
+
+          failed=0
+
+          for entry in "changes:$RESULT_CHANGES" "backend:$RESULT_BACKEND" "frontend:$RESULT_FRONTEND"; do
+            job="${entry%%:*}"
+            result="${entry#*:}"
+            case "$result" in
+              # skipped — легальный сценарий: область не затронута классификацией путей.
+              success|skipped) echo "$job: $result" ;;
+              *) echo "$job: $result — гейт красный"; failed=1 ;;
+            esac
+          done
+
+          if [ "$failed" -ne 0 ]; then
+            exit 1
+          fi
+
+          echo "Все области прошли."

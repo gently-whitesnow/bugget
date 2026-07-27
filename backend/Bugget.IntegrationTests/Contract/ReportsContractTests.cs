@@ -134,6 +134,36 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
     }
 
 
+    /// <summary>
+    /// Вложение внутри репорта отдаётся публичной формой <c>AttachmentSummary</c>:
+    /// служебные поля хранилища (<c>storage_key</c>, <c>storage_kind</c>,
+    /// <c>length_bytes</c>, <c>mime_type</c>, <c>is_gzip_compressed</c>) наружу
+    /// не уходят. Снимок ловит их появление, а этот тест — поимённо и во всех трёх
+    /// контекстах сразу (баг, комментарий, шаг).
+    /// </summary>
+    [Fact(DisplayName = "GET /v2/reports/{aliasId}: вложения отдают только публичные поля")]
+    public async Task GetReportHidesAttachmentStorageFields()
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var reportId = await scenario.CreateReportAsync();
+        var bugId = await scenario.CreateBugAsync(reportId);
+        var commentId = await scenario.CreateCommentAsync(reportId, bugId);
+        var stepId = await scenario.CreateStepAsync(reportId, bugId);
+        await scenario.UploadBugAttachmentAsync(reportId, bugId);
+        await scenario.UploadCommentAttachmentAsync(reportId, bugId, commentId);
+        await scenario.UploadBugStepAttachmentAsync(reportId, bugId, stepId);
+
+        var response = await scenario.Client.GetAsync($"/v2/reports/{reportId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await ContractScenario.ReadJsonAsync(response);
+        var bug = FindBug(body.GetProperty("bugs").EnumerateArray().ToArray(), bugId);
+
+        AssertPublicAttachmentShape(Single(bug.GetProperty("attachments")));
+        AssertPublicAttachmentShape(Single(Single(bug.GetProperty("comments")).GetProperty("attachments")));
+        AssertPublicAttachmentShape(Single(Single(bug.GetProperty("steps")).GetProperty("attachments")));
+    }
+
     [Fact(DisplayName = "GET /v2/reports/{aliasId}: чужой репорт не отдаётся")]
     public async Task GetForeignReport()
     {
@@ -160,17 +190,69 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         await ContractSnapshot.MatchAsync("v2.reports.patch", response);
     }
 
+    /// <summary>
+    /// Сид намеренно полный и с данными, которые LIST не отдаёт: ссылка, вложения
+    /// бага/комментария/шага и сам шаг лежат в базе, но в списке их быть не должно —
+    /// снимок это и доказывает. Второй репорт без багов держит форму пустой
+    /// коллекции, баг с одним полем из пары `receive`/`expect` — `null` в ключе.
+    /// </summary>
     [Fact(DisplayName = "GET /v2/reports: 200, total + reports")]
     public async Task ListReports()
     {
         var scenario = ContractScenario.Create(fixture);
         var reportId = await scenario.CreateReportAsync();
-        await scenario.CreateBugAsync(reportId);
+        var bugId = await scenario.CreateBugAsync(reportId);
+        var commentId = await scenario.CreateCommentAsync(reportId, bugId);
+        var stepId = await scenario.CreateStepAsync(reportId, bugId);
+        await scenario.UploadBugAttachmentAsync(reportId, bugId);
+        await scenario.UploadCommentAttachmentAsync(reportId, bugId, commentId);
+        await scenario.UploadBugStepAttachmentAsync(reportId, bugId, stepId);
+        await scenario.CreateLinkAsync(reportId);
+        await scenario.CreateOneFieldBugAsync(reportId, receive: "только факт");
+        await scenario.CreateReportAsync("contract-report-без-багов");
 
         var response = await scenario.Client.GetAsync("/v2/reports?skip=0&take=10");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         await ContractSnapshot.MatchAsync("v2.reports.list", response);
+    }
+
+    /// <summary>
+    /// LIST не загружает ссылки репорта, вложения багов и шаги воспроизведения
+    /// (см. <c>ReportsDbClient.ListReportsAsync</c>), и раньше отдавал их наружу
+    /// как `null`. Теперь у элемента списка своя форма — ключей нет вовсе.
+    /// Снимок сливает элементы массива и не отличает «ключ есть со значением null»
+    /// от «ключа нет», поэтому отсутствие проверяется здесь поэлементно.
+    /// </summary>
+    [Fact(DisplayName = "GET /v2/reports: в элементе списка нет links, вложений бага и шагов")]
+    public async Task ListReportsOmitsKeysItDoesNotLoad()
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var reportId = await scenario.CreateReportAsync();
+        var bugId = await scenario.CreateBugAsync(reportId);
+        var commentId = await scenario.CreateCommentAsync(reportId, bugId);
+        var stepId = await scenario.CreateStepAsync(reportId, bugId);
+        await scenario.UploadBugAttachmentAsync(reportId, bugId);
+        await scenario.UploadBugStepAttachmentAsync(reportId, bugId, stepId);
+        await scenario.CreateLinkAsync(reportId);
+
+        var response = await scenario.Client.GetAsync("/v2/reports?skip=0&take=10");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await ContractScenario.ReadJsonAsync(response);
+        var report = Assert.Single(
+            body.GetProperty("reports").EnumerateArray().ToArray(),
+            item => item.GetProperty("id").GetString() == reportId);
+
+        Assert.False(report.TryGetProperty("links", out _));
+
+        var bug = FindBug(report.GetProperty("bugs").EnumerateArray().ToArray(), bugId);
+        Assert.False(bug.TryGetProperty("attachments", out _));
+        Assert.False(bug.TryGetProperty("steps", out _));
+
+        // Комментарии список грузит и фронт их читает — они остаются.
+        var comment = Single(bug.GetProperty("comments"));
+        Assert.Equal(commentId, comment.GetProperty("id").GetInt32());
     }
 
     [Fact(DisplayName = "GET /v2/reports с take вне диапазона: 400")]
@@ -255,5 +337,16 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
     {
         Assert.Equal(expectedType, attachment.GetProperty("attach_type").GetInt32());
         Assert.Equal(expectedEntityId, attachment.GetProperty("entity_id").GetInt32());
+    }
+
+    private static void AssertPublicAttachmentShape(JsonElement attachment)
+    {
+        Assert.Equal(
+            new[]
+            {
+                "attach_type", "created_at", "creator_user_id", "entity_id",
+                "file_name", "has_preview", "id",
+            },
+            attachment.EnumerateObject().Select(property => property.Name).OrderBy(name => name, StringComparer.Ordinal));
     }
 }

@@ -472,103 +472,6 @@ namespace Bugget.Reports.Contracts.Generated
     }
 
     /// <summary>
-    /// Вложение бага, шага или комментария. Форма описана как есть: наружу
-    /// <br/>сегодня уходят и служебные поля хранилища (`storage_key`, `storage_kind`).
-    /// <br/>
-    /// </summary>
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Attachment
-    {
-
-        /// <summary>
-        /// Идентификатор вложения.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public int Id { get; set; }
-
-        /// <summary>
-        /// Идентификатор сущности, к которой прикреплён файл.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("entity_id")]
-        public int Entity_id { get; set; }
-
-        /// <summary>
-        /// Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
-        /// <br/>2 — комментарий, 3 — шаг воспроизведения.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("attach_type")]
-        public int Attach_type { get; set; }
-
-        /// <summary>
-        /// Относительный путь либо ключ в S3.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("storage_key")]
-        public string Storage_key { get; set; }
-
-        /// <summary>
-        /// Тип хранилища — 0 temp, 1 standard, 2 cold.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("storage_kind")]
-        public int? Storage_kind { get; set; }
-
-        /// <summary>
-        /// Момент загрузки.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("created_at")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset Created_at { get; set; }
-
-        /// <summary>
-        /// Кто загрузил вложение.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("creator_user_id")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Creator_user_id { get; set; }
-
-        /// <summary>
-        /// Размер вложения в байтах.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("length_bytes")]
-        public long? Length_bytes { get; set; }
-
-        /// <summary>
-        /// Имя файла.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("file_name")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string File_name { get; set; }
-
-        /// <summary>
-        /// MIME-тип содержимого.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("mime_type")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Mime_type { get; set; }
-
-        /// <summary>
-        /// Есть ли превью-версия.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("has_preview")]
-        public bool? Has_preview { get; set; }
-
-        /// <summary>
-        /// Сжато ли содержимое gzip.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("is_gzip_compressed")]
-        public bool? Is_gzip_compressed { get; set; }
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    /// <summary>
     /// Шаг воспроизведения бага.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -625,7 +528,7 @@ namespace Bugget.Reports.Contracts.Generated
         /// Вложения шага. `null` — не запрашивались.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("attachments")]
-        public System.Collections.Generic.IReadOnlyList<Attachment> Attachments { get; set; }
+        public System.Collections.Generic.IReadOnlyList<AttachmentSummary> Attachments { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -701,7 +604,7 @@ namespace Bugget.Reports.Contracts.Generated
         /// Вложения комментария. `null` — не запрашивались.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("attachments")]
-        public System.Collections.Generic.IReadOnlyList<Attachment> Attachments { get; set; }
+        public System.Collections.Generic.IReadOnlyList<AttachmentSummary> Attachments { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -795,7 +698,7 @@ namespace Bugget.Reports.Contracts.Generated
         /// Вложения бага. `null` — не запрашивались.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("attachments")]
-        public System.Collections.Generic.IReadOnlyList<Attachment> Attachments { get; set; }
+        public System.Collections.Generic.IReadOnlyList<AttachmentSummary> Attachments { get; set; }
 
         /// <summary>
         /// Комментарии бага. `null` — не запрашивались.
@@ -808,6 +711,99 @@ namespace Bugget.Reports.Contracts.Generated
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("steps")]
         public System.Collections.Generic.IReadOnlyList<BugStep> Steps { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Баг в составе элемента списка репортов. От `Bug` отличается отсутствием
+    /// <br/>`attachments` и `steps`: LIST их не загружает — карточка репорта в списке
+    /// <br/>показывает только статусы багов и количество комментариев.
+    /// <br/>
+    /// <br/>`title`, `receive` и `expect` — `required` и `nullable` по той же причине,
+    /// <br/>что и в `Bug`.
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BugListItem
+    {
+
+        /// <summary>
+        /// Идентификатор бага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        /// <summary>
+        /// Репорт, которому принадлежит баг.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("report_id")]
+        public int Report_id { get; set; }
+
+        /// <summary>
+        /// Заголовок бага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        public string Title { get; set; }
+
+        /// <summary>
+        /// Фактический результат.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("receive")]
+        public string Receive { get; set; }
+
+        /// <summary>
+        /// Ожидаемый результат.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("expect")]
+        public string Expect { get; set; }
+
+        /// <summary>
+        /// Момент создания.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("created_at")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset Created_at { get; set; }
+
+        /// <summary>
+        /// Момент последнего изменения.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("updated_at")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset Updated_at { get; set; }
+
+        /// <summary>
+        /// Автор бага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("creator_user_id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Creator_user_id { get; set; }
+
+        /// <summary>
+        /// Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        public int Status { get; set; }
+
+        /// <summary>
+        /// Тип автора — человек или бот.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
+        public int Creator_type { get; set; }
+
+        /// <summary>
+        /// Комментарии бага. `null` — не запрашивались.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("comments")]
+        public System.Collections.Generic.IReadOnlyList<Comment> Comments { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -1033,8 +1029,12 @@ namespace Bugget.Reports.Contracts.Generated
     }
 
     /// <summary>
-    /// Вложение так, как его отдают ручки загрузки и переименования: без полей
-    /// <br/>хранилища, в отличие от `Attachment` внутри репорта.
+    /// Публичная форма вложения: только то, что нужно клиенту для отображения
+    /// <br/>и скачивания. Поля хранилища (`storage_key`, `storage_kind`,
+    /// <br/>`length_bytes`, `mime_type`, `is_gzip_compressed`) наружу не уходят.
+    /// <br/>
+    /// <br/>Единая форма для всех вложений модуля: и для ручек загрузки и
+    /// <br/>переименования, и для вложений внутри репорта.
     /// <br/>
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -1411,6 +1411,112 @@ namespace Bugget.Reports.Contracts.Generated
     }
 
     /// <summary>
+    /// Репорт в составе страницы списка. От `Report` отличается отсутствием
+    /// <br/>`links`: LIST их не загружает, и наружу они уходили только как `null`.
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ReportListItem
+    {
+
+        /// <summary>
+        /// Адрес репорта — тот же alias, что и в URL.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Id { get; set; }
+
+        /// <summary>
+        /// Заголовок репорта.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Title { get; set; }
+
+        /// <summary>
+        /// Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        public int Status { get; set; }
+
+        /// <summary>
+        /// Текущий ответственный.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("responsible_user_id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Responsible_user_id { get; set; }
+
+        /// <summary>
+        /// Предыдущий ответственный.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("past_responsible_user_id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Past_responsible_user_id { get; set; }
+
+        /// <summary>
+        /// Автор репорта.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("creator_user_id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Creator_user_id { get; set; }
+
+        /// <summary>
+        /// Команда автора.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("creator_team_id")]
+        public string Creator_team_id { get; set; }
+
+        /// <summary>
+        /// Момент создания.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("created_at")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset Created_at { get; set; }
+
+        /// <summary>
+        /// Момент последнего изменения.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("updated_at")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset Updated_at { get; set; }
+
+        /// <summary>
+        /// Тип автора — человек или бот.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
+        public int Creator_type { get; set; }
+
+        /// <summary>
+        /// Исключён ли репорт из агрегатов аналитики.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("is_excluded_from_analytics")]
+        public bool Is_excluded_from_analytics { get; set; }
+
+        /// <summary>
+        /// Все, кто участвовал в репорте.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("participants_user_ids")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.IReadOnlyList<string> Participants_user_ids { get; set; } = new System.Collections.Generic.List<string>();
+
+        /// <summary>
+        /// Баги репорта. `null` — не запрашивались.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("bugs")]
+        public System.Collections.Generic.IReadOnlyList<BugListItem> Bugs { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
     /// Страница списка репортов.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -1428,7 +1534,7 @@ namespace Bugget.Reports.Contracts.Generated
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("reports")]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.IReadOnlyList<Report> Reports { get; set; } = new System.Collections.Generic.List<Report>();
+        public System.Collections.Generic.IReadOnlyList<ReportListItem> Reports { get; set; } = new System.Collections.Generic.List<ReportListItem>();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 

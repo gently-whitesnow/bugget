@@ -8,7 +8,12 @@ import tseslint from "typescript-eslint";
 import { noUnsafeInnerHtmlOption } from "./eslint-rules/no-unsafe-inner-html.js";
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  // src/shared/api/generated — вывод openapi-typescript из specs/contracts/**.
+  // Правится он перегенерацией (scripts/quality/frontend-openapi-generate.sh),
+  // а не руками, поэтому замечания линтера по нему нечинимы и только шумят.
+  // Так же он исключён из prettier (.prettierignore) и из LOC-бюджета
+  // (.quality/frontend-loc.json).
+  { ignores: ["dist", "src/shared/api/generated"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

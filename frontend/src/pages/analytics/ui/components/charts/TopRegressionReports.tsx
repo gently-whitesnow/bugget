@@ -8,7 +8,13 @@ type Props = {
 const TopRegressionReports = ({ reports }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const openReport = (reportId: number) => {
+  // Контракт analytics помечает обязательным только `title`, поэтому `report_id`
+  // приходит как `number | undefined`. Бекенд его всегда отдаёт; пока `required`
+  // в specs/contracts/analytics/openapi.yaml не восстановлен, без id просто
+  // не навигируем — открывать репорт №0 хуже, чем не открывать никакой.
+  const openReport = (reportId: number | undefined) => {
+    if (reportId === undefined) return;
+
     const next = new URLSearchParams(searchParams);
     next.set("section", "report");
     next.set("report", String(reportId));

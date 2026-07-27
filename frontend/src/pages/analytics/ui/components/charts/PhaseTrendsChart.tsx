@@ -6,6 +6,14 @@ type Props = {
   trends: PhaseTrendWeekly[];
 };
 
+/**
+ * Контракт analytics помечает обязательным только `iso_week`, поэтому числовые
+ * агрегаты приходят как `number | undefined`. Бекенд их всегда считает; пока
+ * `required` в specs/contracts/analytics/openapi.yaml не восстановлен, читаем
+ * их через явный ноль — то же значение, что рисовалось до типизации.
+ */
+const days = (value: number | undefined): number => value ?? 0;
+
 const formatWeek = (iso: string): string => {
   try {
     return formatIsoWeekLabel(parseIsoWeek(iso));
@@ -41,7 +49,7 @@ const PhaseTrendsChart = ({ trends }: Props) => {
   const innerHeight = chartHeight - paddingTop - paddingBottom;
   const maxValue = Math.max(
     1,
-    ...trends.flatMap((t) => [t.test_days, t.fix_days])
+    ...trends.flatMap((t) => [days(t.test_days), days(t.fix_days)])
   );
 
   const slotWidth = innerWidth / trends.length;
@@ -123,8 +131,8 @@ const PhaseTrendsChart = ({ trends }: Props) => {
               {/* Bars */}
               {trends.map((t, i) => {
                 const slotX = paddingLeft + slotWidth * i + barGroupPadding;
-                const testHeight = yScale(t.test_days);
-                const fixHeight = yScale(t.fix_days);
+                const testHeight = yScale(days(t.test_days));
+                const fixHeight = yScale(days(t.fix_days));
                 const baseY = paddingTop + innerHeight;
                 const label = formatWeek(t.iso_week);
                 const labelX = slotX + groupWidth / 2;

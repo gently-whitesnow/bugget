@@ -4,14 +4,45 @@
  */
 
 export interface paths {
-    "/v2/reports/{id}": {
+    "/v2/reports": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Список репортов для главной страницы.
+         * @description Фильтры и пагинация — параметрами запроса. Имена параметров исторически
+         *     в camelCase, менять их нельзя: по ним ходит фронт.
+         */
+        get: operations["Reports_ListReports"];
+        put?: never;
+        /**
+         * Создать репорт.
+         * @description Автор и команда берутся из identity, в теле — только заголовок.
+         *     Отвечает 200, а не 201: контроллер возвращает модель напрямую.
+         */
+        post: operations["Reports_CreateReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Получить репорт со всем содержимым.
+         * @description Отдаёт репорт вместе с багами, их шагами, комментариями и вложениями —
+         *     одним запросом на всю страницу репорта.
+         */
+        get: operations["Reports_GetReport"];
         put?: never;
         post?: never;
         delete?: never;
@@ -19,11 +50,31 @@ export interface paths {
         head?: never;
         /**
          * Частичное обновление репорта.
-         * @description T09 описывает только новое поле `is_excluded_from_analytics`.
-         *     Остальные поля PATCH-эндпоинта будут добавлены в контракт в
-         *     отдельной задаче миграции reports на contract-first.
+         * @description Поля, не переданные в теле (или переданные как `null`), не меняются —
+         *     это «не трогать», а не «обнулить».
          */
-        patch: operations["patchReport"];
+        patch: operations["Reports_PatchReport"];
+        trace?: never;
+    };
+    "/v2/reports/legacy/{legacyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Разрешить legacy-идентификатор репорта.
+         * @description Отдаёт `team_id` и `team_report_id`, по которым фронт строит редирект
+         *     со старой ссылки на текущий адрес репорта.
+         */
+        get: operations["Reports_ResolveLegacyReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v2/reports/{id}/analytics": {
@@ -40,7 +91,425 @@ export interface paths {
          *     Sub-resource на репорте: семантически аналитика принадлежит
          *     конкретному репорту, потому живёт под `/v2/reports/{id}/`.
          */
-        get: operations["getReportAnalytics"];
+        get: operations["Reports_GetReportAnalytics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/counts:batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Батч-счётчики репортов по нескольким срезам.
+         * @description Один запрос вместо N — фронт показывает счётчики всех вкладок сразу.
+         *     Организация всегда берётся из identity, в теле её нет.
+         */
+        post: operations["ReportCounts_CountReportsBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Добавить ссылку к репорту. */
+        post: operations["ReportLinks_CreateReportLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/links/{linkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Обновить ссылку репорта. */
+        put: operations["ReportLinks_UpdateReportLink"];
+        post?: never;
+        /** Удалить ссылку репорта. */
+        delete: operations["ReportLinks_DeleteReportLink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reports/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Полнотекстовый поиск по репортам.
+         * @description Отдаёт ту же форму, что и список репортов, поэтому живёт в контракте
+         *     модуля reports, хотя путь остался в `/v1`. Имена параметров исторически
+         *     в camelCase, менять их нельзя: по ним ходит фронт.
+         */
+        get: operations["Search_SearchReports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Добавить баг в репорт. */
+        post: operations["Bugs_CreateBug"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Частичное обновление бага.
+         * @description Не переданные поля не меняются. Смена `status` переводит баг по его
+         *     жизненному циклу и может двигать фазу репорта.
+         */
+        patch: operations["Bugs_PatchBug"];
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/steps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Добавить шаг воспроизведения. */
+        post: operations["BugSteps_CreateBugStep"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/steps/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Переупорядочить шаги воспроизведения.
+         * @description Порядок задаётся полным списком идентификаторов шагов. В ответе — шаги
+         *     в новом порядке.
+         */
+        put: operations["BugSteps_UpdateBugStepsOrder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Удалить шаг. */
+        delete: operations["BugSteps_DeleteBugStep"];
+        options?: never;
+        head?: never;
+        /** Изменить текст шага. */
+        patch: operations["BugSteps_PatchBugStep"];
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Добавить комментарий к багу. */
+        post: operations["Comments_CreateComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Обновить свой комментарий. */
+        put: operations["Comments_UpdateComment"];
+        post?: never;
+        /** Удалить свой комментарий. */
+        delete: operations["Comments_DeleteComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Загрузить вложение к багу.
+         * @description Тело — `multipart/form-data` с одним файлом. MIME определяется по
+         *     содержимому, а не по заголовку клиента (кроме development-окружения).
+         */
+        post: operations["BugAttachments_CreateBugAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Удалить вложение бага. */
+        delete: operations["BugAttachments_DeleteBugAttachment"];
+        options?: never;
+        head?: never;
+        /** Переименовать вложение бага. */
+        patch: operations["BugAttachments_RenameBugAttachment"];
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Скачать содержимое вложения бага. */
+        get: operations["BugAttachments_GetBugAttachmentContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Скачать превью вложения бага. */
+        get: operations["BugAttachments_GetBugAttachmentPreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Загрузить вложение к шагу воспроизведения. */
+        post: operations["BugStepAttachments_CreateBugStepAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Удалить вложение шага. */
+        delete: operations["BugStepAttachments_DeleteBugStepAttachment"];
+        options?: never;
+        head?: never;
+        /** Переименовать вложение шага. */
+        patch: operations["BugStepAttachments_RenameBugStepAttachment"];
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Скачать содержимое вложения шага. */
+        get: operations["BugStepAttachments_GetBugStepAttachmentContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Скачать превью вложения шага. */
+        get: operations["BugStepAttachments_GetBugStepAttachmentPreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Загрузить вложение к комментарию. */
+        post: operations["CommentAttachments_CreateCommentAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Удалить вложение комментария. */
+        delete: operations["CommentAttachments_DeleteCommentAttachment"];
+        options?: never;
+        head?: never;
+        /** Переименовать вложение комментария. */
+        patch: operations["CommentAttachments_RenameCommentAttachment"];
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Скачать содержимое вложения комментария. */
+        get: operations["CommentAttachments_GetCommentAttachmentContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Скачать превью вложения комментария. */
+        get: operations["CommentAttachments_GetCommentAttachmentPreview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -53,24 +522,468 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Тело создания репорта. */
+        ReportCreateRequest: {
+            /** @description Заголовок репорта. */
+            title: string;
+        };
         /**
          * @description Поля, помеченные `null`, не интерпретируются как «обнулить значение» —
-         *     это «не трогать». В T09 описано только новое поле; остальные PATCH-поля
-         *     существующего эндпоинта пока не описаны в контракте и принимаются
-         *     ad-hoc (см. TODO миграции reports).
+         *     это «не трогать».
          */
         ReportPatchRequest: {
+            /** @description Новый заголовок репорта. */
+            title?: string | null;
+            /**
+             * @description Новый статус репорта: 0 — backlog, 1 — resolved, 2 — fix,
+             *     3 — rejected, 4 — test.
+             */
+            status?: number | null;
+            /** @description Новый ответственный за репорт. */
+            responsible_user_id?: string | null;
             /**
              * @description Если `true` — репорт исключён из агрегатов аналитического модуля
              *     (отдельные счётчики, средние, distributions). `false` — учитывается
              *     (поведение по умолчанию). `null` — не менять текущее значение.
-             * @example true
              */
             is_excluded_from_analytics?: boolean | null;
         };
+        /** @description Тело создания и обновления ссылки репорта. */
+        ReportLinkRequest: {
+            /** @description Адрес ссылки. */
+            link: string;
+            /** @description Отображаемое имя ссылки. */
+            name: string;
+        };
+        /**
+         * @description Тело создания бага. Все поля опциональны на уровне транспорта: полноту
+         *     (баг без `receive` и `expect` не имеет смысла) проверяет бизнес-логика
+         *     и отвечает 400 доменной ошибкой.
+         */
+        BugRequest: {
+            /** @description Заголовок бага. */
+            title?: string | null;
+            /** @description Фактический результат. */
+            receive?: string | null;
+            /** @description Ожидаемый результат. */
+            expect?: string | null;
+        };
+        /** @description Поля бага, которые нужно изменить. Не переданные не меняются. */
+        BugPatchRequest: {
+            /** @description Заголовок бага. */
+            title?: string | null;
+            /** @description Фактический результат. */
+            receive?: string | null;
+            /** @description Ожидаемый результат. */
+            expect?: string | null;
+            /** @description Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected. */
+            status?: number | null;
+        };
+        /** @description Тело создания и обновления шага воспроизведения. */
+        BugStepRequest: {
+            /** @description Текст шага. */
+            text: string;
+        };
+        /** @description Полный список шагов бага в нужном порядке. */
+        BugStepsOrderRequest: {
+            /** @description Идентификаторы шагов в новом порядке. */
+            step_ids: number[];
+        };
+        /** @description Загружаемый файл. Один файл на запрос. */
+        AttachmentUpload: {
+            /**
+             * Format: binary
+             * @description Содержимое файла.
+             */
+            file: string;
+        };
+        /** @description Новое имя вложения. */
+        AttachmentRenameRequest: {
+            /** @description Новое имя файла. */
+            file_name: string;
+        };
+        /** @description Тело создания и обновления комментария. */
+        CommentRequest: {
+            /** @description Текст комментария. */
+            text: string;
+            /**
+             * @description 0 — внутренний (для команды, по умолчанию), 1 — внешний (пересылается
+             *     тестеру). Пропущенное поле трактуется как внутренний.
+             */
+            audience?: number | null;
+        };
+        /** @description Один срез для счётчика: ключ и фильтры, совпадающие с фильтрами LIST. */
+        ReportCountsScope: {
+            /** @description Ключ среза. Возвращается в ответе как ключ карты счётчиков. */
+            key: string;
+            /** @description Фильтр по статусам репорта. */
+            statuses?: number[] | null;
+            /** @description Фильтр по команде-создателю. */
+            team_id?: string | null;
+            /** @description Фильтр по типу создателя. */
+            creator_types?: number[] | null;
+        };
+        /**
+         * @description Набор срезов. Ключи обязаны быть уникальными, срезов не больше 50 —
+         *     иначе 400. Неизвестные поля в теле запрещены.
+         */
+        ReportCountsBatchRequest: {
+            /** @description Срезы, по которым считаются репорты. */
+            scopes: components["schemas"]["ReportCountsScope"][];
+        };
+        /** @description Счётчики по ключам срезов из запроса. */
+        ReportCountsBatchResponse: {
+            /** @description Ключ среза → количество репортов. */
+            counts: {
+                [key: string]: number;
+            };
+        };
+        /** @description Координаты репорта для редиректа со старой ссылки. */
+        LegacyReportResolve: {
+            /** @description Команда-создатель репорта. */
+            team_id: string;
+            /** @description Номер репорта внутри команды. */
+            team_report_id: number;
+        };
+        /**
+         * @description Вложение бага, шага или комментария. Форма описана как есть: наружу
+         *     сегодня уходят и служебные поля хранилища (`storage_key`, `storage_kind`).
+         */
+        Attachment: {
+            /** @description Идентификатор вложения. */
+            id: number;
+            /** @description Идентификатор сущности, к которой прикреплён файл. */
+            entity_id?: number;
+            /** @description Тип сущности: 0 — баг, 1 — комментарий, 2 — шаг. */
+            attach_type: number;
+            /** @description Относительный путь либо ключ в S3. */
+            storage_key?: string | null;
+            /** @description Тип хранилища — 0 temp, 1 standard, 2 cold. */
+            storage_kind?: number | null;
+            /**
+             * Format: date-time
+             * @description Момент загрузки.
+             */
+            created_at: string;
+            /** @description Кто загрузил вложение. */
+            creator_user_id: string;
+            /**
+             * Format: int64
+             * @description Размер вложения в байтах.
+             */
+            length_bytes?: number | null;
+            /** @description Имя файла. */
+            file_name: string;
+            /** @description MIME-тип содержимого. */
+            mime_type?: string;
+            /** @description Есть ли превью-версия. */
+            has_preview?: boolean | null;
+            /** @description Сжато ли содержимое gzip. */
+            is_gzip_compressed?: boolean | null;
+        };
+        /** @description Шаг воспроизведения бага. */
+        BugStep: {
+            /** @description Идентификатор шага. */
+            id: number;
+            /** @description Баг, которому принадлежит шаг. */
+            bug_id: number;
+            /** @description Текст шага. */
+            text: string;
+            /** @description Порядковый номер шага в баге. */
+            step_number: number;
+            /** @description Автор шага. */
+            creator_user_id: string;
+            /**
+             * Format: date-time
+             * @description Момент создания.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+            /** @description Вложения шага. `null` — не запрашивались. */
+            attachments?: components["schemas"]["Attachment"][] | null;
+        };
+        /** @description Комментарий к багу. */
+        Comment: {
+            /** @description Идентификатор комментария. */
+            id: number;
+            /** @description Баг, которому принадлежит комментарий. */
+            bug_id: number;
+            /** @description Текст комментария. */
+            text: string;
+            /** @description Автор комментария. */
+            creator_user_id: string;
+            /** @description Тип автора — человек или бот. */
+            creator_type: number;
+            /** @description 0 — внутренний (для команды), 1 — внешний (уходит тестеру). */
+            audience: number;
+            /**
+             * Format: date-time
+             * @description Момент создания.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+            /** @description Вложения комментария. `null` — не запрашивались. */
+            attachments?: components["schemas"]["Attachment"][] | null;
+        };
+        /** @description Баг внутри репорта со всем вложенным содержимым. */
+        Bug: {
+            /** @description Идентификатор бага. */
+            id: number;
+            /** @description Репорт, которому принадлежит баг. */
+            report_id: number;
+            /** @description Заголовок бага. */
+            title?: string | null;
+            /** @description Фактический результат. */
+            receive?: string | null;
+            /** @description Ожидаемый результат. */
+            expect?: string | null;
+            /**
+             * Format: date-time
+             * @description Момент создания.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+            /** @description Автор бага. */
+            creator_user_id: string;
+            /** @description Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected. */
+            status: number;
+            /** @description Тип автора — человек или бот. */
+            creator_type: number;
+            /** @description Вложения бага. `null` — не запрашивались. */
+            attachments?: components["schemas"]["Attachment"][] | null;
+            /** @description Комментарии бага. `null` — не запрашивались. */
+            comments?: components["schemas"]["Comment"][] | null;
+            /** @description Шаги воспроизведения. `null` — не запрашивались. */
+            steps?: components["schemas"]["BugStep"][] | null;
+        };
+        /**
+         * @description Баг без вложенного содержимого — ответ на создание. Отличается от `Bug`
+         *     отсутствием `report_id` и вложенных коллекций.
+         */
+        BugSummary: {
+            /** @description Идентификатор бага. */
+            id: number;
+            /** @description Заголовок бага. */
+            title?: string | null;
+            /** @description Фактический результат. */
+            receive?: string | null;
+            /** @description Ожидаемый результат. */
+            expect?: string | null;
+            /**
+             * Format: date-time
+             * @description Момент создания.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+            /** @description Автор бага. */
+            creator_user_id: string;
+            /** @description Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected. */
+            status: number;
+            /** @description Тип автора — человек или бот. */
+            creator_type: number;
+        };
+        /** @description Что изменилось в баге после PATCH. */
+        BugPatchResult: {
+            /** @description Идентификатор бага. */
+            id: number;
+            /** @description Заголовок бага. */
+            title?: string | null;
+            /** @description Фактический результат. */
+            receive: string;
+            /** @description Ожидаемый результат. */
+            expect: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+            /** @description Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected. */
+            status: number;
+        };
+        /**
+         * @description Комментарий без вложений — ответ на создание и обновление. Отличается от
+         *     `Comment` отсутствием `attachments`.
+         */
+        CommentSummary: {
+            /** @description Идентификатор комментария. */
+            id: number;
+            /** @description Баг, которому принадлежит комментарий. */
+            bug_id: number;
+            /** @description Текст комментария. */
+            text: string;
+            /** @description Автор комментария. */
+            creator_user_id: string;
+            /** @description Тип автора — человек или бот. */
+            creator_type: number;
+            /** @description 0 — внутренний (для команды), 1 — внешний (уходит тестеру). */
+            audience: number;
+            /**
+             * Format: date-time
+             * @description Момент создания.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+        };
+        /**
+         * @description Вложение так, как его отдают ручки загрузки и переименования: без полей
+         *     хранилища, в отличие от `Attachment` внутри репорта.
+         */
+        AttachmentSummary: {
+            /** @description Идентификатор вложения. */
+            id: number;
+            /** @description Идентификатор сущности, к которой прикреплён файл. */
+            entity_id: number;
+            /** @description Тип сущности: 0 — баг, 1 — комментарий, 2 — шаг. */
+            attach_type: number;
+            /**
+             * Format: date-time
+             * @description Момент загрузки.
+             */
+            created_at: string;
+            /** @description Кто загрузил вложение. */
+            creator_user_id: string;
+            /** @description Имя файла. */
+            file_name: string;
+            /** @description Есть ли превью-версия. */
+            has_preview: boolean;
+        };
+        /** @description Внешняя ссылка, прикреплённая к репорту. */
+        ReportLink: {
+            /** @description Идентификатор ссылки. */
+            id: number;
+            /** @description Репорт, которому принадлежит ссылка. */
+            report_id: number;
+            /** @description Адрес ссылки. */
+            link: string;
+            /** @description Отображаемое имя ссылки. */
+            name: string;
+            /**
+             * Format: date-time
+             * @description Момент создания.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+        };
+        /** @description Репорт без вложенного содержимого — ответ на создание. */
+        ReportSummary: {
+            /** @description Адрес репорта — тот же alias, что и в URL. */
+            id: string;
+            /** @description Заголовок репорта. */
+            title: string;
+            /** @description Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test. */
+            status: number;
+            /** @description Текущий ответственный. */
+            responsible_user_id: string;
+            /** @description Предыдущий ответственный. */
+            past_responsible_user_id: string;
+            /** @description Автор репорта. */
+            creator_user_id: string;
+            /** @description Команда автора. */
+            creator_team_id?: string | null;
+            /**
+             * Format: date-time
+             * @description Момент создания.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+            /** @description Тип автора — человек или бот. */
+            creator_type: number;
+        };
+        /** @description Что изменилось в репорте после PATCH. */
+        ReportPatchResult: {
+            /** @description Адрес репорта — тот же alias, что и в URL. */
+            id: string;
+            /** @description Заголовок репорта. */
+            title: string;
+            /** @description Статус репорта. */
+            status: number;
+            /** @description Текущий ответственный. */
+            responsible_user_id: string;
+            /** @description Предыдущий ответственный. */
+            past_responsible_user_id: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+        };
+        /** @description Репорт со всем содержимым страницы. */
+        Report: {
+            /** @description Адрес репорта — тот же alias, что и в URL. */
+            id: string;
+            /** @description Заголовок репорта. */
+            title: string;
+            /** @description Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test. */
+            status: number;
+            /** @description Текущий ответственный. */
+            responsible_user_id: string;
+            /** @description Предыдущий ответственный. */
+            past_responsible_user_id: string;
+            /** @description Автор репорта. */
+            creator_user_id: string;
+            /** @description Команда автора. */
+            creator_team_id?: string | null;
+            /**
+             * Format: date-time
+             * @description Момент создания.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Момент последнего изменения.
+             */
+            updated_at: string;
+            /** @description Тип автора — человек или бот. */
+            creator_type: number;
+            /** @description Исключён ли репорт из агрегатов аналитики. */
+            is_excluded_from_analytics: boolean;
+            /** @description Все, кто участвовал в репорте. */
+            participants_user_ids: string[];
+            /** @description Ссылки репорта. `null` — не запрашивались. */
+            links?: components["schemas"]["ReportLink"][] | null;
+            /** @description Баги репорта. `null` — не запрашивались. */
+            bugs?: components["schemas"]["Bug"][] | null;
+        };
+        /** @description Страница списка репортов. */
+        ReportList: {
+            /**
+             * Format: int64
+             * @description Сколько всего репортов подходит под фильтры.
+             */
+            total: number;
+            /** @description Репорты текущей страницы. */
+            reports: components["schemas"]["Report"][];
+        };
         /**
          * @description Имя фазы жизненного цикла репорта.
-         * @example Test
          * @enum {string}
          */
         PhaseName: "Test" | "Fix";
@@ -87,93 +1000,73 @@ export interface components {
              * @description Момент выхода из фазы. `null` — если фаза ещё активна.
              */
             exited_at?: string | null;
-            /**
-             * Format: double
-             * @description Длительность фазы в днях. `null` для активной фазы (`exited_at == null`).
-             */
+            /** @description Длительность фазы в днях. `null` для активной фазы (`exited_at == null`). */
             duration_days?: number | null;
             /**
-             * Format: int32
              * @description Индекс цикла, к которому относится фаза (0 — первичный проход,
              *     1 — первый retest и т.д.).
-             * @example 0
              */
-            regression_cycle_index: number;
+            regression_cycle_index?: number;
         };
         /** @description Снимок распределения багов репорта по статусам на момент запроса. */
         AnalyticsReportBugsByStatus: {
-            /**
-             * Format: int32
-             * @description Багов в статусе `open`.
-             * @example 2
-             */
-            open: number;
-            /**
-             * Format: int32
-             * @description Багов в статусе `fixed`.
-             * @example 5
-             */
-            fixed: number;
-            /**
-             * Format: int32
-             * @description Багов в статусе `verified`.
-             * @example 8
-             */
-            verified: number;
-            /**
-             * Format: int32
-             * @description Багов в статусе `rejected`.
-             * @example 1
-             */
-            rejected: number;
+            /** @description Багов в статусе `open`. */
+            open?: number;
+            /** @description Багов в статусе `fixed`. */
+            fixed?: number;
+            /** @description Багов в статусе `verified`. */
+            verified?: number;
+            /** @description Багов в статусе `rejected`. */
+            rejected?: number;
         };
         /** @description Детальная фазовая аналитика одного репорта. */
         AnalyticsReport: {
             /**
              * Format: int64
              * @description ID репорта.
-             * @example 42
              */
-            report_id: number;
+            report_id?: number;
             /** @description Полный таймлайн фаз в порядке возрастания `entered_at`. */
             phase_timeline: components["schemas"]["AnalyticsReportPhaseEntry"][];
             /**
-             * Format: int32
              * @description Кол-во полных regression-циклов (Test → Fix → Test). 0 — репорт
              *     прошёл по «прямому» пути.
-             * @example 1
              */
-            regression_cycles: number;
+            regression_cycles?: number;
             bugs_by_status: components["schemas"]["AnalyticsReportBugsByStatus"];
             /**
-             * Format: int32
              * @description Сколько багов добавлено в репорт во время повторных Test-фаз
              *     (regression_cycle_index ≥ 1).
-             * @example 3
              */
-            bugs_added_during_regression: number;
+            bugs_added_during_regression?: number;
         };
         /**
          * @description Канонический формат ошибки для всех API в bugget/. Не RFC 7807 — намеренно (см. ADR-20260518).
          *     Используется JSON wire-форма snake_case.
          */
         ErrorResponse: {
-            /**
-             * @description Машинно-читаемый код ошибки. Стабильный.
-             * @example forbidden
-             */
+            /** @description Машинно-читаемый код ошибки. Стабильный. */
             error: string;
-            /**
-             * @description Человекочитаемая причина для логов/UI.
-             * @example Workspace membership required
-             */
+            /** @description Человекочитаемая причина для логов/UI. */
             reason: string;
             /** @description Опциональный список структурных ошибок (валидации полей и т.п.). */
             error_list?: string[];
         };
     };
     responses: {
-        /** @description Невалидный запрос. */
+        /**
+         * @description Содержимое файла. Content-Type — MIME сохранённого вложения, для сжатых
+         *     вложений добавляется `Content-Encoding: gzip`.
+         */
+        AttachmentContent: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        /** @description Некорректные параметры запроса. */
         BadRequest: {
             headers: {
                 [name: string]: unknown;
@@ -182,48 +1075,126 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
-        /** @description Пользователь не аутентифицирован. */
-        Unauthorized: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Нет прав на редактирование репорта. */
-        Forbidden: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Репорт не найден. */
-        NotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
     };
-    parameters: never;
+    parameters: {
+        /**
+         * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+         *     по которому фронт строит ссылки.
+         */
+        AliasId: string;
+        /** @description Идентификатор ссылки репорта. */
+        LinkId: number;
+        /** @description Идентификатор бага внутри репорта. */
+        BugId: number;
+        /** @description Идентификатор шага воспроизведения. */
+        StepId: number;
+        /** @description Идентификатор комментария. */
+        CommentId: number;
+        /** @description Идентификатор вложения. */
+        AttachmentId: number;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    patchReport: {
+    Reports_ListReports: {
+        parameters: {
+            query?: {
+                /** @description Фильтр по ответственному или участнику. */
+                userId?: string | null;
+                /** @description Фильтр по команде-создателю. */
+                teamId?: string | null;
+                /** @description Фильтр по статусам репорта (числовые значения `ReportStatus`). */
+                reportStatuses?: number[] | null;
+                /** @description Фильтр по типу создателя (числовые значения `CreatorType`). */
+                creatorTypes?: number[] | null;
+                /** @description Сколько записей пропустить. */
+                skip?: number;
+                /** @description Размер страницы. */
+                take?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Страница репортов и общее количество. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    Reports_CreateReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Репорт создан. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    Reports_GetReport: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description Идентификатор репорта. */
-                id: number;
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Репорт найден. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    Reports_PatchReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
             };
             cookie?: never;
         };
@@ -234,19 +1205,48 @@ export interface operations {
         };
         responses: {
             /** @description Репорт обновлён. */
-            204: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportPatchResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    Reports_ResolveLegacyReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Сквозной идентификатор репорта из старой схемы адресов. */
+                legacyId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Идентификатор разрешён. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyReportResolve"];
+                };
+            };
+            /** @description Репорт не найден либо у него нет команды и номера в команде. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
         };
     };
-    getReportAnalytics: {
+    Reports_GetReportAnalytics: {
         parameters: {
             query?: never;
             header?: never;
@@ -267,9 +1267,913 @@ export interface operations {
                     "application/json": components["schemas"]["AnalyticsReport"];
                 };
             };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    ReportCounts_CountReportsBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportCountsBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Счётчики по ключам из запроса. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportCountsBatchResponse"];
+                };
+            };
+            /**
+             * @description Некорректный запрос: срезов нет, их больше лимита, ключ пустой либо
+             *     повторяется. Тело — `{"error": "..."}` с полями, зависящими от причины.
+             */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportLinks_CreateReportLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Ссылка добавлена. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportLink"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    ReportLinks_UpdateReportLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор ссылки репорта. */
+                linkId: components["parameters"]["LinkId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Ссылка обновлена. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportLink"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    ReportLinks_DeleteReportLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор ссылки репорта. */
+                linkId: components["parameters"]["LinkId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ссылка удалена. Тело пустое. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    Search_SearchReports: {
+        parameters: {
+            query?: {
+                /** @description Поисковая строка. Пустая — фильтрация без текстового поиска. */
+                query?: string | null;
+                /** @description Фильтр по статусам репорта. */
+                reportStatuses?: number[] | null;
+                /** @description Фильтр по ответственному или участнику. */
+                userId?: string | null;
+                /** @description Фильтр по команде-создателю. */
+                teamId?: string | null;
+                /** @description Порядок сортировки результатов. */
+                sort?: string | null;
+                /** @description Сколько записей пропустить. */
+                skip?: number;
+                /** @description Размер страницы. */
+                take?: number;
+                /** @description Фильтр по типу создателя. */
+                creatorTypes?: number[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Страница найденных репортов. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    Bugs_CreateBug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BugRequest"];
+            };
+        };
+        responses: {
+            /** @description Баг добавлен. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BugSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    Bugs_PatchBug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BugPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Баг обновлён. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BugPatchResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugSteps_CreateBugStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BugStepRequest"];
+            };
+        };
+        responses: {
+            /** @description Шаг добавлен. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BugStep"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugSteps_UpdateBugStepsOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BugStepsOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Новый порядок применён. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BugStep"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugSteps_DeleteBugStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор шага воспроизведения. */
+                stepId: components["parameters"]["StepId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Шаг удалён. Тело пустое. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugSteps_PatchBugStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор шага воспроизведения. */
+                stepId: components["parameters"]["StepId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BugStepRequest"];
+            };
+        };
+        responses: {
+            /** @description Шаг обновлён. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BugStep"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    Comments_CreateComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Комментарий добавлен. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    Comments_UpdateComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор комментария. */
+                commentId: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Комментарий обновлён. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    Comments_DeleteComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор комментария. */
+                commentId: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Комментарий удалён. Тело пустое. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugAttachments_CreateBugAttachment: {
+        parameters: {
+            query: {
+                /** @description К чему относится вложение — 0 факт, 1 ожидание. */
+                attachType: number;
+            };
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["AttachmentUpload"];
+            };
+        };
+        responses: {
+            /** @description Вложение сохранено. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugAttachments_DeleteBugAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Вложение удалено. Тело пустое. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugAttachments_RenameBugAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachmentRenameRequest"];
+            };
+        };
+        responses: {
+            /** @description Вложение переименовано. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugAttachments_GetBugAttachmentContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AttachmentContent"];
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugAttachments_GetBugAttachmentPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AttachmentContent"];
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugStepAttachments_CreateBugStepAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор шага воспроизведения. */
+                stepId: components["parameters"]["StepId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["AttachmentUpload"];
+            };
+        };
+        responses: {
+            /** @description Вложение сохранено. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugStepAttachments_DeleteBugStepAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор шага воспроизведения. */
+                stepId: components["parameters"]["StepId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Вложение удалено. Тело пустое. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugStepAttachments_RenameBugStepAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор шага воспроизведения. */
+                stepId: components["parameters"]["StepId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachmentRenameRequest"];
+            };
+        };
+        responses: {
+            /** @description Вложение переименовано. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugStepAttachments_GetBugStepAttachmentContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор шага воспроизведения. */
+                stepId: components["parameters"]["StepId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AttachmentContent"];
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    BugStepAttachments_GetBugStepAttachmentPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор шага воспроизведения. */
+                stepId: components["parameters"]["StepId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AttachmentContent"];
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    CommentAttachments_CreateCommentAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор комментария. */
+                commentId: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["AttachmentUpload"];
+            };
+        };
+        responses: {
+            /** @description Вложение сохранено. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    CommentAttachments_DeleteCommentAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор комментария. */
+                commentId: components["parameters"]["CommentId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Вложение удалено. Тело пустое. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    CommentAttachments_RenameCommentAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор комментария. */
+                commentId: components["parameters"]["CommentId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachmentRenameRequest"];
+            };
+        };
+        responses: {
+            /** @description Вложение переименовано. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    CommentAttachments_GetCommentAttachmentContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор комментария. */
+                commentId: components["parameters"]["CommentId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AttachmentContent"];
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    CommentAttachments_GetCommentAttachmentPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+                /** @description Идентификатор комментария. */
+                commentId: components["parameters"]["CommentId"];
+                /** @description Идентификатор вложения. */
+                id: components["parameters"]["AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AttachmentContent"];
+            400: components["responses"]["BadRequest"];
         };
     };
 }

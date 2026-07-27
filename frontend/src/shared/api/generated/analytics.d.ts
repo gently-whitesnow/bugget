@@ -20,7 +20,7 @@ export interface paths {
          *     Опциональный `teamId` фильтрует выборку по `creator_team_id`. Shape ответа
          *     не меняется (`AnalyticsSummary`), независимо от наличия фильтра.
          */
-        get: operations["getAnalyticsSummary"];
+        get: operations["GetAnalyticsSummary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -41,7 +41,7 @@ export interface paths {
          * @description Списки репортов, в которых пользователь участвовал / завершил, плюс
          *     средняя длительность fix-фазы. UserId — строка (см. shared.yaml UserId).
          */
-        get: operations["getAnalyticsByResponsible"];
+        get: operations["GetAnalyticsByResponsible"];
         put?: never;
         post?: never;
         delete?: never;
@@ -56,13 +56,11 @@ export interface components {
     schemas: {
         /**
          * @description Имя фазы жизненного цикла репорта.
-         * @example Test
          * @enum {string}
          */
         PhaseName: "Test" | "Fix";
         /**
          * @description Финальный исход репорта для метрики `reports_completed`.
-         * @example Resolved
          * @enum {string}
          */
         ResponsibleOutcome: "Resolved" | "Rejected";
@@ -72,23 +70,11 @@ export interface components {
          *     не оказалось данных по соответствующей фазе.
          */
         AvgPhaseDurationDays: {
-            /**
-             * Format: double
-             * @description Среднее время первичной фазы Test (от первой записи до перехода в Fix).
-             * @example 2.5
-             */
-            test_initial: number;
-            /**
-             * Format: double
-             * @description Среднее время повторных Test-фаз после Fix (regression retest).
-             * @example 1.2
-             */
+            /** @description Среднее время первичной фазы Test (от первой записи до перехода в Fix). */
+            test_initial?: number;
+            /** @description Среднее время повторных Test-фаз после Fix (regression retest). */
             test_retest?: number | null;
-            /**
-             * Format: double
-             * @description Среднее время фаз Fix.
-             * @example 1.8
-             */
+            /** @description Среднее время фаз Fix. */
             fix?: number | null;
         };
         /**
@@ -96,64 +82,33 @@ export interface components {
          *     Значения нормализованы (`test_pct + fix_pct ≈ 1.0`).
          */
         PhaseTimeDistribution: {
-            /**
-             * Format: double
-             * @description Доля времени в фазе Test (0..1).
-             * @example 0.62
-             */
-            test_pct: number;
-            /**
-             * Format: double
-             * @description Доля времени в фазе Fix (0..1).
-             * @example 0.38
-             */
-            fix_pct: number;
+            /** @description Доля времени в фазе Test (0..1). */
+            test_pct?: number;
+            /** @description Доля времени в фазе Fix (0..1). */
+            fix_pct?: number;
         };
         /** @description Один элемент top-10 регрессионных репортов. */
         TopRegressionReport: {
             /**
              * Format: int64
              * @description ID репорта.
-             * @example 123
              */
-            report_id: number;
-            /**
-             * @description Заголовок репорта.
-             * @example Кнопка отмены не работает после оплаты
-             */
+            report_id?: number;
+            /** @description Заголовок репорта. */
             title: string;
-            /**
-             * Format: int32
-             * @description Кол-во regression-циклов (Test → Fix → Test).
-             * @example 3
-             */
-            regression_cycles: number;
+            /** @description Кол-во regression-циклов (Test → Fix → Test). */
+            regression_cycles?: number;
         };
         /** @description Один пункт еженедельного тренда по фазам. */
         PhaseTrendWeekly: {
-            /**
-             * @description ISO-неделя в формате `YYYY-Www` (см. ISO 8601).
-             * @example 2026-W18
-             */
+            /** @description ISO-неделя в формате `YYYY-Www` (см. ISO 8601). */
             iso_week: string;
-            /**
-             * Format: double
-             * @description Совокупное время фазы Test за неделю в днях.
-             * @example 12.5
-             */
-            test_days: number;
-            /**
-             * Format: double
-             * @description Совокупное время фазы Fix за неделю в днях.
-             * @example 7.8
-             */
-            fix_days: number;
-            /**
-             * Format: int32
-             * @description Сколько репортов закрыто за неделю.
-             * @example 4
-             */
-            reports_closed: number;
+            /** @description Совокупное время фазы Test за неделю в днях. */
+            test_days?: number;
+            /** @description Совокупное время фазы Fix за неделю в днях. */
+            fix_days?: number;
+            /** @description Сколько репортов закрыто за неделю. */
+            reports_closed?: number;
         };
         /**
          * @description Сводная аналитика по workspace (или по команде — фильтр `creator_team_id`).
@@ -163,31 +118,19 @@ export interface components {
             period: components["schemas"]["Period"];
             avg_phase_duration_days: components["schemas"]["AvgPhaseDurationDays"];
             /**
-             * Format: double
              * @description Среднее время полного цикла репорта (от создания до закрытия),
              *     в днях. `null` — если в окне нет закрытых репортов.
-             * @example 6.4
              */
             avg_full_cycle_days?: number | null;
+            /** @description Доля репортов, ушедших на хотя бы один regression-цикл (0..1). */
+            rework_rate?: number;
             /**
-             * Format: double
-             * @description Доля репортов, ушедших на хотя бы один regression-цикл (0..1).
-             * @example 0.27
-             */
-            rework_rate: number;
-            /**
-             * Format: double
              * @description Среднее число regression-циклов среди репортов, где они > 0.
              *     `null` — если в окне нет таких репортов.
-             * @example 1.6
              */
             avg_regression_cycles_when_present?: number | null;
-            /**
-             * Format: int32
-             * @description Количество закрытых репортов в окне.
-             * @example 18
-             */
-            reports_closed: number;
+            /** @description Количество закрытых репортов в окне. */
+            reports_closed?: number;
             phase_time_distribution: components["schemas"]["PhaseTimeDistribution"];
             /** @description Топ-10 репортов с максимальным числом regression-циклов. */
             top_regression_reports: components["schemas"]["TopRegressionReport"][];
@@ -196,23 +139,15 @@ export interface components {
         };
         /** @description Репорт, в котором пользователь сейчас участвует. */
         AnalyticsResponsibleParticipatedReport: {
-            /**
-             * Format: int64
-             * @example 17
-             */
-            report_id: number;
-            /** @example Падение на push-уведомлении */
+            /** Format: int64 */
+            report_id?: number;
             title: string;
             current_phase: components["schemas"]["PhaseName"];
         };
         /** @description Завершённый репорт пользователя. */
         AnalyticsResponsibleCompletedReport: {
-            /**
-             * Format: int64
-             * @example 9
-             */
-            report_id: number;
-            /** @example Сохранение пустой формы */
+            /** Format: int64 */
+            report_id?: number;
             title: string;
             /** Format: date-time */
             closed_at: string;
@@ -226,10 +161,8 @@ export interface components {
             /** @description Репорты, завершённые пользователем в окне периода. */
             reports_completed: components["schemas"]["AnalyticsResponsibleCompletedReport"][];
             /**
-             * Format: double
              * @description Средняя длительность fix-фаз пользователя в днях.
              *     `null` — если в окне нет fix-фаз с его участием.
-             * @example 1.4
              */
             avg_fix_phase_days?: number | null;
         };
@@ -245,10 +178,7 @@ export interface components {
              * @description Верхняя граница (исключительно).
              */
             to: string;
-            /**
-             * @description Человекочитаемый ярлык периода.
-             * @example last-7-days
-             */
+            /** @description Человекочитаемый ярлык периода. */
             label: string;
         };
         /**
@@ -256,28 +186,21 @@ export interface components {
          *     Используется JSON wire-форма snake_case.
          */
         ErrorResponse: {
-            /**
-             * @description Машинно-читаемый код ошибки. Стабильный.
-             * @example forbidden
-             */
+            /** @description Машинно-читаемый код ошибки. Стабильный. */
             error: string;
-            /**
-             * @description Человекочитаемая причина для логов/UI.
-             * @example Workspace membership required
-             */
+            /** @description Человекочитаемая причина для логов/UI. */
             reason: string;
             /** @description Опциональный список структурных ошибок (валидации полей и т.п.). */
             error_list?: string[];
         };
         /**
-         * @description Идентификатор пользователя как строка. Backend хранит `long`, но wire-формат —
-         *     строка во избежание потери точности в JS Number.
-         * @example 1234567890
+         * @description Идентификатор пользователя. Строка, а не число: источник — внешний
+         *     провайдер аутентификации, формат идентификатора им и определяется.
          */
         UserId: string;
     };
     responses: {
-        /** @description Невалидный запрос (например, неизвестное значение `period`). */
+        /** @description Некорректные параметры запроса. */
         BadRequest: {
             headers: {
                 [name: string]: unknown;
@@ -286,52 +209,15 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
-        /** @description Пользователь не аутентифицирован. */
-        Unauthorized: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Нет прав на запрошенный workspace/team/user-scope. */
-        Forbidden: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Ресурс не найден (репорт / команда / пользователь). */
-        NotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
     };
-    parameters: {
-        /**
-         * @description Период агрегации. Допустимые значения — фиксированный список
-         *     (`7d`, `30d`, `60d`, `180d`, `360d`, `all`). Конкретные границы
-         *     `from`/`to` возвращаются в ответе (`Period`).
-         *
-         *     Wire-формат — простая строка, чтобы не плодить enum со «странными»
-         *     C#-идентификаторами (`_30d`) после кодогенерации NSwag.
-         */
-        PeriodQuery: string;
-    };
+    parameters: never;
     requestBodies: never;
     headers: never;
     pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    getAnalyticsSummary: {
+    GetAnalyticsSummary: {
         parameters: {
             query: {
                 /**
@@ -342,7 +228,7 @@ export interface operations {
                  *     Wire-формат — простая строка, чтобы не плодить enum со «странными»
                  *     C#-идентификаторами (`_30d`) после кодогенерации NSwag.
                  */
-                period: components["parameters"]["PeriodQuery"];
+                period: string;
                 /**
                  * @description Опциональный фильтр по команде-создателю (`creator_team_id`). Без него —
                  *     аналитика по всему workspace.
@@ -365,11 +251,9 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
         };
     };
-    getAnalyticsByResponsible: {
+    GetAnalyticsByResponsible: {
         parameters: {
             query: {
                 /**
@@ -380,7 +264,7 @@ export interface operations {
                  *     Wire-формат — простая строка, чтобы не плодить enum со «странными»
                  *     C#-идентификаторами (`_30d`) после кодогенерации NSwag.
                  */
-                period: components["parameters"]["PeriodQuery"];
+                period: string;
             };
             header?: never;
             path: {
@@ -401,9 +285,6 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
         };
     };
 }

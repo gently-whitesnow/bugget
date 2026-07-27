@@ -68,7 +68,9 @@ const AnalyticsReport = ({ reportId }: Props) => {
     return null;
   }
 
-  const regressionDetected = report.bugs_added_during_regression > 0;
+  // Счётчик необязателен по контракту analytics (см. TopRegressionReports):
+  // отсутствующее значение читаем как ноль — регрессии не было.
+  const regressionDetected = (report.bugs_added_during_regression ?? 0) > 0;
 
   return (
     <div className="flex flex-col gap-4">

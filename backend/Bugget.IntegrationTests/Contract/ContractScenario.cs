@@ -99,6 +99,41 @@ internal sealed class ContractScenario
         return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
     }
 
+    /// <summary>
+    /// Вложение комментария. Тип вложения здесь не параметр запроса: сервер сам ставит
+    /// <c>attach_type = 2</c>, а <c>entity_id</c> — идентификатор комментария.
+    /// </summary>
+    public async Task<int> UploadCommentAttachmentAsync(
+        string reportId,
+        int bugId,
+        int commentId,
+        string fileName = "comment.png")
+    {
+        var response = await Client.PostAsync(
+            $"/v2/reports/{reportId}/bugs/{bugId}/comments/{commentId}/attachments",
+            FileContent(fileName));
+        await AssertSuccessAsync(response, "POST .../comments/{commentId}/attachments");
+
+        return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
+    }
+
+    /// <summary>
+    /// Вложение шага. Сервер ставит <c>attach_type = 3</c>, <c>entity_id</c> — идентификатор шага.
+    /// </summary>
+    public async Task<int> UploadBugStepAttachmentAsync(
+        string reportId,
+        int bugId,
+        int stepId,
+        string fileName = "step.png")
+    {
+        var response = await Client.PostAsync(
+            $"/v2/reports/{reportId}/bugs/{bugId}/steps/{stepId}/attachments",
+            FileContent(fileName));
+        await AssertSuccessAsync(response, "POST .../steps/{stepId}/attachments");
+
+        return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
+    }
+
     public async Task<int> CreateCommentAsync(string reportId, int bugId)
     {
         var response = await Client.PostAsJsonAsync(

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
@@ -50,9 +51,11 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         var scenario = ContractScenario.Create(fixture);
         var reportId = await scenario.CreateReportAsync();
         var bugId = await scenario.CreateBugAsync(reportId);
-        await scenario.CreateCommentAsync(reportId, bugId);
-        await scenario.CreateStepAsync(reportId, bugId);
+        var commentId = await scenario.CreateCommentAsync(reportId, bugId);
+        var stepId = await scenario.CreateStepAsync(reportId, bugId);
         await scenario.UploadBugAttachmentAsync(reportId, bugId);
+        await scenario.UploadCommentAttachmentAsync(reportId, bugId, commentId);
+        await scenario.UploadBugStepAttachmentAsync(reportId, bugId, stepId);
         await scenario.CreateLinkAsync(reportId);
         await scenario.CreateOneFieldBugAsync(reportId, receive: "только факт");
         await scenario.CreateOneFieldBugAsync(reportId, expect: "только ожидание");
@@ -62,6 +65,74 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         await ContractSnapshot.MatchAsync("v2.reports.get", response);
     }
+
+    /// <summary>
+    /// Снимок сливает элементы массива в одну строку и поэтому не отличает «ключ есть
+    /// со значением `null`» от «ключа нет у этого элемента». Инвариант `required` =
+    /// присутствие ключа проверяется здесь поэлементно: у бага с одним заполненным
+    /// полем из пары `receive`/`expect` второй ключ обязан быть в объекте — со
+    /// значением `null`.
+    /// </summary>
+    [Fact(DisplayName = "GET /v2/reports/{aliasId}: у бага с одним полем оба ключа присутствуют, пустой — null")]
+    public async Task GetReportKeepsBothNullableBugKeys()
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var reportId = await scenario.CreateReportAsync();
+        var receiveOnlyId = await scenario.CreateOneFieldBugAsync(reportId, receive: "только факт");
+        var expectOnlyId = await scenario.CreateOneFieldBugAsync(reportId, expect: "только ожидание");
+
+        var response = await scenario.Client.GetAsync($"/v2/reports/{reportId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await ContractScenario.ReadJsonAsync(response);
+        var bugs = body.GetProperty("bugs").EnumerateArray().ToArray();
+
+        var receiveOnly = FindBug(bugs, receiveOnlyId);
+        Assert.Equal("только факт", receiveOnly.GetProperty("receive").GetString());
+        Assert.Equal(JsonValueKind.Null, receiveOnly.GetProperty("expect").ValueKind);
+        Assert.Equal(JsonValueKind.Null, receiveOnly.GetProperty("title").ValueKind);
+
+        var expectOnly = FindBug(bugs, expectOnlyId);
+        Assert.Equal("только ожидание", expectOnly.GetProperty("expect").GetString());
+        Assert.Equal(JsonValueKind.Null, expectOnly.GetProperty("receive").ValueKind);
+        Assert.Equal(JsonValueKind.Null, expectOnly.GetProperty("title").ValueKind);
+    }
+
+    /// <summary>
+    /// Вложения всех трёх контекстов лежат в одной таблице и группируются по
+    /// <c>entity_id</c>, а идентификаторы багов, комментариев и шагов — независимые
+    /// последовательности. Единственное, что разводит их по владельцам, — <c>attach_type</c>.
+    /// Тест фиксирует значения провода: 0 — факт бага, 2 — комментарий, 3 — шаг.
+    /// </summary>
+    [Fact(DisplayName = "GET /v2/reports/{aliasId}: attach_type и entity_id вложения совпадают с владельцем")]
+    public async Task GetReportKeepsAttachmentOwnership()
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var reportId = await scenario.CreateReportAsync();
+        var bugId = await scenario.CreateBugAsync(reportId);
+        var commentId = await scenario.CreateCommentAsync(reportId, bugId);
+        var stepId = await scenario.CreateStepAsync(reportId, bugId);
+        await scenario.UploadBugAttachmentAsync(reportId, bugId);
+        await scenario.UploadCommentAttachmentAsync(reportId, bugId, commentId);
+        await scenario.UploadBugStepAttachmentAsync(reportId, bugId, stepId);
+
+        var response = await scenario.Client.GetAsync($"/v2/reports/{reportId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await ContractScenario.ReadJsonAsync(response);
+        var bug = FindBug(body.GetProperty("bugs").EnumerateArray().ToArray(), bugId);
+
+        AssertAttachment(Single(bug.GetProperty("attachments")), expectedType: 0, expectedEntityId: bugId);
+
+        var comment = Single(bug.GetProperty("comments"));
+        Assert.Equal(commentId, comment.GetProperty("id").GetInt32());
+        AssertAttachment(Single(comment.GetProperty("attachments")), expectedType: 2, expectedEntityId: commentId);
+
+        var step = Single(bug.GetProperty("steps"));
+        Assert.Equal(stepId, step.GetProperty("id").GetInt32());
+        AssertAttachment(Single(step.GetProperty("attachments")), expectedType: 3, expectedEntityId: stepId);
+    }
+
 
     [Fact(DisplayName = "GET /v2/reports/{aliasId}: чужой репорт не отдаётся")]
     public async Task GetForeignReport()
@@ -172,5 +243,17 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         await ContractSnapshot.MatchAsync("v2.reports.counts-batch.post.duplicate", response);
+    }
+
+    private static JsonElement FindBug(JsonElement[] bugs, int bugId) =>
+        Assert.Single(bugs, bug => bug.GetProperty("id").GetInt32() == bugId);
+
+    private static JsonElement Single(JsonElement array) =>
+        Assert.Single(array.EnumerateArray().ToArray());
+
+    private static void AssertAttachment(JsonElement attachment, int expectedType, int expectedEntityId)
+    {
+        Assert.Equal(expectedType, attachment.GetProperty("attach_type").GetInt32());
+        Assert.Equal(expectedEntityId, attachment.GetProperty("entity_id").GetInt32());
     }
 }

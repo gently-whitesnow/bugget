@@ -38,6 +38,32 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
         await ContractSnapshot.MatchAsync("v2.bugs.post.empty", response);
     }
 
+    /// <summary>
+    /// Ответ на создание — `BugSummary`, и он тоже обязан отдавать оба ключа пары
+    /// `receive`/`expect`: бизнес-правило требует заполнить одно из двух, а не оба.
+    /// Снимок `v2.bugs.post` снят с бага, у которого заполнено всё, и потому формы
+    /// с `null` не предъявляет — здесь она предъявлена явно.
+    /// </summary>
+    [Fact(DisplayName = "POST .../bugs с одним заполненным полем: 201, второй ключ приходит null")]
+    public async Task CreateBugWithOneFilledField()
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var reportId = await scenario.CreateReportAsync();
+
+        var response = await scenario.Client.PostAsJsonAsync(
+            $"/v2/reports/{reportId}/bugs",
+            new { receive = "только факт" });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var body = await ContractScenario.ReadJsonAsync(response);
+        Assert.Equal("только факт", body.GetProperty("receive").GetString());
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("expect").ValueKind);
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("title").ValueKind);
+
+        await ContractSnapshot.MatchAsync("v2.bugs.post.one-field", response);
+    }
+
     [Fact(DisplayName = "PATCH /v2/reports/{aliasId}/bugs/{bugId}: 200 и форма BugPatchResult")]
     public async Task PatchBug()
     {
@@ -78,6 +104,37 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
         Assert.Equal("только факт", body.GetProperty("receive").GetString());
 
         await ContractSnapshot.MatchAsync("v2.bugs.patch.one-field", response);
+    }
+
+    /// <summary>
+    /// Зеркало предыдущего сценария: незаполненным остаётся `receive`. Плюс проверка,
+    /// что PATCH второго поля его действительно заполняет, а не оставляет `null`, —
+    /// иначе «оба ключа всегда есть» держалось бы только на одной ветке.
+    /// </summary>
+    [Fact(DisplayName = "PATCH .../bugs/{bugId} бага только с expect: receive приходит null и заполняется патчем")]
+    public async Task PatchBugWithOnlyExpectFilled()
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var reportId = await scenario.CreateReportAsync();
+        var bugId = await scenario.CreateOneFieldBugAsync(reportId, expect: "только ожидание");
+
+        var patchedStatus = await scenario.Client.PatchAsJsonAsync(
+            $"/v2/reports/{reportId}/bugs/{bugId}",
+            new { status = 1 });
+
+        Assert.Equal(HttpStatusCode.OK, patchedStatus.StatusCode);
+        var afterStatus = await ContractScenario.ReadJsonAsync(patchedStatus);
+        Assert.Equal("только ожидание", afterStatus.GetProperty("expect").GetString());
+        Assert.Equal(JsonValueKind.Null, afterStatus.GetProperty("receive").ValueKind);
+
+        var patchedReceive = await scenario.Client.PatchAsJsonAsync(
+            $"/v2/reports/{reportId}/bugs/{bugId}",
+            new { receive = "дозаполнили факт" });
+
+        Assert.Equal(HttpStatusCode.OK, patchedReceive.StatusCode);
+        var afterReceive = await ContractScenario.ReadJsonAsync(patchedReceive);
+        Assert.Equal("дозаполнили факт", afterReceive.GetProperty("receive").GetString());
+        Assert.Equal("только ожидание", afterReceive.GetProperty("expect").GetString());
     }
 
     [Fact(DisplayName = "POST .../steps: 201 и форма BugStepSummary")]

@@ -18,6 +18,12 @@ export type CreateReportResponse = {
   updatedAt: string;
 };
 
+/**
+ * Полная карточка репорта — ответ `GET /v2/reports/{aliasId}`, и только он.
+ * Форма списка живёт отдельно (`ListReportsResponse` в `shared/api/contracts`):
+ * LIST не отдаёт `links`, `bugs[].attachments` и `bugs[].steps`.
+ * Перевод самой карточки на сгенерированный `Report` — отдельный слайс.
+ */
 export type ReportResponse = {
   id: string;
   title: string;
@@ -91,11 +97,6 @@ export type PatchReportResponse = {
   responsibleUserId: string;
   pastResponsibleUserId: string;
   updatedAt: string;
-};
-
-export type ListReportsResponse = {
-  total: number;
-  reports: ReportResponse[];
 };
 
 export type LegacyReportResolveResponse = {

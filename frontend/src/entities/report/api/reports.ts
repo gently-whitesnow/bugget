@@ -1,8 +1,8 @@
 import { appApi } from "@/shared/api";
+import type { ListReportsResponse } from "@/shared/api";
 import type {
   CreateReportRequest,
   CreateReportResponse,
-  ListReportsResponse,
   PatchReportRequest,
   PatchReportResponse,
   ReportResponse,
@@ -11,7 +11,7 @@ import type {
 
 export const fetchReport = async (id: string): Promise<ReportResponse> => {
   try {
-    const { data } = await appApi.get(`/v2/reports/${id}`);
+    const { data } = await appApi.get<ReportResponse>(`/v2/reports/${id}`);
     return data;
   } catch (error) {
     console.error(error);
@@ -69,7 +69,9 @@ export const fetchReportsList = async (
     searchParams.append("skip", String(skip));
     searchParams.append("take", String(take));
 
-    const { data } = await appApi.get(`/v2/reports?${searchParams.toString()}`);
+    const { data } = await appApi.get<ListReportsResponse>(
+      `/v2/reports?${searchParams.toString()}`
+    );
     return data;
   } catch (error) {
     console.error(error);

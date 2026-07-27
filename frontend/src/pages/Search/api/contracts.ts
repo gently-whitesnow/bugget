@@ -1,53 +1,15 @@
-import type { BugStatuses, ReportStatuses } from "@/shared/config";
+import type { ListReportsResponse } from "@/shared/api";
 
-export type AttachmentResponse = {
-  id: number;
-  bugId: number;
-  reportId: string;
-  path: string | null;
-  createdAt: string;
-  attachType: number;
-};
+/**
+ * `GET /v1/reports/search` отдаёт ту же форму, что и список репортов
+ * (`ReportList` в контракте модуля `reports`), поэтому своего DTO у поиска нет.
+ */
+export type SearchResponse = ListReportsResponse;
 
-export type BugResponse = {
-  id: number;
-  reportId: string;
-  receive: string | null;
-  expect: string | null;
-  creatorUserId: string;
-  createdAt: string;
-  updatedAt: string;
-  status: BugStatuses;
-  attachments: AttachmentResponse[];
-  comments: CommentResponse[];
-};
-
-export type CommentResponse = {
-  id: number;
-  bugId: number;
-  text: string | null;
-  creatorUserId: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type ReportResponse = {
-  id: string;
-  title: string;
-  status: ReportStatuses;
-  responsibleUserId: string;
-  creatorUserId: string;
-  createdAt: string;
-  updatedAt: string;
-  participantsUserIds: string[] | null;
-  bugs: BugResponse[] | null;
-};
-
-export type SearchResponse = {
-  reports: ReportResponse[];
-  total: number;
-};
-
+/**
+ * Параметры запроса поиска. Имена исторически в camelCase — они в URL,
+ * менять их нельзя (см. ADR-0005).
+ */
 export type SearchRequestQueryParams = {
   query?: string;
   reportStatuses?: number[];

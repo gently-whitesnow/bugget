@@ -1,0 +1,234 @@
+# Контракт realtime-событий Bugget (SignalR).
+#
+# Второй публичный контракт фронт↔бек рядом с specs/contracts/**/openapi.yaml. HTTP
+# держит гейт backend-contracts, realtime до этого файла не держал ничего: имена событий
+# жили строковыми литералами в Bugget/Hubs и в enum SocketEvent на фронте, и разойтись
+# они могли молча — компилятор C# и tsc про эту связь не знают.
+#
+# Файл описывает то, что уже ходит по проводу, и ничего не генерирует. Источник правды
+# здесь — сам провод: форму сообщений менять нельзя, фронт стоит в проде у заказчика
+# (MAIN-22, ADR-0007).
+#
+# Проверяет соответствие гейт realtime-contract (scripts/quality/realtime-contract.py).
+# Он сверяет четыре стороны и краснеет на расхождении любой:
+#
+#   1) этот файл;
+#   2) объявление публикации в интерфейсе Application-слоя (publisherInterface);
+#   3) реализацию-обработчик, которая реально шлёт в группу (publisher);
+#   4) подписки фронта — enum SocketEvent и customParsers (subscriber).
+#
+# Практика: событие добавляют сначала сюда, потом в код. Гейт одинаково красный и когда
+# событие описано, но его никто не публикует, и когда публикуется мимо контракта, и когда
+# фронт подписан на несуществующее.
+
+version: 1
+
+hubs:
+  - name: ReportPageHub
+    # Путь виден фронту как /api/app/workspaces/{workspaceId}/teams/{teamId}/v1/report-page-hub —
+    # префикс навешивает nginx, в приложении хаб смонтирован по короткому пути.
+    path: "/v1/report-page-hub"
+    server: backend/Bugget/Hubs/ReportPageHub.cs
+    publisherInterface: backend/Bugget.DA/WebSockets/IReportPageHubClient.cs
+    publisher: backend/Bugget/Hubs/ReportPageHubClient.cs
+    subscriber: frontend/src/shared/model/socket/contracts.ts
+    subscriberEnum: SocketEvent
+    description: "Живое обновление страницы репорта. Клиент вступает в группу репорта, сервер рассылает в неё изменения."
+
+    # Клиент → сервер. Фронт зовёт их через conn.invoke.
+    methods:
+      - name: JoinReportGroupAsync
+        description: "Вступить в группу репорта по aliasId. Вызывается заново после каждого переподключения: сервер выдаёт новый connectionId и группы забывает."
+      - name: LeaveReportGroupAsync
+        description: "Покинуть группу репорта."
+
+    # Сервер → клиент. Порядок аргументов в args — это порядок аргументов в SendAsync,
+    # то есть позиционный контракт провода. Типы указаны как в publisherInterface.
+    #
+    # Событие с одним аргументом фронт разбирает дефолтным правилом «payload — первый
+    # аргумент». Событию с двумя и более аргументами обязан соответствовать разборщик
+    # в customParsers — иначе фронт молча потеряет всё, кроме первого. Это соответствие
+    # тоже проверяет гейт.
+    events:
+      - name: ReceiveReportPatch
+        publisher: SendReportPatchAsync
+        description: "Изменение полей репорта: заголовок, статус, ответственный."
+        args:
+          - name: view
+            type: PatchReportSocketView
+
+      - name: ReceiveReportParticipant
+        publisher: SendNewReportParticipantAsync
+        description: "В репорте появился новый участник, приходит его userId."
+        args:
+          - name: newParticipant
+            type: string
+
+      - name: ReceiveBugCreate
+        publisher: SendBugCreateAsync
+        description: "В репорте создан баг."
+        args:
+          - name: summaryDbModel
+            type: BugSummaryDbModel
+
+      - name: ReceiveBugPatch
+        publisher: SendBugPatchAsync
+        description: "Изменение полей бага."
+        args:
+          - name: bugId
+            type: int
+          - name: patchDto
+            type: BugPatchDto
+
+      - name: ReceiveBugAttachmentCreate
+        publisher: SendAttachmentCreateAsync
+        description: "К багу приложен файл. Ветка attachType = Bug общего метода публикации вложений."
+        args:
+          - name: attachmentSocketView
+            type: AttachmentSocketView
+
+      - name: ReceiveCommentAttachmentCreate
+        publisher: SendAttachmentCreateAsync
+        description: "К комментарию приложен файл. Ветка attachType = Comment."
+        args:
+          - name: attachmentSocketView
+            type: AttachmentSocketView
+
+      - name: ReceiveBugStepAttachmentCreate
+        publisher: SendAttachmentCreateAsync
+        description: "К шагу воспроизведения приложен файл. Ветка attachType = BugStep."
+        args:
+          - name: attachmentSocketView
+            type: AttachmentSocketView
+
+      - name: ReceiveBugAttachmentChanged
+        publisher: SendAttachmentChangedAsync
+        description: "У вложения бага изменилось состояние — например, досчиталось превью."
+        args:
+          - name: attachmentSocketView
+            type: AttachmentSocketView
+
+      - name: ReceiveCommentAttachmentChanged
+        publisher: SendAttachmentChangedAsync
+        description: "У вложения комментария изменилось состояние."
+        args:
+          - name: attachmentSocketView
+            type: AttachmentSocketView
+
+      - name: ReceiveBugStepAttachmentChanged
+        publisher: SendAttachmentChangedAsync
+        description: "У вложения шага воспроизведения изменилось состояние."
+        args:
+          - name: attachmentSocketView
+            type: AttachmentSocketView
+
+      - name: ReceiveBugAttachmentDelete
+        publisher: SendAttachmentDeleteAsync
+        description: "Вложение бага удалено."
+        args:
+          - name: id
+            type: int
+          - name: entityId
+            type: int
+          - name: attachType
+            type: int
+
+      - name: ReceiveCommentAttachmentDelete
+        publisher: SendAttachmentDeleteAsync
+        description: "Вложение комментария удалено."
+        args:
+          - name: id
+            type: int
+          - name: entityId
+            type: int
+          - name: attachType
+            type: int
+
+      - name: ReceiveBugStepAttachmentDelete
+        publisher: SendAttachmentDeleteAsync
+        description: "Вложение шага воспроизведения удалено."
+        args:
+          - name: id
+            type: int
+          - name: entityId
+            type: int
+          - name: attachType
+            type: int
+
+      - name: ReceiveCommentCreate
+        publisher: SendCommentCreateAsync
+        description: "В баге создан комментарий."
+        args:
+          - name: commentSummaryDbModel
+            type: CommentSummaryDbModel
+
+      - name: ReceiveCommentUpdate
+        publisher: SendCommentUpdateAsync
+        description: "Комментарий отредактирован."
+        args:
+          - name: commentSummaryDbModel
+            type: CommentSummaryDbModel
+
+      - name: ReceiveCommentDelete
+        publisher: SendCommentDeleteAsync
+        description: "Комментарий удалён."
+        args:
+          - name: bugId
+            type: int
+          - name: commentId
+            type: int
+
+      - name: ReceiveReportLinkCreate
+        publisher: SendReportLinkCreateAsync
+        description: "К репорту добавлена внешняя ссылка."
+        args:
+          - name: linkDbModel
+            type: ReportLinkDbModel
+
+      - name: ReceiveReportLinkUpdate
+        publisher: SendReportLinkUpdateAsync
+        description: "Внешняя ссылка репорта изменена."
+        args:
+          - name: linkDbModel
+            type: ReportLinkDbModel
+
+      - name: ReceiveReportLinkDelete
+        publisher: SendReportLinkDeleteAsync
+        description: "Внешняя ссылка репорта удалена."
+        args:
+          - name: linkId
+            type: int
+
+      - name: ReceiveBugStepCreate
+        publisher: SendBugStepCreateAsync
+        description: "У бага создан шаг воспроизведения."
+        args:
+          - name: bugStepSummaryDbModel
+            type: BugStepSummaryDbModel
+
+      - name: ReceiveBugStepPatch
+        publisher: SendBugStepPatchAsync
+        description: "Шаг воспроизведения изменён."
+        args:
+          - name: bugId
+            type: int
+          - name: bugStepSummaryDbModel
+            type: BugStepSummaryDbModel
+
+      - name: ReceiveBugStepsOrderUpdate
+        publisher: SendBugStepsOrderUpdateAsync
+        description: "Изменён порядок шагов воспроизведения, приходит весь набор шагов бага."
+        args:
+          - name: bugId
+            type: int
+          - name: bugStepSummaryDbModels
+            type: BugStepSummaryDbModel[]
+
+      - name: ReceiveBugStepDelete
+        publisher: SendBugStepDeleteAsync
+        description: "Шаг воспроизведения удалён."
+        args:
+          - name: bugId
+            type: int
+          - name: stepId
+            type: int

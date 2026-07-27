@@ -102,6 +102,12 @@ python3 scripts/quality/backend-duplicates.py --max 0                  # все 
 наследуют сгенерированные абстрактные базы, поэтому маршрут или форма ответа мимо
 контракта не компилируются, а расхождение кода с yaml валит гейт `backend-contracts`.
 
+Realtime-события SignalR описаны в `specs/contracts/events.yaml`. Этот контракт
+описательный: из него ничего не генерируется, форма сообщений — уже публичный контракт
+(ADR-0007). Соответствие контракта, интерфейса публикации, обработчика и подписок фронта
+держит гейт `backend-realtime-contract` / `frontend-realtime-contract`; разобранный
+контракт показывает `python3 scripts/quality/realtime-contract.py --list`.
+
 Архитектурные решения и причины — [specs/ADR/REGISTRY.md](specs/ADR/REGISTRY.md).
 Точка входа для агента — [ROOT.md](ROOT.md).
 

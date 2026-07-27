@@ -37,6 +37,13 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         await ContractSnapshot.MatchAsync("v2.reports.post.invalid", response);
     }
 
+    /// <summary>
+    /// Сид намеренно полный: пустая коллекция в ответе не предъявляет формы своего
+    /// элемента, а `null` в ключе не отличим от отсутствия ключа. Поэтому здесь есть
+    /// и вложение, и ссылка, и баги, у которых заполнено ровно одно поле из пары
+    /// `receive`/`expect` — снимок доказывает, что оба ключа присутствуют всегда,
+    /// а `null` в них законен (см. `required` + `nullable` в контракте).
+    /// </summary>
     [Fact(DisplayName = "GET /v2/reports/{aliasId}: 200 и форма Report с вложенными сущностями")]
     public async Task GetReport()
     {
@@ -45,6 +52,10 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         var bugId = await scenario.CreateBugAsync(reportId);
         await scenario.CreateCommentAsync(reportId, bugId);
         await scenario.CreateStepAsync(reportId, bugId);
+        await scenario.UploadBugAttachmentAsync(reportId, bugId);
+        await scenario.CreateLinkAsync(reportId);
+        await scenario.CreateOneFieldBugAsync(reportId, receive: "только факт");
+        await scenario.CreateOneFieldBugAsync(reportId, expect: "только ожидание");
 
         var response = await scenario.Client.GetAsync($"/v2/reports/{reportId}");
 

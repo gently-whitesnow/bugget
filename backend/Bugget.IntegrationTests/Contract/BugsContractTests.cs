@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
@@ -50,6 +51,33 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         await ContractSnapshot.MatchAsync("v2.bugs.patch", response);
+    }
+
+    /// <summary>
+    /// `patch_bug_internal` возвращает `receive`/`expect` как есть, а не «как передали»:
+    /// у бага с одним заполненным полем второе остаётся `NULL` (миграция 009 сняла
+    /// `NOT NULL` с обеих колонок). Снимок фиксирует, что ключ при этом присутствует
+    /// со значением `null`, — отсюда `required` + `nullable` у `BugPatchResult`.
+    /// </summary>
+    [Fact(DisplayName = "PATCH .../bugs/{bugId} бага с одним заполненным полем: второй ключ приходит null")]
+    public async Task PatchBugWithOneFilledField()
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var reportId = await scenario.CreateReportAsync();
+        var bugId = await scenario.CreateOneFieldBugAsync(reportId, receive: "только факт");
+
+        var response = await scenario.Client.PatchAsJsonAsync(
+            $"/v2/reports/{reportId}/bugs/{bugId}",
+            new { status = 1 });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await ContractScenario.ReadJsonAsync(response);
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("expect").ValueKind);
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("title").ValueKind);
+        Assert.Equal("только факт", body.GetProperty("receive").GetString());
+
+        await ContractSnapshot.MatchAsync("v2.bugs.patch.one-field", response);
     }
 
     [Fact(DisplayName = "POST .../steps: 201 и форма BugStepSummary")]

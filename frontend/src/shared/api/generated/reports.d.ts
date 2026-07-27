@@ -653,13 +653,16 @@ export interface components {
             /** @description Идентификатор вложения. */
             id: number;
             /** @description Идентификатор сущности, к которой прикреплён файл. */
-            entity_id?: number;
-            /** @description Тип сущности: 0 — баг, 1 — комментарий, 2 — шаг. */
+            entity_id: number;
+            /**
+             * @description Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
+             *     2 — комментарий, 3 — шаг воспроизведения.
+             */
             attach_type: number;
             /** @description Относительный путь либо ключ в S3. */
-            storage_key?: string | null;
+            storage_key: string | null;
             /** @description Тип хранилища — 0 temp, 1 standard, 2 cold. */
-            storage_kind?: number | null;
+            storage_kind: number | null;
             /**
              * Format: date-time
              * @description Момент загрузки.
@@ -671,15 +674,15 @@ export interface components {
              * Format: int64
              * @description Размер вложения в байтах.
              */
-            length_bytes?: number | null;
+            length_bytes: number | null;
             /** @description Имя файла. */
             file_name: string;
             /** @description MIME-тип содержимого. */
-            mime_type?: string;
+            mime_type: string;
             /** @description Есть ли превью-версия. */
-            has_preview?: boolean | null;
+            has_preview: boolean | null;
             /** @description Сжато ли содержимое gzip. */
-            is_gzip_compressed?: boolean | null;
+            is_gzip_compressed: boolean | null;
         };
         /** @description Шаг воспроизведения бага. */
         BugStep: {
@@ -704,7 +707,7 @@ export interface components {
              */
             updated_at: string;
             /** @description Вложения шага. `null` — не запрашивались. */
-            attachments?: components["schemas"]["Attachment"][] | null;
+            attachments: components["schemas"]["Attachment"][] | null;
         };
         /** @description Комментарий к багу. */
         Comment: {
@@ -731,20 +734,28 @@ export interface components {
              */
             updated_at: string;
             /** @description Вложения комментария. `null` — не запрашивались. */
-            attachments?: components["schemas"]["Attachment"][] | null;
+            attachments: components["schemas"]["Attachment"][] | null;
         };
-        /** @description Баг внутри репорта со всем вложенным содержимым. */
+        /**
+         * @description Баг внутри репорта со всем вложенным содержимым.
+         *
+         *     `title`, `receive` и `expect` перечислены в `required`, но остаются
+         *     `nullable`: колонки `bugs.title/receive/expect` допускают `NULL`
+         *     (миграция 009 сняла `NOT NULL` с `receive`/`expect`), а бизнес-правило
+         *     требует заполнить хотя бы одно из двух, а не оба. Ключи в ответе при
+         *     этом присутствуют всегда: MVC сериализует `null`.
+         */
         Bug: {
             /** @description Идентификатор бага. */
             id: number;
             /** @description Репорт, которому принадлежит баг. */
             report_id: number;
             /** @description Заголовок бага. */
-            title?: string | null;
+            title: string | null;
             /** @description Фактический результат. */
-            receive?: string | null;
+            receive: string | null;
             /** @description Ожидаемый результат. */
-            expect?: string | null;
+            expect: string | null;
             /**
              * Format: date-time
              * @description Момент создания.
@@ -762,25 +773,28 @@ export interface components {
             /** @description Тип автора — человек или бот. */
             creator_type: number;
             /** @description Вложения бага. `null` — не запрашивались. */
-            attachments?: components["schemas"]["Attachment"][] | null;
+            attachments: components["schemas"]["Attachment"][] | null;
             /** @description Комментарии бага. `null` — не запрашивались. */
-            comments?: components["schemas"]["Comment"][] | null;
+            comments: components["schemas"]["Comment"][] | null;
             /** @description Шаги воспроизведения. `null` — не запрашивались. */
-            steps?: components["schemas"]["BugStep"][] | null;
+            steps: components["schemas"]["BugStep"][] | null;
         };
         /**
          * @description Баг без вложенного содержимого — ответ на создание. Отличается от `Bug`
          *     отсутствием `report_id` и вложенных коллекций.
+         *
+         *     `title`, `receive` и `expect` обязательны по присутствию ключа и при этом
+         *     `nullable` — по той же причине, что и в `Bug`.
          */
         BugSummary: {
             /** @description Идентификатор бага. */
             id: number;
             /** @description Заголовок бага. */
-            title?: string | null;
+            title: string | null;
             /** @description Фактический результат. */
-            receive?: string | null;
+            receive: string | null;
             /** @description Ожидаемый результат. */
-            expect?: string | null;
+            expect: string | null;
             /**
              * Format: date-time
              * @description Момент создания.
@@ -798,16 +812,22 @@ export interface components {
             /** @description Тип автора — человек или бот. */
             creator_type: number;
         };
-        /** @description Что изменилось в баге после PATCH. */
+        /**
+         * @description Что изменилось в баге после PATCH.
+         *
+         *     `title`, `receive` и `expect` возвращаются как есть из `patch_bug_internal`,
+         *     то есть могут быть `null`: баг заводят с одним заполненным полем из пары
+         *     `receive`/`expect`, и PATCH второго не заполняет. Ключи присутствуют всегда.
+         */
         BugPatchResult: {
             /** @description Идентификатор бага. */
             id: number;
             /** @description Заголовок бага. */
-            title?: string | null;
+            title: string | null;
             /** @description Фактический результат. */
-            receive: string;
+            receive: string | null;
             /** @description Ожидаемый результат. */
-            expect: string;
+            expect: string | null;
             /**
              * Format: date-time
              * @description Момент последнего изменения.
@@ -853,7 +873,10 @@ export interface components {
             id: number;
             /** @description Идентификатор сущности, к которой прикреплён файл. */
             entity_id: number;
-            /** @description Тип сущности: 0 — баг, 1 — комментарий, 2 — шаг. */
+            /**
+             * @description Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
+             *     2 — комментарий, 3 — шаг воспроизведения.
+             */
             attach_type: number;
             /**
              * Format: date-time
@@ -903,7 +926,7 @@ export interface components {
             /** @description Автор репорта. */
             creator_user_id: string;
             /** @description Команда автора. */
-            creator_team_id?: string | null;
+            creator_team_id: string | null;
             /**
              * Format: date-time
              * @description Момент создания.
@@ -950,7 +973,7 @@ export interface components {
             /** @description Автор репорта. */
             creator_user_id: string;
             /** @description Команда автора. */
-            creator_team_id?: string | null;
+            creator_team_id: string | null;
             /**
              * Format: date-time
              * @description Момент создания.
@@ -968,9 +991,9 @@ export interface components {
             /** @description Все, кто участвовал в репорте. */
             participants_user_ids: string[];
             /** @description Ссылки репорта. `null` — не запрашивались. */
-            links?: components["schemas"]["ReportLink"][] | null;
+            links: components["schemas"]["ReportLink"][] | null;
             /** @description Баги репорта. `null` — не запрашивались. */
-            bugs?: components["schemas"]["Bug"][] | null;
+            bugs: components["schemas"]["Bug"][] | null;
         };
         /** @description Страница списка репортов. */
         ReportList: {
@@ -999,25 +1022,25 @@ export interface components {
              * Format: date-time
              * @description Момент выхода из фазы. `null` — если фаза ещё активна.
              */
-            exited_at?: string | null;
+            exited_at: string | null;
             /** @description Длительность фазы в днях. `null` для активной фазы (`exited_at == null`). */
-            duration_days?: number | null;
+            duration_days: number | null;
             /**
              * @description Индекс цикла, к которому относится фаза (0 — первичный проход,
              *     1 — первый retest и т.д.).
              */
-            regression_cycle_index?: number;
+            regression_cycle_index: number;
         };
         /** @description Снимок распределения багов репорта по статусам на момент запроса. */
         AnalyticsReportBugsByStatus: {
             /** @description Багов в статусе `open`. */
-            open?: number;
+            open: number;
             /** @description Багов в статусе `fixed`. */
-            fixed?: number;
+            fixed: number;
             /** @description Багов в статусе `verified`. */
-            verified?: number;
+            verified: number;
             /** @description Багов в статусе `rejected`. */
-            rejected?: number;
+            rejected: number;
         };
         /** @description Детальная фазовая аналитика одного репорта. */
         AnalyticsReport: {
@@ -1025,20 +1048,20 @@ export interface components {
              * Format: int64
              * @description ID репорта.
              */
-            report_id?: number;
+            report_id: number;
             /** @description Полный таймлайн фаз в порядке возрастания `entered_at`. */
             phase_timeline: components["schemas"]["AnalyticsReportPhaseEntry"][];
             /**
              * @description Кол-во полных regression-циклов (Test → Fix → Test). 0 — репорт
              *     прошёл по «прямому» пути.
              */
-            regression_cycles?: number;
+            regression_cycles: number;
             bugs_by_status: components["schemas"]["AnalyticsReportBugsByStatus"];
             /**
              * @description Сколько багов добавлено в репорт во время повторных Test-фаз
              *     (regression_cycle_index ≥ 1).
              */
-            bugs_added_during_regression?: number;
+            bugs_added_during_regression: number;
         };
         /**
          * @description Канонический формат ошибки для всех API в bugget/. Не RFC 7807 — намеренно (см. ADR-20260518).

@@ -171,6 +171,22 @@ internal static class ReportsMapper
         Attachments = model.Attachments?.Select(ToContract).ToArray(),
     };
 
+    /// <remarks>
+    /// Поля хранилища (`storage_key`, `storage_kind`, `length_bytes`, `mime_type`)
+    /// в summary не уходят — так было и до contract-first, форма зафиксирована
+    /// снимками ручек загрузки и переименования.
+    /// </remarks>
+    public static AttachmentSummary ToSummaryContract(this AttachmentDbModel model) => new()
+    {
+        Id = model.Id,
+        Entity_id = model.EntityId,
+        Attach_type = model.AttachType,
+        Created_at = model.CreatedAt,
+        Creator_user_id = model.CreatorUserId,
+        File_name = model.FileName,
+        Has_preview = model.HasPreview == true,
+    };
+
     public static Attachment ToContract(this AttachmentDbModel model) => new()
     {
         Id = model.Id,

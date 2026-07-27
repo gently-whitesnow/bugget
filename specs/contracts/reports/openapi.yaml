@@ -480,6 +480,286 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
+  /v2/reports/{aliasId}/bugs/{bugId}/attachments:
+    post:
+      operationId: BugAttachments_CreateBugAttachment
+      summary: Загрузить вложение к багу.
+      description: |-
+        Тело — `multipart/form-data` с одним файлом. MIME определяется по
+        содержимому, а не по заголовку клиента (кроме development-окружения).
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - name: attachType
+          in: query
+          required: true
+          description: К чему относится вложение — 0 факт, 1 ожидание.
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttachmentUpload'
+      responses:
+        '201':
+          description: Вложение сохранено.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}:
+    patch:
+      operationId: BugAttachments_RenameBugAttachment
+      summary: Переименовать вложение бага.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/AttachmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachmentRenameRequest'
+      responses:
+        '200':
+          description: Вложение переименовано.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    delete:
+      operationId: BugAttachments_DeleteBugAttachment
+      summary: Удалить вложение бага.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/AttachmentId'
+      responses:
+        '200':
+          description: Вложение удалено. Тело пустое.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content:
+    get:
+      operationId: BugAttachments_GetBugAttachmentContent
+      summary: Скачать содержимое вложения бага.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/AttachmentId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AttachmentContent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content/preview:
+    get:
+      operationId: BugAttachments_GetBugAttachmentPreview
+      summary: Скачать превью вложения бага.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/AttachmentId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AttachmentContent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments:
+    post:
+      operationId: BugStepAttachments_CreateBugStepAttachment
+      summary: Загрузить вложение к шагу воспроизведения.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/StepId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttachmentUpload'
+      responses:
+        '201':
+          description: Вложение сохранено.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}:
+    patch:
+      operationId: BugStepAttachments_RenameBugStepAttachment
+      summary: Переименовать вложение шага.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/StepId'
+        - $ref: '#/components/parameters/AttachmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachmentRenameRequest'
+      responses:
+        '200':
+          description: Вложение переименовано.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    delete:
+      operationId: BugStepAttachments_DeleteBugStepAttachment
+      summary: Удалить вложение шага.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/StepId'
+        - $ref: '#/components/parameters/AttachmentId'
+      responses:
+        '200':
+          description: Вложение удалено. Тело пустое.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content:
+    get:
+      operationId: BugStepAttachments_GetBugStepAttachmentContent
+      summary: Скачать содержимое вложения шага.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/StepId'
+        - $ref: '#/components/parameters/AttachmentId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AttachmentContent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content/preview:
+    get:
+      operationId: BugStepAttachments_GetBugStepAttachmentPreview
+      summary: Скачать превью вложения шага.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/StepId'
+        - $ref: '#/components/parameters/AttachmentId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AttachmentContent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments:
+    post:
+      operationId: CommentAttachments_CreateCommentAttachment
+      summary: Загрузить вложение к комментарию.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/CommentId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttachmentUpload'
+      responses:
+        '201':
+          description: Вложение сохранено.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}:
+    patch:
+      operationId: CommentAttachments_RenameCommentAttachment
+      summary: Переименовать вложение комментария.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/CommentId'
+        - $ref: '#/components/parameters/AttachmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachmentRenameRequest'
+      responses:
+        '200':
+          description: Вложение переименовано.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    delete:
+      operationId: CommentAttachments_DeleteCommentAttachment
+      summary: Удалить вложение комментария.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/CommentId'
+        - $ref: '#/components/parameters/AttachmentId'
+      responses:
+        '200':
+          description: Вложение удалено. Тело пустое.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content:
+    get:
+      operationId: CommentAttachments_GetCommentAttachmentContent
+      summary: Скачать содержимое вложения комментария.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/CommentId'
+        - $ref: '#/components/parameters/AttachmentId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AttachmentContent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content/preview:
+    get:
+      operationId: CommentAttachments_GetCommentAttachmentPreview
+      summary: Скачать превью вложения комментария.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/CommentId'
+        - $ref: '#/components/parameters/AttachmentId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AttachmentContent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
 components:
 
   parameters:
@@ -523,6 +803,14 @@ components:
       in: path
       required: true
       description: Идентификатор комментария.
+      schema:
+        type: integer
+
+    AttachmentId:
+      name: id
+      in: path
+      required: true
+      description: Идентификатор вложения.
       schema:
         type: integer
 
@@ -670,6 +958,29 @@ components:
           description: Идентификаторы шагов в новом порядке.
           items:
             type: integer
+
+    AttachmentUpload:
+      type: object
+      description: Загружаемый файл. Один файл на запрос.
+      required:
+        - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: Содержимое файла.
+
+    AttachmentRenameRequest:
+      type: object
+      description: Новое имя вложения.
+      required:
+        - file_name
+      properties:
+        file_name:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Новое имя файла.
 
     CommentRequest:
       type: object
@@ -1091,6 +1402,44 @@ components:
           format: date-time
           description: Момент последнего изменения.
 
+    AttachmentSummary:
+      type: object
+      description: |
+        Вложение так, как его отдают ручки загрузки и переименования: без полей
+        хранилища, в отличие от `Attachment` внутри репорта.
+      required:
+        - id
+        - entity_id
+        - attach_type
+        - created_at
+        - creator_user_id
+        - file_name
+        - has_preview
+      properties:
+        id:
+          type: integer
+          description: Идентификатор вложения.
+        entity_id:
+          type: integer
+          description: Идентификатор сущности, к которой прикреплён файл.
+        attach_type:
+          type: integer
+          description: |-
+            Тип сущности: 0 — баг, 1 — комментарий, 2 — шаг.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент загрузки.
+        creator_user_id:
+          type: string
+          description: Кто загрузил вложение.
+        file_name:
+          type: string
+          description: Имя файла.
+        has_preview:
+          type: boolean
+          description: Есть ли превью-версия.
+
     ReportLink:
       type: object
       description: Внешняя ссылка, прикреплённая к репорту.
@@ -1372,6 +1721,16 @@ components:
             (regression_cycle_index ≥ 1).
 
   responses:
+
+    AttachmentContent:
+      description: |-
+        Содержимое файла. Content-Type — MIME сохранённого вложения, для сжатых
+        вложений добавляется `Content-Encoding: gzip`.
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
 
     BadRequest:
       description: Некорректные параметры запроса.

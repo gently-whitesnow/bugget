@@ -277,7 +277,272 @@ namespace Bugget.Api.Generated.Reports
 
     }
 
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class BugAttachmentsControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// Загрузить вложение к багу.
+        /// </summary>
+        /// <remarks>
+        /// Тело — `multipart/form-data` с одним файлом. MIME определяется по
+        /// <br/>содержимому, а не по заголовку клиента (кроме development-окружения).
+        /// </remarks>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="attachType">К чему относится вложение — 0 факт, 1 ожидание.</param>
+        /// <param name="file">Содержимое файла.</param>
+        /// <returns>Вложение сохранено.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/attachments")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AttachmentSummary>> CreateBugAttachment(string aliasId, int bugId, [Microsoft.AspNetCore.Mvc.FromQuery] int attachType, FileParameter file = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Переименовать вложение бага.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Вложение переименовано.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPatch, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AttachmentSummary>> RenameBugAttachment(string aliasId, int bugId, int id, [Microsoft.AspNetCore.Mvc.FromBody] AttachmentRenameRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Удалить вложение бага.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Вложение удалено. Тело пустое.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteBugAttachment(string aliasId, int bugId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Скачать содержимое вложения бага.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Содержимое файла. Content-Type — MIME сохранённого вложения, для сжатых
+        /// <br/>вложений добавляется `Content-Encoding: gzip`.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetBugAttachmentContent(string aliasId, int bugId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Скачать превью вложения бага.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Содержимое файла. Content-Type — MIME сохранённого вложения, для сжатых
+        /// <br/>вложений добавляется `Content-Encoding: gzip`.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content/preview")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetBugAttachmentPreview(string aliasId, int bugId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class BugStepAttachmentsControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// Загрузить вложение к шагу воспроизведения.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="stepId">Идентификатор шага воспроизведения.</param>
+        /// <param name="file">Содержимое файла.</param>
+        /// <returns>Вложение сохранено.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AttachmentSummary>> CreateBugStepAttachment(string aliasId, int bugId, int stepId, FileParameter file = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Переименовать вложение шага.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="stepId">Идентификатор шага воспроизведения.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Вложение переименовано.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPatch, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AttachmentSummary>> RenameBugStepAttachment(string aliasId, int bugId, int stepId, int id, [Microsoft.AspNetCore.Mvc.FromBody] AttachmentRenameRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Удалить вложение шага.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="stepId">Идентификатор шага воспроизведения.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Вложение удалено. Тело пустое.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteBugStepAttachment(string aliasId, int bugId, int stepId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Скачать содержимое вложения шага.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="stepId">Идентификатор шага воспроизведения.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Содержимое файла. Content-Type — MIME сохранённого вложения, для сжатых
+        /// <br/>вложений добавляется `Content-Encoding: gzip`.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetBugStepAttachmentContent(string aliasId, int bugId, int stepId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Скачать превью вложения шага.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="stepId">Идентификатор шага воспроизведения.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Содержимое файла. Content-Type — MIME сохранённого вложения, для сжатых
+        /// <br/>вложений добавляется `Content-Encoding: gzip`.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content/preview")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetBugStepAttachmentPreview(string aliasId, int bugId, int stepId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class CommentAttachmentsControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// Загрузить вложение к комментарию.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="commentId">Идентификатор комментария.</param>
+        /// <param name="file">Содержимое файла.</param>
+        /// <returns>Вложение сохранено.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AttachmentSummary>> CreateCommentAttachment(string aliasId, int bugId, int commentId, FileParameter file = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Переименовать вложение комментария.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="commentId">Идентификатор комментария.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Вложение переименовано.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPatch, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AttachmentSummary>> RenameCommentAttachment(string aliasId, int bugId, int commentId, int id, [Microsoft.AspNetCore.Mvc.FromBody] AttachmentRenameRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Удалить вложение комментария.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="commentId">Идентификатор комментария.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Вложение удалено. Тело пустое.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteCommentAttachment(string aliasId, int bugId, int commentId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Скачать содержимое вложения комментария.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="commentId">Идентификатор комментария.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Содержимое файла. Content-Type — MIME сохранённого вложения, для сжатых
+        /// <br/>вложений добавляется `Content-Encoding: gzip`.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetCommentAttachmentContent(string aliasId, int bugId, int commentId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Скачать превью вложения комментария.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="commentId">Идентификатор комментария.</param>
+        /// <param name="id">Идентификатор вложения.</param>
+        /// <returns>Содержимое файла. Content-Type — MIME сохранённого вложения, для сжатых
+        /// <br/>вложений добавляется `Content-Encoding: gzip`.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content/preview")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetCommentAttachmentPreview(string aliasId, int bugId, int commentId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+    }
+
     
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class FileParameter
+    {
+        public FileParameter(System.IO.Stream data)
+            : this (data, null, null)
+        {
+        }
+
+        public FileParameter(System.IO.Stream data, string fileName)
+            : this (data, fileName, null)
+        {
+        }
+
+        public FileParameter(System.IO.Stream data, string fileName, string contentType)
+        {
+            Data = data;
+            FileName = fileName;
+            ContentType = contentType;
+        }
+
+        public System.IO.Stream Data { get; private set; }
+
+        public string FileName { get; private set; }
+
+        public string ContentType { get; private set; }
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class FileResponse : System.IDisposable
+    {
+        private System.IDisposable _client;
+        private System.IDisposable _response;
+
+        public int StatusCode { get; private set; }
+
+        public System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> Headers { get; private set; }
+
+        public System.IO.Stream Stream { get; private set; }
+
+        public bool IsPartial
+        {
+            get { return StatusCode == 206; }
+        }
+
+        public FileResponse(int statusCode, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.IO.Stream stream, System.IDisposable client, System.IDisposable response)
+        {
+            StatusCode = statusCode;
+            Headers = headers;
+            Stream = stream;
+            _client = client;
+            _response = response;
+        }
+
+        public void Dispose()
+        {
+            Stream.Dispose();
+            if (_response != null)
+                _response.Dispose();
+            if (_client != null)
+                _client.Dispose();
+        }
+    }
+
 
 
 }

@@ -174,16 +174,7 @@ public static class ServiceCollectionExtensions
         // Обработчик Result-ошибок модулей users и authorization — они используют Flow.
         services.AddSingleton<Flow.ResultExceptionHandlerMiddleware>();
 
-        services.AddControllers(options =>
-        {
-            // Модуль reports исторически требует аутентификации на всех своих контроллерах.
-            // Контроллеры модулей users и authorization живут в том же процессе и объявляют
-            // авторизацию сами ([Auth] / [JwtAuth]), поэтому фильтр вешается по сборке,
-            // а не глобально.
-            options.Conventions.Add(new ReportsModuleAuthorizationConvention());
-        })
-        .AddJsonOptions(options => { options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower; })
-        .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = _ => new ModelStateInvalidHandler());
+        services.AddMvcPipeline();
 
         services.AddSingleton<IReportPageHubClient, ReportPageHubClient>();
 

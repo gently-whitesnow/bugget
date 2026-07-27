@@ -90,7 +90,7 @@ public sealed class CommentsAndLinksContractTests(AppContractFixture fixture) : 
     {
         var scenario = ContractScenario.Create(fixture);
         var reportId = await scenario.CreateReportAsync();
-        var linkId = await CreateLinkAsync(scenario, reportId);
+        var linkId = await scenario.CreateLinkAsync(reportId);
 
         var response = await scenario.Client.PutAsJsonAsync(
             $"/v2/reports/{reportId}/links/{linkId}",
@@ -105,21 +105,11 @@ public sealed class CommentsAndLinksContractTests(AppContractFixture fixture) : 
     {
         var scenario = ContractScenario.Create(fixture);
         var reportId = await scenario.CreateReportAsync();
-        var linkId = await CreateLinkAsync(scenario, reportId);
+        var linkId = await scenario.CreateLinkAsync(reportId);
 
         var response = await scenario.Client.DeleteAsync($"/v2/reports/{reportId}/links/{linkId}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         await ContractSnapshot.MatchAsync("v2.report-links.delete", response);
-    }
-
-    private static async Task<int> CreateLinkAsync(ContractScenario scenario, string reportId)
-    {
-        var response = await scenario.Client.PostAsJsonAsync(
-            $"/v2/reports/{reportId}/links",
-            new { link = "https://example.test/issue/1", name = "внешняя задача" });
-
-        var body = await ContractScenario.ReadJsonAsync(response);
-        return body.GetProperty("id").GetInt32();
     }
 }

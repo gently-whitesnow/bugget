@@ -1160,10 +1160,17 @@ components:
         сегодня уходят и служебные поля хранилища (`storage_key`, `storage_kind`).
       required:
         - id
+        - entity_id
         - attach_type
+        - storage_key
+        - storage_kind
         - created_at
         - creator_user_id
+        - length_bytes
         - file_name
+        - mime_type
+        - has_preview
+        - is_gzip_compressed
       properties:
         id:
           type: integer
@@ -1174,7 +1181,8 @@ components:
         attach_type:
           type: integer
           description: |-
-            Тип сущности: 0 — баг, 1 — комментарий, 2 — шаг.
+            Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
+            2 — комментарий, 3 — шаг воспроизведения.
         storage_key:
           type: string
           nullable: true
@@ -1221,6 +1229,7 @@ components:
         - creator_user_id
         - created_at
         - updated_at
+        - attachments
       properties:
         id:
           type: integer
@@ -1264,6 +1273,7 @@ components:
         - audience
         - created_at
         - updated_at
+        - attachments
       properties:
         id:
           type: integer
@@ -1300,15 +1310,28 @@ components:
 
     Bug:
       type: object
-      description: Баг внутри репорта со всем вложенным содержимым.
+      description: |
+        Баг внутри репорта со всем вложенным содержимым.
+
+        `title`, `receive` и `expect` перечислены в `required`, но остаются
+        `nullable`: колонки `bugs.title/receive/expect` допускают `NULL`
+        (миграция 009 сняла `NOT NULL` с `receive`/`expect`), а бизнес-правило
+        требует заполнить хотя бы одно из двух, а не оба. Ключи в ответе при
+        этом присутствуют всегда: MVC сериализует `null`.
       required:
         - id
         - report_id
+        - title
+        - receive
+        - expect
         - created_at
         - updated_at
         - creator_user_id
         - status
         - creator_type
+        - attachments
+        - comments
+        - steps
       properties:
         id:
           type: integer
@@ -1369,8 +1392,14 @@ components:
       description: |
         Баг без вложенного содержимого — ответ на создание. Отличается от `Bug`
         отсутствием `report_id` и вложенных коллекций.
+
+        `title`, `receive` и `expect` обязательны по присутствию ключа и при этом
+        `nullable` — по той же причине, что и в `Bug`.
       required:
         - id
+        - title
+        - receive
+        - expect
         - created_at
         - updated_at
         - creator_user_id
@@ -1412,9 +1441,15 @@ components:
 
     BugPatchResult:
       type: object
-      description: Что изменилось в баге после PATCH.
+      description: |
+        Что изменилось в баге после PATCH.
+
+        `title`, `receive` и `expect` возвращаются как есть из `patch_bug_internal`,
+        то есть могут быть `null`: баг заводят с одним заполненным полем из пары
+        `receive`/`expect`, и PATCH второго не заполняет. Ключи присутствуют всегда.
       required:
         - id
+        - title
         - receive
         - expect
         - updated_at
@@ -1429,9 +1464,11 @@ components:
           description: Заголовок бага.
         receive:
           type: string
+          nullable: true
           description: Фактический результат.
         expect:
           type: string
+          nullable: true
           description: Ожидаемый результат.
         updated_at:
           type: string
@@ -1506,7 +1543,8 @@ components:
         attach_type:
           type: integer
           description: |-
-            Тип сущности: 0 — баг, 1 — комментарий, 2 — шаг.
+            Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
+            2 — комментарий, 3 — шаг воспроизведения.
         created_at:
           type: string
           format: date-time
@@ -1563,6 +1601,7 @@ components:
         - responsible_user_id
         - past_responsible_user_id
         - creator_user_id
+        - creator_team_id
         - created_at
         - updated_at
         - creator_type
@@ -1642,11 +1681,14 @@ components:
         - responsible_user_id
         - past_responsible_user_id
         - creator_user_id
+        - creator_team_id
         - created_at
         - updated_at
         - creator_type
         - is_excluded_from_analytics
         - participants_user_ids
+        - links
+        - bugs
       properties:
         id:
           type: string
@@ -1732,6 +1774,9 @@ components:
       required:
         - phase
         - entered_at
+        - exited_at
+        - duration_days
+        - regression_cycle_index
       properties:
         phase:
           $ref: '#/components/schemas/PhaseName'
@@ -1758,6 +1803,11 @@ components:
     AnalyticsReportBugsByStatus:
       type: object
       description: Снимок распределения багов репорта по статусам на момент запроса.
+      required:
+        - open
+        - fixed
+        - verified
+        - rejected
       properties:
         open:
           type: integer
@@ -1776,8 +1826,11 @@ components:
       type: object
       description: Детальная фазовая аналитика одного репорта.
       required:
+        - report_id
         - phase_timeline
+        - regression_cycles
         - bugs_by_status
+        - bugs_added_during_regression
       properties:
         report_id:
           type: integer

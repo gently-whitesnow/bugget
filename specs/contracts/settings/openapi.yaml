@@ -147,6 +147,9 @@ components:
       required:
         - id
         - title
+        - description
+        - is_array
+        - is_bool
         - values
       properties:
         id:

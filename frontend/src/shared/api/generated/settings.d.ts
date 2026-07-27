@@ -92,11 +92,11 @@ export interface components {
             /** @description Название настройки для UI. */
             title: string;
             /** @description Пояснение к настройке. */
-            description?: string | null;
+            description: string | null;
             /** @description Ожидает ли настройка несколько значений. */
-            is_array?: boolean;
+            is_array: boolean;
             /** @description Булева ли настройка. */
-            is_bool?: boolean;
+            is_bool: boolean;
             /** @description Текущие значения. */
             values: string[];
         };

@@ -71,11 +71,11 @@ export interface components {
          */
         AvgPhaseDurationDays: {
             /** @description Среднее время первичной фазы Test (от первой записи до перехода в Fix). */
-            test_initial?: number;
+            test_initial: number;
             /** @description Среднее время повторных Test-фаз после Fix (regression retest). */
-            test_retest?: number | null;
+            test_retest: number | null;
             /** @description Среднее время фаз Fix. */
-            fix?: number | null;
+            fix: number | null;
         };
         /**
          * @description Доля общего времени жизни репортов, проведённая в Test/Fix.
@@ -83,9 +83,9 @@ export interface components {
          */
         PhaseTimeDistribution: {
             /** @description Доля времени в фазе Test (0..1). */
-            test_pct?: number;
+            test_pct: number;
             /** @description Доля времени в фазе Fix (0..1). */
-            fix_pct?: number;
+            fix_pct: number;
         };
         /** @description Один элемент top-10 регрессионных репортов. */
         TopRegressionReport: {
@@ -93,22 +93,22 @@ export interface components {
              * Format: int64
              * @description ID репорта.
              */
-            report_id?: number;
+            report_id: number;
             /** @description Заголовок репорта. */
             title: string;
             /** @description Кол-во regression-циклов (Test → Fix → Test). */
-            regression_cycles?: number;
+            regression_cycles: number;
         };
         /** @description Один пункт еженедельного тренда по фазам. */
         PhaseTrendWeekly: {
             /** @description ISO-неделя в формате `YYYY-Www` (см. ISO 8601). */
             iso_week: string;
             /** @description Совокупное время фазы Test за неделю в днях. */
-            test_days?: number;
+            test_days: number;
             /** @description Совокупное время фазы Fix за неделю в днях. */
-            fix_days?: number;
+            fix_days: number;
             /** @description Сколько репортов закрыто за неделю. */
-            reports_closed?: number;
+            reports_closed: number;
         };
         /**
          * @description Сводная аналитика по workspace (или по команде — фильтр `creator_team_id`).
@@ -121,16 +121,16 @@ export interface components {
              * @description Среднее время полного цикла репорта (от создания до закрытия),
              *     в днях. `null` — если в окне нет закрытых репортов.
              */
-            avg_full_cycle_days?: number | null;
+            avg_full_cycle_days: number | null;
             /** @description Доля репортов, ушедших на хотя бы один regression-цикл (0..1). */
-            rework_rate?: number;
+            rework_rate: number;
             /**
              * @description Среднее число regression-циклов среди репортов, где они > 0.
              *     `null` — если в окне нет таких репортов.
              */
-            avg_regression_cycles_when_present?: number | null;
+            avg_regression_cycles_when_present: number | null;
             /** @description Количество закрытых репортов в окне. */
-            reports_closed?: number;
+            reports_closed: number;
             phase_time_distribution: components["schemas"]["PhaseTimeDistribution"];
             /** @description Топ-10 репортов с максимальным числом regression-циклов. */
             top_regression_reports: components["schemas"]["TopRegressionReport"][];
@@ -140,14 +140,14 @@ export interface components {
         /** @description Репорт, в котором пользователь сейчас участвует. */
         AnalyticsResponsibleParticipatedReport: {
             /** Format: int64 */
-            report_id?: number;
+            report_id: number;
             title: string;
             current_phase: components["schemas"]["PhaseName"];
         };
         /** @description Завершённый репорт пользователя. */
         AnalyticsResponsibleCompletedReport: {
             /** Format: int64 */
-            report_id?: number;
+            report_id: number;
             title: string;
             /** Format: date-time */
             closed_at: string;
@@ -164,7 +164,7 @@ export interface components {
              * @description Средняя длительность fix-фаз пользователя в днях.
              *     `null` — если в окне нет fix-фаз с его участием.
              */
-            avg_fix_phase_days?: number | null;
+            avg_fix_phase_days: number | null;
         };
         /** @description Полузакрытый интервал времени [from; to). `label` — короткое имя для UI/логов. */
         Period: {

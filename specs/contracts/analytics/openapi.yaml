@@ -117,6 +117,10 @@ components:
         Средняя длительность фаз в днях (десятичные значения).
         Поля `test_retest` и `fix` могут быть `null`, если в окне периода
         не оказалось данных по соответствующей фазе.
+      required:
+        - test_initial
+        - test_retest
+        - fix
       properties:
         test_initial:
           type: number
@@ -135,6 +139,9 @@ components:
       description: |
         Доля общего времени жизни репортов, проведённая в Test/Fix.
         Значения нормализованы (`test_pct + fix_pct ≈ 1.0`).
+      required:
+        - test_pct
+        - fix_pct
       properties:
         test_pct:
           type: number
@@ -147,7 +154,9 @@ components:
       type: object
       description: Один элемент top-10 регрессионных репортов.
       required:
+        - report_id
         - title
+        - regression_cycles
       properties:
         report_id:
           type: integer
@@ -165,6 +174,9 @@ components:
       description: Один пункт еженедельного тренда по фазам.
       required:
         - iso_week
+        - test_days
+        - fix_days
+        - reports_closed
       properties:
         iso_week:
           type: string
@@ -187,6 +199,10 @@ components:
       required:
         - period
         - avg_phase_duration_days
+        - avg_full_cycle_days
+        - rework_rate
+        - avg_regression_cycles_when_present
+        - reports_closed
         - phase_time_distribution
         - top_regression_reports
         - phase_trends_weekly
@@ -232,6 +248,7 @@ components:
       type: object
       description: Репорт, в котором пользователь сейчас участвует.
       required:
+        - report_id
         - title
         - current_phase
       properties:
@@ -247,6 +264,7 @@ components:
       type: object
       description: Завершённый репорт пользователя.
       required:
+        - report_id
         - title
         - closed_at
         - outcome
@@ -269,6 +287,7 @@ components:
         - period
         - reports_participated
         - reports_completed
+        - avg_fix_phase_days
       properties:
         period:
           $ref: '../shared.yaml#/components/schemas/Period'

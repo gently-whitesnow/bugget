@@ -493,7 +493,8 @@ namespace Bugget.Reports.Contracts.Generated
         public int Entity_id { get; set; }
 
         /// <summary>
-        /// Тип сущности: 0 — баг, 1 — комментарий, 2 — шаг.
+        /// Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
+        /// <br/>2 — комментарий, 3 — шаг воспроизведения.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("attach_type")]
         public int Attach_type { get; set; }
@@ -541,6 +542,7 @@ namespace Bugget.Reports.Contracts.Generated
         /// MIME-тип содержимого.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("mime_type")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Mime_type { get; set; }
 
         /// <summary>
@@ -714,6 +716,13 @@ namespace Bugget.Reports.Contracts.Generated
 
     /// <summary>
     /// Баг внутри репорта со всем вложенным содержимым.
+    /// <br/>
+    /// <br/>`title`, `receive` и `expect` перечислены в `required`, но остаются
+    /// <br/>`nullable`: колонки `bugs.title/receive/expect` допускают `NULL`
+    /// <br/>(миграция 009 сняла `NOT NULL` с `receive`/`expect`), а бизнес-правило
+    /// <br/>требует заполнить хотя бы одно из двух, а не оба. Ключи в ответе при
+    /// <br/>этом присутствуют всегда: MVC сериализует `null`.
+    /// <br/>
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Bug
@@ -815,6 +824,9 @@ namespace Bugget.Reports.Contracts.Generated
     /// Баг без вложенного содержимого — ответ на создание. Отличается от `Bug`
     /// <br/>отсутствием `report_id` и вложенных коллекций.
     /// <br/>
+    /// <br/>`title`, `receive` и `expect` обязательны по присутствию ключа и при этом
+    /// <br/>`nullable` — по той же причине, что и в `Bug`.
+    /// <br/>
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class BugSummary
@@ -890,6 +902,11 @@ namespace Bugget.Reports.Contracts.Generated
 
     /// <summary>
     /// Что изменилось в баге после PATCH.
+    /// <br/>
+    /// <br/>`title`, `receive` и `expect` возвращаются как есть из `patch_bug_internal`,
+    /// <br/>то есть могут быть `null`: баг заводят с одним заполненным полем из пары
+    /// <br/>`receive`/`expect`, и PATCH второго не заполняет. Ключи присутствуют всегда.
+    /// <br/>
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class BugPatchResult
@@ -911,14 +928,12 @@ namespace Bugget.Reports.Contracts.Generated
         /// Фактический результат.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("receive")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Receive { get; set; }
 
         /// <summary>
         /// Ожидаемый результат.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("expect")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Expect { get; set; }
 
         /// <summary>
@@ -1039,7 +1054,8 @@ namespace Bugget.Reports.Contracts.Generated
         public int Entity_id { get; set; }
 
         /// <summary>
-        /// Тип сущности: 0 — баг, 1 — комментарий, 2 — шаг.
+        /// Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
+        /// <br/>2 — комментарий, 3 — шаг воспроизведения.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("attach_type")]
         public int Attach_type { get; set; }

@@ -63,6 +63,42 @@ internal sealed class ContractScenario
         return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
     }
 
+    /// <summary>
+    /// Баг, у которого заполнено ровно одно поле из пары <c>receive</c>/<c>expect</c>
+    /// и не заполнен <c>title</c>. Бизнес-правило требует хотя бы одно из двух, а не оба,
+    /// поэтому такой баг — законный, и наружу он уходит с <c>null</c> во втором ключе.
+    /// </summary>
+    public async Task<int> CreateOneFieldBugAsync(string reportId, string? receive = null, string? expect = null)
+    {
+        var response = await Client.PostAsJsonAsync(
+            $"/v2/reports/{reportId}/bugs",
+            new { receive, expect });
+        await AssertSuccessAsync(response, "POST /v2/reports/{aliasId}/bugs (одно поле)");
+
+        return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
+    }
+
+    public async Task<int> CreateLinkAsync(
+        string reportId,
+        string link = "https://example.test/issue/1",
+        string name = "внешняя задача")
+    {
+        var response = await Client.PostAsJsonAsync($"/v2/reports/{reportId}/links", new { link, name });
+        await AssertSuccessAsync(response, "POST /v2/reports/{aliasId}/links");
+
+        return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
+    }
+
+    public async Task<int> UploadBugAttachmentAsync(string reportId, int bugId, string fileName = "shot.png")
+    {
+        var response = await Client.PostAsync(
+            $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=0",
+            FileContent(fileName));
+        await AssertSuccessAsync(response, "POST .../bugs/{bugId}/attachments");
+
+        return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
+    }
+
     public async Task<int> CreateCommentAsync(string reportId, int bugId)
     {
         var response = await Client.PostAsJsonAsync(

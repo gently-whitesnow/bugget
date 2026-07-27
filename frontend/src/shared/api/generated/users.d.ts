@@ -616,16 +616,16 @@ export interface components {
              */
             updated_at: string;
             /** @description Команды пространства. `null` — не запрашивались. */
-            teams?: components["schemas"]["TeamSummary"][] | null;
+            teams: components["schemas"]["TeamSummary"][] | null;
         };
         /** @description Всё, что нужно стартовому экрану про пространства пользователя. */
         WorkspacesContext: {
             /** @description Доступные пространства с командами. */
             workspaces: components["schemas"]["WorkspaceWithTeams"][];
             /** @description Членство пользователя в командах. */
-            teams_member?: components["schemas"]["TeamMemberSummary"][] | null;
+            teams_member: components["schemas"]["TeamMemberSummary"][] | null;
             /** @description Членство пользователя в пространствах. */
-            workspaces_member?: components["schemas"]["WorkspaceMemberSummary"][] | null;
+            workspaces_member: components["schemas"]["WorkspaceMemberSummary"][] | null;
         };
         /** @description Приглашение в команду без самой ссылки. */
         TeamInvite: {
@@ -677,11 +677,11 @@ export interface components {
             /** @description Отображаемое имя. */
             name: string;
             /** @description Ключ аватара в хранилище. `null` — аватара нет. */
-            image_url?: string | null;
+            image_url: string | null;
             /** @description Роль в текущем рабочем пространстве. */
             workspace_role: string;
             /** @description Привязанный аккаунт Mattermost. */
-            mattermost_user_id?: string | null;
+            mattermost_user_id: string | null;
         };
         /**
          * @description Профиль так, как его отдаёт обновление: с внутренним числовым
@@ -698,9 +698,9 @@ export interface components {
             /** @description Отображаемое имя. */
             name: string;
             /** @description Ключ аватара в хранилище. */
-            image_url?: string | null;
+            image_url: string | null;
             /** @description Привязанный аккаунт Mattermost. */
-            mattermost_user_id?: string | null;
+            mattermost_user_id: string | null;
             /**
              * Format: date-time
              * @description Момент регистрации.
@@ -718,7 +718,7 @@ export interface components {
             /** @description Отображаемое имя. */
             name: string;
             /** @description Ключ аватара в хранилище. */
-            image_url?: string | null;
+            image_url: string | null;
         };
         /** @description Страница подсказок по пользователям. */
         AutocompleteUsers: {
@@ -734,7 +734,7 @@ export interface components {
             /** @description Идентификатор пользователя у провайдера. */
             external_id: string;
             /** @description Почта, пришедшая от провайдера. */
-            email?: string | null;
+            email: string | null;
             /**
              * Format: date-time
              * @description Момент привязки.

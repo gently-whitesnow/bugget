@@ -1018,6 +1018,7 @@ components:
         - name
         - created_at
         - updated_at
+        - teams
       properties:
         id:
           type: string
@@ -1045,6 +1046,8 @@ components:
       description: Всё, что нужно стартовому экрану про пространства пользователя.
       required:
         - workspaces
+        - teams_member
+        - workspaces_member
       properties:
         workspaces:
           type: array
@@ -1134,7 +1137,9 @@ components:
       required:
         - id
         - name
+        - image_url
         - workspace_role
+        - mattermost_user_id
       properties:
         id:
           $ref: '../shared.yaml#/components/schemas/UserId'
@@ -1162,6 +1167,8 @@ components:
         - id
         - external_id
         - name
+        - image_url
+        - mattermost_user_id
         - registration_date
         - updated_at
       properties:
@@ -1198,6 +1205,7 @@ components:
       required:
         - id
         - name
+        - image_url
       properties:
         id:
           $ref: '../shared.yaml#/components/schemas/UserId'
@@ -1231,6 +1239,7 @@ components:
       required:
         - provider
         - external_id
+        - email
         - linked_at
       properties:
         provider:

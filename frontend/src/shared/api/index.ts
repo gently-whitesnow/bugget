@@ -14,6 +14,10 @@ export {
   getSignalRConnectionId,
 } from "./instances";
 
+// Разбор ошибок API
+export { parseApiError } from "./parseApiError";
+export type { ApiError } from "./parseApiError";
+
 // Контракты
 export * from "./contracts";
 

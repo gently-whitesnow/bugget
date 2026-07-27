@@ -28,6 +28,21 @@ const shouldSkipCaseConversion = (url: string | undefined): boolean => {
   return skipCaseConversionPatterns.some((re) => re.test(url));
 };
 
+/**
+ * RFC 9457 Problem Details. Все имена RFC однословные, конверсия их не изменила бы,
+ * но в `errors` лежит словарь «имя поля → ошибки», и рекурсивная конверсия ключей
+ * переписала бы имена полей формы. Поэтому problem+json не конвертируем вовсе.
+ */
+const isProblemDetailsResponse = (headers: unknown): boolean => {
+  const contentType = (headers as Record<string, unknown> | undefined)?.[
+    "content-type"
+  ];
+  return (
+    typeof contentType === "string" &&
+    contentType.toLowerCase().includes("application/problem+json")
+  );
+};
+
 const setupResponseInterceptors = (axiosInstance: AxiosInstance) => {
   axiosInstance.interceptors.response.use(
     (response) => response,
@@ -60,7 +75,11 @@ const setupResponseInterceptors = (axiosInstance: AxiosInstance) => {
   );
 
   axiosInstance.interceptors.response.use((response) => {
-    if (response.data && !shouldSkipCaseConversion(response.config?.url)) {
+    if (
+      response.data &&
+      !shouldSkipCaseConversion(response.config?.url) &&
+      !isProblemDetailsResponse(response.headers)
+    ) {
       response.data = convertObjectToCamel(response.data);
     }
     return response;

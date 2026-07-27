@@ -161,6 +161,122 @@ namespace Bugget.Api.Generated.Reports
 
     }
 
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class BugsControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// Добавить баг в репорт.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <returns>Баг добавлен.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<BugSummary>> CreateBug(string aliasId, [Microsoft.AspNetCore.Mvc.FromBody] BugRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Частичное обновление бага.
+        /// </summary>
+        /// <remarks>
+        /// Не переданные поля не меняются. Смена `status` переводит баг по его
+        /// <br/>жизненному циклу и может двигать фазу репорта.
+        /// </remarks>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <returns>Баг обновлён.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPatch, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<BugPatchResult>> PatchBug(string aliasId, int bugId, [Microsoft.AspNetCore.Mvc.FromBody] BugPatchRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class BugStepsControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// Добавить шаг воспроизведения.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <returns>Шаг добавлен.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/steps")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<BugStep>> CreateBugStep(string aliasId, int bugId, [Microsoft.AspNetCore.Mvc.FromBody] BugStepRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Переупорядочить шаги воспроизведения.
+        /// </summary>
+        /// <remarks>
+        /// Порядок задаётся полным списком идентификаторов шагов. В ответе — шаги
+        /// <br/>в новом порядке.
+        /// </remarks>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <returns>Новый порядок применён.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/steps/order")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<BugStep>>> UpdateBugStepsOrder(string aliasId, int bugId, [Microsoft.AspNetCore.Mvc.FromBody] BugStepsOrderRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Изменить текст шага.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="stepId">Идентификатор шага воспроизведения.</param>
+        /// <returns>Шаг обновлён.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPatch, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<BugStep>> PatchBugStep(string aliasId, int bugId, int stepId, [Microsoft.AspNetCore.Mvc.FromBody] BugStepRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Удалить шаг.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="stepId">Идентификатор шага воспроизведения.</param>
+        /// <returns>Шаг удалён. Тело пустое.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteBugStep(string aliasId, int bugId, int stepId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class CommentsControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// Добавить комментарий к багу.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <returns>Комментарий добавлен.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/comments")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<CommentSummary>> CreateComment(string aliasId, int bugId, [Microsoft.AspNetCore.Mvc.FromBody] CommentRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Обновить свой комментарий.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="commentId">Идентификатор комментария.</param>
+        /// <returns>Комментарий обновлён.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<CommentSummary>> UpdateComment(string aliasId, int bugId, int commentId, [Microsoft.AspNetCore.Mvc.FromBody] CommentRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Удалить свой комментарий.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="commentId">Идентификатор комментария.</param>
+        /// <returns>Комментарий удалён. Тело пустое.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteComment(string aliasId, int bugId, int commentId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+    }
+
     
 
 

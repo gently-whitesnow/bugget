@@ -1,11 +1,11 @@
 using Bugget.Entities.DbModels.Attachment;
 using Bugget.Entities.DbModels.Bug;
 using Bugget.Entities.DbModels.BugSteps;
+using Bugget.Entities.DbModels.Comment;
 using Bugget.Entities.DbModels.ReportLink;
 using Bugget.Entities.Views;
 using Bugget.Entities.Views.Reports;
 using Bugget.Reports.Contracts.Generated;
-using CommentDbModel = Bugget.Entities.DbModels.Comment.CommentDbModel;
 
 namespace Bugget.Mappers;
 
@@ -122,6 +122,41 @@ internal static class ReportsMapper
         Created_at = model.CreatedAt,
         Updated_at = model.UpdatedAt,
         Attachments = model.Attachments?.Select(ToContract).ToArray(),
+    };
+
+    public static BugSummary ToSummaryContract(this BugSummaryDbModel model) => new()
+    {
+        Id = model.Id,
+        Title = model.Title,
+        Receive = model.Receive,
+        Expect = model.Expect,
+        Created_at = model.CreatedAt,
+        Updated_at = model.UpdatedAt,
+        Creator_user_id = model.CreatorUserId,
+        Status = model.Status,
+        Creator_type = model.CreatorType,
+    };
+
+    public static BugPatchResult ToContract(this BugPatchResultDbModel model) => new()
+    {
+        Id = model.Id,
+        Title = model.Title,
+        Receive = model.Receive,
+        Expect = model.Expect,
+        Updated_at = model.UpdatedAt,
+        Status = model.Status,
+    };
+
+    public static CommentSummary ToSummaryContract(this CommentSummaryDbModel model) => new()
+    {
+        Id = model.Id,
+        Bug_id = model.BugId,
+        Text = model.Text,
+        Creator_user_id = model.CreatorUserId,
+        Creator_type = model.CreatorType,
+        Audience = model.Audience,
+        Created_at = model.CreatedAt,
+        Updated_at = model.UpdatedAt,
     };
 
     public static BugStep ToContract(this BugStepSummaryDbModel model) => new()

@@ -1,39 +1,54 @@
+using Bugget.Api.Generated.Reports;
 using Bugget.BO.Services.Bugs;
 using Bugget.Entities.Authentication;
-using Bugget.Entities.DbModels.Bug;
 using Bugget.Entities.DTO.Bug;
 using Bugget.Extensions;
+using Bugget.Mappers;
+using Bugget.Reports.Contracts.Generated;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bugget.Controllers.Bugs;
 
 /// <summary>
-/// Api для работы с багами
+/// Api для работы с багами. Маршруты, тела запросов и формы ответов приходят из
+/// <c>specs/contracts/reports/openapi.yaml</c> через <see cref="BugsControllerBase"/>.
 /// </summary>
-[Route("/v2/reports/{aliasId}/bugs")]
-public sealed class BugsController(BugsService bugsService) : ApiController
+[ApiController]
+public sealed class BugsController(BugsService bugsService) : BugsControllerBase
 {
-    /// <summary>
-    /// Добавить баг
-    /// </summary>
-    /// <returns></returns>
-    [HttpPost]
-    [ProducesResponseType(typeof(BugSummaryDbModel), 201)]
-    public Task<IActionResult> CreateBugAsync([FromRoute] string aliasId, [FromBody] BugDto createDto)
+    public override Task<ActionResult<BugSummary>> CreateBug(
+        string aliasId,
+        BugRequest body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return bugsService.CreateBugAsync(user, aliasId, createDto).AsActionResultAsync(201);
+        var createDto = new BugDto
+        {
+            Title = body.Title,
+            Receive = body.Receive,
+            Expect = body.Expect
+        };
+
+        return bugsService.CreateBugAsync(user, aliasId, createDto)
+            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract(), 201);
     }
 
-    /// <summary>
-    /// Изменить баг
-    /// </summary>
-    /// <returns></returns>
-    [HttpPatch("{bugId}")]
-    [ProducesResponseType(typeof(BugPatchResultDbModel), 200)]
-    public Task<IActionResult> UpdateBugAsync([FromRoute] string aliasId, [FromRoute] int bugId, [FromBody] BugPatchDto patchDto)
+    public override Task<ActionResult<BugPatchResult>> PatchBug(
+        string aliasId,
+        int bugId,
+        BugPatchRequest body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return bugsService.PatchBugAsync(user, aliasId, bugId, patchDto).AsActionResultAsync();
+        var patchDto = new BugPatchDto
+        {
+            Title = body.Title,
+            Receive = body.Receive,
+            Expect = body.Expect,
+            Status = body.Status
+        };
+
+        return bugsService.PatchBugAsync(user, aliasId, bugId, patchDto)
+            .AsContractResultAsync(dbModel => dbModel.ToContract());
     }
 }

@@ -286,6 +286,200 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
+  /v2/reports/{aliasId}/bugs:
+    post:
+      operationId: Bugs_CreateBug
+      summary: Добавить баг в репорт.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BugRequest'
+      responses:
+        '201':
+          description: Баг добавлен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BugSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}:
+    patch:
+      operationId: Bugs_PatchBug
+      summary: Частичное обновление бага.
+      description: |-
+        Не переданные поля не меняются. Смена `status` переводит баг по его
+        жизненному циклу и может двигать фазу репорта.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BugPatchRequest'
+      responses:
+        '200':
+          description: Баг обновлён.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BugPatchResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/steps:
+    post:
+      operationId: BugSteps_CreateBugStep
+      summary: Добавить шаг воспроизведения.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BugStepRequest'
+      responses:
+        '201':
+          description: Шаг добавлен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BugStep'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/steps/order:
+    put:
+      operationId: BugSteps_UpdateBugStepsOrder
+      summary: Переупорядочить шаги воспроизведения.
+      description: |-
+        Порядок задаётся полным списком идентификаторов шагов. В ответе — шаги
+        в новом порядке.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BugStepsOrderRequest'
+      responses:
+        '200':
+          description: Новый порядок применён.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BugStep'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}:
+    patch:
+      operationId: BugSteps_PatchBugStep
+      summary: Изменить текст шага.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/StepId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BugStepRequest'
+      responses:
+        '200':
+          description: Шаг обновлён.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BugStep'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    delete:
+      operationId: BugSteps_DeleteBugStep
+      summary: Удалить шаг.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/StepId'
+      responses:
+        '200':
+          description: Шаг удалён. Тело пустое.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/comments:
+    post:
+      operationId: Comments_CreateComment
+      summary: Добавить комментарий к багу.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentRequest'
+      responses:
+        '201':
+          description: Комментарий добавлен.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}:
+    put:
+      operationId: Comments_UpdateComment
+      summary: Обновить свой комментарий.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/CommentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentRequest'
+      responses:
+        '200':
+          description: Комментарий обновлён.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    delete:
+      operationId: Comments_DeleteComment
+      summary: Удалить свой комментарий.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+        - $ref: '#/components/parameters/CommentId'
+      responses:
+        '200':
+          description: Комментарий удалён. Тело пустое.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
 components:
 
   parameters:
@@ -305,6 +499,30 @@ components:
       in: path
       required: true
       description: Идентификатор ссылки репорта.
+      schema:
+        type: integer
+
+    BugId:
+      name: bugId
+      in: path
+      required: true
+      description: Идентификатор бага внутри репорта.
+      schema:
+        type: integer
+
+    StepId:
+      name: stepId
+      in: path
+      required: true
+      description: Идентификатор шага воспроизведения.
+      schema:
+        type: integer
+
+    CommentId:
+      name: commentId
+      in: path
+      required: true
+      description: Идентификатор комментария.
       schema:
         type: integer
 
@@ -373,6 +591,105 @@ components:
           minLength: 1
           maxLength: 256
           description: Отображаемое имя ссылки.
+
+    BugRequest:
+      type: object
+      description: |
+        Тело создания бага. Все поля опциональны на уровне транспорта: полноту
+        (баг без `receive` и `expect` не имеет смысла) проверяет бизнес-логика
+        и отвечает 400 доменной ошибкой.
+      properties:
+        title:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 128
+          description: Заголовок бага.
+        receive:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 2048
+          description: Фактический результат.
+        expect:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 2048
+          description: Ожидаемый результат.
+
+    BugPatchRequest:
+      type: object
+      description: Поля бага, которые нужно изменить. Не переданные не меняются.
+      properties:
+        title:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 128
+          description: Заголовок бага.
+        receive:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 2048
+          description: Фактический результат.
+        expect:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 2048
+          description: Ожидаемый результат.
+        status:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 3
+          description: Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+
+    BugStepRequest:
+      type: object
+      description: Тело создания и обновления шага воспроизведения.
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2048
+          description: Текст шага.
+
+    BugStepsOrderRequest:
+      type: object
+      description: Полный список шагов бага в нужном порядке.
+      required:
+        - step_ids
+      properties:
+        step_ids:
+          type: array
+          description: Идентификаторы шагов в новом порядке.
+          items:
+            type: integer
+
+    CommentRequest:
+      type: object
+      description: Тело создания и обновления комментария.
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2048
+          description: Текст комментария.
+        audience:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 1
+          description: |
+            0 — внутренний (для команды, по умолчанию), 1 — внешний (пересылается
+            тестеру). Пропущенное поле трактуется как внутренний.
 
     ReportCountsScope:
       type: object
@@ -654,6 +971,125 @@ components:
           description: Шаги воспроизведения. `null` — не запрашивались.
           items:
             $ref: '#/components/schemas/BugStep'
+
+    BugSummary:
+      type: object
+      description: |
+        Баг без вложенного содержимого — ответ на создание. Отличается от `Bug`
+        отсутствием `report_id` и вложенных коллекций.
+      required:
+        - id
+        - created_at
+        - updated_at
+        - creator_user_id
+        - status
+        - creator_type
+      properties:
+        id:
+          type: integer
+          description: Идентификатор бага.
+        title:
+          type: string
+          nullable: true
+          description: Заголовок бага.
+        receive:
+          type: string
+          nullable: true
+          description: Фактический результат.
+        expect:
+          type: string
+          nullable: true
+          description: Ожидаемый результат.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+        creator_user_id:
+          type: string
+          description: Автор бага.
+        status:
+          type: integer
+          description: Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+        creator_type:
+          type: integer
+          description: Тип автора — человек или бот.
+
+    BugPatchResult:
+      type: object
+      description: Что изменилось в баге после PATCH.
+      required:
+        - id
+        - receive
+        - expect
+        - updated_at
+        - status
+      properties:
+        id:
+          type: integer
+          description: Идентификатор бага.
+        title:
+          type: string
+          nullable: true
+          description: Заголовок бага.
+        receive:
+          type: string
+          description: Фактический результат.
+        expect:
+          type: string
+          description: Ожидаемый результат.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+        status:
+          type: integer
+          description: Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+
+    CommentSummary:
+      type: object
+      description: |
+        Комментарий без вложений — ответ на создание и обновление. Отличается от
+        `Comment` отсутствием `attachments`.
+      required:
+        - id
+        - bug_id
+        - text
+        - creator_user_id
+        - creator_type
+        - audience
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Идентификатор комментария.
+        bug_id:
+          type: integer
+          description: Баг, которому принадлежит комментарий.
+        text:
+          type: string
+          description: Текст комментария.
+        creator_user_id:
+          type: string
+          description: Автор комментария.
+        creator_type:
+          type: integer
+          description: Тип автора — человек или бот.
+        audience:
+          type: integer
+          description: 0 — внутренний (для команды), 1 — внешний (уходит тестеру).
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
 
     ReportLink:
       type: object

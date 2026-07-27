@@ -139,6 +139,180 @@ namespace Bugget.Reports.Contracts.Generated
     }
 
     /// <summary>
+    /// Тело создания бага. Все поля опциональны на уровне транспорта: полноту
+    /// <br/>(баг без `receive` и `expect` не имеет смысла) проверяет бизнес-логика
+    /// <br/>и отвечает 400 доменной ошибкой.
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BugRequest
+    {
+
+        /// <summary>
+        /// Заголовок бага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.ComponentModel.DataAnnotations.StringLength(128, MinimumLength = 1)]
+        public string Title { get; set; }
+
+        /// <summary>
+        /// Фактический результат.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("receive")]
+        [System.ComponentModel.DataAnnotations.StringLength(2048, MinimumLength = 1)]
+        public string Receive { get; set; }
+
+        /// <summary>
+        /// Ожидаемый результат.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("expect")]
+        [System.ComponentModel.DataAnnotations.StringLength(2048, MinimumLength = 1)]
+        public string Expect { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Поля бага, которые нужно изменить. Не переданные не меняются.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BugPatchRequest
+    {
+
+        /// <summary>
+        /// Заголовок бага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        [System.ComponentModel.DataAnnotations.StringLength(128, MinimumLength = 1)]
+        public string Title { get; set; }
+
+        /// <summary>
+        /// Фактический результат.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("receive")]
+        [System.ComponentModel.DataAnnotations.StringLength(2048, MinimumLength = 1)]
+        public string Receive { get; set; }
+
+        /// <summary>
+        /// Ожидаемый результат.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("expect")]
+        [System.ComponentModel.DataAnnotations.StringLength(2048, MinimumLength = 1)]
+        public string Expect { get; set; }
+
+        /// <summary>
+        /// Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        [System.ComponentModel.DataAnnotations.Range(0, 3)]
+        public int? Status { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Тело создания и обновления шага воспроизведения.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BugStepRequest
+    {
+
+        /// <summary>
+        /// Текст шага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("text")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(2048, MinimumLength = 1)]
+        public string Text { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Полный список шагов бага в нужном порядке.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BugStepsOrderRequest
+    {
+
+        /// <summary>
+        /// Идентификаторы шагов в новом порядке.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("step_ids")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.IReadOnlyList<int> Step_ids { get; set; } = new System.Collections.Generic.List<int>();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Тело создания и обновления комментария.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CommentRequest
+    {
+
+        /// <summary>
+        /// Текст комментария.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("text")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(2048, MinimumLength = 1)]
+        public string Text { get; set; }
+
+        /// <summary>
+        /// 0 — внутренний (для команды, по умолчанию), 1 — внешний (пересылается
+        /// <br/>тестеру). Пропущенное поле трактуется как внутренний.
+        /// <br/>
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("audience")]
+        [System.ComponentModel.DataAnnotations.Range(0, 1)]
+        public int? Audience { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
     /// Один срез для счётчика: ключ и фильтры, совпадающие с фильтрами LIST.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -574,6 +748,212 @@ namespace Bugget.Reports.Contracts.Generated
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("steps")]
         public System.Collections.Generic.IReadOnlyList<BugStep> Steps { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Баг без вложенного содержимого — ответ на создание. Отличается от `Bug`
+    /// <br/>отсутствием `report_id` и вложенных коллекций.
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BugSummary
+    {
+
+        /// <summary>
+        /// Идентификатор бага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        /// <summary>
+        /// Заголовок бага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        public string Title { get; set; }
+
+        /// <summary>
+        /// Фактический результат.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("receive")]
+        public string Receive { get; set; }
+
+        /// <summary>
+        /// Ожидаемый результат.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("expect")]
+        public string Expect { get; set; }
+
+        /// <summary>
+        /// Момент создания.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("created_at")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset Created_at { get; set; }
+
+        /// <summary>
+        /// Момент последнего изменения.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("updated_at")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset Updated_at { get; set; }
+
+        /// <summary>
+        /// Автор бага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("creator_user_id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Creator_user_id { get; set; }
+
+        /// <summary>
+        /// Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        public int Status { get; set; }
+
+        /// <summary>
+        /// Тип автора — человек или бот.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
+        public int Creator_type { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Что изменилось в баге после PATCH.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BugPatchResult
+    {
+
+        /// <summary>
+        /// Идентификатор бага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        /// <summary>
+        /// Заголовок бага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        public string Title { get; set; }
+
+        /// <summary>
+        /// Фактический результат.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("receive")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Receive { get; set; }
+
+        /// <summary>
+        /// Ожидаемый результат.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("expect")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Expect { get; set; }
+
+        /// <summary>
+        /// Момент последнего изменения.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("updated_at")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset Updated_at { get; set; }
+
+        /// <summary>
+        /// Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        public int Status { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Комментарий без вложений — ответ на создание и обновление. Отличается от
+    /// <br/>`Comment` отсутствием `attachments`.
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CommentSummary
+    {
+
+        /// <summary>
+        /// Идентификатор комментария.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        /// <summary>
+        /// Баг, которому принадлежит комментарий.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("bug_id")]
+        public int Bug_id { get; set; }
+
+        /// <summary>
+        /// Текст комментария.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("text")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Text { get; set; }
+
+        /// <summary>
+        /// Автор комментария.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("creator_user_id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Creator_user_id { get; set; }
+
+        /// <summary>
+        /// Тип автора — человек или бот.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
+        public int Creator_type { get; set; }
+
+        /// <summary>
+        /// 0 — внутренний (для команды), 1 — внешний (уходит тестеру).
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("audience")]
+        public int Audience { get; set; }
+
+        /// <summary>
+        /// Момент создания.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("created_at")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset Created_at { get; set; }
+
+        /// <summary>
+        /// Момент последнего изменения.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("updated_at")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset Updated_at { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 

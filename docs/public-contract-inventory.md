@@ -13,7 +13,7 @@
 | --- | --- | --- | --- |
 | `* /_internal/ping` | внутренний | нет | проверка живости |
 | `* /health` | внутренний | нет | healthcheck для оркестратора |
-| `* /v1/report-page-hub` | фронт | да — `ReportPageHubContractTests` | проверяется handshake; сам обмен сообщениями — вне контракта HTTP |
+| `* /v1/report-page-hub` | фронт | да — `ReportPageHubContractTests` | проверяется handshake; сами сообщения описаны в specs/contracts/events.yaml, дрейф держит гейт realtime-contract |
 | `* /v1/report-page-hub/negotiate` | фронт | да — `ReportPageHubContractTests` |  |
 | `DELETE /v1/workspaces/{workspaceId}` | фронт | да — `UsersWorkspacesContractTests` |  |
 | `DELETE /v1/workspaces/{workspaceId}/teams/{teamId}` | фронт | да — `UsersWorkspacesContractTests` |  |

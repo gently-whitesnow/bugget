@@ -71,7 +71,7 @@ internal static class PublicContractInventory
         ["PUT /v1/user-settings-sections/{sectionId}/settings/{settingId}"] = new(Frontend, "SettingsAndSearchContractTests"),
 
         // --- SignalR ---
-        ["* /v1/report-page-hub"] = new(Frontend, "ReportPageHubContractTests", "проверяется handshake; сам обмен сообщениями — вне контракта HTTP"),
+        ["* /v1/report-page-hub"] = new(Frontend, "ReportPageHubContractTests", "проверяется handshake; сами сообщения описаны в specs/contracts/events.yaml, дрейф держит гейт realtime-contract"),
         ["* /v1/report-page-hub/negotiate"] = new(Frontend, "ReportPageHubContractTests"),
 
         // --- users: рабочие пространства и команды ---

@@ -20,6 +20,7 @@ Bugget — инструмент для баг-репортов: тестиров
 | Запуск, конфигурация, структура backend, переменные окружения | [README.md](README.md) |
 | Почему архитектура такая, а не другая | [specs/ADR/REGISTRY.md](specs/ADR/REGISTRY.md) |
 | Контракты API (источник правды) | `specs/contracts/<module>/openapi.yaml`, общее — `specs/contracts/shared.yaml` |
+| Какие события ходят по SignalR | `specs/contracts/events.yaml` |
 | Что вообще проверяется перед сдачей | [.quality/quality.config.json](.quality/quality.config.json) |
 | Раннер проверок | `scripts/quality/verify.sh` |
 | Перегенерация кода из контрактов | `scripts/quality/openapi-generate.sh` (C#), `scripts/quality/frontend-openapi-generate.sh` (TypeScript) |
@@ -62,6 +63,13 @@ Bugget — инструмент для баг-репортов: тестиров
 **`frontend/src/shared/api/generated/*.d.ts` руками не правим** — по той же причине и
 из того же yaml. Перегенерация — `scripts/quality/frontend-openapi-generate.sh`, держит
 гейт `frontend-contracts`. Каталог исключён из prettier, eslint и LOC-бюджета.
+
+**Realtime-события описаны в `specs/contracts/events.yaml`.** Что уходит по SignalR на
+страницу репорта, с какими аргументами и кто это публикует — там, а не по трём файлам.
+Из этого контракта ничего не генерируется: форму сообщений менять нельзя, фронт в проде
+у заказчика (ADR-0007). Событие добавляют сначала в yaml, потом в код — иначе красный
+гейт `backend-realtime-contract` / `frontend-realtime-contract`. Он же краснеет на снятой
+подписке фронта и на разошедшихся аргументах.
 
 **Публичный HTTP-контракт зафиксирован снимками.** Статус, media type и форма тела
 каждого пути, который зовёт фронт или nginx, лежат текстом в

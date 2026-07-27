@@ -1,0 +1,1470 @@
+openapi: 3.0.3
+
+# Контракт модуля Users — та его часть, которую зовёт фронт.
+# Источник правды для Users.Api/Generated/*.g.cs.
+#
+# Внутренние ручки (`/_internal/users/**`), которые зовёт модуль authorization,
+# в контракт не входят: их потребитель не фронт, и программа работ их ещё двигает.
+#
+# Каждый пользовательский путь объявлен дважды — с контекстом
+# `/v1/workspaces/{workspaceId}/teams/{teamId}/...` и без него. Так исторически
+# объявлены маршруты контроллеров (два `[Route]` на класс), фронт ходит по варианту
+# с контекстом. Контракт описывает оба, потому что оба публичны; операции с
+# контекстом помечены суффиксом `InContext`, и контроллер реализует их делегированием.
+#
+# Правится этот файл, а не .g.cs: перегенерация — scripts/quality/openapi-generate.sh.
+
+info:
+  title: Bugget Users API
+  version: 1.0.0
+  description: |-
+    Рабочие пространства, команды, участники, приглашения и профиль пользователя.
+
+paths:
+
+  /v1/users:
+    get:
+      operationId: Users_GetUser
+      summary: Профиль текущего пользователя.
+      responses:
+        '200':
+          description: Профиль.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден.
+
+    put:
+      operationId: Users_PutUser
+      summary: Обновить профиль текущего пользователя.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: Профиль обновлён.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    delete:
+      operationId: Users_DeleteUser
+      summary: Удалить текущего пользователя.
+      responses:
+        '200':
+          description: Пользователь удалён. Тело пустое.
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users:
+    get:
+      operationId: Users_GetUserInContext
+      summary: Профиль текущего пользователя.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Профиль.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден.
+
+    put:
+      operationId: Users_PutUserInContext
+      summary: Обновить профиль текущего пользователя.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: Профиль обновлён.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    delete:
+      operationId: Users_DeleteUserInContext
+      summary: Удалить текущего пользователя.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Пользователь удалён. Тело пустое.
+
+  /v1/users/batch/list:
+    post:
+      operationId: Users_ListUsers
+      summary: Пользователи по списку идентификаторов.
+      description: |-
+        Нераспознанные идентификаторы просто не вернутся. Пустой результат —
+        пустой массив, а не 404.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdList'
+      responses:
+        '200':
+          description: Найденные пользователи.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users/batch/list:
+    post:
+      operationId: Users_ListUsersInContext
+      summary: Пользователи по списку идентификаторов.
+      description: |-
+        Нераспознанные идентификаторы просто не вернутся. Пустой результат —
+        пустой массив, а не 404.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdList'
+      responses:
+        '200':
+          description: Найденные пользователи.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/users/autocomplete:
+    get:
+      operationId: Users_AutocompleteUsers
+      summary: Поиск пользователей по имени в текущем рабочем пространстве.
+      parameters:
+        - name: searchString
+          in: query
+          required: false
+          description: Строка поиска по имени.
+          schema:
+            type: string
+            nullable: true
+        - name: skip
+          in: query
+          required: false
+          description: Сколько записей пропустить.
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: take
+          in: query
+          required: false
+          description: Размер страницы.
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Подходящие пользователи.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutocompleteUsers'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users/autocomplete:
+    get:
+      operationId: Users_AutocompleteUsersInContext
+      summary: Поиск пользователей по имени в текущем рабочем пространстве.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+        - name: searchString
+          in: query
+          required: false
+          description: Строка поиска по имени.
+          schema:
+            type: string
+            nullable: true
+        - name: skip
+          in: query
+          required: false
+          description: Сколько записей пропустить.
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: take
+          in: query
+          required: false
+          description: Размер страницы.
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Подходящие пользователи.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutocompleteUsers'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/users/external-links:
+    get:
+      operationId: Users_GetExternalLinks
+      summary: Привязанные способы входа текущего пользователя.
+      responses:
+        '200':
+          description: Привязки.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExternalLink'
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links:
+    get:
+      operationId: Users_GetExternalLinksInContext
+      summary: Привязанные способы входа текущего пользователя.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Привязки.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExternalLink'
+
+  /v1/users/external-links/{provider}:
+    delete:
+      operationId: Users_UnlinkProvider
+      summary: Отвязать способ входа.
+      description: |-
+        Единственный способ входа отвязать нельзя — 400 с текстовым телом.
+      parameters:
+        - $ref: '#/components/parameters/Provider'
+      responses:
+        '204':
+          description: Способ входа отвязан.
+        '400':
+          description: Это единственный способ входа. Тело — текст, не JSON.
+        '404':
+          description: Такой привязки у пользователя нет.
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links/{provider}:
+    delete:
+      operationId: Users_UnlinkProviderInContext
+      summary: Отвязать способ входа.
+      description: |-
+        Единственный способ входа отвязать нельзя — 400 с текстовым телом.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/Provider'
+      responses:
+        '204':
+          description: Способ входа отвязан.
+        '400':
+          description: Это единственный способ входа. Тело — текст, не JSON.
+        '404':
+          description: Такой привязки у пользователя нет.
+
+  /v1/users/merge:
+    post:
+      operationId: Users_MergeUsers
+      summary: Объединить аккаунты.
+      description: |-
+        Переносит данные исходного аккаунта в текущий.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeUsersRequest'
+      responses:
+        '200':
+          description: Аккаунты объединены. Тело пустое.
+        '400':
+          description: Некорректный идентификатор либо аккаунт объединяют сам с собой.
+        '404':
+          description: Исходный аккаунт не найден.
+        '409':
+          description: Исходный аккаунт владеет рабочими пространствами.
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users/merge:
+    post:
+      operationId: Users_MergeUsersInContext
+      summary: Объединить аккаунты.
+      description: |-
+        Переносит данные исходного аккаунта в текущий.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeUsersRequest'
+      responses:
+        '200':
+          description: Аккаунты объединены. Тело пустое.
+        '400':
+          description: Некорректный идентификатор либо аккаунт объединяют сам с собой.
+        '404':
+          description: Исходный аккаунт не найден.
+        '409':
+          description: Исходный аккаунт владеет рабочими пространствами.
+
+  /v1/users/mattermost:
+    put:
+      operationId: Users_LinkMattermost
+      summary: Привязать аккаунт Mattermost вручную.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkMattermostRequest'
+      responses:
+        '204':
+          description: Аккаунт привязан.
+        '400':
+          description: Некорректный идентификатор Mattermost.
+
+    delete:
+      operationId: Users_UnlinkMattermost
+      summary: Отвязать аккаунт Mattermost.
+      responses:
+        '200':
+          description: Аккаунт отвязан. Тело пустое.
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users/mattermost:
+    put:
+      operationId: Users_LinkMattermostInContext
+      summary: Привязать аккаунт Mattermost вручную.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkMattermostRequest'
+      responses:
+        '204':
+          description: Аккаунт привязан.
+        '400':
+          description: Некорректный идентификатор Mattermost.
+
+    delete:
+      operationId: Users_UnlinkMattermostInContext
+      summary: Отвязать аккаунт Mattermost.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Аккаунт отвязан. Тело пустое.
+
+  /v1/users/avatar:
+    post:
+      operationId: Avatar_UploadAvatar
+      summary: Загрузить свой аватар.
+      description: |-
+        Не больше 200 КБ, форматы JPEG, PNG, GIF и WebP.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AvatarUpload'
+      responses:
+        '200':
+          description: Аватар загружен. Тело пустое.
+        '400':
+          description: Файл больше лимита либо формат не поддерживается.
+
+    delete:
+      operationId: Avatar_DeleteAvatar
+      summary: Удалить свой аватар.
+      responses:
+        '204':
+          description: Аватар удалён.
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar:
+    post:
+      operationId: Avatar_UploadAvatarInContext
+      summary: Загрузить свой аватар.
+      description: |-
+        Не больше 200 КБ, форматы JPEG, PNG, GIF и WebP.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AvatarUpload'
+      responses:
+        '200':
+          description: Аватар загружен. Тело пустое.
+        '400':
+          description: Файл больше лимита либо формат не поддерживается.
+
+    delete:
+      operationId: Avatar_DeleteAvatarInContext
+      summary: Удалить свой аватар.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '204':
+          description: Аватар удалён.
+
+  /v1/users/avatar/content:
+    get:
+      operationId: Avatar_GetAvatarContent
+      summary: Содержимое своего аватара.
+      responses:
+        '200':
+          $ref: '#/components/responses/AvatarContent'
+        '404':
+          description: Аватара нет.
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar/content:
+    get:
+      operationId: Avatar_GetAvatarContentInContext
+      summary: Содержимое своего аватара.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AvatarContent'
+        '404':
+          description: Аватара нет.
+
+  /v1/users/{userId}/avatar/content:
+    get:
+      operationId: Avatar_GetUserAvatarContent
+      summary: Содержимое аватара пользователя из текущего рабочего пространства.
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AvatarContent'
+        '404':
+          description: Пользователь не найден либо у него нет аватара.
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users/{userId}/avatar/content:
+    get:
+      operationId: Avatar_GetUserAvatarContentInContext
+      summary: Содержимое аватара пользователя из текущего рабочего пространства.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          $ref: '#/components/responses/AvatarContent'
+        '404':
+          description: Пользователь не найден либо у него нет аватара.
+
+
+  /v1/workspaces:
+    post:
+      operationId: Workspaces_CreateWorkspace
+      summary: Создать рабочее пространство.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceCreateRequest'
+      responses:
+        '200':
+          description: Рабочее пространство создано.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    get:
+      operationId: Workspaces_GetWorkspacesContext
+      summary: Рабочие пространства пользователя со всем контекстом.
+      description: |-
+        Один запрос на весь стартовый экран: пространства с командами, членство
+        в пространствах и членство в командах.
+      responses:
+        '200':
+          description: Контекст пользователя.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspacesContext'
+
+  /v1/workspaces/{workspaceId}:
+    put:
+      operationId: WorkspacesAdmin_UpdateWorkspace
+      summary: Переименовать рабочее пространство.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceUpdateRequest'
+      responses:
+        '200':
+          description: Рабочее пространство обновлено.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    delete:
+      operationId: WorkspacesAdmin_DeleteWorkspace
+      summary: Удалить рабочее пространство.
+      description: |-
+        Удаляется текущее пространство пользователя, а не то, что в пути:
+        идентификатор в адресе оставлен ради формы URL.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Рабочее пространство удалено. Тело пустое.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/workspaces/{workspaceId}/members/join:
+    post:
+      operationId: WorkspaceMembers_JoinWorkspace
+      summary: Вступить в рабочее пространство.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Пользователь вступил.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceMember'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/workspaces/{workspaceId}/teams:
+    post:
+      operationId: TeamsAdmin_CreateTeam
+      summary: Создать команду.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamCreateRequest'
+      responses:
+        '200':
+          description: Команда создана.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}:
+    put:
+      operationId: TeamsAdmin_UpdateTeam
+      summary: Переименовать команду.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamUpdateRequest'
+      responses:
+        '200':
+          description: Команда обновлена.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    delete:
+      operationId: TeamsAdmin_DeleteTeam
+      summary: Удалить команду.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Команда удалена. Тело пустое.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/workspaces/{workspaceId}/teams/batch/list:
+    post:
+      operationId: Teams_ListTeams
+      summary: Команды по списку идентификаторов.
+      description: |-
+        Нераспознанные идентификаторы просто не вернутся.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdList'
+      responses:
+        '200':
+          description: Найденные команды.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/workspaces/{workspaceId}/teams/autocomplete:
+    get:
+      operationId: Teams_AutocompleteTeams
+      summary: Поиск команд по имени в рабочем пространстве.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: searchString
+          in: query
+          required: false
+          description: Строка поиска по имени.
+          schema:
+            type: string
+            nullable: true
+        - name: skip
+          in: query
+          required: false
+          description: Сколько записей пропустить.
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: take
+          in: query
+          required: false
+          description: Размер страницы.
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Подходящие команды.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutocompleteTeams'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/members:
+    get:
+      operationId: TeamMembers_ListTeamMembers
+      summary: Участники команды.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Участники и лимит размера команды.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamMembers'
+    delete:
+      operationId: TeamMembers_LeaveTeam
+      summary: Выйти из команды.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Пользователь вышел из команды. Тело пустое.
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/members/join:
+    post:
+      operationId: TeamMembers_JoinTeam
+      summary: Вступить в команду.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Пользователь вступил в команду. Тело пустое.
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/members/{userId}:
+    delete:
+      operationId: TeamMembersAdmin_DeleteTeamMember
+      summary: Удалить участника команды.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Участник удалён. Тело пустое.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/invites:
+    post:
+      operationId: TeamInvitesAdmin_CreateTeamInvite
+      summary: Создать приглашение в команду.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Приглашение создано.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamInviteWithLink'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    get:
+      operationId: TeamInvitesAdmin_GetTeamInvite
+      summary: Действующее приглашение команды.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Приглашение.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamInvite'
+        '204':
+          description: Действующего приглашения нет.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/invites/{id}:
+    put:
+      operationId: TeamInvitesAdmin_UpdateTeamInvite
+      summary: Перевыпустить приглашение.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/InviteId'
+      responses:
+        '201':
+          description: Приглашение перевыпущено.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamInviteWithLink'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Приглашение не найдено.
+    delete:
+      operationId: TeamInvitesAdmin_DeleteTeamInvite
+      summary: Удалить приглашение.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/InviteId'
+      responses:
+        '200':
+          description: Приглашение удалено. Тело пустое.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/invites/accept:
+    post:
+      operationId: TeamInvites_AcceptTeamInvite
+      summary: Принять приглашение.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInviteRequest'
+      responses:
+        '200':
+          description: Приглашение принято.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedInvite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Приглашение не найдено либо просрочено.
+
+components:
+
+  parameters:
+
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      description: Идентификатор рабочего пространства.
+      schema:
+        type: integer
+
+    TeamId:
+      name: teamId
+      in: path
+      required: true
+      description: Идентификатор команды.
+      schema:
+        type: integer
+
+    UserId:
+      name: userId
+      in: path
+      required: true
+      description: Идентификатор пользователя.
+      schema:
+        type: integer
+        format: int64
+
+    InviteId:
+      name: id
+      in: path
+      required: true
+      description: Идентификатор приглашения.
+      schema:
+        type: integer
+
+    Provider:
+      name: provider
+      in: path
+      required: true
+      description: Провайдер входа, например `mattermost`.
+      schema:
+        type: string
+
+  schemas:
+
+    IdList:
+      type: array
+      description: |
+        Идентификаторы строками — от 1 до 1000 за запрос. Строки, а не числа:
+        так это уже принимает фронт.
+      minItems: 1
+      maxItems: 1000
+      items:
+        type: string
+
+    WorkspaceCreateRequest:
+      type: object
+      description: Тело создания рабочего пространства.
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          description: Название рабочего пространства.
+
+    WorkspaceUpdateRequest:
+      type: object
+      description: Новое название рабочего пространства.
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          description: Название рабочего пространства.
+
+    TeamCreateRequest:
+      type: object
+      description: Тело создания команды.
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Название команды.
+
+    TeamUpdateRequest:
+      type: object
+      description: Новое название команды.
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Название команды.
+
+    UserUpdateRequest:
+      type: object
+      description: Изменяемые поля профиля.
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Отображаемое имя.
+
+    MergeUsersRequest:
+      type: object
+      description: Какой аккаунт влить в текущий.
+      required:
+        - source_user_id
+      properties:
+        source_user_id:
+          type: string
+          minLength: 1
+          maxLength: 32
+          description: Идентификатор исходного аккаунта.
+
+    LinkMattermostRequest:
+      type: object
+      description: Идентификатор аккаунта в Mattermost.
+      required:
+        - mattermost_user_id
+      properties:
+        mattermost_user_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: Идентификатор пользователя в Mattermost.
+
+    AcceptInviteRequest:
+      type: object
+      description: Токен приглашения.
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          description: Токен из ссылки-приглашения.
+
+    AvatarUpload:
+      type: object
+      description: Файл аватара. Один файл на запрос.
+      required:
+        - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: Содержимое файла.
+
+    Workspace:
+      type: object
+      description: Рабочее пространство.
+      required:
+        - id
+        - name
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Идентификатор.
+        name:
+          type: string
+          description: Название.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+
+    Team:
+      type: object
+      description: Команда.
+      required:
+        - id
+        - workspace_id
+        - name
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Идентификатор.
+        workspace_id:
+          type: integer
+          description: Рабочее пространство команды.
+        name:
+          type: string
+          description: Название.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+
+    TeamSummary:
+      type: object
+      description: |
+        Команда так, как её отдают списковые ручки: идентификатор строкой и без
+        привязки к пространству.
+      required:
+        - id
+        - name
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          description: Идентификатор.
+        name:
+          type: string
+          description: Название.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+
+    AutocompleteTeams:
+      type: object
+      description: Страница подсказок по командам.
+      required:
+        - teams
+        - total
+      properties:
+        teams:
+          type: array
+          description: Подходящие команды.
+          items:
+            $ref: '#/components/schemas/TeamSummary'
+        total:
+          type: integer
+          description: Сколько команд в текущей выдаче.
+
+    WorkspaceMember:
+      type: object
+      description: Членство пользователя в рабочем пространстве.
+      required:
+        - workspace_id
+        - user_id
+        - role
+        - created_at
+      properties:
+        workspace_id:
+          type: integer
+          description: Рабочее пространство.
+        user_id:
+          type: integer
+          format: int64
+          description: Пользователь.
+        role:
+          type: string
+          description: Роль в пространстве.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент вступления.
+
+    WorkspaceMemberSummary:
+      type: object
+      description: |
+        То же членство в контексте стартового экрана: идентификаторы строками.
+      required:
+        - workspace_id
+        - user_id
+        - role
+        - created_at
+      properties:
+        workspace_id:
+          type: string
+          description: Рабочее пространство.
+        user_id:
+          type: string
+          description: Пользователь.
+        role:
+          type: string
+          description: Роль в пространстве.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент вступления.
+
+    TeamMemberSummary:
+      type: object
+      description: Членство пользователя в команде.
+      required:
+        - team_id
+        - user_id
+        - created_at
+      properties:
+        team_id:
+          type: string
+          description: Команда.
+        user_id:
+          type: string
+          description: Пользователь.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент вступления.
+
+    TeamMembers:
+      type: object
+      description: Участники команды и лимит её размера.
+      required:
+        - members
+        - size_limit
+      properties:
+        members:
+          type: array
+          description: Участники.
+          items:
+            $ref: '#/components/schemas/TeamMemberSummary'
+        size_limit:
+          type: integer
+          description: |
+            Предельный размер команды. 0 — лимита нет (self-hosted-контур).
+
+    WorkspaceWithTeams:
+      type: object
+      description: Рабочее пространство со своими командами.
+      required:
+        - id
+        - name
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          description: Идентификатор.
+        name:
+          type: string
+          description: Название.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+        teams:
+          type: array
+          nullable: true
+          description: Команды пространства. `null` — не запрашивались.
+          items:
+            $ref: '#/components/schemas/TeamSummary'
+
+    WorkspacesContext:
+      type: object
+      description: Всё, что нужно стартовому экрану про пространства пользователя.
+      required:
+        - workspaces
+      properties:
+        workspaces:
+          type: array
+          description: Доступные пространства с командами.
+          items:
+            $ref: '#/components/schemas/WorkspaceWithTeams'
+        teams_member:
+          type: array
+          nullable: true
+          description: Членство пользователя в командах.
+          items:
+            $ref: '#/components/schemas/TeamMemberSummary'
+        workspaces_member:
+          type: array
+          nullable: true
+          description: Членство пользователя в пространствах.
+          items:
+            $ref: '#/components/schemas/WorkspaceMemberSummary'
+
+    TeamInvite:
+      type: object
+      description: Приглашение в команду без самой ссылки.
+      required:
+        - id
+        - created_at
+        - expires_at
+      properties:
+        id:
+          type: integer
+          description: Идентификатор приглашения.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        expires_at:
+          type: string
+          format: date-time
+          description: Момент истечения.
+
+    TeamInviteWithLink:
+      type: object
+      description: |
+        Приглашение вместе со ссылкой. Ссылка отдаётся только при создании и
+        перевыпуске: в хранилище лежит хеш токена, а не он сам.
+      required:
+        - id
+        - invite_link
+        - created_at
+        - expires_at
+      properties:
+        id:
+          type: integer
+          description: Идентификатор приглашения.
+        invite_link:
+          type: string
+          description: Ссылка-приглашение с токеном.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        expires_at:
+          type: string
+          format: date-time
+          description: Момент истечения.
+
+    AcceptedInvite:
+      type: object
+      description: Куда пользователь попал, приняв приглашение.
+      required:
+        - id
+        - team_id
+        - workspace_id
+      properties:
+        id:
+          type: integer
+          description: Идентификатор приглашения.
+        team_id:
+          type: integer
+          description: Команда.
+        workspace_id:
+          type: integer
+          description: Рабочее пространство.
+
+    User:
+      type: object
+      description: Пользователь так, как его видит фронт.
+      required:
+        - id
+        - name
+        - workspace_role
+      properties:
+        id:
+          $ref: '../shared.yaml#/components/schemas/UserId'
+        name:
+          type: string
+          description: Отображаемое имя.
+        image_url:
+          type: string
+          nullable: true
+          description: Ключ аватара в хранилище. `null` — аватара нет.
+        workspace_role:
+          type: string
+          description: Роль в текущем рабочем пространстве.
+        mattermost_user_id:
+          type: string
+          nullable: true
+          description: Привязанный аккаунт Mattermost.
+
+    UserProfile:
+      type: object
+      description: |
+        Профиль так, как его отдаёт обновление: с внутренним числовым
+        идентификатором и внешним идентификатором провайдера.
+      required:
+        - id
+        - external_id
+        - name
+        - registration_date
+        - updated_at
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Внутренний идентификатор.
+        external_id:
+          type: string
+          description: Идентификатор у провайдера входа.
+        name:
+          type: string
+          description: Отображаемое имя.
+        image_url:
+          type: string
+          nullable: true
+          description: Ключ аватара в хранилище.
+        mattermost_user_id:
+          type: string
+          nullable: true
+          description: Привязанный аккаунт Mattermost.
+        registration_date:
+          type: string
+          format: date-time
+          description: Момент регистрации.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+
+    AutocompleteUser:
+      type: object
+      description: Пользователь в подсказках поиска.
+      required:
+        - id
+        - name
+      properties:
+        id:
+          $ref: '../shared.yaml#/components/schemas/UserId'
+        name:
+          type: string
+          description: Отображаемое имя.
+        image_url:
+          type: string
+          nullable: true
+          description: Ключ аватара в хранилище.
+
+    AutocompleteUsers:
+      type: object
+      description: Страница подсказок по пользователям.
+      required:
+        - users
+        - total
+      properties:
+        users:
+          type: array
+          description: Подходящие пользователи.
+          items:
+            $ref: '#/components/schemas/AutocompleteUser'
+        total:
+          type: integer
+          description: Сколько пользователей в текущей выдаче.
+
+    ExternalLink:
+      type: object
+      description: Привязанный способ входа.
+      required:
+        - provider
+        - external_id
+        - linked_at
+      properties:
+        provider:
+          type: string
+          description: Провайдер, например `mattermost`.
+        external_id:
+          type: string
+          description: Идентификатор пользователя у провайдера.
+        email:
+          type: string
+          nullable: true
+          description: Почта, пришедшая от провайдера.
+        linked_at:
+          type: string
+          format: date-time
+          description: Момент привязки.
+
+  responses:
+
+    AvatarContent:
+      description: Содержимое аватара. Content-Type — по расширению файла.
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
+
+    BadRequest:
+      description: Некорректные параметры запроса.
+      content:
+        application/json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Недостаточно прав.
+      content:
+        application/json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ErrorResponse'

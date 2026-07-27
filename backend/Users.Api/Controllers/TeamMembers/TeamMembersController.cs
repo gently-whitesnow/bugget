@@ -1,50 +1,62 @@
-using System.Net;
 using Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Users.Api.Contracts.Generated;
+using Users.Api.Generated;
+using Users.Api.Mappers;
 using Users.BO.TeamMembers;
 using Users.Entities.Options;
 
 namespace Users.Api.Controllers.TeamMembers;
 
+/// <summary>
+/// Участники команды. Маршруты и формы приходят из
+/// <c>specs/contracts/users/openapi.yaml</c> через <see cref="TeamMembersControllerBase"/>.
+/// </summary>
+[ApiController]
 [Auth]
-[Route("v1/workspaces/{workspaceId}/teams/{teamId}/members")]
 [WorkspaceRequired]
-public sealed class TeamMembersController(ITeamMembersService teamMembersService, IOptions<TeamsOptions> teamsOptions, IOptions<SelfHostedOptions> selfHostedOptions) : ApiController
+public sealed class TeamMembersController(
+    ITeamMembersService teamMembersService,
+    IOptions<TeamsOptions> teamsOptions,
+    IOptions<SelfHostedOptions> selfHostedOptions) : TeamMembersControllerBase
 {
     /// <summary>
     /// Вступить в команду
     /// </summary>
-    /// <returns></returns>
-    [HttpPost("join")]
-    [ProducesResponseType((int)HttpStatusCode.OK)]
-    public Task JoinTeamAsync([FromRoute] int teamId)
+    public override async Task<IActionResult> JoinTeam(
+        int workspaceId,
+        int teamId,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return teamMembersService.CreateTeamMemberAsync(teamId, user.Id);
+        await teamMembersService.CreateTeamMemberAsync(teamId, user.Id);
+        return Ok();
     }
 
     /// <summary>
     /// Получить участников команды
     /// </summary>
-    [HttpGet]
-    [ProducesResponseType(typeof(TeamMembersView), (int)HttpStatusCode.OK)]
-    public async Task<TeamMembersView> ListTeamMembersAsync([FromRoute] int teamId)
+    public override async Task<ActionResult<Contracts.Generated.TeamMembers>> ListTeamMembers(
+        int workspaceId,
+        int teamId,
+        CancellationToken cancellationToken = default)
     {
         var members = await teamMembersService.ListTeamMembersAsync(teamId);
         var sizeLimit = selfHostedOptions.Value.Enabled ? 0 : teamsOptions.Value.DefaultSizeLimit;
-        return members.ToView(sizeLimit);
+        return members.ToView(sizeLimit).ToContract();
     }
 
     /// <summary>
     /// Выйти из команды
     /// </summary>
-    [HttpDelete]
-    [ProducesResponseType((int)HttpStatusCode.OK)]
-    public Task LeaveTeamAsync([FromRoute] int teamId)
+    public override async Task<IActionResult> LeaveTeam(
+        int workspaceId,
+        int teamId,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return teamMembersService.DeleteTeamMemberAsync(user.Id, teamId);
+        await teamMembersService.DeleteTeamMemberAsync(user.Id, teamId);
+        return Ok();
     }
 }

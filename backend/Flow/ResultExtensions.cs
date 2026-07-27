@@ -35,7 +35,22 @@ public static class ResultExtensions
         return operation.AsActionResult(toView, successStatusCode);
     }
 
-    public static IActionResult AsActionResult(
+    /// <summary>
+    /// То же, что AsActionResultAsync с маппером, но результат типизирован
+    /// контрактным DTO: сгенерированные из OpenAPI базы объявляют
+    /// ActionResult&lt;T&gt;, и расхождение с контрактом ловит компилятор.
+    /// </summary>
+    public static async Task<ActionResult<TContract>> AsContractResultAsync<TValue, TContract>(
+        this Task<ResultStruct<TValue>> operationTask,
+        Func<TValue, TContract> toContract,
+        int successStatusCode = 200)
+    {
+        var operation = await operationTask;
+
+        return operation.AsActionResult(toContract, successStatusCode);
+    }
+
+    public static ActionResult AsActionResult(
         this ResultStruct operation,
         int successStatusCode = 200)
     {
@@ -50,7 +65,7 @@ public static class ResultExtensions
         };
     }
 
-    public static IActionResult AsActionResult<TValue>(
+    public static ActionResult AsActionResult<TValue>(
         this ResultStruct<TValue> operation,
         int successStatusCode = 200)
     {
@@ -68,7 +83,7 @@ public static class ResultExtensions
         };
     }
 
-    public static IActionResult AsActionResult<TValue, TView>(
+    public static ActionResult AsActionResult<TValue, TView>(
         this ResultStruct<TValue> operation,
         Func<TValue, TView> toView,
         int successStatusCode = 200)

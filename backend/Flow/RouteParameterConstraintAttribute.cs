@@ -1,6 +1,7 @@
+using System;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
-namespace Bugget.Routing;
+namespace Flow.Routing;
 
 /// <summary>
 /// Возвращает ограничение типа в шаблон маршрута сгенерированного действия:
@@ -15,11 +16,14 @@ namespace Bugget.Routing;
 /// Вешается точечно и только там, где ограничение было до перехода на
 /// contract-first: глобальное правило «каждый int-параметр маршрута получает
 /// :int» поменяло бы ответы там, где их никто не менял.
+///
+/// Живёт в Flow — общем для модулей наборе ASP.NET-обвязки (там же обработчик
+/// невалидной модели и middleware ошибок), потому что нужен и reports, и users.
 /// </summary>
 /// <param name="parameter">Имя параметра маршрута, например <c>id</c>.</param>
 /// <param name="constraint">Ограничение маршрутизации, например <c>long</c>.</param>
 [AttributeUsage(AttributeTargets.Method)]
-internal sealed class RouteParameterConstraintAttribute(string parameter, string constraint)
+public sealed class RouteParameterConstraintAttribute(string parameter, string constraint)
     : Attribute, IActionModelConvention
 {
     public void Apply(ActionModel action)

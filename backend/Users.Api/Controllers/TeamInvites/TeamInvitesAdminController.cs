@@ -1,63 +1,76 @@
 using Authentication;
 using Flow.Extensions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
+using Users.Api.Contracts.Generated;
 using Users.Api.Controllers.TeamInvites;
+using Users.Api.Generated;
+using Users.Api.Mappers;
 using Users.BO.TeamInvites;
-using Users.Entities.Options;
 
 namespace Users.Api.Controllers;
 
-[Route("v1/workspaces/{workspaceId}/teams/{teamId}/invites")]
+/// <summary>
+/// Приглашения в команду. Маршруты и формы приходят из
+/// <c>specs/contracts/users/openapi.yaml</c> через
+/// <see cref="TeamInvitesAdminControllerBase"/>.
+/// </summary>
+[ApiController]
 [Auth(Roles = "admin")]
 [TeamRequired]
-public sealed class TeamInvitesAdminController(ITeamInvitesService teamInvitesService, IOptions<TeamsOptions> options) : ApiController
+public sealed class TeamInvitesAdminController(ITeamInvitesService teamInvitesService) : TeamInvitesAdminControllerBase
 {
     /// <summary>
     /// Создать инвайт для вступления в команду
     /// </summary>
-    [HttpPost]
-    [ProducesResponseType(typeof(TeamCreateInviteView), 200)]
-    public async Task<IActionResult> CreateTeamInviteAsync([FromRoute] int workspaceId, [FromRoute] int teamId)
+    public override async Task<ActionResult<TeamInviteWithLink>> CreateTeamInvite(
+        int workspaceId,
+        int teamId,
+        CancellationToken cancellationToken = default)
     {
         var invite = await teamInvitesService.CreateTeamInviteAsync(workspaceId, teamId);
-        return Ok(invite.ToView());
+        return Ok(invite.ToView().ToContract());
     }
 
     /// <summary>
     /// Перегенерировать инвайт для вступления в команду
     /// </summary>
-    [HttpPut("{id}")]
-    [ProducesResponseType(typeof(TeamCreateInviteView), 201)]
-    public Task<IActionResult> UpdateTeamInviteAsync([FromRoute] int teamId, [FromRoute] int id)
+    public override Task<ActionResult<TeamInviteWithLink>> UpdateTeamInvite(
+        int workspaceId,
+        int teamId,
+        int id,
+        CancellationToken cancellationToken = default)
     {
         return teamInvitesService.UpdateTeamInviteAsync(teamId, id)
-        .AsActionResultAsync(result => result.ToView(), 201);
+            .AsContractResultAsync(result => result.ToView().ToContract(), 201);
     }
 
     /// <summary>
     /// Получить инвайты команды
     /// </summary>
-    [HttpGet]
-    [ProducesResponseType(typeof(TeamInviteView), 200)]
-    [ProducesResponseType(204)]
-    public async Task<IActionResult> GetTeamInviteAsync([FromRoute] int teamId)
+    public override async Task<ActionResult<TeamInvite>> GetTeamInvite(
+        int workspaceId,
+        int teamId,
+        CancellationToken cancellationToken = default)
     {
         var invite = await teamInvitesService.GetTeamInviteAsync(teamId);
         if (invite is null)
         {
             return NoContent();
         }
-        return Ok(invite.ToView());
+
+        return Ok(invite.ToView().ToContract());
     }
 
     /// <summary>
     /// Удалить инвайт команды
     /// </summary>
-    [HttpDelete("{id}")]
-    [ProducesResponseType(200)]
-    public Task DeleteTeamInviteAsync([FromRoute] int teamId, [FromRoute] int id)
+    public override async Task<IActionResult> DeleteTeamInvite(
+        int workspaceId,
+        int teamId,
+        int id,
+        CancellationToken cancellationToken = default)
     {
-        return teamInvitesService.DeleteTeamInviteAsync(teamId, id);
+        await teamInvitesService.DeleteTeamInviteAsync(teamId, id);
+        return Ok();
     }
 }

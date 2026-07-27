@@ -263,14 +263,14 @@ namespace Bugget.Analytics.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("top_regression_reports")]
         [System.ComponentModel.DataAnnotations.Required]
         [System.ComponentModel.DataAnnotations.MaxLength(10)]
-        public System.Collections.Generic.IReadOnlyList<TopRegressionReport> Top_regression_reports { get; } = new System.Collections.Generic.List<TopRegressionReport>();
+        public System.Collections.Generic.IReadOnlyList<TopRegressionReport> Top_regression_reports { get; set; } = new System.Collections.Generic.List<TopRegressionReport>();
 
         /// <summary>
         /// Понедельный тренд по фазам в окне периода.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("phase_trends_weekly")]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.IReadOnlyList<PhaseTrendWeekly> Phase_trends_weekly { get; } = new System.Collections.Generic.List<PhaseTrendWeekly>();
+        public System.Collections.Generic.IReadOnlyList<PhaseTrendWeekly> Phase_trends_weekly { get; set; } = new System.Collections.Generic.List<PhaseTrendWeekly>();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -363,14 +363,14 @@ namespace Bugget.Analytics.Contracts.Generated
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("reports_participated")]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.IReadOnlyList<AnalyticsResponsibleParticipatedReport> Reports_participated { get; } = new System.Collections.Generic.List<AnalyticsResponsibleParticipatedReport>();
+        public System.Collections.Generic.IReadOnlyList<AnalyticsResponsibleParticipatedReport> Reports_participated { get; set; } = new System.Collections.Generic.List<AnalyticsResponsibleParticipatedReport>();
 
         /// <summary>
         /// Репорты, завершённые пользователем в окне периода.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("reports_completed")]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.IReadOnlyList<AnalyticsResponsibleCompletedReport> Reports_completed { get; } = new System.Collections.Generic.List<AnalyticsResponsibleCompletedReport>();
+        public System.Collections.Generic.IReadOnlyList<AnalyticsResponsibleCompletedReport> Reports_completed { get; set; } = new System.Collections.Generic.List<AnalyticsResponsibleCompletedReport>();
 
         /// <summary>
         /// Средняя длительность fix-фаз пользователя в днях.
@@ -457,7 +457,7 @@ namespace Bugget.Analytics.Contracts.Generated
         /// Опциональный список структурных ошибок (валидации полей и т.п.).
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("error_list")]
-        public System.Collections.Generic.IReadOnlyList<string> Error_list { get; }
+        public System.Collections.Generic.IReadOnlyList<string> Error_list { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 

@@ -1,40 +1,51 @@
 using Authentication;
 using Flow.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Users.Api.Contracts.Generated;
+using Users.Api.Generated;
+using Users.Api.Mappers;
 using Users.BO.Interfaces;
-using Users.Entities.DbModels.Workspaces;
-using Users.Entities.Dto.Workspaces;
 
 namespace Users.Api.Controllers.Workspaces;
 
-[Route("v1/workspaces")]
+/// <summary>
+/// Административные операции над рабочим пространством. Маршруты и формы приходят
+/// из <c>specs/contracts/users/openapi.yaml</c> через
+/// <see cref="WorkspacesAdminControllerBase"/>.
+/// </summary>
+[ApiController]
 [Auth(Roles = "admin")]
 [WorkspaceRequired]
-public sealed class WorkspacesAdminController(IWorkspacesService workspacesService) : ApiController
+public sealed class WorkspacesAdminController(IWorkspacesService workspacesService) : WorkspacesAdminControllerBase
 {
     /// <summary>
     /// Переименовать рабочую область
     /// </summary>
-    [HttpPut("{workspaceId}")]
-    [ProducesResponseType(typeof(WorkspaceDbModel), 200)]
-    public Task<IActionResult> UpdateWorkspaceAsync([FromRoute] int workspaceId, [FromBody] UpdateWorkspaceDto dto)
+    public override Task<ActionResult<Workspace>> UpdateWorkspace(
+        int workspaceId,
+        WorkspaceUpdateRequest body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
 
-        return workspacesService.UpdateWorkspaceAsync(user.Id, workspaceId, dto.Name)
-        .AsActionResultAsync();
+        return workspacesService.UpdateWorkspaceAsync(user.Id, workspaceId, body.Name)
+            .AsContractResultAsync(model => model.ToContract());
     }
 
     /// <summary>
     /// Удалить рабочую область
     /// </summary>
-    [HttpDelete("{workspaceId}")]
-    [ProducesResponseType(200)]
-    public Task<IActionResult> DeleteWorkspaceAsync()
+    /// <remarks>
+    /// Удаляется текущая область пользователя, а не та, что в пути: так было и до
+    /// contract-first, идентификатор в адресе оставлен ради формы URL.
+    /// </remarks>
+    public override Task<IActionResult> DeleteWorkspace(
+        string workspaceId,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
 
         return workspacesService.DeleteWorkspaceAsync(user.Id, user.WorkspaceId!.Value)
-        .AsActionResultAsync();
+            .AsActionResultAsync();
     }
 }

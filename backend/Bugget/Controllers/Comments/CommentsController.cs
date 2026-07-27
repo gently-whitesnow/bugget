@@ -1,62 +1,57 @@
+using Bugget.Api.Generated.Reports;
 using Bugget.BO.Services.Comments;
 using Bugget.Entities.Authentication;
-using Bugget.Entities.DbModels.Comment;
 using Bugget.Entities.DTO.Comment;
 using Bugget.Extensions;
+using Bugget.Mappers;
+using Bugget.Reports.Contracts.Generated;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bugget.Controllers.Comments;
 
 /// <summary>
-/// Api для работы с комментами
+/// Api для работы с комментами. Маршруты и формы приходят из
+/// <c>specs/contracts/reports/openapi.yaml</c> через <see cref="CommentsControllerBase"/>.
 /// </summary>
-[Route("/v2/reports/{aliasId}/bugs/{bugId}/comments")]
-public sealed class CommentsController(
-    CommentsService commentsService) : ApiController
+[ApiController]
+public sealed class CommentsController(CommentsService commentsService) : CommentsControllerBase
 {
-    /// <summary>
-    /// Добавить комментарий
-    /// </summary>
-    /// <param name="aliasId"></param>
-    /// <param name="bugId"></param>
-    /// <param name="createDto"></param>
-    /// <returns></returns>
-    [HttpPost]
-    [ProducesResponseType(typeof(CommentSummaryDbModel), 201)]
-    public async Task<IActionResult> CreateCommentAsync([FromRoute] string aliasId, [FromRoute] int bugId, [FromBody] CommentDto createDto)
+    public override Task<ActionResult<CommentSummary>> CreateComment(
+        string aliasId,
+        int bugId,
+        CommentRequest body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return await commentsService.CreateCommentAsync(user, aliasId, bugId, createDto).AsActionResultAsync(201);
+        return commentsService.CreateCommentAsync(user, aliasId, bugId, ToDto(body))
+            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract(), 201);
     }
 
-    /// <summary>
-    /// Удалить свой комментарий
-    /// </summary>
-    /// <param name="aliasId"></param>
-    /// <param name="bugId"></param>
-    /// <param name="commentId"></param>
-    /// <returns></returns>
-    [HttpDelete("{commentId}")]
-    [ProducesResponseType(200)]
-    public Task<IActionResult> DeleteCommentAsync([FromRoute] string aliasId, [FromRoute] int bugId, [FromRoute] int commentId)
+    public override Task<ActionResult<CommentSummary>> UpdateComment(
+        string aliasId,
+        int bugId,
+        int commentId,
+        CommentRequest body,
+        CancellationToken cancellationToken = default)
+    {
+        var user = User.GetIdentity();
+        return commentsService.UpdateCommentAsync(user, aliasId, bugId, commentId, ToDto(body))
+            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract());
+    }
+
+    public override Task<IActionResult> DeleteComment(
+        string aliasId,
+        int bugId,
+        int commentId,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         return commentsService.DeleteCommentAsync(user, aliasId, bugId, commentId).AsActionResultAsync();
     }
 
-    /// <summary>
-    /// Обновить свой комментарий
-    /// </summary>
-    /// <param name="aliasId"></param>
-    /// <param name="bugId"></param>
-    /// <param name="commentId"></param>
-    /// <param name="updateDto"></param>
-    /// <returns></returns>
-    [HttpPut("{commentId}")]
-    [ProducesResponseType(typeof(CommentSummaryDbModel), 200)]
-    public Task<IActionResult> UpdateCommentAsync([FromRoute] string aliasId, [FromRoute] int bugId, [FromRoute] int commentId, [FromBody] CommentDto updateDto)
+    private static CommentDto ToDto(CommentRequest body) => new()
     {
-        var user = User.GetIdentity();
-        return commentsService.UpdateCommentAsync(user, aliasId, bugId, commentId, updateDto).AsActionResultAsync();
-    }
+        Text = body.Text,
+        Audience = (short?)body.Audience
+    };
 }

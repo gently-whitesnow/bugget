@@ -1,39 +1,40 @@
 using Authentication;
 using Flow.Extensions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Users.Api.Contracts.Generated;
 using Users.Api.Controllers.Workspaces;
-using Users.BO;
+using Users.Api.Generated;
+using Users.Api.Mappers;
 using Users.BO.Interfaces;
-using Users.Entities.BO;
-using Users.Entities.DbModels.Workspaces;
-using Users.Entities.Dto.Workspaces;
 
 namespace Users.Api.Controllers;
 
-[Route("v1/workspaces")]
+/// <summary>
+/// Рабочие пространства пользователя. Маршруты и формы приходят из
+/// <c>specs/contracts/users/openapi.yaml</c> через <see cref="WorkspacesControllerBase"/>.
+/// </summary>
+[ApiController]
 [Auth]
-public sealed class WorkspacesController(IWorkspacesService workspacesService) : ApiController
+public sealed class WorkspacesController(IWorkspacesService workspacesService) : WorkspacesControllerBase
 {
     /// <summary>
     /// Создать рабочую область
     /// </summary>
-    [HttpPost]
-    [ProducesResponseType(typeof(WorkspaceDbModel), 200)]
-    public Task<IActionResult> CreateWorkspaceAsync([FromBody] CreateWorkspaceDto createWorkspaceDto)
+    public override Task<ActionResult<Workspace>> CreateWorkspace(
+        WorkspaceCreateRequest body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
 
-        return workspacesService.CreateWorkspaceAsync(user.Id, createWorkspaceDto.Name).AsActionResultAsync();
+        return workspacesService.CreateWorkspaceAsync(user.Id, body.Name)
+            .AsContractResultAsync(model => model.ToContract());
     }
 
     /// <summary>
     /// Получить рабочие области
     /// </summary>
-    /// <returns></returns>
-    [HttpGet]
-    [ProducesResponseType(typeof(WorkspacesContextView), 200)]
-    public async Task<WorkspacesContextView> GetWorkspacesContextAsync()
+    public override async Task<ActionResult<WorkspacesContext>> GetWorkspacesContext(
+        CancellationToken cancellationToken = default)
     {
         var (workspaces, workspacesMember, teamsMember) = await workspacesService.GetWorkspacesContextAsync(User.GetIdentity().Id);
         return new WorkspacesContextView
@@ -67,6 +68,6 @@ public sealed class WorkspacesController(IWorkspacesService workspacesService) :
                 Role = m.Role,
                 CreatedAt = m.CreatedAt
             }).ToArray()
-        };
+        }.ToContract();
     }
 }

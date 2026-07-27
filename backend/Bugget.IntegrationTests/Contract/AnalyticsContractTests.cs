@@ -48,4 +48,16 @@ public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassF
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         await ContractSnapshot.MatchAsync("v2.reports.analytics.get", response);
     }
+
+    [Fact(DisplayName = "GET /v2/reports/{id}/analytics: нечисловой сегмент не совпадает с маршрутом — 404")]
+    public async Task ReportAnalyticsWithNonNumericId()
+    {
+        // Ограничение маршрута (:long) держит поведение «мусорный сегмент — это не наш
+        // путь». Без него запрос доехал бы до действия и вернул 400 на связывании.
+        var scenario = ContractScenario.Create(fixture);
+
+        var response = await scenario.Client.GetAsync("/v2/reports/not-a-number/analytics");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

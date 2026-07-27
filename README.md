@@ -98,7 +98,9 @@ python3 scripts/quality/backend-duplicates.py --max 0                  # все 
 
 Контракты API описаны в `specs/contracts/<module>/openapi.yaml`, общие схемы —
 в `specs/contracts/shared.yaml`. Это источник правды: файлы `*.g.cs` только генерируются
-(`./scripts/quality/openapi-generate.sh`) и правке руками не подлежат.
+(`./scripts/quality/openapi-generate.sh`) и правке руками не подлежат. Контроллеры
+наследуют сгенерированные абстрактные базы, поэтому маршрут или форма ответа мимо
+контракта не компилируются, а расхождение кода с yaml валит гейт `backend-contracts`.
 
 Архитектурные решения и причины — [specs/ADR/REGISTRY.md](specs/ADR/REGISTRY.md).
 Точка входа для агента — [ROOT.md](ROOT.md).

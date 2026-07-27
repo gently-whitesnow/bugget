@@ -1,51 +1,60 @@
 using Authentication;
 using Flow.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Users.Api.Contracts.Generated;
+using Users.Api.Generated;
+using Users.Api.Mappers;
 using Users.BO.Interfaces;
-using Users.Entities.DbModels.Teams;
-using Users.Entities.Dto.Teams;
 
 namespace Users.Api.Controllers;
 
-[Route("v1/workspaces/{workspaceId}/teams")]
+/// <summary>
+/// Административные операции над командами. Маршруты и формы приходят из
+/// <c>specs/contracts/users/openapi.yaml</c> через <see cref="TeamsAdminControllerBase"/>.
+/// </summary>
+[ApiController]
 [Auth(Roles = "admin")]
-public sealed class TeamsAdminController(ITeamsService teamsService) : ApiController
+public sealed class TeamsAdminController(ITeamsService teamsService) : TeamsAdminControllerBase
 {
     /// <summary>
     /// Создать команду
     /// </summary>
-    [HttpPost]
-    [ProducesResponseType(typeof(TeamDbModel), 200)]
     [WorkspaceRequired]
-    public Task<IActionResult> CreateTeamAsync([FromRoute] int workspaceId, [FromBody] CreateTeamDto createTeamDto)
+    public override Task<ActionResult<Team>> CreateTeam(
+        int workspaceId,
+        TeamCreateRequest body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
 
-        return teamsService.CreateTeamAsync(workspaceId, createTeamDto.Name, user.Id, user.TeamId).AsActionResultAsync();
+        return teamsService.CreateTeamAsync(workspaceId, body.Name, user.Id, user.TeamId)
+            .AsContractResultAsync(model => model.ToContract());
     }
 
     /// <summary>
     /// Обновить команду
     /// </summary>
-    [HttpPut("{teamId}")]
-    [ProducesResponseType(typeof(TeamDbModel), 200)]
     [WorkspaceRequired]
-    public Task<TeamDbModel> UpdateTeamAsync(
-        [FromRoute] int workspaceId,
-        [FromRoute] int teamId,
-        [FromBody] UpdateTeamDto updateTeamDto)
+    public override async Task<ActionResult<Team>> UpdateTeam(
+        int workspaceId,
+        int teamId,
+        TeamUpdateRequest body,
+        CancellationToken cancellationToken = default)
     {
-        return teamsService.UpdateTeamAsync(workspaceId, teamId, updateTeamDto.Name);
+        var team = await teamsService.UpdateTeamAsync(workspaceId, teamId, body.Name);
+        return team.ToContract();
     }
 
     /// <summary>
     /// Удалить команду
     /// </summary>
-    [HttpDelete("{teamId}")]
-    [ProducesResponseType(200)]
     [WorkspaceRequired]
-    public Task DeleteTeamAsync([FromRoute] int workspaceId, [FromRoute] int teamId)
+    public override async Task<IActionResult> DeleteTeam(
+        int workspaceId,
+        int teamId,
+        CancellationToken cancellationToken = default)
     {
-        return teamsService.DeleteTeamAsync(workspaceId, teamId);
+        await teamsService.DeleteTeamAsync(workspaceId, teamId);
+        return Ok();
     }
 }

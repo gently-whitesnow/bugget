@@ -1,44 +1,35 @@
 using System.ComponentModel.DataAnnotations;
-using System.Net;
 using Authentication;
-using Flow.Extensions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Users.Api.Contracts.Generated;
 using Users.Api.Controllers.Users;
-using Users.BO;
+using Users.Api.Generated;
+using Users.Api.Mappers;
 using Users.BO.Interfaces;
-using Users.Entities.DbModels.Users;
-using Users.Entities.Dto.Users;
-using Users.Entities.View.Users;
-
 
 namespace Users.Api.Controllers;
 
+/// <summary>
+/// Профиль пользователя. Маршруты и формы приходят из
+/// <c>specs/contracts/users/openapi.yaml</c> через <see cref="UsersControllerBase"/>.
+/// </summary>
+/// <remarks>
+/// Каждая ручка объявлена дважды: с контекстом
+/// <c>/v1/workspaces/{workspaceId}/teams/{teamId}/users/**</c> и без него. Так
+/// исторически объявлены маршруты этого контроллера, и фронт ходит по варианту
+/// с контекстом. Идентификаторы из пути не используются — пользователь всегда
+/// берётся из identity, поэтому контекстные операции делегируют бесконтекстным.
+/// </remarks>
+[ApiController]
 [Auth]
-[Route("v1/users")]
-[Route("v1/workspaces/{workspaceId}/teams/{teamId}/users")]
 public sealed class UsersController(
     IUsersService userService,
-    IUserExternalLinksService externalLinksService) : ApiController
+    IUserExternalLinksService externalLinksService) : UsersControllerBase
 {
-    /// <summary>
-    /// Удалить пользователя
-    /// </summary>
-    /// <returns></returns>
-    [HttpDelete]
-    [ProducesResponseType((int)HttpStatusCode.OK)]
-    public Task DeleteUserAsync()
-    {
-        var user = User.GetIdentity();
-        return userService.DeleteUserAsync(user.Id);
-    }
-
     /// <summary>
     /// Получить пользователя
     /// </summary>
-    [HttpGet]
-    [ProducesResponseType(typeof(UserView), (int)HttpStatusCode.OK)]
-    public async Task<IActionResult> GetUserAsync()
+    public override async Task<ActionResult<User>> GetUser(CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         var userDbModel = await userService.GetUserAsync(user.Id);
@@ -46,98 +37,107 @@ public sealed class UsersController(
         {
             return NotFound();
         }
-        return Ok(userDbModel.ToUserView(user.WorkspaceRole));
+
+        return Ok(userDbModel.ToUserView(user.WorkspaceRole).ToContract());
+    }
+
+    /// <summary>
+    /// Обновить данные пользователя
+    /// </summary>
+    public override async Task<ActionResult<UserProfile>> PutUser(
+        UserUpdateRequest body,
+        CancellationToken cancellationToken = default)
+    {
+        var user = User.GetIdentity();
+        var updated = await userService.PutUserAsync(user.Id, new Entities.Dto.Users.PutUserDto { Name = body.Name });
+        return updated.ToContract();
+    }
+
+    /// <summary>
+    /// Удалить пользователя
+    /// </summary>
+    public override async Task<IActionResult> DeleteUser(CancellationToken cancellationToken = default)
+    {
+        var user = User.GetIdentity();
+        await userService.DeleteUserAsync(user.Id);
+        return Ok();
     }
 
     /// <summary>
     /// Получение пользователей по id
     /// </summary>
-    /// <param name="userIds"></param>
-    /// <returns></returns>
     [WorkspaceRequired]
-    [HttpPost("batch/list")]
-    [ProducesResponseType(typeof(UserView[]), (int)HttpStatusCode.OK)]
-    public async Task<UserView[]> ListUsersAsync(
-        [FromBody]
-        [MinLength(1)]
-        [MaxLength(1000)]
-        string[] userIds)
+    public override async Task<ActionResult<ICollection<User>>> ListUsers(
+        [MinLength(1)][MaxLength(1000)] IEnumerable<string> body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        var parsedIds = userIds
+        var parsedIds = body
             .Where(id => long.TryParse(id, out _))
             .Select(long.Parse)
             .ToArray();
         if (parsedIds.Length == 0)
         {
-            return [];
+            return new List<User>();
         }
 
         var users = await userService.ListUsersAsync(parsedIds, user.WorkspaceId);
-        return users.Select(e => e.ToUserView(user.WorkspaceRole)).ToArray();
+        return users.Select(e => e.ToUserView(user.WorkspaceRole).ToContract()).ToList();
     }
 
     /// <summary>
     /// Поиск пользователей по имени
     /// </summary>
-    [HttpGet("autocomplete")]
-    [ProducesResponseType(typeof(AutocompleteUsersView), 200)]
+    /// <remarks>
+    /// Диапазоны skip/take объявлены здесь: генератор minimum/maximum
+    /// query-параметров в атрибуты не переносит.
+    /// </remarks>
     [WorkspaceRequired]
-    public async Task<IActionResult> AutocompleteUsersAsync(
-        [FromQuery] string? searchString = null,
-        [FromQuery][Range(0, int.MaxValue)] int skip = 0,
-        [FromQuery][Range(1, 100)] int take = 10)
+    public override async Task<ActionResult<AutocompleteUsers>> AutocompleteUsers(
+        string? searchString = null,
+        [Range(0, int.MaxValue)] int? skip = 0,
+        [Range(1, 100)] int? take = 10,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         var users = await userService.AutocompleteUsersAsync(
             user.WorkspaceId!.Value,
             searchString ?? string.Empty,
-            skip,
-            take,
+            skip ?? 0,
+            take ?? 10,
             user.TeamId);
 
-        return Ok(new AutocompleteUsersView
+        return Ok(new Entities.View.Users.AutocompleteUsersView
         {
-            Users = users.Select(e => new AutocompleteUserView
+            Users = users.Select(e => new Entities.View.Users.AutocompleteUserView
             {
                 Id = e.Id.ToString(),
                 Name = e.Name,
                 ImageUrl = e.ImageUrl
             }),
             Total = users.Length
-        });
-    }
-
-    /// <summary>
-    /// Обновить данные пользователя
-    /// </summary>
-    [HttpPut]
-    [ProducesResponseType(typeof(UserDbModel), 200)]
-    public Task<UserDbModel> PutUserAsync([FromBody] PutUserDto putUserDto)
-    {
-        var user = User.GetIdentity();
-        return userService.PutUserAsync(user.Id, putUserDto);
+        }.ToContract());
     }
 
     /// <summary>
     /// Список привязанных провайдеров текущего пользователя
     /// </summary>
-    [HttpGet("external-links")]
-    [ProducesResponseType(typeof(ExternalLinkView[]), (int)HttpStatusCode.OK)]
-    public async Task<ExternalLinkView[]> GetExternalLinksAsync()
+    public override async Task<ActionResult<ICollection<ExternalLink>>> GetExternalLinks(
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         var links = await externalLinksService.GetLinksAsync(user.Id);
-        return links.Select(l => new ExternalLinkView(l.Provider, l.ExternalId, l.Email, l.LinkedAt)).ToArray();
+        return links
+            .Select(l => new ExternalLinkView(l.Provider, l.ExternalId, l.Email, l.LinkedAt).ToContract())
+            .ToList();
     }
 
     /// <summary>
     /// Отвязать провайдера (нельзя отвязать последний способ входа)
     /// </summary>
-    [HttpDelete("external-links/{provider}")]
-    [ProducesResponseType((int)HttpStatusCode.NoContent)]
-    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
-    public async Task<IActionResult> UnlinkProviderAsync([FromRoute] string provider)
+    public override async Task<IActionResult> UnlinkProvider(
+        string provider,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         var links = await externalLinksService.GetLinksAsync(user.Id);
@@ -158,16 +158,13 @@ public sealed class UsersController(
     /// <summary>
     /// Мёрж аккаунтов: перенести данные sourceUser → текущий пользователь
     /// </summary>
-    [HttpPost("merge")]
-    [ProducesResponseType((int)HttpStatusCode.OK)]
-    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
-    [ProducesResponseType((int)HttpStatusCode.Conflict)]
-    [ProducesResponseType((int)HttpStatusCode.NotFound)]
-    public async Task<IActionResult> MergeUsersAsync([FromBody] MergeUsersDto dto)
+    public override async Task<IActionResult> MergeUsers(
+        MergeUsersRequest body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
 
-        if (!long.TryParse(dto.SourceUserId, out var sourceUserId))
+        if (!long.TryParse(body.Source_user_id, out var sourceUserId))
         {
             return BadRequest("Некорректный sourceUserId");
         }
@@ -194,24 +191,24 @@ public sealed class UsersController(
     /// <summary>
     /// Привязать Mattermost аккаунт вручную
     /// </summary>
-    [HttpPut("mattermost")]
-    [ProducesResponseType((int)HttpStatusCode.NoContent)]
-    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
-    public async Task<IActionResult> LinkMattermostAsync([FromBody] LinkMattermostDto dto)
+    public override async Task<IActionResult> LinkMattermost(
+        LinkMattermostRequest body,
+        CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(dto.MattermostUserId) || dto.MattermostUserId.Length > 64)
+        if (string.IsNullOrWhiteSpace(body.Mattermost_user_id) || body.Mattermost_user_id.Length > 64)
         {
             return BadRequest("Некорректный Mattermost User ID");
         }
 
         var user = User.GetIdentity();
-        await userService.UpdateMattermostUserIdAsync(user.Id, dto.MattermostUserId.Trim());
+        await userService.UpdateMattermostUserIdAsync(user.Id, body.Mattermost_user_id.Trim());
         return NoContent();
     }
 
-    [HttpDelete("mattermost")]
-    [ProducesResponseType((int)HttpStatusCode.NoContent)]
-    public async Task<IActionResult> Disconnect()
+    /// <summary>
+    /// Отвязать Mattermost аккаунт
+    /// </summary>
+    public override async Task<IActionResult> UnlinkMattermost(CancellationToken cancellationToken = default)
     {
         var identity = User.GetIdentity();
         var userId = identity.Id;
@@ -225,4 +222,65 @@ public sealed class UsersController(
         return Ok();
     }
 
+    // --- те же операции по адресу с контекстом рабочего пространства и команды ---
+
+    public override Task<ActionResult<User>> GetUserInContext(
+        string workspaceId,
+        string teamId,
+        CancellationToken cancellationToken = default) => GetUser(cancellationToken);
+
+    public override Task<ActionResult<UserProfile>> PutUserInContext(
+        string workspaceId,
+        string teamId,
+        UserUpdateRequest body,
+        CancellationToken cancellationToken = default) => PutUser(body, cancellationToken);
+
+    public override Task<IActionResult> DeleteUserInContext(
+        string workspaceId,
+        string teamId,
+        CancellationToken cancellationToken = default) => DeleteUser(cancellationToken);
+
+    [WorkspaceRequired]
+    public override Task<ActionResult<ICollection<User>>> ListUsersInContext(
+        string workspaceId,
+        string teamId,
+        [MinLength(1)][MaxLength(1000)] IEnumerable<string> body,
+        CancellationToken cancellationToken = default) => ListUsers(body, cancellationToken);
+
+    [WorkspaceRequired]
+    public override Task<ActionResult<AutocompleteUsers>> AutocompleteUsersInContext(
+        string workspaceId,
+        string teamId,
+        string? searchString = null,
+        [Range(0, int.MaxValue)] int? skip = 0,
+        [Range(1, 100)] int? take = 10,
+        CancellationToken cancellationToken = default) => AutocompleteUsers(searchString, skip, take, cancellationToken);
+
+    public override Task<ActionResult<ICollection<ExternalLink>>> GetExternalLinksInContext(
+        string workspaceId,
+        string teamId,
+        CancellationToken cancellationToken = default) => GetExternalLinks(cancellationToken);
+
+    public override Task<IActionResult> UnlinkProviderInContext(
+        string workspaceId,
+        string teamId,
+        string provider,
+        CancellationToken cancellationToken = default) => UnlinkProvider(provider, cancellationToken);
+
+    public override Task<IActionResult> MergeUsersInContext(
+        string workspaceId,
+        string teamId,
+        MergeUsersRequest body,
+        CancellationToken cancellationToken = default) => MergeUsers(body, cancellationToken);
+
+    public override Task<IActionResult> LinkMattermostInContext(
+        string workspaceId,
+        string teamId,
+        LinkMattermostRequest body,
+        CancellationToken cancellationToken = default) => LinkMattermost(body, cancellationToken);
+
+    public override Task<IActionResult> UnlinkMattermostInContext(
+        string workspaceId,
+        string teamId,
+        CancellationToken cancellationToken = default) => UnlinkMattermost(cancellationToken);
 }

@@ -24,6 +24,21 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
         await ContractSnapshot.MatchAsync("users.v1.users.get", response);
     }
 
+    [Fact(DisplayName = "GET .../users: нечисловые workspaceId/teamId в пути — ответ тот же, не 400")]
+    public async Task GetUserWithNonNumericContext()
+    {
+        // Сегменты контекста в этих путях ручка не использует: пользователь берётся
+        // из identity, а идентификаторы до contract-first вообще не связывались.
+        // Контракт описывает их строками — иначе мусор в сегменте начал бы отбиваться
+        // как 400 на связывании, чего раньше не было.
+        var scenario = await UsersScenario.CreateAsync(fixture);
+
+        var response = await scenario.Client.GetAsync("/v1/workspaces/not-a-number/teams/also-not/users");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await ContractSnapshot.MatchAsync("users.v1.users.get", response);
+    }
+
     [Fact(DisplayName = "PUT .../users: 200 и форма User")]
     public async Task PutUser()
     {

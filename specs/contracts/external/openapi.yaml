@@ -1,0 +1,240 @@
+openapi: 3.0.3
+
+# Контракт модуля External. Источник правды для Bugget/Generated/ExternalControllerBase.g.cs
+# и Bugget/Generated/ExternalContracts.g.cs.
+#
+# Модуль о внешних источниках задач (сейчас Kaiten): поиск, привязка найденного
+# к репорту и справочник досок для автокомплита.
+#
+# DTO генерируются в проект Bugget: их потребитель — только слой API.
+# Правится этот файл, а не .g.cs: перегенерация — scripts/quality/openapi-generate.sh.
+
+info:
+  title: Bugget External sources API
+  version: 1.0.0
+  description: |-
+    Внешние источники задач. Поверхность намеренно provider-neutral: в ответе
+    поиска источник приходит строкой, а не отдельным типом на каждый провайдер.
+
+paths:
+
+  /v1/external/search:
+    get:
+      operationId: External_SearchExternal
+      summary: Поиск по внешним источникам.
+      parameters:
+        - name: query
+          in: query
+          required: false
+          description: Поисковая строка.
+          schema:
+            type: string
+            nullable: true
+        - name: skip
+          in: query
+          required: false
+          description: Сколько записей пропустить.
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: take
+          in: query
+          required: false
+          description: Размер страницы.
+          schema:
+            type: integer
+            default: 10
+            minimum: 0
+      responses:
+        '200':
+          description: Найденные элементы.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalSearchResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/external/search/apply:
+    post:
+      operationId: External_ApplyExternalSearchResult
+      summary: Привязать найденный элемент к репорту.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalSearchApplyRequest'
+      responses:
+        '200':
+          description: Элемент привязан. Тело пустое.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/external/kaiten/boards:
+    get:
+      operationId: External_ListKaitenBoards
+      summary: Доски Kaiten для автокомплита.
+      parameters:
+        - name: query
+          in: query
+          required: false
+          description: Строка для фильтра по названию доски.
+          schema:
+            type: string
+            nullable: true
+        - name: skip
+          in: query
+          required: false
+          description: Сколько записей пропустить.
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: take
+          in: query
+          required: false
+          description: Размер страницы.
+          schema:
+            type: integer
+            default: 10
+            minimum: 0
+      responses:
+        '200':
+          description: Доски, подходящие под фильтр.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KaitenBoard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/external/kaiten/boards/batch-get:
+    post:
+      operationId: External_BatchGetKaitenBoards
+      summary: Доски Kaiten по идентификаторам.
+      description: |-
+        Один запрос вместо N: фронт показывает названия досок, выбранных
+        в настройках.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KaitenBoardsBatchGetRequest'
+      responses:
+        '200':
+          description: Найденные доски. Отсутствующие идентификаторы просто не вернутся.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KaitenBoard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+components:
+
+  schemas:
+
+    ExternalSearchApplyRequest:
+      type: object
+      description: Что и к какому репорту привязать.
+      required:
+        - id
+        - source
+        - report_id
+      properties:
+        id:
+          type: string
+          description: Идентификатор элемента во внешнем источнике.
+        source:
+          type: string
+          description: Источник элемента — например `kaiten`.
+        report_id:
+          type: string
+          description: Адрес репорта, к которому привязывается элемент.
+
+    KaitenBoardsBatchGetRequest:
+      type: object
+      description: Идентификаторы досок, от 1 до 100 за запрос.
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          description: Идентификаторы досок Kaiten.
+          items:
+            type: integer
+
+    ExternalSearchItem:
+      type: object
+      description: Элемент внешнего источника.
+      required:
+        - id
+        - text
+        - source
+      properties:
+        id:
+          type: string
+          description: Идентификатор элемента во внешнем источнике.
+        text:
+          type: string
+          description: Текст, по которому идёт поиск и который видит пользователь.
+        source:
+          type: string
+          description: Источник элемента — например `kaiten`.
+
+    ExternalSearchResult:
+      type: object
+      description: Страница результатов поиска по внешним источникам.
+      required:
+        - total
+        - items
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: Сколько всего элементов нашлось.
+        items:
+          type: array
+          description: Элементы текущей страницы.
+          items:
+            $ref: '#/components/schemas/ExternalSearchItem'
+
+    KaitenBoard:
+      type: object
+      description: Доска Kaiten в том виде, в каком она сохранена у нас.
+      required:
+        - id
+        - title
+        - space_title
+        - space_id
+      properties:
+        id:
+          type: integer
+          description: Идентификатор доски в Kaiten.
+        title:
+          type: string
+          description: Название доски.
+        space_title:
+          type: string
+          description: Название пространства, которому принадлежит доска.
+        space_id:
+          type: integer
+          description: Идентификатор пространства.
+
+  responses:
+
+    BadRequest:
+      description: Некорректные параметры запроса.
+      content:
+        application/json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ErrorResponse'

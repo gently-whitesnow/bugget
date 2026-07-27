@@ -1,34 +1,39 @@
 using System.ComponentModel.DataAnnotations;
 using Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Users.Api.Contracts.Generated;
 using Users.Api.Controllers.Teams;
 using Users.Api.Controllers.Workspaces;
+using Users.Api.Generated;
+using Users.Api.Mappers;
 using Users.BO.Interfaces;
 
 namespace Users.Api.Controllers;
 
+/// <summary>
+/// Чтение команд рабочего пространства. Маршруты и формы приходят из
+/// <c>specs/contracts/users/openapi.yaml</c> через <see cref="TeamsControllerBase"/>.
+/// </summary>
+[ApiController]
 [Auth]
-[Route("v1/workspaces/{workspaceId}/teams")]
-public sealed class TeamsController(ITeamsService teamsService) : ApiController
+public sealed class TeamsController(ITeamsService teamsService) : TeamsControllerBase
 {
     /// <summary>
     /// Получение команд по массиву id
     /// </summary>
-    [HttpPost("batch/list")]
-    [ProducesResponseType(typeof(TeamView[]), 200)]
     [WorkspaceRequired]
-    public async Task<TeamView[]> ListTeamsAsync(
-        [FromRoute] int workspaceId,
-        [FromBody][MinLength(1)][MaxLength(1000)] string[] teamIds)
+    public override async Task<ActionResult<ICollection<TeamSummary>>> ListTeams(
+        int workspaceId,
+        [MinLength(1)][MaxLength(1000)] IEnumerable<string> body,
+        CancellationToken cancellationToken = default)
     {
-        var parsedIds = teamIds
+        var parsedIds = body
             .Where(id => int.TryParse(id, out _))
             .Select(int.Parse)
             .ToArray();
         if (parsedIds.Length == 0)
         {
-            return [];
+            return new List<TeamSummary>();
         }
 
         var teams = await teamsService.ListTeamsAsync(workspaceId, parsedIds);
@@ -38,20 +43,23 @@ public sealed class TeamsController(ITeamsService teamsService) : ApiController
             Name = t.Name,
             CreatedAt = t.CreatedAt,
             UpdatedAt = t.UpdatedAt
-        }).ToArray();
+        }).Select(UsersContractMapper.ToContract).ToList();
     }
 
     /// <summary>
     /// Поиск команд по имени в текущем workspace
     /// </summary>
-    [HttpGet("autocomplete")]
-    [ProducesResponseType(typeof(AutocompleteTeamsView), 200)]
+    /// <remarks>
+    /// Диапазоны skip/take объявлены здесь: генератор minimum/maximum
+    /// query-параметров в атрибуты не переносит.
+    /// </remarks>
     [WorkspaceRequired]
-    public async Task<IActionResult> AutocompleteTeamsAsync(
-        [FromRoute] int workspaceId,
-        [FromQuery] string? searchString = null,
-        [FromQuery][Range(0, int.MaxValue)] int skip = 0,
-        [FromQuery][Range(1, 100)] int take = 10)
+    public override async Task<ActionResult<AutocompleteTeams>> AutocompleteTeams(
+        int workspaceId,
+        string? searchString = null,
+        [Range(0, int.MaxValue)] int? skip = 0,
+        [Range(1, 100)] int? take = 10,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         if (user.WorkspaceId != workspaceId)
@@ -59,7 +67,11 @@ public sealed class TeamsController(ITeamsService teamsService) : ApiController
             return Forbid();
         }
 
-        var teams = await teamsService.AutocompleteTeamsAsync(workspaceId, searchString ?? string.Empty, skip, take);
+        var teams = await teamsService.AutocompleteTeamsAsync(
+            workspaceId,
+            searchString ?? string.Empty,
+            skip ?? 0,
+            take ?? 10);
 
         return Ok(new AutocompleteTeamsView
         {
@@ -71,6 +83,6 @@ public sealed class TeamsController(ITeamsService teamsService) : ApiController
                 UpdatedAt = t.UpdatedAt
             }),
             Total = teams.Length
-        });
+        }.ToContract());
     }
 }

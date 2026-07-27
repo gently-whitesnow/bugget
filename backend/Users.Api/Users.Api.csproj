@@ -13,6 +13,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Мапперы в контрактные DTO internal: снаружи модуля они не нужны, а его
+         собственным тестам — да. -->
+    <InternalsVisibleTo Include="Users.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Users.BO\Users.BO.csproj" />
     <ProjectReference Include="..\Users.DbUp\Users.DbUp.csproj" />
     <ProjectReference Include="..\BugReport.Logging\BugReport.Logging.csproj" />

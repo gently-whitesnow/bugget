@@ -1,3 +1,4 @@
+using Bugget.BO.ExternalSearch.Models;
 using Bugget.BO.Interfaces;
 using Bugget.DA.Interfaces;
 using Bugget.ExternalClients.Kaiten.Models;

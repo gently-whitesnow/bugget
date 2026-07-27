@@ -124,6 +124,18 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact(DisplayName = "GET /v2/reports/legacy/{legacyId}: нечисловой сегмент не совпадает с маршрутом — 404")]
+    public async Task ResolveLegacyReportWithNonNumericId()
+    {
+        // Ограничение маршрута (:int) держит поведение «мусорный сегмент — это не наш
+        // путь». Без него запрос доехал бы до действия и вернул 400 на связывании.
+        var scenario = ContractScenario.Create(fixture);
+
+        var response = await scenario.Client.GetAsync("/v2/reports/legacy/not-a-number");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     [Fact(DisplayName = "POST /v2/reports/counts:batch: 200, counts по ключам запроса")]
     public async Task CountsBatch()
     {

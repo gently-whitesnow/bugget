@@ -79,7 +79,7 @@
 | `GET /v2/analytics/responsible/{userId}` | фронт | да — `AnalyticsContractTests` |  |
 | `GET /v2/analytics/summary` | фронт | да — `AnalyticsContractTests` |  |
 | `GET /v2/reports` | фронт | да — `ReportsContractTests` |  |
-| `GET /v2/reports/legacy/{legacyId}` | фронт | да — `ReportsContractTests` |  |
+| `GET /v2/reports/legacy/{legacyId:int}` | фронт | да — `ReportsContractTests` |  |
 | `GET /v2/reports/{aliasId}` | фронт | да — `ReportsContractTests` |  |
 | `GET /v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content` | фронт | да — `AttachmentsContractTests` |  |
 | `GET /v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content/preview` | фронт | да — `AttachmentsContractTests` |  |
@@ -87,7 +87,7 @@
 | `GET /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content/preview` | фронт | да — `AttachmentsContractTests` |  |
 | `GET /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content` | фронт | да — `AttachmentsContractTests` |  |
 | `GET /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content/preview` | фронт | да — `AttachmentsContractTests` |  |
-| `GET /v2/reports/{id}/analytics` | фронт | да — `AnalyticsContractTests` |  |
+| `GET /v2/reports/{id:long}/analytics` | фронт | да — `AnalyticsContractTests` |  |
 | `PATCH /v2/reports/{aliasId}` | фронт | да — `ReportsContractTests` |  |
 | `PATCH /v2/reports/{aliasId}/bugs/{bugId}` | фронт | да — `BugsContractTests` |  |
 | `PATCH /v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}` | фронт | да — `AttachmentsContractTests` |  |

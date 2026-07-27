@@ -11,6 +11,7 @@ using Bugget.Entities.Views.Reports;
 using Bugget.Extensions;
 using Bugget.Mappers;
 using Bugget.Reports.Contracts.Generated;
+using Bugget.Routing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -103,6 +104,7 @@ public sealed class ReportsController(
     /// <summary>
     /// Детальная фазовая аналитика по конкретному репорту (sub-resource).
     /// </summary>
+    [RouteParameterConstraint("id", "long")]
     public override async Task<ActionResult<AnalyticsReport>> GetReportAnalytics(
         long id,
         CancellationToken cancellationToken = default)
@@ -125,6 +127,7 @@ public sealed class ReportsController(
     /// <summary>
     /// Разрешить legacy reportId и вернуть teamId + teamReportId для редиректа.
     /// </summary>
+    [RouteParameterConstraint("legacyId", "int")]
     public override async Task<ActionResult<LegacyReportResolve>> ResolveLegacyReport(
         int legacyId,
         CancellationToken cancellationToken = default)

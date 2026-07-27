@@ -20,9 +20,9 @@ internal static class PublicContractInventory
         ["GET /v2/reports"] = new(Frontend, "ReportsContractTests"),
         ["GET /v2/reports/{aliasId}"] = new(Frontend, "ReportsContractTests"),
         ["PATCH /v2/reports/{aliasId}"] = new(Frontend, "ReportsContractTests"),
-        ["GET /v2/reports/legacy/{legacyId}"] = new(Frontend, "ReportsContractTests"),
+        ["GET /v2/reports/legacy/{legacyId:int}"] = new(Frontend, "ReportsContractTests"),
         ["POST /v2/reports/counts:batch"] = new(Frontend, "ReportsContractTests"),
-        ["GET /v2/reports/{id}/analytics"] = new(Frontend, "AnalyticsContractTests"),
+        ["GET /v2/reports/{id:long}/analytics"] = new(Frontend, "AnalyticsContractTests"),
 
         // --- bugs и шаги ---
         ["POST /v2/reports/{aliasId}/bugs"] = new(Frontend, "BugsContractTests"),

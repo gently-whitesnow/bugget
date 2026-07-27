@@ -89,10 +89,19 @@ internal sealed class ContractScenario
         return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
     }
 
-    public async Task<int> UploadBugAttachmentAsync(string reportId, int bugId, string fileName = "shot.png")
+    /// <summary>
+    /// Вложение бага. <c>attachType</c> здесь — параметр запроса, и он же уходит
+    /// на провод: 0 — факт (<c>receive</c>), 1 — ожидаемый результат (<c>expect</c>).
+    /// Оба значения законны и попадают в один и тот же <c>bugs[].attachments</c>.
+    /// </summary>
+    public async Task<int> UploadBugAttachmentAsync(
+        string reportId,
+        int bugId,
+        string fileName = "shot.png",
+        int attachType = 0)
     {
         var response = await Client.PostAsync(
-            $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=0",
+            $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType={attachType}",
             FileContent(fileName));
         await AssertSuccessAsync(response, "POST .../bugs/{bugId}/attachments");
 

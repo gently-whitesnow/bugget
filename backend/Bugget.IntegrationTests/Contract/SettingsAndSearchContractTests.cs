@@ -91,6 +91,45 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
         await ContractSnapshot.MatchAsync("v1.reports.search.get", response);
     }
 
+    /// <summary>
+    /// Поиск — второй адрес той же формы списка (<c>ReportList</c>), и снимок
+    /// <c>v1.reports.search.get</c> снят с репорта без багов, поэтому форму
+    /// <c>bugs[]</c> он не предъявляет вовсе. Сужение LIST проверяется здесь на
+    /// полном сиде и поэлементно: ссылки, вложения бага и шаги лежат в базе, но в
+    /// ответе поиска их быть не должно, а комментарии — должны.
+    /// </summary>
+    [Fact(DisplayName = "GET /v1/reports/search: в элементе результата нет links, вложений бага и шагов")]
+    public async Task SearchReportsOmitsKeysItDoesNotLoad()
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var reportId = await scenario.CreateReportAsync("ищем именно этот репорт с багом");
+        var bugId = await scenario.CreateBugAsync(reportId);
+        var commentId = await scenario.CreateCommentAsync(reportId, bugId);
+        var stepId = await scenario.CreateStepAsync(reportId, bugId);
+        await scenario.UploadBugAttachmentAsync(reportId, bugId);
+        await scenario.UploadBugStepAttachmentAsync(reportId, bugId, stepId);
+        await scenario.CreateLinkAsync(reportId);
+
+        var response = await scenario.Client.GetAsync("/v1/reports/search?query=репорт&skip=0&take=10");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await ContractScenario.ReadJsonAsync(response);
+        var report = Assert.Single(
+            body.GetProperty("reports").EnumerateArray().ToArray(),
+            item => item.GetProperty("id").GetString() == reportId);
+
+        Assert.False(report.TryGetProperty("links", out _), "поиск отдал links, которых не загружает");
+
+        var bug = Assert.Single(
+            report.GetProperty("bugs").EnumerateArray().ToArray(),
+            item => item.GetProperty("id").GetInt32() == bugId);
+        Assert.False(bug.TryGetProperty("attachments", out _), "поиск отдал вложения бага, которых не загружает");
+        Assert.False(bug.TryGetProperty("steps", out _), "поиск отдал шаги, которых не загружает");
+
+        var comment = Assert.Single(bug.GetProperty("comments").EnumerateArray().ToArray());
+        Assert.Equal(commentId, comment.GetProperty("id").GetInt32());
+    }
+
     [Fact(DisplayName = "GET /v1/external/search: 200, total + items")]
     public async Task ExternalSearch()
     {

@@ -1,48 +1,54 @@
+using Bugget.Api.Generated.Reports;
 using Bugget.BO.Services.ReportLinks;
 using Bugget.Entities.Authentication;
-using Bugget.Entities.DbModels.ReportLink;
 using Bugget.Entities.DTO.Link;
 using Bugget.Extensions;
+using Bugget.Mappers;
+using Bugget.Reports.Contracts.Generated;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bugget.Controllers.Reports;
 
 /// <summary>
-/// Api для работы со ссылками репорта
+/// Api для работы со ссылками репорта. Маршруты и формы приходят из
+/// <c>specs/contracts/reports/openapi.yaml</c> через <see cref="ReportLinksControllerBase"/>.
 /// </summary>
-[Route("/v2/reports/{aliasId}/links")]
-public sealed class ReportLinksController(ReportLinksService reportLinksService) : ApiController
+[ApiController]
+public sealed class ReportLinksController(ReportLinksService reportLinksService) : ReportLinksControllerBase
 {
-    /// <summary>
-    /// Добавить ссылку к репорту
-    /// </summary>
-    [HttpPost]
-    [ProducesResponseType(typeof(ReportLinkDbModel), 201)]
-    public async Task<IActionResult> CreateReportLinkAsync([FromRoute] string aliasId, [FromBody] ReportLinkDto createDto)
+    public override Task<ActionResult<ReportLink>> CreateReportLink(
+        string aliasId,
+        ReportLinkRequest body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return await reportLinksService.CreateReportLinkAsync(user, aliasId, createDto).AsActionResultAsync(201);
+        return reportLinksService.CreateReportLinkAsync(user, aliasId, ToDto(body))
+            .AsContractResultAsync(dbModel => dbModel.ToContract(), 201);
     }
 
-    /// <summary>
-    /// Обновить ссылку репорта
-    /// </summary>
-    [HttpPut("{linkId}")]
-    [ProducesResponseType(typeof(ReportLinkDbModel), 200)]
-    public Task<IActionResult> UpdateReportLinkAsync([FromRoute] string aliasId, [FromRoute] int linkId, [FromBody] ReportLinkDto updateDto)
+    public override Task<ActionResult<ReportLink>> UpdateReportLink(
+        string aliasId,
+        int linkId,
+        ReportLinkRequest body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return reportLinksService.UpdateReportLinkAsync(user, aliasId, linkId, updateDto).AsActionResultAsync();
+        return reportLinksService.UpdateReportLinkAsync(user, aliasId, linkId, ToDto(body))
+            .AsContractResultAsync(dbModel => dbModel.ToContract());
     }
 
-    /// <summary>
-    /// Удалить ссылку репорта
-    /// </summary>
-    [HttpDelete("{linkId}")]
-    [ProducesResponseType(200)]
-    public Task<IActionResult> DeleteReportLinkAsync([FromRoute] string aliasId, [FromRoute] int linkId)
+    public override Task<IActionResult> DeleteReportLink(
+        string aliasId,
+        int linkId,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         return reportLinksService.DeleteReportLinkAsync(user, aliasId, linkId).AsActionResultAsync();
     }
+
+    private static ReportLinkDto ToDto(ReportLinkRequest body) => new()
+    {
+        Link = body.Link,
+        Name = body.Name
+    };
 }

@@ -56,7 +56,8 @@ Bugget — инструмент для баг-репортов: тестиров
 локально он лежит в `artifacts/coverage/report`.
 
 **`*.g.cs` руками не правим.** Источник правды — `specs/contracts/**/openapi.yaml`,
-перегенерация — `scripts/quality/openapi-generate.sh`. Причина — ADR-0005.
+перегенерация — `scripts/quality/openapi-generate.sh`. Причина — ADR-0005. Держит это
+не ревью, а гейт `backend-contracts`: он перегенерирует всё и краснеет на любом диффе.
 
 **Публичный HTTP-контракт зафиксирован снимками.** Статус, media type и форма тела
 каждого пути, который зовёт фронт или nginx, лежат текстом в

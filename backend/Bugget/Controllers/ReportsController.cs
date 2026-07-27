@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using Bugget.Api.Generated.Reports;
 using Bugget.BO.Mappers;
 using Bugget.BO.Services.Analytics;
 using Bugget.BO.Services.Reports;
 using Bugget.Entities.Authentication;
-using Bugget.Entities.DbModels.Report;
 using Bugget.Entities.DTO.Report;
 using Bugget.Entities.Options;
 using Bugget.Entities.Views;
@@ -17,85 +17,94 @@ using Microsoft.Extensions.Options;
 namespace Bugget.Controllers;
 
 /// <summary>
-/// v2 Api для работы с репортами
+/// v2 Api для работы с репортами. Наследует <see cref="ReportsControllerBase"/> —
+/// маршруты, HTTP-методы, валидация тела и типы ответов приходят из
+/// <c>specs/contracts/reports/openapi.yaml</c>.
 /// </summary>
-[Route("/v2/reports")]
+[ApiController]
 public sealed class ReportsController(
     ReportsService reportsService,
     AnalyticsService analyticsService,
-    IOptions<ReportAliasOptions> reportAliasOptions) : ApiController
+    IOptions<ReportAliasOptions> reportAliasOptions) : ReportsControllerBase
 {
-    /// <summary>
-    /// Создать репорт
-    /// </summary>
-    [HttpPost]
-    [ProducesResponseType(typeof(ReportSummaryViewModel), 201)]
-    public async Task<ReportSummaryViewModel> CreateReportAsync([FromBody] ReportCreateDto createDto)
+    public override async Task<ActionResult<ReportSummary>> CreateReport(
+        ReportCreateRequest body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        var reportSummaryDbModel = await reportsService.CreateReportAsync(user.Id, user.TeamId, user.OrganizationId, createDto);
-        return reportSummaryDbModel.ToViewModel(reportAliasOptions.Value);
+        var reportSummaryDbModel = await reportsService.CreateReportAsync(
+            user.Id,
+            user.TeamId,
+            user.OrganizationId,
+            new ReportCreateDto { Title = body.Title });
+
+        return reportSummaryDbModel.ToViewModel(reportAliasOptions.Value).ToContract();
     }
 
-    /// <summary>   
-    /// Получить репорт
-    /// </summary>
-    /// <param name="aliasId">alias идентификатор репорта</param>
-    /// <returns></returns>
-    [HttpGet("{aliasId}")]
-    [ProducesResponseType(typeof(ReportViewModel), 200)]
-    public Task<IActionResult> GetReportAsync([FromRoute] string aliasId)
+    public override Task<ActionResult<Report>> GetReport(
+        string aliasId,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         return reportsService.GetReportAsync(aliasId, user.OrganizationId, user.TeamId)
-        .AsActionResultAsync(dbModel => dbModel.ToViewModel(reportAliasOptions.Value));
+            .AsContractResultAsync(dbModel => dbModel.ToViewModel(reportAliasOptions.Value).ToContract());
     }
 
-    /// <summary>
-    /// Частичное обновление репорта
-    /// </summary>
-    [HttpPatch("{aliasId}")]
-    [ProducesResponseType(typeof(ReportPatchResultViewModel), 200)]
-    public Task<IActionResult> PatchReportAsync([FromRoute] string aliasId, [FromBody] ReportPatchDto patchDto)
+    public override Task<ActionResult<ReportPatchResult>> PatchReport(
+        string aliasId,
+        ReportPatchRequest body,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
+        var patchDto = new ReportPatchDto
+        {
+            Title = body.Title,
+            Status = body.Status,
+            ResponsibleUserId = body.Responsible_user_id,
+            IsExcludedFromAnalytics = body.Is_excluded_from_analytics
+        };
+
         return reportsService.PatchReportAsync(aliasId, user, patchDto)
-        .AsActionResultAsync(result => result.ToPatchResultViewModel(reportAliasOptions.Value));
+            .AsContractResultAsync(result => result.ToPatchResultViewModel(reportAliasOptions.Value).ToContract());
     }
 
-    /// <summary>
-    /// Получить репорты (для главной страницы)
-    /// </summary>
-    /// <returns></returns>
-    [HttpGet]
-    [ProducesResponseType(typeof(ReportViews), 200)]
-    public async Task<ReportViews> ListReportsAsync(
-        [FromQuery] string? userId = null,
-         [FromQuery] string? teamId = null,
-         [FromQuery] int[]? reportStatuses = null,
-         [FromQuery] int[]? creatorTypes = null,
-         [FromQuery][Range(0, int.MaxValue)] int skip = 0,
-         [FromQuery][Range(1, 100)] int take = 10)
+    /// <remarks>
+    /// Диапазоны <c>skip</c>/<c>take</c> объявлены здесь, а не в базе: NSwag не переносит
+    /// <c>minimum</c>/<c>maximum</c> параметров запроса в атрибуты. Значения совпадают
+    /// с контрактом, расхождение видно на ревью одного файла.
+    /// </remarks>
+    public override async Task<ActionResult<ReportList>> ListReports(
+        string? userId = null,
+        string? teamId = null,
+        IEnumerable<int>? reportStatuses = null,
+        IEnumerable<int>? creatorTypes = null,
+        [Range(0, int.MaxValue)] int? skip = 0,
+        [Range(1, 100)] int? take = 10,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
 
-        var (total, reports) = await reportsService.ListReportsAsync(user.OrganizationId, userId, teamId, reportStatuses, creatorTypes, skip, take);
+        var (total, reports) = await reportsService.ListReportsAsync(
+            user.OrganizationId,
+            userId,
+            teamId,
+            reportStatuses?.ToArray(),
+            creatorTypes?.ToArray(),
+            skip ?? 0,
+            take ?? 10);
+
         return new ReportViews
         {
             Total = total,
             Reports = reports.ToViewModel(reportAliasOptions.Value)
-        };
+        }.ToContract();
     }
 
     /// <summary>
     /// Детальная фазовая аналитика по конкретному репорту (sub-resource).
-    /// Контракт описан в <c>bugget/specs/contracts/reports/openapi.yaml</c>;
-    /// shape ответа — <see cref="AnalyticsReport"/> из <c>Bugget.Reports.Contracts</c>.
     /// </summary>
-    [HttpGet("{id:long}/analytics")]
-    [ProducesResponseType(typeof(AnalyticsReport), 200)]
-    public async Task<ActionResult<AnalyticsReport>> GetReportAnalyticsAsync(
-        [FromRoute] long id,
+    public override async Task<ActionResult<AnalyticsReport>> GetReportAnalytics(
+        long id,
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
@@ -116,9 +125,9 @@ public sealed class ReportsController(
     /// <summary>
     /// Разрешить legacy reportId и вернуть teamId + teamReportId для редиректа.
     /// </summary>
-    [HttpGet("legacy/{legacyId:int}")]
-    [ProducesResponseType(typeof(LegacyReportResolveView), 200)]
-    public async Task<IActionResult> ResolveLegacyReportAsync([FromRoute] int legacyId)
+    public override async Task<ActionResult<LegacyReportResolve>> ResolveLegacyReport(
+        int legacyId,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -143,6 +152,6 @@ public sealed class ReportsController(
         {
             TeamId = resolvedReport.CreatorTeamId,
             TeamReportId = resolvedReport.TeamReportId.Value
-        });
+        }.ToContract());
     }
 }

@@ -30,17 +30,70 @@ namespace Bugget.Api.Generated.Reports
     public abstract class ReportsControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
     {
         /// <summary>
+        /// Создать репорт.
+        /// </summary>
+        /// <remarks>
+        /// Автор и команда берутся из identity, в теле — только заголовок.
+        /// <br/>Отвечает 200, а не 201: контроллер возвращает модель напрямую.
+        /// </remarks>
+        /// <returns>Репорт создан.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ReportSummary>> CreateReport([Microsoft.AspNetCore.Mvc.FromBody] ReportCreateRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Список репортов для главной страницы.
+        /// </summary>
+        /// <remarks>
+        /// Фильтры и пагинация — параметрами запроса. Имена параметров исторически
+        /// <br/>в camelCase, менять их нельзя: по ним ходит фронт.
+        /// </remarks>
+        /// <param name="userId">Фильтр по ответственному или участнику.</param>
+        /// <param name="teamId">Фильтр по команде-создателю.</param>
+        /// <param name="reportStatuses">Фильтр по статусам репорта (числовые значения `ReportStatus`).</param>
+        /// <param name="creatorTypes">Фильтр по типу создателя (числовые значения `CreatorType`).</param>
+        /// <param name="skip">Сколько записей пропустить.</param>
+        /// <param name="take">Размер страницы.</param>
+        /// <returns>Страница репортов и общее количество.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ReportList>> ListReports([Microsoft.AspNetCore.Mvc.FromQuery] string userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string teamId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<int> reportStatuses = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<int> creatorTypes = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? skip = 0, [Microsoft.AspNetCore.Mvc.FromQuery] int? take = 10, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Получить репорт со всем содержимым.
+        /// </summary>
+        /// <remarks>
+        /// Отдаёт репорт вместе с багами, их шагами, комментариями и вложениями —
+        /// <br/>одним запросом на всю страницу репорта.
+        /// </remarks>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <returns>Репорт найден.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Report>> GetReport(string aliasId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
         /// Частичное обновление репорта.
         /// </summary>
         /// <remarks>
-        /// T09 описывает только новое поле `is_excluded_from_analytics`.
-        /// <br/>Остальные поля PATCH-эндпоинта будут добавлены в контракт в
-        /// <br/>отдельной задаче миграции reports на contract-first.
+        /// Поля, не переданные в теле (или переданные как `null`), не меняются —
+        /// <br/>это «не трогать», а не «обнулить».
         /// </remarks>
-        /// <param name="id">Идентификатор репорта.</param>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
         /// <returns>Репорт обновлён.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpPatch, Microsoft.AspNetCore.Mvc.Route("v2/reports/{id}")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> PatchReport(long id, [Microsoft.AspNetCore.Mvc.FromBody] ReportPatchRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        [Microsoft.AspNetCore.Mvc.HttpPatch, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ReportPatchResult>> PatchReport(string aliasId, [Microsoft.AspNetCore.Mvc.FromBody] ReportPatchRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Разрешить legacy-идентификатор репорта.
+        /// </summary>
+        /// <remarks>
+        /// Отдаёт `team_id` и `team_report_id`, по которым фронт строит редирект
+        /// <br/>со старой ссылки на текущий адрес репорта.
+        /// </remarks>
+        /// <param name="legacyId">Сквозной идентификатор репорта из старой схемы адресов.</param>
+        /// <returns>Идентификатор разрешён.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports/legacy/{legacyId}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<LegacyReportResolve>> ResolveLegacyReport(int legacyId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Детальная фазовая аналитика конкретного репорта.
@@ -55,6 +108,56 @@ namespace Bugget.Api.Generated.Reports
         /// <returns>Аналитика по репорту собрана.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports/{id}/analytics")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AnalyticsReport>> GetReportAnalytics(long id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class ReportCountsControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// Батч-счётчики репортов по нескольким срезам.
+        /// </summary>
+        /// <remarks>
+        /// Один запрос вместо N — фронт показывает счётчики всех вкладок сразу.
+        /// <br/>Организация всегда берётся из identity, в теле её нет.
+        /// </remarks>
+        /// <returns>Счётчики по ключам из запроса.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/counts:batch")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ReportCountsBatchResponse>> CountReportsBatch([Microsoft.AspNetCore.Mvc.FromBody] ReportCountsBatchRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class ReportLinksControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// Добавить ссылку к репорту.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <returns>Ссылка добавлена.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/links")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ReportLink>> CreateReportLink(string aliasId, [Microsoft.AspNetCore.Mvc.FromBody] ReportLinkRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Обновить ссылку репорта.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="linkId">Идентификатор ссылки репорта.</param>
+        /// <returns>Ссылка обновлена.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/links/{linkId}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ReportLink>> UpdateReportLink(string aliasId, int linkId, [Microsoft.AspNetCore.Mvc.FromBody] ReportLinkRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Удалить ссылку репорта.
+        /// </summary>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="linkId">Идентификатор ссылки репорта.</param>
+        /// <returns>Ссылка удалена. Тело пустое.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/links/{linkId}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteReportLink(string aliasId, int linkId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 

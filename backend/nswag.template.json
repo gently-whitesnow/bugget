@@ -51,8 +51,8 @@
       "dictionaryBaseType": "System.Collections.Generic.Dictionary",
       "dictionaryInstanceType": "System.Collections.Generic.Dictionary",
       "dictionaryType": "System.Collections.Generic.IReadOnlyDictionary",
-      "generateImmutableArrayProperties": true,
-      "generateImmutableDictionaryProperties": true,
+      "generateImmutableArrayProperties": false,
+      "generateImmutableDictionaryProperties": false,
       "jsonLibrary": "SystemTextJson",
       "useSnakeCaseNaming": true
     },

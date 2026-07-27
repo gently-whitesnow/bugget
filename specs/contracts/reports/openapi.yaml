@@ -3,9 +3,14 @@ openapi: 3.0.3
 # Контракт модуля Reports. Источник правды для Bugget/Generated/ReportsControllerBase.g.cs
 # и Bugget.Reports.Contracts/Generated/ReportsContracts.g.cs.
 #
-# Контракт частичный: описан PATCH /v2/reports/{id} (только поле
-# is_excluded_from_analytics) и GET /v2/reports/{id}/analytics. Полная миграция
-# reports на contract-first — отдельная задача.
+# Документ описывает три контроллера: Reports, ReportCounts и ReportLinks. Разделение
+# идёт по префиксу operationId (`Reports_`, `ReportCounts_`, `ReportLinks_`) — NSwag
+# генерирует по абстрактной базе на префикс, а DTO остаются общими на весь модуль.
+#
+# Контракт снят с работающего API 1:1: пути, имена query-параметров и формы ответов
+# описаны так, как их сегодня видит фронт. Отступления от канона AIP перечислены
+# в specs/ADR/0005-contract-first-openapi.md — они чинятся отдельными задачами,
+# а не по ходу описания.
 #
 # Правится этот файл, а не .g.cs: перегенерация — scripts/quality/openapi-generate.sh.
 # Порядок схем в components/schemas определяет порядок типов в сгенерированном файле.
@@ -14,27 +19,125 @@ info:
   title: Bugget Reports API
   version: 1.0.0
   description: |-
-    Часть контракта репортов, переведённая на contract-first: частичное
-    обновление репорта и детальная фазовая аналитика по нему.
+    Репорты, их счётчики и ссылки. Репорт — корневая сущность продукта: страница
+    репорта показывает вложенные баги, их шаги, комментарии и вложения.
 
 paths:
 
-  /v2/reports/{id}:
-    patch:
-      operationId: PatchReport
-      summary: Частичное обновление репорта.
+  /v2/reports:
+    post:
+      operationId: Reports_CreateReport
+      summary: Создать репорт.
       description: |-
-        T09 описывает только новое поле `is_excluded_from_analytics`.
-        Остальные поля PATCH-эндпоинта будут добавлены в контракт в
-        отдельной задаче миграции reports на contract-first.
+        Автор и команда берутся из identity, в теле — только заголовок.
+        Отвечает 200, а не 201: контроллер возвращает модель напрямую.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportCreateRequest'
+      responses:
+        '200':
+          description: Репорт создан.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    get:
+      operationId: Reports_ListReports
+      summary: Список репортов для главной страницы.
+      description: |-
+        Фильтры и пагинация — параметрами запроса. Имена параметров исторически
+        в camelCase, менять их нельзя: по ним ходит фронт.
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Идентификатор репорта.
+        - name: userId
+          in: query
+          required: false
+          description: Фильтр по ответственному или участнику.
+          schema:
+            type: string
+            nullable: true
+        - name: teamId
+          in: query
+          required: false
+          description: Фильтр по команде-создателю.
+          schema:
+            type: string
+            nullable: true
+        - name: reportStatuses
+          in: query
+          required: false
+          description: Фильтр по статусам репорта (числовые значения `ReportStatus`).
+          schema:
+            type: array
+            nullable: true
+            items:
+              type: integer
+        - name: creatorTypes
+          in: query
+          required: false
+          description: Фильтр по типу создателя (числовые значения `CreatorType`).
+          schema:
+            type: array
+            nullable: true
+            items:
+              type: integer
+        - name: skip
+          in: query
+          required: false
+          description: Сколько записей пропустить.
           schema:
             type: integer
-            format: int64
+            default: 0
+            minimum: 0
+        - name: take
+          in: query
+          required: false
+          description: Размер страницы.
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Страница репортов и общее количество.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}:
+    get:
+      operationId: Reports_GetReport
+      summary: Получить репорт со всем содержимым.
+      description: |-
+        Отдаёт репорт вместе с багами, их шагами, комментариями и вложениями —
+        одним запросом на всю страницу репорта.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+      responses:
+        '200':
+          description: Репорт найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    patch:
+      operationId: Reports_PatchReport
+      summary: Частичное обновление репорта.
+      description: |-
+        Поля, не переданные в теле (или переданные как `null`), не меняются —
+        это «не трогать», а не «обнулить».
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
       requestBody:
         required: true
         content:
@@ -44,12 +147,40 @@ paths:
       responses:
         '200':
           description: Репорт обновлён.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportPatchResult'
         '400':
           $ref: '#/components/responses/BadRequest'
 
+  /v2/reports/legacy/{legacyId}:
+    get:
+      operationId: Reports_ResolveLegacyReport
+      summary: Разрешить legacy-идентификатор репорта.
+      description: |-
+        Отдаёт `team_id` и `team_report_id`, по которым фронт строит редирект
+        со старой ссылки на текущий адрес репорта.
+      parameters:
+        - name: legacyId
+          in: path
+          required: true
+          description: Сквозной идентификатор репорта из старой схемы адресов.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Идентификатор разрешён.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegacyReportResolve'
+        '404':
+          description: Репорт не найден либо у него нет команды и номера в команде.
+
   /v2/reports/{id}/analytics:
     get:
-      operationId: GetReportAnalytics
+      operationId: Reports_GetReportAnalytics
       summary: Детальная фазовая аналитика конкретного репорта.
       description: |-
         Полный таймлайн фаз (Test/Fix), счётчик regression-циклов и
@@ -74,18 +205,149 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
+  /v2/reports/counts:batch:
+    post:
+      operationId: ReportCounts_CountReportsBatch
+      summary: Батч-счётчики репортов по нескольким срезам.
+      description: |-
+        Один запрос вместо N — фронт показывает счётчики всех вкладок сразу.
+        Организация всегда берётся из identity, в теле её нет.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportCountsBatchRequest'
+      responses:
+        '200':
+          description: Счётчики по ключам из запроса.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportCountsBatchResponse'
+        '400':
+          description: |-
+            Некорректный запрос: срезов нет, их больше лимита, ключ пустой либо
+            повторяется. Тело — `{"error": "..."}` с полями, зависящими от причины.
+
+  /v2/reports/{aliasId}/links:
+    post:
+      operationId: ReportLinks_CreateReportLink
+      summary: Добавить ссылку к репорту.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportLinkRequest'
+      responses:
+        '201':
+          description: Ссылка добавлена.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportLink'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v2/reports/{aliasId}/links/{linkId}:
+    put:
+      operationId: ReportLinks_UpdateReportLink
+      summary: Обновить ссылку репорта.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/LinkId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportLinkRequest'
+      responses:
+        '200':
+          description: Ссылка обновлена.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportLink'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    delete:
+      operationId: ReportLinks_DeleteReportLink
+      summary: Удалить ссылку репорта.
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/LinkId'
+      responses:
+        '200':
+          description: Ссылка удалена. Тело пустое.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
 components:
 
+  parameters:
+
+    AliasId:
+      name: aliasId
+      in: path
+      required: true
+      description: |-
+        Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+        по которому фронт строит ссылки.
+      schema:
+        type: string
+
+    LinkId:
+      name: linkId
+      in: path
+      required: true
+      description: Идентификатор ссылки репорта.
+      schema:
+        type: integer
+
   schemas:
+
+    ReportCreateRequest:
+      type: object
+      description: Тело создания репорта.
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Заголовок репорта.
 
     ReportPatchRequest:
       type: object
       description: |
         Поля, помеченные `null`, не интерпретируются как «обнулить значение» —
-        это «не трогать». В T09 описано только новое поле; остальные PATCH-поля
-        существующего эндпоинта пока не описаны в контракте и принимаются
-        ad-hoc (см. TODO миграции reports).
+        это «не трогать».
       properties:
+        title:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 128
+          description: Новый заголовок репорта.
+        status:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 4
+          description: |
+            Новый статус репорта: 0 — backlog, 1 — resolved, 2 — fix,
+            3 — rejected, 4 — test.
+        responsible_user_id:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 256
+          description: Новый ответственный за репорт.
         is_excluded_from_analytics:
           type: boolean
           nullable: true
@@ -93,6 +355,503 @@ components:
             Если `true` — репорт исключён из агрегатов аналитического модуля
             (отдельные счётчики, средние, distributions). `false` — учитывается
             (поведение по умолчанию). `null` — не менять текущее значение.
+
+    ReportLinkRequest:
+      type: object
+      description: Тело создания и обновления ссылки репорта.
+      required:
+        - link
+        - name
+      properties:
+        link:
+          type: string
+          minLength: 1
+          maxLength: 2048
+          description: Адрес ссылки.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Отображаемое имя ссылки.
+
+    ReportCountsScope:
+      type: object
+      description: |-
+        Один срез для счётчика: ключ и фильтры, совпадающие с фильтрами LIST.
+      additionalProperties: false
+      required:
+        - key
+      properties:
+        key:
+          type: string
+          description: Ключ среза. Возвращается в ответе как ключ карты счётчиков.
+        statuses:
+          type: array
+          nullable: true
+          description: Фильтр по статусам репорта.
+          items:
+            type: integer
+        team_id:
+          type: string
+          nullable: true
+          description: Фильтр по команде-создателю.
+        creator_types:
+          type: array
+          nullable: true
+          description: Фильтр по типу создателя.
+          items:
+            type: integer
+
+    ReportCountsBatchRequest:
+      type: object
+      description: |
+        Набор срезов. Ключи обязаны быть уникальными, срезов не больше 50 —
+        иначе 400. Неизвестные поля в теле запрещены.
+      additionalProperties: false
+      required:
+        - scopes
+      properties:
+        scopes:
+          type: array
+          description: Срезы, по которым считаются репорты.
+          items:
+            $ref: '#/components/schemas/ReportCountsScope'
+
+    ReportCountsBatchResponse:
+      type: object
+      description: Счётчики по ключам срезов из запроса.
+      required:
+        - counts
+      properties:
+        counts:
+          type: object
+          description: Ключ среза → количество репортов.
+          additionalProperties:
+            type: integer
+            format: int64
+
+    LegacyReportResolve:
+      type: object
+      description: Координаты репорта для редиректа со старой ссылки.
+      required:
+        - team_id
+        - team_report_id
+      properties:
+        team_id:
+          type: string
+          description: Команда-создатель репорта.
+        team_report_id:
+          type: integer
+          description: Номер репорта внутри команды.
+
+    Attachment:
+      type: object
+      description: |
+        Вложение бага, шага или комментария. Форма описана как есть: наружу
+        сегодня уходят и служебные поля хранилища (`storage_key`, `storage_kind`).
+      required:
+        - id
+        - attach_type
+        - created_at
+        - creator_user_id
+        - file_name
+      properties:
+        id:
+          type: integer
+          description: Идентификатор вложения.
+        entity_id:
+          type: integer
+          description: Идентификатор сущности, к которой прикреплён файл.
+        attach_type:
+          type: integer
+          description: |-
+            Тип сущности: 0 — баг, 1 — комментарий, 2 — шаг.
+        storage_key:
+          type: string
+          nullable: true
+          description: Относительный путь либо ключ в S3.
+        storage_kind:
+          type: integer
+          nullable: true
+          description: Тип хранилища — 0 temp, 1 standard, 2 cold.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент загрузки.
+        creator_user_id:
+          type: string
+          description: Кто загрузил вложение.
+        length_bytes:
+          type: integer
+          format: int64
+          nullable: true
+          description: Размер вложения в байтах.
+        file_name:
+          type: string
+          description: Имя файла.
+        mime_type:
+          type: string
+          description: MIME-тип содержимого.
+        has_preview:
+          type: boolean
+          nullable: true
+          description: Есть ли превью-версия.
+        is_gzip_compressed:
+          type: boolean
+          nullable: true
+          description: Сжато ли содержимое gzip.
+
+    BugStep:
+      type: object
+      description: Шаг воспроизведения бага.
+      required:
+        - id
+        - bug_id
+        - text
+        - step_number
+        - creator_user_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Идентификатор шага.
+        bug_id:
+          type: integer
+          description: Баг, которому принадлежит шаг.
+        text:
+          type: string
+          description: Текст шага.
+        step_number:
+          type: integer
+          description: Порядковый номер шага в баге.
+        creator_user_id:
+          type: string
+          description: Автор шага.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+        attachments:
+          type: array
+          nullable: true
+          description: Вложения шага. `null` — не запрашивались.
+          items:
+            $ref: '#/components/schemas/Attachment'
+
+    Comment:
+      type: object
+      description: Комментарий к багу.
+      required:
+        - id
+        - bug_id
+        - text
+        - creator_user_id
+        - creator_type
+        - audience
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Идентификатор комментария.
+        bug_id:
+          type: integer
+          description: Баг, которому принадлежит комментарий.
+        text:
+          type: string
+          description: Текст комментария.
+        creator_user_id:
+          type: string
+          description: Автор комментария.
+        creator_type:
+          type: integer
+          description: Тип автора — человек или бот.
+        audience:
+          type: integer
+          description: 0 — внутренний (для команды), 1 — внешний (уходит тестеру).
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+        attachments:
+          type: array
+          nullable: true
+          description: Вложения комментария. `null` — не запрашивались.
+          items:
+            $ref: '#/components/schemas/Attachment'
+
+    Bug:
+      type: object
+      description: Баг внутри репорта со всем вложенным содержимым.
+      required:
+        - id
+        - report_id
+        - created_at
+        - updated_at
+        - creator_user_id
+        - status
+        - creator_type
+      properties:
+        id:
+          type: integer
+          description: Идентификатор бага.
+        report_id:
+          type: integer
+          description: Репорт, которому принадлежит баг.
+        title:
+          type: string
+          nullable: true
+          description: Заголовок бага.
+        receive:
+          type: string
+          nullable: true
+          description: Фактический результат.
+        expect:
+          type: string
+          nullable: true
+          description: Ожидаемый результат.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+        creator_user_id:
+          type: string
+          description: Автор бага.
+        status:
+          type: integer
+          description: Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+        creator_type:
+          type: integer
+          description: Тип автора — человек или бот.
+        attachments:
+          type: array
+          nullable: true
+          description: Вложения бага. `null` — не запрашивались.
+          items:
+            $ref: '#/components/schemas/Attachment'
+        comments:
+          type: array
+          nullable: true
+          description: Комментарии бага. `null` — не запрашивались.
+          items:
+            $ref: '#/components/schemas/Comment'
+        steps:
+          type: array
+          nullable: true
+          description: Шаги воспроизведения. `null` — не запрашивались.
+          items:
+            $ref: '#/components/schemas/BugStep'
+
+    ReportLink:
+      type: object
+      description: Внешняя ссылка, прикреплённая к репорту.
+      required:
+        - id
+        - report_id
+        - link
+        - name
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Идентификатор ссылки.
+        report_id:
+          type: integer
+          description: Репорт, которому принадлежит ссылка.
+        link:
+          type: string
+          description: Адрес ссылки.
+        name:
+          type: string
+          description: Отображаемое имя ссылки.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+
+    ReportSummary:
+      type: object
+      description: Репорт без вложенного содержимого — ответ на создание.
+      required:
+        - id
+        - title
+        - status
+        - responsible_user_id
+        - past_responsible_user_id
+        - creator_user_id
+        - created_at
+        - updated_at
+        - creator_type
+      properties:
+        id:
+          type: string
+          description: Адрес репорта — тот же alias, что и в URL.
+        title:
+          type: string
+          description: Заголовок репорта.
+        status:
+          type: integer
+          description: Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test.
+        responsible_user_id:
+          type: string
+          description: Текущий ответственный.
+        past_responsible_user_id:
+          type: string
+          description: Предыдущий ответственный.
+        creator_user_id:
+          type: string
+          description: Автор репорта.
+        creator_team_id:
+          type: string
+          nullable: true
+          description: Команда автора.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+        creator_type:
+          type: integer
+          description: Тип автора — человек или бот.
+
+    ReportPatchResult:
+      type: object
+      description: Что изменилось в репорте после PATCH.
+      required:
+        - id
+        - title
+        - status
+        - responsible_user_id
+        - past_responsible_user_id
+        - updated_at
+      properties:
+        id:
+          type: string
+          description: Адрес репорта — тот же alias, что и в URL.
+        title:
+          type: string
+          description: Заголовок репорта.
+        status:
+          type: integer
+          description: Статус репорта.
+        responsible_user_id:
+          type: string
+          description: Текущий ответственный.
+        past_responsible_user_id:
+          type: string
+          description: Предыдущий ответственный.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+
+    Report:
+      type: object
+      description: Репорт со всем содержимым страницы.
+      required:
+        - id
+        - title
+        - status
+        - responsible_user_id
+        - past_responsible_user_id
+        - creator_user_id
+        - created_at
+        - updated_at
+        - creator_type
+        - is_excluded_from_analytics
+        - participants_user_ids
+      properties:
+        id:
+          type: string
+          description: Адрес репорта — тот же alias, что и в URL.
+        title:
+          type: string
+          description: Заголовок репорта.
+        status:
+          type: integer
+          description: Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test.
+        responsible_user_id:
+          type: string
+          description: Текущий ответственный.
+        past_responsible_user_id:
+          type: string
+          description: Предыдущий ответственный.
+        creator_user_id:
+          type: string
+          description: Автор репорта.
+        creator_team_id:
+          type: string
+          nullable: true
+          description: Команда автора.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент создания.
+        updated_at:
+          type: string
+          format: date-time
+          description: Момент последнего изменения.
+        creator_type:
+          type: integer
+          description: Тип автора — человек или бот.
+        is_excluded_from_analytics:
+          type: boolean
+          description: Исключён ли репорт из агрегатов аналитики.
+        participants_user_ids:
+          type: array
+          description: Все, кто участвовал в репорте.
+          items:
+            type: string
+        links:
+          type: array
+          nullable: true
+          description: Ссылки репорта. `null` — не запрашивались.
+          items:
+            $ref: '#/components/schemas/ReportLink'
+        bugs:
+          type: array
+          nullable: true
+          description: Баги репорта. `null` — не запрашивались.
+          items:
+            $ref: '#/components/schemas/Bug'
+
+    ReportList:
+      type: object
+      description: Страница списка репортов.
+      required:
+        - total
+        - reports
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: Сколько всего репортов подходит под фильтры.
+        reports:
+          type: array
+          description: Репорты текущей страницы.
+          items:
+            $ref: '#/components/schemas/Report'
 
     PhaseName:
       type: string

@@ -34,7 +34,23 @@ public static class ResultExtensions
         return operation.AsActionResult(toView, successStatusCode);
     }
 
-    public static IActionResult AsActionResult(
+    /// <summary>
+    /// То же, что <see cref="AsActionResultAsync{TValue,TView}"/>, но результат типизирован
+    /// контрактным DTO: сгенерированные из OpenAPI базы объявляют
+    /// <see cref="ActionResult{TValue}"/>, и тип ответа перестаёт быть делом
+    /// договорённости — расхождение с контрактом ловит компилятор.
+    /// </summary>
+    public static async Task<ActionResult<TContract>> AsContractResultAsync<TValue, TContract>(
+        this Task<MonadeStruct<TValue>> operationTask,
+        Func<TValue, TContract> toContract,
+        int successStatusCode = 200)
+    {
+        var operation = await operationTask;
+
+        return operation.AsActionResult(toContract, successStatusCode);
+    }
+
+    public static ActionResult AsActionResult(
         this MonadeStruct operation,
         int successStatusCode = 200)
     {
@@ -49,7 +65,7 @@ public static class ResultExtensions
         };
     }
 
-    public static IActionResult AsActionResult<TValue>(
+    public static ActionResult AsActionResult<TValue>(
         this MonadeStruct<TValue> operation,
         int successStatusCode = 200)
     {
@@ -67,7 +83,7 @@ public static class ResultExtensions
         };
     }
 
-    public static IActionResult AsActionResult<TValue, TView>(
+    public static ActionResult AsActionResult<TValue, TView>(
         this MonadeStruct<TValue> operation,
         Func<TValue, TView> toView,
         int successStatusCode = 200)

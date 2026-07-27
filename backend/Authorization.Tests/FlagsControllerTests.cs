@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Authorization.Api.Contracts.Generated;
 using Authorization.Api.Controllers;
 using Authorization.Api.Interfaces;
 using Authorization.Api.Models;
@@ -30,11 +31,11 @@ public sealed class FlagsControllerTests
 
         var controller = CreateController(adminAccess, userId);
 
-        var result = await controller.Get();
+        var result = await controller.GetFlags();
 
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var view = Assert.IsType<FlagsView>(ok.Value);
-        Assert.True(view.BetaTest);
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var view = Assert.IsType<Flags>(ok.Value);
+        Assert.True(view.Beta_test);
     }
 
     [Fact]
@@ -54,11 +55,11 @@ public sealed class FlagsControllerTests
 
         var controller = CreateController(adminAccess, userId);
 
-        var result = await controller.Get();
+        var result = await controller.GetFlags();
 
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var view = Assert.IsType<FlagsView>(ok.Value);
-        Assert.False(view.BetaTest);
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var view = Assert.IsType<Flags>(ok.Value);
+        Assert.False(view.Beta_test);
     }
 
     private static FlagsController CreateController(AdminAccessService adminAccess, long userId)

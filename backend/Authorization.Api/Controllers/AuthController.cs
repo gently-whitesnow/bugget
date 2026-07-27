@@ -1,45 +1,51 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Authentication;
-using Authorization.Api;
-using Authorization.Api.Models;
+using Authorization.Api.Contracts.Generated;
+using Authorization.Api.Generated;
 using Authorization.Api.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace Authorization.Api.Controllers;
 
+/// <summary>
+/// Кто я и выход. Маршруты и формы ответов приходят из
+/// <c>specs/contracts/authorization/openapi.yaml</c> через <see cref="AuthControllerBase"/>.
+/// </summary>
 [ApiController]
 public class AuthController(
     IRefreshRevocationStore revocation,
     ILogger<AuthController> logger,
     IRedirectService redirectService
-    ) : ControllerBase
+    ) : AuthControllerBase
 {
     /// <summary>
-    /// Информация об авторизированном пользователе
-    /// В будущем будет возвращаться только краткая информация
+    /// Информация об авторизированном пользователе.
+    /// В будущем будет возвращаться только краткая информация.
     /// </summary>
-    /// <returns></returns>
     [JwtAuth]
-    [HttpGet("v1/auth")]
-    [ProducesResponseType(typeof(AuthUserView), 200)]
-    public IActionResult Me()
+    public override Task<ActionResult<AuthUser>> GetCurrentUser(CancellationToken cancellationToken = default)
     {
         var identity = new UserIdentity(User);
-        return Ok(new AuthUserView(identity.Id.ToString(), identity.TeamId, identity.WorkspaceId, identity.WorkspaceRole));
+        var user = new AuthUser
+        {
+            Id = identity.Id.ToString(),
+            Team_id = identity.TeamId,
+            Workspace_id = identity.WorkspaceId,
+            Workspace_role = identity.WorkspaceRole,
+        };
+
+        return Task.FromResult<ActionResult<AuthUser>>(Ok(user));
     }
 
     /// <summary>
-    /// Метод разлогина
+    /// Метод разлогина.
     /// </summary>
-    /// <returns></returns>
     [JwtAuth]
-    [HttpPost("v1/logout")]
-    [ProducesResponseType(200)]
-    public async Task<IActionResult> Logout()
+    public override async Task<ActionResult<LogoutResult>> Logout(CancellationToken cancellationToken = default)
     {
         var refresh = HttpContext.Request.Cookies["refresh_token"];
         logger.LogInformation("Logout request received. Refresh token: {RefreshToken}", refresh);
@@ -55,9 +61,8 @@ public class AuthController(
         HttpContext.Response.Cookies.Delete("access_token");
         HttpContext.Response.Cookies.Delete("refresh_token");
 
-        var redirectUrl = redirectService.GetRedirectUrl();
-
-        // Возвращаем 200 OK с URL для редиректа вместо HTTP редиректа
-        return Ok(new { redirectUrl });
+        // Возвращаем 200 OK с URL для редиректа вместо HTTP редиректа: решение
+        // о переходе принимает фронт.
+        return Ok(new LogoutResult { Redirect_url = redirectService.GetRedirectUrl() });
     }
 }

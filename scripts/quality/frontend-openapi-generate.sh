@@ -24,9 +24,12 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CONTRACTS="$ROOT/specs/contracts"
 FRONTEND="$ROOT/frontend"
-OUT_DIR="$FRONTEND/src/shared/api/generated"
+
+# Каталоги переопределяются только самопроверкой гейта (--self-test), которая
+# гоняет генерацию в песочнице. В обычном прогоне действуют пути репозитория.
+CONTRACTS="${BUGGET_CONTRACTS_DIR:-$ROOT/specs/contracts}"
+OUT_DIR="${BUGGET_GENERATED_DIR:-$FRONTEND/src/shared/api/generated}"
 
 if [ "$#" -gt 0 ]; then
   modules=("$@")

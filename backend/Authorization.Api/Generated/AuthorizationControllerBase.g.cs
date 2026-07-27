@@ -30,16 +30,6 @@ namespace Authorization.Api.Generated
     public abstract class AuthControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
     {
         /// <summary>
-        /// Информация об авторизованном пользователе.
-        /// </summary>
-        /// <remarks>
-        /// Источник — claims текущего токена, обращений к БД нет.
-        /// </remarks>
-        /// <returns>Текущий пользователь.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/auth")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AuthUser>> GetCurrentUser(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
         /// Выход из системы.
         /// </summary>
         /// <remarks>
@@ -49,18 +39,6 @@ namespace Authorization.Api.Generated
         /// <returns>Сессия завершена.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v1/logout")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<LogoutResult>> Logout(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public abstract class FlagsControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
-    {
-        /// <summary>
-        /// Флаги доступа текущего пользователя.
-        /// </summary>
-        /// <returns>Флаги.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/flags")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Flags>> GetFlags(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 

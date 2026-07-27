@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 namespace Authorization.Api.Controllers;
 
 /// <summary>
-/// Кто я и выход. Маршруты и формы ответов приходят из
+/// Выход из системы. Маршрут и форма ответа приходят из
 /// <c>specs/contracts/authorization/openapi.yaml</c> через <see cref="AuthControllerBase"/>.
 /// </summary>
 [ApiController]
@@ -22,25 +22,6 @@ public class AuthController(
     IRedirectService redirectService
     ) : AuthControllerBase
 {
-    /// <summary>
-    /// Информация об авторизированном пользователе.
-    /// В будущем будет возвращаться только краткая информация.
-    /// </summary>
-    [JwtAuth]
-    public override Task<ActionResult<AuthUser>> GetCurrentUser(CancellationToken cancellationToken = default)
-    {
-        var identity = new UserIdentity(User);
-        var user = new AuthUser
-        {
-            Id = identity.Id.ToString(),
-            Team_id = identity.TeamId,
-            Workspace_id = identity.WorkspaceId,
-            Workspace_role = identity.WorkspaceRole,
-        };
-
-        return Task.FromResult<ActionResult<AuthUser>>(Ok(user));
-    }
-
     /// <summary>
     /// Метод разлогина.
     /// </summary>

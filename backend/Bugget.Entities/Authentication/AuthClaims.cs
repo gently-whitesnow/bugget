@@ -9,7 +9,6 @@ public static class AuthClaims
     public const string OrganizationId = "organization_id";
     public const string OrganizationIdHeaderConfigured = "organization_id_header_configured";
     public const string SignalRConnectionId = "signalr_connection_id";
-    public const string ClientName = "client_name";
 
 
 }

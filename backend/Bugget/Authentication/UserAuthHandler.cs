@@ -21,8 +21,6 @@ public class UserAuthHandler(
     private readonly string? OrganizationIdHeader = authHeadersOptions.CurrentValue.OrganizationIdHeaderName;
 
     private const string SignalRConnectionIdHeader = "X-Signal-R-Connection-Id";
-    private const string ClientNameHeader = "X-Client-Name";
-    private const string InternalRoutePrefix = "/v2/_internal/";
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync() =>
         Task.FromResult(Authenticate());
@@ -32,11 +30,6 @@ public class UserAuthHandler(
         if (Request.Path.Equals("/_internal/ping"))
         {
             return AuthenticateResult.NoResult();
-        }
-
-        if (Request.Path.StartsWithSegments("/v2/_internal", StringComparison.OrdinalIgnoreCase))
-        {
-            return AuthenticateInternalClient();
         }
 
         var headers = Request.Headers;
@@ -114,25 +107,6 @@ public class UserAuthHandler(
         }
 
         return defaultValue;
-    }
-
-    private AuthenticateResult AuthenticateInternalClient()
-    {
-        var clientName = Request.Headers[ClientNameHeader].ToString();
-        if (string.IsNullOrWhiteSpace(clientName))
-        {
-            Logger.LogWarning("Internal request to {Path} rejected: missing {Header}", Request.Path, ClientNameHeader);
-            return Fail($"{ClientNameHeader} header is required");
-        }
-
-        Logger.LogInformation("Internal request to {Path} from client {ClientName}", Request.Path, clientName);
-
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, clientName),
-            new Claim(AuthClaims.ClientName, clientName),
-        };
-        return AuthenticateResult.Success(CreateTicket(claims));
     }
 
     private static AuthenticateResult Fail(string reason) =>

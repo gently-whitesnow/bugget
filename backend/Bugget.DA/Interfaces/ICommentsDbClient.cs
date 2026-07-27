@@ -21,9 +21,7 @@ public interface ICommentsDbClient
         int creatorType = (int)CreatorType.User,
         int audience = (int)CommentAudience.Internal);
 
-    Task<IReadOnlyList<CommentSummaryDbModel>> ListExternalCommentsByBugAsync(int bugId, int sinceId, int limit);
 
-    Task<CommentLocatorDbModel?> GetCommentLocatorAsync(int commentId);
 
     Task<CommentSummaryDbModel?> GetCommentAsync(int commentId);
 

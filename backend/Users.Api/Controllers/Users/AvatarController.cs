@@ -13,9 +13,9 @@ namespace Users.Api.Controllers.Users;
 /// <c>specs/contracts/users/openapi.yaml</c> через <see cref="AvatarControllerBase"/>.
 /// </summary>
 /// <remarks>
-/// Как и профиль, каждая ручка объявлена дважды — с контекстом рабочего
-/// пространства и команды и без него; контекстные операции делегируют
-/// бесконтекстным.
+/// Как и профиль, все ручки живут по адресу с контекстом рабочего пространства
+/// и команды: по нему ходит фронт. Идентификаторы из пути не используются —
+/// пользователь берётся из identity.
 /// </remarks>
 [ApiController]
 [Auth]
@@ -41,7 +41,10 @@ public sealed class AvatarController(
     /// <summary>
     /// Удалить свой аватар
     /// </summary>
-    public override async Task<IActionResult> DeleteAvatar(CancellationToken cancellationToken = default)
+    public override async Task<IActionResult> DeleteAvatarInContext(
+        string workspaceId,
+        string teamId,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         await avatarService.DeleteAvatarAsync(user.Id, cancellationToken);
@@ -51,7 +54,9 @@ public sealed class AvatarController(
     /// <summary>
     /// Загрузить свой аватар
     /// </summary>
-    public override async Task<IActionResult> UploadAvatar(
+    public override async Task<IActionResult> UploadAvatarInContext(
+        string workspaceId,
+        string teamId,
         [FromForm] FileParameter file,
         CancellationToken cancellationToken = default)
     {
@@ -75,7 +80,10 @@ public sealed class AvatarController(
     /// <summary>
     /// Получить свой аватар
     /// </summary>
-    public override async Task<IActionResult> GetAvatarContent(CancellationToken cancellationToken = default)
+    public override async Task<IActionResult> GetAvatarContentInContext(
+        string workspaceId,
+        string teamId,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         var userDbModel = await userService.GetUserAsync(user.Id);
@@ -92,7 +100,9 @@ public sealed class AvatarController(
     /// </summary>
     [WorkspaceRequired]
     [RouteParameterConstraint("userId", "long")]
-    public override async Task<IActionResult> GetUserAvatarContent(
+    public override async Task<IActionResult> GetUserAvatarContentInContext(
+        string workspaceId,
+        string teamId,
         long userId,
         CancellationToken cancellationToken = default)
     {
@@ -111,32 +121,6 @@ public sealed class AvatarController(
 
         return await StreamAvatarAsync(userDbModel.ImageUrl, cancellationToken);
     }
-
-    // --- те же операции по адресу с контекстом рабочего пространства и команды ---
-
-    public override Task<IActionResult> DeleteAvatarInContext(
-        string workspaceId,
-        string teamId,
-        CancellationToken cancellationToken = default) => DeleteAvatar(cancellationToken);
-
-    public override Task<IActionResult> UploadAvatarInContext(
-        string workspaceId,
-        string teamId,
-        [FromForm] FileParameter file,
-        CancellationToken cancellationToken = default) => UploadAvatar(file, cancellationToken);
-
-    public override Task<IActionResult> GetAvatarContentInContext(
-        string workspaceId,
-        string teamId,
-        CancellationToken cancellationToken = default) => GetAvatarContent(cancellationToken);
-
-    [WorkspaceRequired]
-    [RouteParameterConstraint("userId", "long")]
-    public override Task<IActionResult> GetUserAvatarContentInContext(
-        string workspaceId,
-        string teamId,
-        long userId,
-        CancellationToken cancellationToken = default) => GetUserAvatarContent(userId, cancellationToken);
 
     private async Task<IActionResult> StreamAvatarAsync(string storageKey, CancellationToken ct)
     {

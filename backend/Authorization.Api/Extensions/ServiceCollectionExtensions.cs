@@ -45,7 +45,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddBusinessLogic(this IServiceCollection services)
     {
         services.AddSingleton<IUsersService, UsersService>();
-        services.AddSingleton<AdminAccessService>();
         services.AddSingleton<IRedirectService, RedirectService>();
 
         return services;

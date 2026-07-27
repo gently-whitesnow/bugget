@@ -14,13 +14,6 @@ public interface IBugsDbClient
         int reportId,
         BugDto bugDto);
 
-    Task<BugSummaryDbModel> CreateBugAsync(
-        ITransactionScope scope,
-        string userId,
-        int reportId,
-        BugDto bugDto,
-        short creatorType);
-
     Task<BugPatchResultDbModel> PatchBugAsync(int reportId, int bugId, BugPatchDto patchDto);
 
     Task<BugPatchResultDbModel> PatchBugAsync(
@@ -33,7 +26,4 @@ public interface IBugsDbClient
 
     Task<BugSummaryDbModel?> GetBugAsync(ITransactionScope scope, int reportId, int bugId);
 
-    Task<BugLocatorDbModel?> GetBugLocatorAsync(int bugId);
-
-    Task<BugDetailDbModel?> GetBugDetailInternalAsync(int bugId, int[] bugAttachTypes, CancellationToken ct = default);
 }

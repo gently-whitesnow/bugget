@@ -58,57 +58,6 @@ public sealed class CommentsDbClient : PostgresClient, ICommentsDbClient
     /// Жёсткий фильтр <c>audience = External</c> в SQL — I-1 инвариант: internal-комментарии
     /// никогда не покидают query path, даже при баге на уровне caller'а.
     /// </summary>
-    public async Task<IReadOnlyList<CommentSummaryDbModel>> ListExternalCommentsByBugAsync(
-        int bugId,
-        int sinceId,
-        int limit)
-    {
-        await using var connection = await DataSource.OpenConnectionAsync();
-
-        var rows = await connection.QueryAsync<CommentSummaryDbModel>(
-            @"SELECT c.id, c.bug_id, c.text, c.creator_user_id, c.creator_type,
-                     c.audience, c.created_at, c.updated_at
-              FROM public.comments c
-              WHERE c.bug_id = @bug_id AND c.audience = @audience AND c.id > @since_id
-              ORDER BY c.id
-              LIMIT @limit;",
-            new
-            {
-                bug_id = bugId,
-                audience = (short)CommentAudience.External,
-                since_id = sinceId,
-                limit = limit,
-            });
-
-        return rows.AsList();
-    }
-
-    /// <summary>
-    /// Резолв report+workspace+alias-координат комментария по его id (без bugId/reportId на входе).
-    /// Используется `_internal` контрактом загрузки comment-attachment'а от beta-bot,
-    /// где caller имеет только `commentId` после успешного `POST /v2/_internal/bugs/{bugId}/comments`.
-    /// </summary>
-    public async Task<CommentLocatorDbModel?> GetCommentLocatorAsync(int commentId)
-    {
-        await using var connection = await DataSource.OpenConnectionAsync();
-
-        return await connection.QuerySingleOrDefaultAsync<CommentLocatorDbModel>(
-            @"SELECT c.id AS CommentId,
-                     c.bug_id AS BugId,
-                     b.report_id AS ReportId,
-                     c.creator_user_id AS CreatorUserId,
-                     r.creator_team_id AS CreatorTeamId,
-                     r.creator_organization_id AS CreatorOrganizationId,
-                     r.public_id AS PublicId,
-                     r.team_report_id AS TeamReportId
-              FROM public.comments c
-              JOIN public.bugs b ON b.id = c.bug_id
-              JOIN public.reports r ON r.id = b.report_id
-              WHERE c.id = @comment_id
-              LIMIT 1;",
-            new { comment_id = commentId });
-    }
-
     public async Task<CommentSummaryDbModel?> GetCommentAsync(int commentId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();

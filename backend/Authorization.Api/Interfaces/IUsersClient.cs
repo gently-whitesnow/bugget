@@ -19,7 +19,6 @@ public interface IUsersClient
 
     Task<long?> FindUserByProviderAndExternalIdAsync(string provider, string externalId);
 
-    Task<bool> IsAdminAsync(long userId);
 
     /// <summary>
     /// Добавить привязку внешнего провайдера к пользователю.

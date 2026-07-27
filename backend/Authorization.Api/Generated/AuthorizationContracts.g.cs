@@ -27,46 +27,6 @@ namespace Authorization.Api.Contracts.Generated
     
 
     /// <summary>
-    /// Текущий пользователь так, как его видит фронт.
-    /// </summary>
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class AuthUser
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Id { get; set; }
-
-        /// <summary>
-        /// Текущая команда. `null` — команда не выбрана.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("team_id")]
-        public int? Team_id { get; set; }
-
-        /// <summary>
-        /// Текущее рабочее пространство. `null` — не выбрано.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("workspace_id")]
-        public int? Workspace_id { get; set; }
-
-        /// <summary>
-        /// Роль в рабочем пространстве.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("workspace_role")]
-        public string Workspace_role { get; set; }
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    /// <summary>
     /// Куда уводить пользователя после выхода.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -79,30 +39,6 @@ namespace Authorization.Api.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("redirect_url")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Redirect_url { get; set; }
-
-        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    /// <summary>
-    /// Флаги доступа.
-    /// </summary>
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Flags
-    {
-
-        /// <summary>
-        /// Доступны ли пользователю бета-возможности.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("beta_test")]
-        public bool Beta_test { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 

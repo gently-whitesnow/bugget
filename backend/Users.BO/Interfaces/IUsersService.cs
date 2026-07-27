@@ -10,7 +10,6 @@ public interface IUsersService
     Task<ResultStruct<UserContext?>> GetUserContextAsync(long userId);
     Task<ResultStruct<UserContext?>> GetUserContextByExternalIdAsync(string externalId);
     Task<UserDbModel?> GetUserAsync(long userId);
-    Task<bool> IsAdminAsync(long userId);
     Task<UserDbModel[]> AutocompleteUsersAsync(int workspaceId, string searchString, int skip, int take, int? teamId = null);
     Task<UserDbModel[]> ListUsersAsync(long[] userIds, int? workspaceId);
     Task DeleteUserAsync(long userId);

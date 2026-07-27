@@ -52,52 +52,6 @@ RETURNING id;";
         return await connection.ExecuteScalarAsync<long>(command);
     }
 
-    public async Task<IReadOnlyList<DomainEventDbModel>> ListAsync(
-        string workspaceId,
-        long sinceId,
-        int limit,
-        string[]? eventTypes,
-        CancellationToken ct = default)
-    {
-        const string sql = @"
-SELECT id, workspace_id, aggregate_type, aggregate_id,
-       event_type, event_version, payload::text AS payload,
-       actor_user_id, actor_creator_type, occurred_at, correlation_id
-FROM public.domain_events
-WHERE workspace_id = @workspaceId
-  AND id > @sinceId
-  AND (@eventTypes::text[] IS NULL OR event_type = ANY(@eventTypes::text[]))
-ORDER BY id
-LIMIT @limit;";
-
-        await using var connection = await DataSource.OpenConnectionAsync(ct);
-        var rows = await connection.QueryAsync<DomainEventRow>(new CommandDefinition(
-            sql,
-            new
-            {
-                workspaceId,
-                sinceId,
-                limit,
-                eventTypes = (eventTypes != null && eventTypes.Length > 0) ? eventTypes : null,
-            },
-            cancellationToken: ct));
-
-        return rows.Select(r => new DomainEventDbModel
-        {
-            Id = r.Id,
-            WorkspaceId = r.WorkspaceId,
-            AggregateType = r.AggregateType,
-            AggregateId = r.AggregateId,
-            EventType = r.EventType,
-            EventVersion = r.EventVersion,
-            Payload = r.Payload,
-            ActorUserId = r.ActorUserId,
-            ActorCreatorType = r.ActorCreatorType,
-            OccurredAt = r.OccurredAt,
-            CorrelationId = r.CorrelationId,
-        }).ToArray();
-    }
-
     public async Task<IReadOnlyList<DomainEventDbModel>> ListAllAsync(
         long sinceId,
         int limit,
@@ -132,18 +86,6 @@ LIMIT @limit;";
             OccurredAt = r.OccurredAt,
             CorrelationId = r.CorrelationId,
         }).ToArray();
-    }
-
-    public async Task<long> GetLatestIdAsync(string workspaceId, CancellationToken ct = default)
-    {
-        const string sql = @"
-SELECT COALESCE(MAX(id), 0)
-FROM public.domain_events
-WHERE workspace_id = @workspaceId;";
-
-        await using var connection = await DataSource.OpenConnectionAsync(ct);
-        return await connection.ExecuteScalarAsync<long>(new CommandDefinition(
-            sql, new { workspaceId }, cancellationToken: ct));
     }
 
     public async Task<long> GetLatestIdAcrossAllAsync(CancellationToken ct = default)

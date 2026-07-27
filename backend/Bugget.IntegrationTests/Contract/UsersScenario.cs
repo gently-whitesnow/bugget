@@ -1,8 +1,9 @@
 using System.Globalization;
-using System.Net.Http.Json;
-using System.Text.Json;
 using Dapper;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using Users.BO.Interfaces;
+using Users.Entities.Dto.Users;
 using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
@@ -57,19 +58,20 @@ internal sealed class UsersScenario
     }
 
     /// <summary>
-    /// Пользователь заводится тем же путём, что и в бою: модуль authorization зовёт
-    /// внутреннюю ручку users после успешного входа.
+    /// Пользователь заводится тем же путём, что и в бою: модуль authorization после
+    /// успешного входа зовёт <see cref="IUsersService.TryInsertUserAsync"/> напрямую
+    /// (см. Bugget/Modules/InProcess/AuthorizationUsersClientAdapter.cs).
     /// </summary>
     public static async Task<long> CreateUserAsync(AppContractFixture fixture)
     {
-        var client = fixture.CreateAnonymousClient();
-        var response = await client.PostAsJsonAsync(
-            "/_internal/users",
-            new { external_id = Guid.NewGuid().ToString("N"), name = "Контрактный пользователь" });
+        var usersService = fixture.Services.GetRequiredService<IUsersService>();
+        var user = await usersService.TryInsertUserAsync(new CreateUserDto
+        {
+            ExternalId = Guid.NewGuid().ToString("N"),
+            Name = "Контрактный пользователь"
+        });
 
-        await EnsureSuccessAsync(response, "POST /_internal/users");
-
-        return ReadId(await ContractScenario.ReadJsonAsync(response));
+        return user.Id;
     }
 
     public string TeamPath(string suffix) =>
@@ -99,14 +101,6 @@ internal sealed class UsersScenario
             new { workspaceId });
 
         return (workspaceId!.Value, teamId);
-    }
-
-    private static long ReadId(JsonElement element)
-    {
-        var id = element.GetProperty("id");
-        return id.ValueKind == JsonValueKind.String
-            ? long.Parse(id.GetString()!, CultureInfo.InvariantCulture)
-            : id.GetInt64();
     }
 
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, string what)

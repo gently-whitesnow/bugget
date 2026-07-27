@@ -25,19 +25,4 @@ public class UsersServiceTests
         _avatarService = new Mock<IAvatarDownloadService>(MockBehavior.Strict);
         _sut = new UsersService(_usersRepo.Object, _membersRepo.Object, _teamsService.Object, _taskQueue.Object, _avatarService.Object);
     }
-
-    [Fact]
-    public async Task IsAdminAsync_ReturnsRepositoryValue()
-    {
-        const long userId = 42L;
-
-        _usersRepo
-            .Setup(r => r.IsAdminAsync(userId))
-            .ReturnsAsync(true);
-
-        var result = await _sut.IsAdminAsync(userId);
-
-        Assert.True(result);
-        _usersRepo.Verify(r => r.IsAdminAsync(userId), Times.Once);
-    }
 }

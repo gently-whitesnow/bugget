@@ -134,58 +134,6 @@ public class UserAuthHandlerTests
     }
 
     [Fact]
-    public async Task InternalRoute_Fails_WhenClientNameHeaderMissing()
-    {
-        var headersOptions = new AuthHeadersOptions { UserIdHeaderName = "X-User-Id" };
-        var context = new DefaultHttpContext();
-        context.Request.Path = "/v2/_internal/bugs";
-
-        var handler = CreateHandler(context, headersOptions);
-
-        var result = await handler.AuthenticateAsync();
-
-        Assert.False(result.Succeeded);
-        Assert.Contains("X-Client-Name", result.Failure?.Message);
-    }
-
-    [Fact]
-    public async Task InternalRoute_Succeeds_AndEmitsClientNameClaim()
-    {
-        var headersOptions = new AuthHeadersOptions { UserIdHeaderName = "X-User-Id" };
-        var context = new DefaultHttpContext();
-        context.Request.Path = "/v2/_internal/bugs";
-        context.Request.Headers["X-Client-Name"] = "beta-bot";
-
-        var handler = CreateHandler(context, headersOptions);
-
-        var result = await handler.AuthenticateAsync();
-
-        Assert.True(result.Succeeded);
-        Assert.Equal("beta-bot", result.Principal?.FindFirst("client_name")?.Value);
-        Assert.Equal("beta-bot", result.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-    }
-
-    [Fact]
-    public async Task InternalRoute_BypassesUserHeaderValidation()
-    {
-        var headersOptions = new AuthHeadersOptions
-        {
-            UserIdHeaderName = "X-User-Id",
-            TeamIdHeaderName = "X-Team-Id",
-            OrganizationIdHeaderName = "X-Org-Id"
-        };
-        var context = new DefaultHttpContext();
-        context.Request.Path = "/v2/_internal/reports";
-        context.Request.Headers["X-Client-Name"] = "beta-bot";
-
-        var handler = CreateHandler(context, headersOptions);
-
-        var result = await handler.AuthenticateAsync();
-
-        Assert.True(result.Succeeded);
-    }
-
-    [Fact]
     public async Task Fails_WhenOrgHeaderConfiguredButEmpty()
     {
         // Arrange

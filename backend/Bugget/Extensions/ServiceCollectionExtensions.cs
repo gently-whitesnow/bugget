@@ -12,7 +12,6 @@ using Bugget.BO.Services.Bugs;
 using Bugget.BO.Services.Comments;
 using Bugget.BO.Services.External;
 using Bugget.BO.Services.Idempotency;
-using Bugget.BO.Services.Internal;
 using Bugget.BO.Services.ReportLinks;
 using Bugget.BO.Services.Reports;
 using Bugget.BO.Services.Settings;
@@ -119,13 +118,6 @@ public static class ServiceCollectionExtensions
             .AddSingleton<CommentLogsService>()
             .AddSingleton<IDomainEventPublisher, DomainEventPublisher>()
             .AddSingleton<IdempotencyCacheService>()
-            .AddSingleton<InternalBugsService>()
-            .AddSingleton<InternalBugStepsService>()
-            .AddSingleton<InternalBugDetailService>()
-            .AddSingleton<InternalAttachmentsService>()
-            .AddSingleton<InternalCommentsService>()
-            .AddSingleton<InternalReportsService>()
-            .AddSingleton<InternalDomainEventsService>()
             .AddSingleton<AnalyticsService>()
             .AddSingleton(TimeProvider.System)
             ;

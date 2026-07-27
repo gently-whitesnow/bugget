@@ -86,11 +86,6 @@ public sealed class UsersService(
         return usersDbClient.GetUserAsync(userId);
     }
 
-    public Task<bool> IsAdminAsync(long userId)
-    {
-        return usersDbClient.IsAdminAsync(userId);
-    }
-
     public Task<UserDbModel[]> AutocompleteUsersAsync(int workspaceId, string searchString, int skip, int take, int? teamId = null)
     {
         return usersDbClient.AutocompleteUsersAsync(workspaceId, searchString, skip, take, teamId);

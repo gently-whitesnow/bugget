@@ -14,13 +14,6 @@ public interface IDomainEventsDbClient
     /// </summary>
     Task<long> InsertAsync(DomainEventDbModel evt, CancellationToken ct = default);
 
-    Task<IReadOnlyList<DomainEventDbModel>> ListAsync(
-        string workspaceId,
-        long sinceId,
-        int limit,
-        string[]? eventTypes,
-        CancellationToken ct = default);
-
     /// <summary>
     /// Глобальная (без фильтра по <c>workspace_id</c>) выборка хвоста событий для
     /// локального outbox-консьюмера: проекция глобальная, per-workspace не нужно.
@@ -29,8 +22,6 @@ public interface IDomainEventsDbClient
         long sinceId,
         int limit,
         CancellationToken ct = default);
-
-    Task<long> GetLatestIdAsync(string workspaceId, CancellationToken ct = default);
 
     /// <summary>
     /// Глобальный <c>MAX(id) FROM domain_events</c>. Используется при bootstrap'е

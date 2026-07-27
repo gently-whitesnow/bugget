@@ -14,11 +14,10 @@ namespace Users.Api.Controllers;
 /// <c>specs/contracts/users/openapi.yaml</c> через <see cref="UsersControllerBase"/>.
 /// </summary>
 /// <remarks>
-/// Каждая ручка объявлена дважды: с контекстом
-/// <c>/v1/workspaces/{workspaceId}/teams/{teamId}/users/**</c> и без него. Так
-/// исторически объявлены маршруты этого контроллера, и фронт ходит по варианту
-/// с контекстом. Идентификаторы из пути не используются — пользователь всегда
-/// берётся из identity, поэтому контекстные операции делегируют бесконтекстным.
+/// Все ручки живут по адресу с контекстом
+/// <c>/v1/workspaces/{workspaceId}/teams/{teamId}/users/**</c> — по нему ходит фронт.
+/// Идентификаторы из пути не используются: пользователь всегда берётся из identity,
+/// поэтому <c>workspaceId</c> и <c>teamId</c> здесь игнорируются.
 /// </remarks>
 [ApiController]
 [Auth]
@@ -29,7 +28,10 @@ public sealed class UsersController(
     /// <summary>
     /// Получить пользователя
     /// </summary>
-    public override async Task<ActionResult<User>> GetUser(CancellationToken cancellationToken = default)
+    public override async Task<ActionResult<User>> GetUserInContext(
+        string workspaceId,
+        string teamId,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         var userDbModel = await userService.GetUserAsync(user.Id);
@@ -44,7 +46,9 @@ public sealed class UsersController(
     /// <summary>
     /// Обновить данные пользователя
     /// </summary>
-    public override async Task<ActionResult<UserProfile>> PutUser(
+    public override async Task<ActionResult<UserProfile>> PutUserInContext(
+        string workspaceId,
+        string teamId,
         UserUpdateRequest body,
         CancellationToken cancellationToken = default)
     {
@@ -56,7 +60,10 @@ public sealed class UsersController(
     /// <summary>
     /// Удалить пользователя
     /// </summary>
-    public override async Task<IActionResult> DeleteUser(CancellationToken cancellationToken = default)
+    public override async Task<IActionResult> DeleteUserInContext(
+        string workspaceId,
+        string teamId,
+        CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         await userService.DeleteUserAsync(user.Id);
@@ -67,7 +74,9 @@ public sealed class UsersController(
     /// Получение пользователей по id
     /// </summary>
     [WorkspaceRequired]
-    public override async Task<ActionResult<ICollection<User>>> ListUsers(
+    public override async Task<ActionResult<ICollection<User>>> ListUsersInContext(
+        string workspaceId,
+        string teamId,
         [MinLength(1)][MaxLength(1000)] IEnumerable<string> body,
         CancellationToken cancellationToken = default)
     {
@@ -93,7 +102,9 @@ public sealed class UsersController(
     /// query-параметров в атрибуты не переносит.
     /// </remarks>
     [WorkspaceRequired]
-    public override async Task<ActionResult<AutocompleteUsers>> AutocompleteUsers(
+    public override async Task<ActionResult<AutocompleteUsers>> AutocompleteUsersInContext(
+        string workspaceId,
+        string teamId,
         string? searchString = null,
         [Range(0, int.MaxValue)] int? skip = 0,
         [Range(1, 100)] int? take = 10,
@@ -122,7 +133,9 @@ public sealed class UsersController(
     /// <summary>
     /// Список привязанных провайдеров текущего пользователя
     /// </summary>
-    public override async Task<ActionResult<ICollection<ExternalLink>>> GetExternalLinks(
+    public override async Task<ActionResult<ICollection<ExternalLink>>> GetExternalLinksInContext(
+        string workspaceId,
+        string teamId,
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
@@ -135,7 +148,9 @@ public sealed class UsersController(
     /// <summary>
     /// Отвязать провайдера (нельзя отвязать последний способ входа)
     /// </summary>
-    public override async Task<IActionResult> UnlinkProvider(
+    public override async Task<IActionResult> UnlinkProviderInContext(
+        string workspaceId,
+        string teamId,
         string provider,
         CancellationToken cancellationToken = default)
     {
@@ -158,7 +173,9 @@ public sealed class UsersController(
     /// <summary>
     /// Мёрж аккаунтов: перенести данные sourceUser → текущий пользователь
     /// </summary>
-    public override async Task<IActionResult> MergeUsers(
+    public override async Task<IActionResult> MergeUsersInContext(
+        string workspaceId,
+        string teamId,
         MergeUsersRequest body,
         CancellationToken cancellationToken = default)
     {
@@ -191,7 +208,9 @@ public sealed class UsersController(
     /// <summary>
     /// Привязать Mattermost аккаунт вручную
     /// </summary>
-    public override async Task<IActionResult> LinkMattermost(
+    public override async Task<IActionResult> LinkMattermostInContext(
+        string workspaceId,
+        string teamId,
         LinkMattermostRequest body,
         CancellationToken cancellationToken = default)
     {
@@ -208,7 +227,10 @@ public sealed class UsersController(
     /// <summary>
     /// Отвязать Mattermost аккаунт
     /// </summary>
-    public override async Task<IActionResult> UnlinkMattermost(CancellationToken cancellationToken = default)
+    public override async Task<IActionResult> UnlinkMattermostInContext(
+        string workspaceId,
+        string teamId,
+        CancellationToken cancellationToken = default)
     {
         var identity = User.GetIdentity();
         var userId = identity.Id;
@@ -221,66 +243,4 @@ public sealed class UsersController(
         await userService.UpdateMattermostUserIdAsync(userId, null);
         return Ok();
     }
-
-    // --- те же операции по адресу с контекстом рабочего пространства и команды ---
-
-    public override Task<ActionResult<User>> GetUserInContext(
-        string workspaceId,
-        string teamId,
-        CancellationToken cancellationToken = default) => GetUser(cancellationToken);
-
-    public override Task<ActionResult<UserProfile>> PutUserInContext(
-        string workspaceId,
-        string teamId,
-        UserUpdateRequest body,
-        CancellationToken cancellationToken = default) => PutUser(body, cancellationToken);
-
-    public override Task<IActionResult> DeleteUserInContext(
-        string workspaceId,
-        string teamId,
-        CancellationToken cancellationToken = default) => DeleteUser(cancellationToken);
-
-    [WorkspaceRequired]
-    public override Task<ActionResult<ICollection<User>>> ListUsersInContext(
-        string workspaceId,
-        string teamId,
-        [MinLength(1)][MaxLength(1000)] IEnumerable<string> body,
-        CancellationToken cancellationToken = default) => ListUsers(body, cancellationToken);
-
-    [WorkspaceRequired]
-    public override Task<ActionResult<AutocompleteUsers>> AutocompleteUsersInContext(
-        string workspaceId,
-        string teamId,
-        string? searchString = null,
-        [Range(0, int.MaxValue)] int? skip = 0,
-        [Range(1, 100)] int? take = 10,
-        CancellationToken cancellationToken = default) => AutocompleteUsers(searchString, skip, take, cancellationToken);
-
-    public override Task<ActionResult<ICollection<ExternalLink>>> GetExternalLinksInContext(
-        string workspaceId,
-        string teamId,
-        CancellationToken cancellationToken = default) => GetExternalLinks(cancellationToken);
-
-    public override Task<IActionResult> UnlinkProviderInContext(
-        string workspaceId,
-        string teamId,
-        string provider,
-        CancellationToken cancellationToken = default) => UnlinkProvider(provider, cancellationToken);
-
-    public override Task<IActionResult> MergeUsersInContext(
-        string workspaceId,
-        string teamId,
-        MergeUsersRequest body,
-        CancellationToken cancellationToken = default) => MergeUsers(body, cancellationToken);
-
-    public override Task<IActionResult> LinkMattermostInContext(
-        string workspaceId,
-        string teamId,
-        LinkMattermostRequest body,
-        CancellationToken cancellationToken = default) => LinkMattermost(body, cancellationToken);
-
-    public override Task<IActionResult> UnlinkMattermostInContext(
-        string workspaceId,
-        string teamId,
-        CancellationToken cancellationToken = default) => UnlinkMattermost(cancellationToken);
 }

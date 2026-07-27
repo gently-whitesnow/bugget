@@ -9,7 +9,6 @@ public interface IUsersRepository
     Task<UserDbModel> TryInsertUserAsync(CreateUserDto createUserDto);
     Task<UserDbModel?> GetUserAsync(long userId);
     Task<UserDbModel?> GetUserByExternalIdAsync(string externalId);
-    Task<bool> IsAdminAsync(long userId);
     Task DeleteUserAsync(long userId);
     Task<UserDbModel[]> AutocompleteUsersAsync(int workspaceId, string searchString, int skip, int take, int? teamId = null);
     Task<UserDbModel[]> ListUsersAsync(long[] userIds, int? workspaceId);

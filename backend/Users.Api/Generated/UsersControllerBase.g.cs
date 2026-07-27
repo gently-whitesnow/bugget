@@ -32,27 +32,6 @@ namespace Users.Api.Generated
         /// <summary>
         /// Профиль текущего пользователя.
         /// </summary>
-        /// <returns>Профиль.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/users")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<User>> GetUser(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Обновить профиль текущего пользователя.
-        /// </summary>
-        /// <returns>Профиль обновлён.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("v1/users")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<UserProfile>> PutUser([Microsoft.AspNetCore.Mvc.FromBody] UserUpdateRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Удалить текущего пользователя.
-        /// </summary>
-        /// <returns>Пользователь удалён. Тело пустое.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/users")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteUser(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Профиль текущего пользователя.
-        /// </summary>
         /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
         /// <br/>пространство берётся из identity. Описан строкой, потому что до
         /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
@@ -96,17 +75,6 @@ namespace Users.Api.Generated
         /// Нераспознанные идентификаторы просто не вернутся. Пустой результат —
         /// <br/>пустой массив, а не 404.
         /// </remarks>
-        /// <returns>Найденные пользователи.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v1/users/batch/list")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<User>>> ListUsers([Microsoft.AspNetCore.Mvc.FromBody] System.Collections.Generic.IEnumerable<string> body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Пользователи по списку идентификаторов.
-        /// </summary>
-        /// <remarks>
-        /// Нераспознанные идентификаторы просто не вернутся. Пустой результат —
-        /// <br/>пустой массив, а не 404.
-        /// </remarks>
         /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
         /// <br/>пространство берётся из identity. Описан строкой, потому что до
         /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
@@ -116,16 +84,6 @@ namespace Users.Api.Generated
         /// <returns>Найденные пользователи.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/batch/list")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<User>>> ListUsersInContext(string workspaceId, string teamId, [Microsoft.AspNetCore.Mvc.FromBody] System.Collections.Generic.IEnumerable<string> body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Поиск пользователей по имени в текущем рабочем пространстве.
-        /// </summary>
-        /// <param name="searchString">Строка поиска по имени.</param>
-        /// <param name="skip">Сколько записей пропустить.</param>
-        /// <param name="take">Размер страницы.</param>
-        /// <returns>Подходящие пользователи.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/users/autocomplete")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AutocompleteUsers>> AutocompleteUsers([Microsoft.AspNetCore.Mvc.FromQuery] string searchString = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? skip = 0, [Microsoft.AspNetCore.Mvc.FromQuery] int? take = 10, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Поиск пользователей по имени в текущем рабочем пространстве.
@@ -146,13 +104,6 @@ namespace Users.Api.Generated
         /// <summary>
         /// Привязанные способы входа текущего пользователя.
         /// </summary>
-        /// <returns>Привязки.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/users/external-links")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ExternalLink>>> GetExternalLinks(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Привязанные способы входа текущего пользователя.
-        /// </summary>
         /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
         /// <br/>пространство берётся из identity. Описан строкой, потому что до
         /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
@@ -162,17 +113,6 @@ namespace Users.Api.Generated
         /// <returns>Привязки.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ExternalLink>>> GetExternalLinksInContext(string workspaceId, string teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Отвязать способ входа.
-        /// </summary>
-        /// <remarks>
-        /// Единственный способ входа отвязать нельзя — 400 с текстовым телом.
-        /// </remarks>
-        /// <param name="provider">Провайдер входа, например `mattermost`.</param>
-        /// <returns>Способ входа отвязан.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/users/external-links/{provider}")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UnlinkProvider(string provider, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Отвязать способ входа.
@@ -197,16 +137,6 @@ namespace Users.Api.Generated
         /// <remarks>
         /// Переносит данные исходного аккаунта в текущий.
         /// </remarks>
-        /// <returns>Аккаунты объединены. Тело пустое.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v1/users/merge")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> MergeUsers([Microsoft.AspNetCore.Mvc.FromBody] MergeUsersRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Объединить аккаунты.
-        /// </summary>
-        /// <remarks>
-        /// Переносит данные исходного аккаунта в текущий.
-        /// </remarks>
         /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
         /// <br/>пространство берётся из identity. Описан строкой, потому что до
         /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
@@ -216,20 +146,6 @@ namespace Users.Api.Generated
         /// <returns>Аккаунты объединены. Тело пустое.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/merge")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> MergeUsersInContext(string workspaceId, string teamId, [Microsoft.AspNetCore.Mvc.FromBody] MergeUsersRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Привязать аккаунт Mattermost вручную.
-        /// </summary>
-        /// <returns>Аккаунт привязан.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("v1/users/mattermost")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> LinkMattermost([Microsoft.AspNetCore.Mvc.FromBody] LinkMattermostRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Отвязать аккаунт Mattermost.
-        /// </summary>
-        /// <returns>Аккаунт отвязан. Тело пустое.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/users/mattermost")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UnlinkMattermost(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Привязать аккаунт Mattermost вручную.
@@ -268,24 +184,6 @@ namespace Users.Api.Generated
         /// <remarks>
         /// Не больше 200 КБ, форматы JPEG, PNG, GIF и WebP.
         /// </remarks>
-        /// <param name="file">Содержимое файла.</param>
-        /// <returns>Аватар загружен. Тело пустое.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v1/users/avatar")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UploadAvatar(FileParameter file = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Удалить свой аватар.
-        /// </summary>
-        /// <returns>Аватар удалён.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/users/avatar")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteAvatar(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Загрузить свой аватар.
-        /// </summary>
-        /// <remarks>
-        /// Не больше 200 КБ, форматы JPEG, PNG, GIF и WebP.
-        /// </remarks>
         /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
         /// <br/>пространство берётся из identity. Описан строкой, потому что до
         /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
@@ -313,13 +211,6 @@ namespace Users.Api.Generated
         /// <summary>
         /// Содержимое своего аватара.
         /// </summary>
-        /// <returns>Содержимое аватара. Content-Type — по расширению файла.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/users/avatar/content")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetAvatarContent(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Содержимое своего аватара.
-        /// </summary>
         /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
         /// <br/>пространство берётся из identity. Описан строкой, потому что до
         /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
@@ -329,14 +220,6 @@ namespace Users.Api.Generated
         /// <returns>Содержимое аватара. Content-Type — по расширению файла.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar/content")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetAvatarContentInContext(string workspaceId, string teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <summary>
-        /// Содержимое аватара пользователя из текущего рабочего пространства.
-        /// </summary>
-        /// <param name="userId">Идентификатор пользователя.</param>
-        /// <returns>Содержимое аватара. Content-Type — по расширению файла.</returns>
-        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/users/{userId}/avatar/content")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetUserAvatarContent(long userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Содержимое аватара пользователя из текущего рабочего пространства.

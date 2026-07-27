@@ -4,25 +4,6 @@
  */
 
 export interface paths {
-    "/v1/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Профиль текущего пользователя. */
-        get: operations["Users_GetUser"];
-        /** Обновить профиль текущего пользователя. */
-        put: operations["Users_PutUser"];
-        post?: never;
-        /** Удалить текущего пользователя. */
-        delete: operations["Users_DeleteUser"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/workspaces/{workspaceId}/teams/{teamId}/users": {
         parameters: {
             query?: never;
@@ -37,27 +18,6 @@ export interface paths {
         post?: never;
         /** Удалить текущего пользователя. */
         delete: operations["Users_DeleteUserInContext"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/users/batch/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Пользователи по списку идентификаторов.
-         * @description Нераспознанные идентификаторы просто не вернутся. Пустой результат —
-         *     пустой массив, а не 404.
-         */
-        post: operations["Users_ListUsers"];
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -84,23 +44,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/users/autocomplete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Поиск пользователей по имени в текущем рабочем пространстве. */
-        get: operations["Users_AutocompleteUsers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/workspaces/{workspaceId}/teams/{teamId}/users/autocomplete": {
         parameters: {
             query?: never;
@@ -110,23 +53,6 @@ export interface paths {
         };
         /** Поиск пользователей по имени в текущем рабочем пространстве. */
         get: operations["Users_AutocompleteUsersInContext"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/users/external-links": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Привязанные способы входа текущего пользователя. */
-        get: operations["Users_GetExternalLinks"];
         put?: never;
         post?: never;
         delete?: never;
@@ -152,26 +78,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/users/external-links/{provider}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Отвязать способ входа.
-         * @description Единственный способ входа отвязать нельзя — 400 с текстовым телом.
-         */
-        delete: operations["Users_UnlinkProvider"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links/{provider}": {
         parameters: {
             query?: never;
@@ -187,26 +93,6 @@ export interface paths {
          * @description Единственный способ входа отвязать нельзя — 400 с текстовым телом.
          */
         delete: operations["Users_UnlinkProviderInContext"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/users/merge": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Объединить аккаунты.
-         * @description Переносит данные исходного аккаунта в текущий.
-         */
-        post: operations["Users_MergeUsers"];
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -232,24 +118,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/users/mattermost": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Привязать аккаунт Mattermost вручную. */
-        put: operations["Users_LinkMattermost"];
-        post?: never;
-        /** Отвязать аккаунт Mattermost. */
-        delete: operations["Users_UnlinkMattermost"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/workspaces/{workspaceId}/teams/{teamId}/users/mattermost": {
         parameters: {
             query?: never;
@@ -263,27 +131,6 @@ export interface paths {
         post?: never;
         /** Отвязать аккаунт Mattermost. */
         delete: operations["Users_UnlinkMattermostInContext"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/users/avatar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Загрузить свой аватар.
-         * @description Не больше 200 КБ, форматы JPEG, PNG, GIF и WebP.
-         */
-        post: operations["Avatar_UploadAvatar"];
-        /** Удалить свой аватар. */
-        delete: operations["Avatar_DeleteAvatar"];
         options?: never;
         head?: never;
         patch?: never;
@@ -310,23 +157,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/users/avatar/content": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Содержимое своего аватара. */
-        get: operations["Avatar_GetAvatarContent"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar/content": {
         parameters: {
             query?: never;
@@ -336,23 +166,6 @@ export interface paths {
         };
         /** Содержимое своего аватара. */
         get: operations["Avatar_GetAvatarContentInContext"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/users/{userId}/avatar/content": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Содержимое аватара пользователя из текущего рабочего пространства. */
-        get: operations["Avatar_GetUserAvatarContent"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1005,76 +818,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    Users_GetUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Профиль. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["User"];
-                };
-            };
-            /** @description Пользователь не найден. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Users_PutUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Профиль обновлён. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserProfile"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    Users_DeleteUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Пользователь удалён. Тело пустое. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     Users_GetUserInContext: {
         parameters: {
             query?: never;
@@ -1184,31 +927,6 @@ export interface operations {
             };
         };
     };
-    Users_ListUsers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IdList"];
-            };
-        };
-        responses: {
-            /** @description Найденные пользователи. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["User"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
     Users_ListUsersInContext: {
         parameters: {
             query?: never;
@@ -1242,34 +960,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["User"][];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    Users_AutocompleteUsers: {
-        parameters: {
-            query?: {
-                /** @description Строка поиска по имени. */
-                searchString?: string | null;
-                /** @description Сколько записей пропустить. */
-                skip?: number;
-                /** @description Размер страницы. */
-                take?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Подходящие пользователи. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AutocompleteUsers"];
                 };
             };
             400: components["responses"]["BadRequest"];
@@ -1316,26 +1006,6 @@ export interface operations {
             400: components["responses"]["BadRequest"];
         };
     };
-    Users_GetExternalLinks: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Привязки. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExternalLink"][];
-                };
-            };
-        };
-    };
     Users_GetExternalLinksInContext: {
         parameters: {
             query?: never;
@@ -1366,41 +1036,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ExternalLink"][];
                 };
-            };
-        };
-    };
-    Users_UnlinkProvider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Провайдер входа, например `mattermost`. */
-                provider: components["parameters"]["Provider"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Способ входа отвязан. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Это единственный способ входа. Тело — текст, не JSON. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Такой привязки у пользователя нет. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -1444,49 +1079,6 @@ export interface operations {
             };
             /** @description Такой привязки у пользователя нет. */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Users_MergeUsers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MergeUsersRequest"];
-            };
-        };
-        responses: {
-            /** @description Аккаунты объединены. Тело пустое. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Некорректный идентификатор либо аккаунт объединяют сам с собой. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Исходный аккаунт не найден. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Исходный аккаунт владеет рабочими пространствами. */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1543,53 +1135,6 @@ export interface operations {
             };
             /** @description Исходный аккаунт владеет рабочими пространствами. */
             409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Users_LinkMattermost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LinkMattermostRequest"];
-            };
-        };
-        responses: {
-            /** @description Аккаунт привязан. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Некорректный идентификатор Mattermost. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Users_UnlinkMattermost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Аккаунт отвязан. Тело пустое. */
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1670,53 +1215,6 @@ export interface operations {
             };
         };
     };
-    Avatar_UploadAvatar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["AvatarUpload"];
-            };
-        };
-        responses: {
-            /** @description Аватар загружен. Тело пустое. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Файл больше лимита либо формат не поддерживается. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Avatar_DeleteAvatar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Аватар удалён. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     Avatar_UploadAvatarInContext: {
         parameters: {
             query?: never;
@@ -1790,25 +1288,6 @@ export interface operations {
             };
         };
     };
-    Avatar_GetAvatarContent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: components["responses"]["AvatarContent"];
-            /** @description Аватара нет. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     Avatar_GetAvatarContentInContext: {
         parameters: {
             query?: never;
@@ -1833,28 +1312,6 @@ export interface operations {
         responses: {
             200: components["responses"]["AvatarContent"];
             /** @description Аватара нет. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    Avatar_GetUserAvatarContent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Идентификатор пользователя. */
-                userId: components["parameters"]["UserId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: components["responses"]["AvatarContent"];
-            /** @description Пользователь не найден либо у него нет аватара. */
             404: {
                 headers: {
                     [name: string]: unknown;

@@ -44,7 +44,6 @@ public sealed class AuthorizationUsersClientAdapter(
     public Task<long?> FindUserByProviderAndExternalIdAsync(string provider, string externalId) =>
         externalLinksService.FindUserByProviderAndExternalIdAsync(provider, externalId);
 
-    public Task<bool> IsAdminAsync(long userId) => usersService.IsAdminAsync(userId);
 
     public async Task<(bool Success, string? ErrorCode, string? ConflictOwnerId)> AddExternalLinkAsync(
         long userId, string provider, string externalId, string? email)

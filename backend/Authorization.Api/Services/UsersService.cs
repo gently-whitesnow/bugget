@@ -56,11 +56,6 @@ public sealed class UsersService(IUsersClient usersClient, IUserCache userCache,
         return usersClient.FindUserByProviderAndExternalIdAsync(provider, externalId);
     }
 
-    public Task<bool> IsAdminAsync(long userId)
-    {
-        return usersClient.IsAdminAsync(userId);
-    }
-
     public Task<User> InsertOrUpdateUserAsync(IExternalUser externalUser)
     {
         return usersClient.InsertOrUpdateUserAsync(externalUser);

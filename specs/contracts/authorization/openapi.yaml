@@ -3,8 +3,8 @@ openapi: 3.0.3
 # Контракт модуля Authorization — та его часть, которую зовёт фронт.
 # Источник правды для Authorization.Api/Generated/*.g.cs.
 #
-# Служебные поверхности (`/_internal/auth`, админский вход, ревокация кэша)
-# в контракт не входят: их зовут nginx и соседние модули, не фронт.
+# Служебная поверхность `/_internal/auth` в контракт не входит: её зовёт nginx
+# как auth_request, не фронт.
 #
 # Правится этот файл, а не .g.cs: перегенерация — scripts/quality/openapi-generate.sh.
 
@@ -12,26 +12,10 @@ info:
   title: Bugget Authorization API
   version: 1.0.0
   description: |-
-    Кто я, что мне доступно и выход. Всё остальное про аутентификацию фронт не
-    видит: токены живут в cookie, обмен и обновление делает прокси.
+    Выход из системы. Всё остальное про аутентификацию фронт не видит:
+    токены живут в cookie, обмен и обновление делает прокси.
 
 paths:
-
-  /v1/auth:
-    get:
-      operationId: Auth_GetCurrentUser
-      summary: Информация об авторизованном пользователе.
-      description: |-
-        Источник — claims текущего токена, обращений к БД нет.
-      responses:
-        '200':
-          description: Текущий пользователь.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthUser'
-        '401':
-          description: Токена нет либо он невалиден.
 
   /v1/logout:
     post:
@@ -50,44 +34,9 @@ paths:
         '401':
           description: Токена нет либо он невалиден.
 
-  /v1/flags:
-    get:
-      operationId: Flags_GetFlags
-      summary: Флаги доступа текущего пользователя.
-      responses:
-        '200':
-          description: Флаги.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Flags'
-        '401':
-          description: Токена нет либо он невалиден.
-
 components:
 
   schemas:
-
-    AuthUser:
-      type: object
-      description: Текущий пользователь так, как его видит фронт.
-      required:
-        - id
-      properties:
-        id:
-          $ref: '../shared.yaml#/components/schemas/UserId'
-        team_id:
-          type: integer
-          nullable: true
-          description: Текущая команда. `null` — команда не выбрана.
-        workspace_id:
-          type: integer
-          nullable: true
-          description: Текущее рабочее пространство. `null` — не выбрано.
-        workspace_role:
-          type: string
-          nullable: true
-          description: Роль в рабочем пространстве.
 
     LogoutResult:
       type: object
@@ -98,13 +47,3 @@ components:
         redirect_url:
           type: string
           description: Адрес страницы входа.
-
-    Flags:
-      type: object
-      description: Флаги доступа.
-      required:
-        - beta_test
-      properties:
-        beta_test:
-          type: boolean
-          description: Доступны ли пользователю бета-возможности.

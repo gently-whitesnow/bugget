@@ -53,50 +53,6 @@ public sealed class AuthorizationContractTests(AppContractFixture fixture) : ICl
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [Fact(DisplayName = "GET /_internal/anon/auth: 200, device id в заголовке для nginx")]
-    public async Task AnonymousAuth()
-    {
-        var client = fixture.CreateAnonymousClient();
-
-        var response = await client.GetAsync("/_internal/anon/auth");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.True(response.Headers.TryGetValues(ContractHeaders.UserId, out _));
-        Assert.True(response.Headers.TryGetValues("X-Auth-Set-Cookie-Device-Id", out _));
-    }
-
-    [Fact(DisplayName = "GET /v1/auth: 200 и форма AuthUser")]
-    public async Task Me()
-    {
-        var (client, _) = await LoginAsync();
-
-        var response = await client.GetAsync("/v1/auth");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("authorization.v1.auth.get", response);
-    }
-
-    [Fact(DisplayName = "GET /v1/auth без токена: 401")]
-    public async Task MeWithoutToken()
-    {
-        var client = fixture.CreateAnonymousClient();
-
-        var response = await client.GetAsync("/v1/auth");
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact(DisplayName = "GET /v1/flags: 200 и форма Flags")]
-    public async Task Flags()
-    {
-        var (client, _) = await LoginAsync();
-
-        var response = await client.GetAsync("/v1/flags");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("authorization.v1.flags.get", response);
-    }
-
     [Fact(DisplayName = "POST /v1/logout: 200 и адрес редиректа в теле")]
     public async Task Logout()
     {

@@ -40,15 +40,6 @@ public class UsersDbClient : PostgresClient, IUsersRepository
         );
     }
 
-    public async Task<bool> IsAdminAsync(long userId)
-    {
-        await using var conn = await DataSource.OpenConnectionAsync();
-        return await conn.QuerySingleAsync<bool>(
-            "SELECT * FROM is_admin_user(@user_id)",
-            new { user_id = userId }
-        );
-    }
-
     public async Task DeleteUserAsync(long userId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();

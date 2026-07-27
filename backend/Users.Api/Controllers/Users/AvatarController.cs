@@ -115,26 +115,26 @@ public sealed class AvatarController(
     // --- те же операции по адресу с контекстом рабочего пространства и команды ---
 
     public override Task<IActionResult> DeleteAvatarInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         CancellationToken cancellationToken = default) => DeleteAvatar(cancellationToken);
 
     public override Task<IActionResult> UploadAvatarInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         [FromForm] FileParameter file,
         CancellationToken cancellationToken = default) => UploadAvatar(file, cancellationToken);
 
     public override Task<IActionResult> GetAvatarContentInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         CancellationToken cancellationToken = default) => GetAvatarContent(cancellationToken);
 
     [WorkspaceRequired]
     [RouteParameterConstraint("userId", "long")]
     public override Task<IActionResult> GetUserAvatarContentInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         long userId,
         CancellationToken cancellationToken = default) => GetUserAvatarContent(userId, cancellationToken);
 

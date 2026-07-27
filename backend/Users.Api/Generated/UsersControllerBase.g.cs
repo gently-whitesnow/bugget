@@ -53,29 +53,41 @@ namespace Users.Api.Generated
         /// <summary>
         /// Профиль текущего пользователя.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <returns>Профиль.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<User>> GetUserInContext(int workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<User>> GetUserInContext(string workspaceId, string teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Обновить профиль текущего пользователя.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <returns>Профиль обновлён.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<UserProfile>> PutUserInContext(int workspaceId, int teamId, [Microsoft.AspNetCore.Mvc.FromBody] UserUpdateRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<UserProfile>> PutUserInContext(string workspaceId, string teamId, [Microsoft.AspNetCore.Mvc.FromBody] UserUpdateRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Удалить текущего пользователя.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <returns>Пользователь удалён. Тело пустое.</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteUserInContext(int workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteUserInContext(string workspaceId, string teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Пользователи по списку идентификаторов.
@@ -95,11 +107,15 @@ namespace Users.Api.Generated
         /// Нераспознанные идентификаторы просто не вернутся. Пустой результат —
         /// <br/>пустой массив, а не 404.
         /// </remarks>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <returns>Найденные пользователи.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/batch/list")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<User>>> ListUsersInContext(int workspaceId, int teamId, [Microsoft.AspNetCore.Mvc.FromBody] System.Collections.Generic.IEnumerable<string> body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<User>>> ListUsersInContext(string workspaceId, string teamId, [Microsoft.AspNetCore.Mvc.FromBody] System.Collections.Generic.IEnumerable<string> body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Поиск пользователей по имени в текущем рабочем пространстве.
@@ -114,14 +130,18 @@ namespace Users.Api.Generated
         /// <summary>
         /// Поиск пользователей по имени в текущем рабочем пространстве.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <param name="searchString">Строка поиска по имени.</param>
         /// <param name="skip">Сколько записей пропустить.</param>
         /// <param name="take">Размер страницы.</param>
         /// <returns>Подходящие пользователи.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/autocomplete")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AutocompleteUsers>> AutocompleteUsersInContext(int workspaceId, int teamId, [Microsoft.AspNetCore.Mvc.FromQuery] string searchString = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? skip = 0, [Microsoft.AspNetCore.Mvc.FromQuery] int? take = 10, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AutocompleteUsers>> AutocompleteUsersInContext(string workspaceId, string teamId, [Microsoft.AspNetCore.Mvc.FromQuery] string searchString = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? skip = 0, [Microsoft.AspNetCore.Mvc.FromQuery] int? take = 10, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Привязанные способы входа текущего пользователя.
@@ -133,11 +153,15 @@ namespace Users.Api.Generated
         /// <summary>
         /// Привязанные способы входа текущего пользователя.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <returns>Привязки.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ExternalLink>>> GetExternalLinksInContext(int workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ExternalLink>>> GetExternalLinksInContext(string workspaceId, string teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Отвязать способ входа.
@@ -156,12 +180,16 @@ namespace Users.Api.Generated
         /// <remarks>
         /// Единственный способ входа отвязать нельзя — 400 с текстовым телом.
         /// </remarks>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <param name="provider">Провайдер входа, например `mattermost`.</param>
         /// <returns>Способ входа отвязан.</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links/{provider}")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UnlinkProviderInContext(int workspaceId, int teamId, string provider, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UnlinkProviderInContext(string workspaceId, string teamId, string provider, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Объединить аккаунты.
@@ -179,11 +207,15 @@ namespace Users.Api.Generated
         /// <remarks>
         /// Переносит данные исходного аккаунта в текущий.
         /// </remarks>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <returns>Аккаунты объединены. Тело пустое.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/merge")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> MergeUsersInContext(int workspaceId, int teamId, [Microsoft.AspNetCore.Mvc.FromBody] MergeUsersRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> MergeUsersInContext(string workspaceId, string teamId, [Microsoft.AspNetCore.Mvc.FromBody] MergeUsersRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Привязать аккаунт Mattermost вручную.
@@ -202,20 +234,28 @@ namespace Users.Api.Generated
         /// <summary>
         /// Привязать аккаунт Mattermost вручную.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <returns>Аккаунт привязан.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/mattermost")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> LinkMattermostInContext(int workspaceId, int teamId, [Microsoft.AspNetCore.Mvc.FromBody] LinkMattermostRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> LinkMattermostInContext(string workspaceId, string teamId, [Microsoft.AspNetCore.Mvc.FromBody] LinkMattermostRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Отвязать аккаунт Mattermost.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <returns>Аккаунт отвязан. Тело пустое.</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/mattermost")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UnlinkMattermostInContext(int workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UnlinkMattermostInContext(string workspaceId, string teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -246,21 +286,29 @@ namespace Users.Api.Generated
         /// <remarks>
         /// Не больше 200 КБ, форматы JPEG, PNG, GIF и WebP.
         /// </remarks>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <param name="file">Содержимое файла.</param>
         /// <returns>Аватар загружен. Тело пустое.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UploadAvatarInContext(int workspaceId, int teamId, FileParameter file = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UploadAvatarInContext(string workspaceId, string teamId, FileParameter file = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Удалить свой аватар.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <returns>Аватар удалён.</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteAvatarInContext(int workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteAvatarInContext(string workspaceId, string teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Содержимое своего аватара.
@@ -272,11 +320,15 @@ namespace Users.Api.Generated
         /// <summary>
         /// Содержимое своего аватара.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <returns>Содержимое аватара. Content-Type — по расширению файла.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar/content")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetAvatarContentInContext(int workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetAvatarContentInContext(string workspaceId, string teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Содержимое аватара пользователя из текущего рабочего пространства.
@@ -289,12 +341,16 @@ namespace Users.Api.Generated
         /// <summary>
         /// Содержимое аватара пользователя из текущего рабочего пространства.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
-        /// <param name="teamId">Идентификатор команды.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
         /// <param name="userId">Идентификатор пользователя.</param>
         /// <returns>Содержимое аватара. Content-Type — по расширению файла.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/{userId}/avatar/content")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetUserAvatarContentInContext(int workspaceId, int teamId, long userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetUserAvatarContentInContext(string workspaceId, string teamId, long userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -339,10 +395,13 @@ namespace Users.Api.Generated
         /// Удаляется текущее пространство пользователя, а не то, что в пути:
         /// <br/>идентификатор в адресе оставлен ради формы URL.
         /// </remarks>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
         /// <returns>Рабочее пространство удалено. Тело пустое.</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteWorkspace(int workspaceId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteWorkspace(string workspaceId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -423,29 +482,38 @@ namespace Users.Api.Generated
         /// <summary>
         /// Участники команды.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
         /// <param name="teamId">Идентификатор команды.</param>
         /// <returns>Участники и лимит размера команды.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/members")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<TeamMembers>> ListTeamMembers(int workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<TeamMembers>> ListTeamMembers(string workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Выйти из команды.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
         /// <param name="teamId">Идентификатор команды.</param>
         /// <returns>Пользователь вышел из команды. Тело пустое.</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/members")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> LeaveTeam(int workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> LeaveTeam(string workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Вступить в команду.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
         /// <param name="teamId">Идентификатор команды.</param>
         /// <returns>Пользователь вступил в команду. Тело пустое.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/members/join")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> JoinTeam(int workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> JoinTeam(string workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -455,12 +523,15 @@ namespace Users.Api.Generated
         /// <summary>
         /// Удалить участника команды.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
         /// <param name="teamId">Идентификатор команды.</param>
         /// <param name="userId">Идентификатор пользователя.</param>
         /// <returns>Участник удалён. Тело пустое.</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/members/{userId}")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteTeamMember(int workspaceId, int teamId, long userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteTeamMember(string workspaceId, int teamId, long userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -479,31 +550,40 @@ namespace Users.Api.Generated
         /// <summary>
         /// Действующее приглашение команды.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
         /// <param name="teamId">Идентификатор команды.</param>
         /// <returns>Приглашение.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/invites")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<TeamInvite>> GetTeamInvite(int workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<TeamInvite>> GetTeamInvite(string workspaceId, int teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Перевыпустить приглашение.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
         /// <param name="teamId">Идентификатор команды.</param>
         /// <param name="id">Идентификатор приглашения.</param>
         /// <returns>Приглашение перевыпущено.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/invites/{id}")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<TeamInviteWithLink>> UpdateTeamInvite(int workspaceId, int teamId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<TeamInviteWithLink>> UpdateTeamInvite(string workspaceId, int teamId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Удалить приглашение.
         /// </summary>
-        /// <param name="workspaceId">Идентификатор рабочего пространства.</param>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
         /// <param name="teamId">Идентификатор команды.</param>
         /// <param name="id">Идентификатор приглашения.</param>
         /// <returns>Приглашение удалено. Тело пустое.</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/invites/{id}")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteTeamInvite(int workspaceId, int teamId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteTeamInvite(string workspaceId, int teamId, int id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 

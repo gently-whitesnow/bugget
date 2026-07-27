@@ -129,6 +129,22 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
         await ContractSnapshot.MatchAsync("users.v1.team-members.get", response);
     }
 
+    [Fact(DisplayName = "GET .../teams/{teamId}/members: нечисловой workspaceId в пути — ответ тот же, не 400")]
+    public async Task ListTeamMembersWithNonNumericWorkspace()
+    {
+        // Команду ручка берёт из пути, а рабочее пространство — из identity: сегмент
+        // workspaceId до contract-first не связывался, и мусор в нём доезжал до
+        // действия. Контракт описывает его строкой, чтобы так и осталось.
+        var scenario = await UsersScenario.CreateAsync(fixture);
+
+        var response = await scenario.Client.GetAsync($"/v1/workspaces/not-a-number/teams/{scenario.TeamId}/members");
+
+        // Снимок формы здесь не снимается: команда по умолчанию общая на прогон, и
+        // состав участников зависит от соседних сценариев. Проверяется ровно то,
+        // ради чего тест написан — запрос доезжает до действия.
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     [Fact(DisplayName = "POST .../teams/{teamId}/members/join и DELETE .../members: 200")]
     public async Task JoinAndLeaveTeam()
     {

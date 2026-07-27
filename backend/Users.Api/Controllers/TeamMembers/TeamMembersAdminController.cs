@@ -19,7 +19,7 @@ public sealed class TeamMembersAdminController(ITeamMembersService teamMembersSe
     /// Удалить участника команды
     /// </summary>
     public override async Task<IActionResult> DeleteTeamMember(
-        int workspaceId,
+        string workspaceId,
         int teamId,
         long userId,
         CancellationToken cancellationToken = default)

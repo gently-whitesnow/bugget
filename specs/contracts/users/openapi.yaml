@@ -67,8 +67,8 @@ paths:
       operationId: Users_GetUserInContext
       summary: Профиль текущего пользователя.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
       responses:
         '200':
           description: Профиль.
@@ -83,8 +83,8 @@ paths:
       operationId: Users_PutUserInContext
       summary: Обновить профиль текущего пользователя.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
       requestBody:
         required: true
         content:
@@ -105,8 +105,8 @@ paths:
       operationId: Users_DeleteUserInContext
       summary: Удалить текущего пользователя.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
       responses:
         '200':
           description: Пользователь удалён. Тело пустое.
@@ -144,8 +144,8 @@ paths:
         Нераспознанные идентификаторы просто не вернутся. Пустой результат —
         пустой массив, а не 404.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
       requestBody:
         required: true
         content:
@@ -208,8 +208,8 @@ paths:
       operationId: Users_AutocompleteUsersInContext
       summary: Поиск пользователей по имени в текущем рабочем пространстве.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
         - name: searchString
           in: query
           required: false
@@ -263,8 +263,8 @@ paths:
       operationId: Users_GetExternalLinksInContext
       summary: Привязанные способы входа текущего пользователя.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
       responses:
         '200':
           description: Привязки.
@@ -298,8 +298,8 @@ paths:
       description: |-
         Единственный способ входа отвязать нельзя — 400 с текстовым телом.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
         - $ref: '#/components/parameters/Provider'
       responses:
         '204':
@@ -338,8 +338,8 @@ paths:
       description: |-
         Переносит данные исходного аккаунта в текущий.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
       requestBody:
         required: true
         content:
@@ -384,8 +384,8 @@ paths:
       operationId: Users_LinkMattermostInContext
       summary: Привязать аккаунт Mattermost вручную.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
       requestBody:
         required: true
         content:
@@ -402,8 +402,8 @@ paths:
       operationId: Users_UnlinkMattermostInContext
       summary: Отвязать аккаунт Mattermost.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
       responses:
         '200':
           description: Аккаунт отвязан. Тело пустое.
@@ -440,8 +440,8 @@ paths:
       description: |-
         Не больше 200 КБ, форматы JPEG, PNG, GIF и WebP.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
       requestBody:
         required: true
         content:
@@ -458,8 +458,8 @@ paths:
       operationId: Avatar_DeleteAvatarInContext
       summary: Удалить свой аватар.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
       responses:
         '204':
           description: Аватар удалён.
@@ -479,8 +479,8 @@ paths:
       operationId: Avatar_GetAvatarContentInContext
       summary: Содержимое своего аватара.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
       responses:
         '200':
           $ref: '#/components/responses/AvatarContent'
@@ -504,8 +504,8 @@ paths:
       operationId: Avatar_GetUserAvatarContentInContext
       summary: Содержимое аватара пользователя из текущего рабочего пространства.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
         - $ref: '#/components/parameters/UserId'
       responses:
         '200':
@@ -579,7 +579,7 @@ paths:
         Удаляется текущее пространство пользователя, а не то, что в пути:
         идентификатор в адресе оставлен ради формы URL.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
       responses:
         '200':
           description: Рабочее пространство удалено. Тело пустое.
@@ -735,7 +735,7 @@ paths:
       operationId: TeamMembers_ListTeamMembers
       summary: Участники команды.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
         - $ref: '#/components/parameters/TeamId'
       responses:
         '200':
@@ -748,7 +748,7 @@ paths:
       operationId: TeamMembers_LeaveTeam
       summary: Выйти из команды.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
         - $ref: '#/components/parameters/TeamId'
       responses:
         '200':
@@ -759,7 +759,7 @@ paths:
       operationId: TeamMembers_JoinTeam
       summary: Вступить в команду.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
         - $ref: '#/components/parameters/TeamId'
       responses:
         '200':
@@ -770,7 +770,7 @@ paths:
       operationId: TeamMembersAdmin_DeleteTeamMember
       summary: Удалить участника команды.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
         - $ref: '#/components/parameters/TeamId'
         - $ref: '#/components/parameters/UserId'
       responses:
@@ -799,7 +799,7 @@ paths:
       operationId: TeamInvitesAdmin_GetTeamInvite
       summary: Действующее приглашение команды.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
         - $ref: '#/components/parameters/TeamId'
       responses:
         '200':
@@ -818,7 +818,7 @@ paths:
       operationId: TeamInvitesAdmin_UpdateTeamInvite
       summary: Перевыпустить приглашение.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
         - $ref: '#/components/parameters/TeamId'
         - $ref: '#/components/parameters/InviteId'
       responses:
@@ -836,7 +836,7 @@ paths:
       operationId: TeamInvitesAdmin_DeleteTeamInvite
       summary: Удалить приглашение.
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
         - $ref: '#/components/parameters/TeamId'
         - $ref: '#/components/parameters/InviteId'
       responses:
@@ -879,6 +879,18 @@ components:
       schema:
         type: integer
 
+    WorkspaceIdIgnored:
+      name: workspaceId
+      in: path
+      required: true
+      description: |-
+        Сегмент адреса, значение которого ручка не использует: рабочее
+        пространство берётся из identity. Описан строкой, потому что до
+        contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        доезжал до действия, а не отбивался как 400.
+      schema:
+        type: string
+
     TeamId:
       name: teamId
       in: path
@@ -886,6 +898,16 @@ components:
       description: Идентификатор команды.
       schema:
         type: integer
+
+    TeamIdIgnored:
+      name: teamId
+      in: path
+      required: true
+      description: |-
+        Сегмент адреса, значение которого ручка не использует: команда берётся
+        из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.
+      schema:
+        type: string
 
     UserId:
       name: userId

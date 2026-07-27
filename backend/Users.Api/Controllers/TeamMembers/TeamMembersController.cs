@@ -25,7 +25,7 @@ public sealed class TeamMembersController(
     /// Вступить в команду
     /// </summary>
     public override async Task<IActionResult> JoinTeam(
-        int workspaceId,
+        string workspaceId,
         int teamId,
         CancellationToken cancellationToken = default)
     {
@@ -38,7 +38,7 @@ public sealed class TeamMembersController(
     /// Получить участников команды
     /// </summary>
     public override async Task<ActionResult<Contracts.Generated.TeamMembers>> ListTeamMembers(
-        int workspaceId,
+        string workspaceId,
         int teamId,
         CancellationToken cancellationToken = default)
     {
@@ -51,7 +51,7 @@ public sealed class TeamMembersController(
     /// Выйти из команды
     /// </summary>
     public override async Task<IActionResult> LeaveTeam(
-        int workspaceId,
+        string workspaceId,
         int teamId,
         CancellationToken cancellationToken = default)
     {

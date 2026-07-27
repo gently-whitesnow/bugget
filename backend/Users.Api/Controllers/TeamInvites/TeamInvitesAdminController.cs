@@ -35,7 +35,7 @@ public sealed class TeamInvitesAdminController(ITeamInvitesService teamInvitesSe
     /// Перегенерировать инвайт для вступления в команду
     /// </summary>
     public override Task<ActionResult<TeamInviteWithLink>> UpdateTeamInvite(
-        int workspaceId,
+        string workspaceId,
         int teamId,
         int id,
         CancellationToken cancellationToken = default)
@@ -48,7 +48,7 @@ public sealed class TeamInvitesAdminController(ITeamInvitesService teamInvitesSe
     /// Получить инвайты команды
     /// </summary>
     public override async Task<ActionResult<TeamInvite>> GetTeamInvite(
-        int workspaceId,
+        string workspaceId,
         int teamId,
         CancellationToken cancellationToken = default)
     {
@@ -65,7 +65,7 @@ public sealed class TeamInvitesAdminController(ITeamInvitesService teamInvitesSe
     /// Удалить инвайт команды
     /// </summary>
     public override async Task<IActionResult> DeleteTeamInvite(
-        int workspaceId,
+        string workspaceId,
         int teamId,
         int id,
         CancellationToken cancellationToken = default)

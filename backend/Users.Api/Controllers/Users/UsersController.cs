@@ -225,62 +225,62 @@ public sealed class UsersController(
     // --- те же операции по адресу с контекстом рабочего пространства и команды ---
 
     public override Task<ActionResult<User>> GetUserInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         CancellationToken cancellationToken = default) => GetUser(cancellationToken);
 
     public override Task<ActionResult<UserProfile>> PutUserInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         UserUpdateRequest body,
         CancellationToken cancellationToken = default) => PutUser(body, cancellationToken);
 
     public override Task<IActionResult> DeleteUserInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         CancellationToken cancellationToken = default) => DeleteUser(cancellationToken);
 
     [WorkspaceRequired]
     public override Task<ActionResult<ICollection<User>>> ListUsersInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         [MinLength(1)][MaxLength(1000)] IEnumerable<string> body,
         CancellationToken cancellationToken = default) => ListUsers(body, cancellationToken);
 
     [WorkspaceRequired]
     public override Task<ActionResult<AutocompleteUsers>> AutocompleteUsersInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         string? searchString = null,
         [Range(0, int.MaxValue)] int? skip = 0,
         [Range(1, 100)] int? take = 10,
         CancellationToken cancellationToken = default) => AutocompleteUsers(searchString, skip, take, cancellationToken);
 
     public override Task<ActionResult<ICollection<ExternalLink>>> GetExternalLinksInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         CancellationToken cancellationToken = default) => GetExternalLinks(cancellationToken);
 
     public override Task<IActionResult> UnlinkProviderInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         string provider,
         CancellationToken cancellationToken = default) => UnlinkProvider(provider, cancellationToken);
 
     public override Task<IActionResult> MergeUsersInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         MergeUsersRequest body,
         CancellationToken cancellationToken = default) => MergeUsers(body, cancellationToken);
 
     public override Task<IActionResult> LinkMattermostInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         LinkMattermostRequest body,
         CancellationToken cancellationToken = default) => LinkMattermost(body, cancellationToken);
 
     public override Task<IActionResult> UnlinkMattermostInContext(
-        int workspaceId,
-        int teamId,
+        string workspaceId,
+        string teamId,
         CancellationToken cancellationToken = default) => UnlinkMattermost(cancellationToken);
 }

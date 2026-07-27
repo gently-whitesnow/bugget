@@ -40,7 +40,7 @@ public sealed class WorkspacesAdminController(IWorkspacesService workspacesServi
     /// contract-first, идентификатор в адресе оставлен ради формы URL.
     /// </remarks>
     public override Task<IActionResult> DeleteWorkspace(
-        int workspaceId,
+        string workspaceId,
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();

@@ -40,6 +40,33 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
         await ContractSnapshot.MatchAsync("v2.bug-attachments.post.invalid", response);
     }
 
+    /// <summary>
+    /// `attachType` у баговой ручки приходит из query, и на проводе это просто `integer`.
+    /// Вложения всех контекстов лежат в одной таблице и разводятся по владельцам только
+    /// значением `attach_type`, поэтому чужое значение (2 — комментарий, 3 — шаг) или
+    /// значение вне 0..3 не должно доезжать до хранилища: иначе вложение бага всплыло бы
+    /// у комментария или шага с тем же идентификатором. Тест фиксирует, что это уже
+    /// закрыто доменной ошибкой, а не только описанием в контракте.
+    /// </summary>
+    [Theory(DisplayName = "POST .../bugs/{bugId}/attachments с чужим или неизвестным attachType: 400")]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(99)]
+    [InlineData(-1)]
+    public async Task UploadBugAttachmentWithForeignType(int attachType)
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var (reportId, bugId) = await CreateBugAsync(scenario);
+
+        var response = await scenario.Client.PostAsync(
+            $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType={attachType}",
+            ContractScenario.FileContent("shot.png"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await ContractScenario.ReadJsonAsync(response);
+        Assert.Equal("attachment_type_not_allowed", body.GetProperty("error").GetString());
+    }
+
     [Fact(DisplayName = "GET .../attachments/{id}/content: содержимое вложения")]
     public async Task DownloadBugAttachment()
     {

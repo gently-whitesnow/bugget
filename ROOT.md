@@ -22,7 +22,7 @@ Bugget — инструмент для баг-репортов: тестиров
 | Контракты API (источник правды) | `specs/contracts/<module>/openapi.yaml`, общее — `specs/contracts/shared.yaml` |
 | Что вообще проверяется перед сдачей | [.quality/quality.config.json](.quality/quality.config.json) |
 | Раннер проверок | `scripts/quality/verify.sh` |
-| Перегенерация кода из контрактов | `scripts/quality/openapi-generate.sh` |
+| Перегенерация кода из контрактов | `scripts/quality/openapi-generate.sh` (C#), `scripts/quality/frontend-openapi-generate.sh` (TypeScript) |
 | Какие HTTP-пути публичны и чем покрыты | [docs/public-contract-inventory.md](docs/public-contract-inventory.md) |
 | Как контрибьютить, безопасность, кодекс | [docs/](docs/) |
 
@@ -58,6 +58,10 @@ Bugget — инструмент для баг-репортов: тестиров
 **`*.g.cs` руками не правим.** Источник правды — `specs/contracts/**/openapi.yaml`,
 перегенерация — `scripts/quality/openapi-generate.sh`. Причина — ADR-0005. Держит это
 не ревью, а гейт `backend-contracts`: он перегенерирует всё и краснеет на любом диффе.
+
+**`frontend/src/shared/api/generated/*.d.ts` руками не правим** — по той же причине и
+из того же yaml. Перегенерация — `scripts/quality/frontend-openapi-generate.sh`, держит
+гейт `frontend-contracts`. Каталог исключён из prettier, eslint и LOC-бюджета.
 
 **Публичный HTTP-контракт зафиксирован снимками.** Статус, media type и форма тела
 каждого пути, который зовёт фронт или nginx, лежат текстом в

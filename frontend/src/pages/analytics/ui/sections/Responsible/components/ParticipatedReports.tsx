@@ -22,7 +22,11 @@ const phaseLabel = (
 const ParticipatedReports = ({ reports }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const openReport = (reportId: number) => {
+  // `report_id` необязателен по контракту analytics (см. TopRegressionReports):
+  // без id не навигируем, вместо того чтобы открывать репорт №0.
+  const openReport = (reportId: number | undefined) => {
+    if (reportId === undefined) return;
+
     const next = new URLSearchParams(searchParams);
     next.set("section", "report");
     next.set("report", String(reportId));

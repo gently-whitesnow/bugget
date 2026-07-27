@@ -9,6 +9,7 @@ import {
 } from "@/entities/user";
 import { showExternalProviders } from "@/shared/config";
 import { notificationMessages, useNotifications } from "@/shared/model";
+import { parseApiError } from "@/shared/api";
 
 export const useExternalLinks = () => {
   const { notifyError, notifySuccess } = useNotifications();
@@ -99,13 +100,8 @@ export const useExternalLinks = () => {
       setMergeOwnerId(null);
     } catch (error: unknown) {
       console.error("Failed to merge accounts", error);
-      const axiosError = error as {
-        response?: { status?: number; data?: { error?: string } };
-      };
-      if (
-        axiosError.response?.status === 409 &&
-        axiosError.response?.data?.error === "source_owns_workspaces"
-      ) {
+      const { status, code } = parseApiError(error);
+      if (status === 409 && code === "source_owns_workspaces") {
         notifyError(
           "Невозможно объединить: у второго аккаунта есть рабочая область",
           "Войдите во второй аккаунт и удалите рабочую область, затем попробуйте снова.",

@@ -29,6 +29,7 @@ import {
 import { ActionDropdown, SidebarContainer } from "@/shared/ui";
 import { useNotifications, notificationMessages } from "@/shared/model";
 import { renameWorkspaceFx } from "@/entities/saas/workspace";
+import { parseApiError } from "@/shared/api";
 
 export const CustomLeftSidebar = () => {
   const { teamId: pageTeamId } = useParams<{ teamId: string }>();
@@ -119,13 +120,10 @@ export const CustomLeftSidebar = () => {
       navigate(getTeamPath(teamId));
     } catch (err: unknown) {
       console.error("Failed to create team:", err);
-      const axiosError = err as {
-        response?: { data?: { reason?: string } };
-      };
-      const reason = axiosError?.response?.data?.reason;
+      const { message } = parseApiError(err);
       notifyError(
         "Не удалось создать команду",
-        reason ?? notificationMessages.errorRetry,
+        message ?? notificationMessages.errorRetry,
         {
           dedupeKey: "sidebar-create-team-failed",
         }

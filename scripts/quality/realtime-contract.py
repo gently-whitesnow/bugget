@@ -188,6 +188,11 @@ CUSTOM_PARSER_KEY = re.compile(r"^\s*\[(\w+)\.(\w+)\]\s*:", re.MULTILINE)
 INVOKE_LITERAL = re.compile(r"\.invoke\(\s*\"(\w+)\"")
 STRAY_PUBLISH = re.compile(r"\.SendAsync\(\s*\"(\w+)\"")
 
+# По этим признакам файл считается знающим про SignalR: без упоминания пространства имён
+# (или полного имени типа) назвать хаб-контекст в C# нельзя — в неявные using веб-SDK
+# SignalR не входит. HttpClient.SendAsync и WebSocket.SendAsync такого признака не дают.
+SIGNALR_MARKERS = ("Microsoft.AspNetCore.SignalR", "IHubContext<")
+
 
 def split_args(text: str) -> list[str]:
     """Аргументы верхнего уровня: вложенные скобки и строки не считаем разделителями."""
@@ -450,16 +455,45 @@ def check(read) -> list[str]:
     for hub in hubs:
         problems.extend(check_hub(hub, read, invocations))
 
-    # Публикация мимо объявленных обработчиков: новый хаб-клиент в другом файле контракт
-    # обойдёт молча, поэтому ищем литеральные SendAsync по всему бекенду.
-    known = {hub["publisher"] for hub in hubs}
+    problems.extend(stray_publications({hub["publisher"] for hub in hubs}, read))
+    return problems
+
+
+def stray_publications(known: set[str], read) -> list[str]:
+    """Публикация мимо объявленных обработчиков: новый хаб-клиент в другом файле.
+
+    Одного поиска литералов мало: имя события может приходить переменной
+    (`SendAsync(eventName, …)`), и тогда обход контракта не виден вовсе. Поэтому в
+    файлах, которые вообще знают про SignalR, запрещён любой SendAsync — с литералом,
+    с переменной, с чем угодно. Разбирать выражения гейт не берётся: неизвестное имя
+    он обязан считать нарушением, а не пропускать.
+
+    Признак файла — упоминание пространства имён SignalR или IHubContext. Без него
+    типы SignalR в C# не назвать: в неявные using веб-SDK они не входят. Файлы вне
+    этого признака проверяются по-старому, на литералы, — на случай, если публикация
+    заедет в файл окольным путём.
+    """
+    hint = f"обработчиками контракта объявлены только {', '.join(sorted(known))}"
+    problems: list[str] = []
+
     for path in scan_files(BACKEND_SCAN, (".cs",), BACKEND_SKIP):
         if path in known:
             continue
-        for name in sorted(set(STRAY_PUBLISH.findall(read(path)))):
+        text = read(path)
+        if not any(marker in text for marker in SIGNALR_MARKERS):
+            for name in sorted(set(STRAY_PUBLISH.findall(text))):
+                problems.append(f"публикация вне контракта: {name} — уходит из {path}, {hint}")
+            continue
+
+        for position in (m.start() for m in re.finditer(r"\.SendAsync\(", text)):
+            args, _ = read_call_args(text, text.index("(", position))
+            name = args[0] if args else ""
+            shown = name[1:-1] if name.startswith("\"") else f"имя из выражения {name!r}"
             problems.append(
-                f"публикация вне контракта: {name} — уходит из {path}, "
-                f"а обработчиками контракта объявлены только {', '.join(sorted(known))}"
+                f"публикация вне контракта: {shown} — уходит из {path}, {hint}. "
+                "Публикуй через объявленный обработчик: в файле, который знает про SignalR, "
+                "гейт запрещает любой SendAsync, потому что имя события в нём может быть "
+                "вычисляемым и контракт обойдёт молча"
             )
 
     return problems
@@ -518,6 +552,30 @@ def self_test() -> int:
         (
             "метод хаба выпал из контракта",
             mutation(CONTRACT, "      - name: LeaveReportGroupAsync\n", "      - name: LeaveReportGroupAsyncX\n"),
+            True,
+        ),
+        (
+            "публикация мимо обработчика литералом",
+            mutation(
+                hub["server"],
+                "    // Отключение от группы",
+                '    private Task BypassAsync() => Clients.All.SendAsync("ReceiveBypassedContract", "payload");\n\n'
+                "    // Отключение от группы",
+            ),
+            True,
+        ),
+        (
+            "публикация мимо обработчика с вычисляемым именем",
+            mutation(
+                hub["server"],
+                "    // Отключение от группы",
+                "    private Task BypassAsync()\n"
+                "    {\n"
+                '        var eventName = "ReceiveBypassedContract";\n'
+                '        return Clients.All.SendAsync(eventName, "payload");\n'
+                "    }\n\n"
+                "    // Отключение от группы",
+            ),
             True,
         ),
         (

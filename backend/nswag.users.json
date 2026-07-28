@@ -7,7 +7,7 @@
     "  - DTO → Users.Api/Generated/UsersContracts.g.cs",
     "  - abstract controllers → Users.Api/Generated/UsersControllerBase.g.cs",
     "",
-    "Контроллеров в модуле много (Workspaces, Teams, TeamMembers, TeamInvites, Users,",
+    "Контроллеров в модуле много (Workspaces, Teams, TeamMembers, Users,",
     "Avatar и их admin-варианты), они разделены префиксом operationId.",
     "DTO генерируются в сам проект модуля: их потребитель — только его контроллеры.",
     "",

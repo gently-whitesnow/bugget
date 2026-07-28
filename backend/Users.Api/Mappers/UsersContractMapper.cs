@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Users.Api.Contracts.Generated;
-using Users.Api.Controllers.TeamInvites;
 using Users.Api.Controllers.TeamMembers;
 using Users.Api.Controllers.Teams;
 using Users.Api.Controllers.Users;
@@ -140,25 +139,4 @@ internal static class UsersContractMapper
         Workspaces_member = view.WorkspacesMember is null ? null : [.. view.WorkspacesMember.Select(ToContract)],
     };
 
-    public static TeamInviteWithLink ToContract(this TeamCreateInviteView view) => new()
-    {
-        Id = view.Id,
-        Invite_link = view.InviteLink,
-        Created_at = view.CreatedAt,
-        Expires_at = view.ExpiresAt,
-    };
-
-    public static TeamInvite ToContract(this TeamInviteView view) => new()
-    {
-        Id = view.Id,
-        Created_at = view.CreatedAt,
-        Expires_at = view.ExpiresAt,
-    };
-
-    public static AcceptedInvite ToContract(this AcceptInviteView view) => new()
-    {
-        Id = view.Id,
-        Team_id = view.TeamId,
-        Workspace_id = view.WorkspaceId,
-    };
 }

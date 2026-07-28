@@ -67,26 +67,3 @@ export type WorkspacesContextResponse = {
 export type CreateWorkspaceRequest = {
   name: string;
 };
-
-export type AcceptInviteRequest = {
-  token: string;
-};
-
-export type AcceptInviteResponse = {
-  id: string;
-  teamId: string;
-  workspaceId: string;
-};
-
-export type TeamCreateInviteRequest = {
-  id: string;
-  createdAt: string;
-  expiresAt: string;
-  inviteLink: string;
-};
-
-export type TeamInviteResponse = {
-  id: string;
-  createdAt: string;
-  expiresAt: string;
-};

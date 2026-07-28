@@ -1,7 +1,0 @@
-status: 200
-content-type: application/json
-body:
-$: object
-$.id: number
-$.team_id: number
-$.workspace_id: number

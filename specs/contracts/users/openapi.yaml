@@ -560,94 +560,6 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
-  /v1/workspaces/{workspaceId}/teams/{teamId}/invites:
-    post:
-      operationId: TeamInvitesAdmin_CreateTeamInvite
-      summary: Создать приглашение в команду.
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/TeamId'
-      responses:
-        '200':
-          description: Приглашение создано.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TeamInviteWithLink'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-    get:
-      operationId: TeamInvitesAdmin_GetTeamInvite
-      summary: Действующее приглашение команды.
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceIdIgnored'
-        - $ref: '#/components/parameters/TeamId'
-      responses:
-        '200':
-          description: Приглашение.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TeamInvite'
-        '204':
-          description: Действующего приглашения нет.
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-  /v1/workspaces/{workspaceId}/teams/{teamId}/invites/{id}:
-    put:
-      operationId: TeamInvitesAdmin_UpdateTeamInvite
-      summary: Перевыпустить приглашение.
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceIdIgnored'
-        - $ref: '#/components/parameters/TeamId'
-        - $ref: '#/components/parameters/InviteId'
-      responses:
-        '201':
-          description: Приглашение перевыпущено.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TeamInviteWithLink'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Приглашение не найдено.
-    delete:
-      operationId: TeamInvitesAdmin_DeleteTeamInvite
-      summary: Удалить приглашение.
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceIdIgnored'
-        - $ref: '#/components/parameters/TeamId'
-        - $ref: '#/components/parameters/InviteId'
-      responses:
-        '200':
-          description: Приглашение удалено. Тело пустое.
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-  /v1/invites/accept:
-    post:
-      operationId: TeamInvites_AcceptTeamInvite
-      summary: Принять приглашение.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AcceptInviteRequest'
-      responses:
-        '200':
-          description: Приглашение принято.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AcceptedInvite'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          description: Приглашение не найдено либо просрочено.
-
 components:
 
   parameters:
@@ -698,14 +610,6 @@ components:
       schema:
         type: integer
         format: int64
-
-    InviteId:
-      name: id
-      in: path
-      required: true
-      description: Идентификатор приглашения.
-      schema:
-        type: integer
 
     Provider:
       name: provider
@@ -810,16 +714,6 @@ components:
           minLength: 1
           maxLength: 64
           description: Идентификатор пользователя в Mattermost.
-
-    AcceptInviteRequest:
-      type: object
-      description: Токен приглашения.
-      required:
-        - token
-      properties:
-        token:
-          type: string
-          description: Токен из ссылки-приглашения.
 
     AvatarUpload:
       type: object
@@ -1066,70 +960,6 @@ components:
           description: Членство пользователя в пространствах.
           items:
             $ref: '#/components/schemas/WorkspaceMemberSummary'
-
-    TeamInvite:
-      type: object
-      description: Приглашение в команду без самой ссылки.
-      required:
-        - id
-        - created_at
-        - expires_at
-      properties:
-        id:
-          type: integer
-          description: Идентификатор приглашения.
-        created_at:
-          type: string
-          format: date-time
-          description: Момент создания.
-        expires_at:
-          type: string
-          format: date-time
-          description: Момент истечения.
-
-    TeamInviteWithLink:
-      type: object
-      description: |
-        Приглашение вместе со ссылкой. Ссылка отдаётся только при создании и
-        перевыпуске: в хранилище лежит хеш токена, а не он сам.
-      required:
-        - id
-        - invite_link
-        - created_at
-        - expires_at
-      properties:
-        id:
-          type: integer
-          description: Идентификатор приглашения.
-        invite_link:
-          type: string
-          description: Ссылка-приглашение с токеном.
-        created_at:
-          type: string
-          format: date-time
-          description: Момент создания.
-        expires_at:
-          type: string
-          format: date-time
-          description: Момент истечения.
-
-    AcceptedInvite:
-      type: object
-      description: Куда пользователь попал, приняв приглашение.
-      required:
-        - id
-        - team_id
-        - workspace_id
-      properties:
-        id:
-          type: integer
-          description: Идентификатор приглашения.
-        team_id:
-          type: integer
-          description: Команда.
-        workspace_id:
-          type: integer
-          description: Рабочее пространство.
 
     User:
       type: object

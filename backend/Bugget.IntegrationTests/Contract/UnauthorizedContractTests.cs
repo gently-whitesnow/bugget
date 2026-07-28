@@ -62,7 +62,6 @@ public sealed class UnauthorizedContractTests(AppContractFixture fixture) : ICla
         { "GET", "/v1/workspaces/1/teams/1/members" },
         { "POST", "/v1/workspaces/1/teams/1/members/join" },
         { "DELETE", "/v1/workspaces/1/teams/1/members" },
-        { "POST", "/v1/invites/accept" },
         { "GET", "/v1/workspaces/1/teams/1/users" },
         { "PUT", "/v1/workspaces/1/teams/1/users" },
         { "POST", "/v1/workspaces/1/teams/1/users/batch/list" },

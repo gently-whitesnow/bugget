@@ -28,7 +28,7 @@ public class TeamsServiceTests
         _authorizationRepo = new Mock<IAuthorizationRepository>(MockBehavior.Strict);
         _logger = new Mock<ILogger<TeamsService>>(MockBehavior.Loose);
         _options = new Mock<IOptions<TeamsOptions>>(MockBehavior.Strict);
-        _options.Setup(o => o.Value).Returns(new TeamsOptions { DefaultSizeLimit = _defaultSizeLimit, DefaultTeamsCountLimit = 5, ExpiresIn = TimeSpan.FromDays(7), Pepper = "test_pepper" });
+        _options.Setup(o => o.Value).Returns(new TeamsOptions { DefaultSizeLimit = _defaultSizeLimit, DefaultTeamsCountLimit = 5 });
         _selfHostedOptions = new Mock<IOptions<SelfHostedOptions>>(MockBehavior.Strict);
         _selfHostedOptions.Setup(o => o.Value).Returns(new SelfHostedOptions { Enabled = true });
         _sut = new TeamsService(_teamsRepo.Object, _teamMembersRepo.Object, _authorizationRepo.Object, _options.Object, _selfHostedOptions.Object);

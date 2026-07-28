@@ -376,59 +376,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/workspaces/{workspaceId}/teams/{teamId}/invites": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Действующее приглашение команды. */
-        get: operations["TeamInvitesAdmin_GetTeamInvite"];
-        put?: never;
-        /** Создать приглашение в команду. */
-        post: operations["TeamInvitesAdmin_CreateTeamInvite"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/workspaces/{workspaceId}/teams/{teamId}/invites/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Перевыпустить приглашение. */
-        put: operations["TeamInvitesAdmin_UpdateTeamInvite"];
-        post?: never;
-        /** Удалить приглашение. */
-        delete: operations["TeamInvitesAdmin_DeleteTeamInvite"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/invites/accept": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Принять приглашение. */
-        post: operations["TeamInvites_AcceptTeamInvite"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -472,11 +419,6 @@ export interface components {
         LinkMattermostRequest: {
             /** @description Идентификатор пользователя в Mattermost. */
             mattermost_user_id: string;
-        };
-        /** @description Токен приглашения. */
-        AcceptInviteRequest: {
-            /** @description Токен из ссылки-приглашения. */
-            token: string;
         };
         /** @description Файл аватара. Один файл на запрос. */
         AvatarUpload: {
@@ -627,50 +569,6 @@ export interface components {
             /** @description Членство пользователя в пространствах. */
             workspaces_member: components["schemas"]["WorkspaceMemberSummary"][] | null;
         };
-        /** @description Приглашение в команду без самой ссылки. */
-        TeamInvite: {
-            /** @description Идентификатор приглашения. */
-            id: number;
-            /**
-             * Format: date-time
-             * @description Момент создания.
-             */
-            created_at: string;
-            /**
-             * Format: date-time
-             * @description Момент истечения.
-             */
-            expires_at: string;
-        };
-        /**
-         * @description Приглашение вместе со ссылкой. Ссылка отдаётся только при создании и
-         *     перевыпуске: в хранилище лежит хеш токена, а не он сам.
-         */
-        TeamInviteWithLink: {
-            /** @description Идентификатор приглашения. */
-            id: number;
-            /** @description Ссылка-приглашение с токеном. */
-            invite_link: string;
-            /**
-             * Format: date-time
-             * @description Момент создания.
-             */
-            created_at: string;
-            /**
-             * Format: date-time
-             * @description Момент истечения.
-             */
-            expires_at: string;
-        };
-        /** @description Куда пользователь попал, приняв приглашение. */
-        AcceptedInvite: {
-            /** @description Идентификатор приглашения. */
-            id: number;
-            /** @description Команда. */
-            team_id: number;
-            /** @description Рабочее пространство. */
-            workspace_id: number;
-        };
         /** @description Пользователь так, как его видит фронт. */
         User: {
             id: components["schemas"]["UserId"];
@@ -807,8 +705,6 @@ export interface components {
         TeamIdIgnored: string;
         /** @description Идентификатор пользователя. */
         UserId: number;
-        /** @description Идентификатор приглашения. */
-        InviteId: number;
         /** @description Провайдер входа, например `mattermost`. */
         Provider: string;
     };
@@ -1739,173 +1635,6 @@ export interface operations {
                 content?: never;
             };
             403: components["responses"]["Forbidden"];
-        };
-    };
-    TeamInvitesAdmin_GetTeamInvite: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description Сегмент адреса, значение которого ручка не использует: рабочее
-                 *     пространство берётся из identity. Описан строкой, потому что до
-                 *     contract-first этот сегмент не связывался вовсе — любой мусор в нём
-                 *     доезжал до действия, а не отбивался как 400.
-                 */
-                workspaceId: components["parameters"]["WorkspaceIdIgnored"];
-                /** @description Идентификатор команды. */
-                teamId: components["parameters"]["TeamId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Приглашение. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TeamInvite"];
-                };
-            };
-            /** @description Действующего приглашения нет. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    TeamInvitesAdmin_CreateTeamInvite: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Идентификатор рабочего пространства. */
-                workspaceId: components["parameters"]["WorkspaceId"];
-                /** @description Идентификатор команды. */
-                teamId: components["parameters"]["TeamId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Приглашение создано. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TeamInviteWithLink"];
-                };
-            };
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    TeamInvitesAdmin_UpdateTeamInvite: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description Сегмент адреса, значение которого ручка не использует: рабочее
-                 *     пространство берётся из identity. Описан строкой, потому что до
-                 *     contract-first этот сегмент не связывался вовсе — любой мусор в нём
-                 *     доезжал до действия, а не отбивался как 400.
-                 */
-                workspaceId: components["parameters"]["WorkspaceIdIgnored"];
-                /** @description Идентификатор команды. */
-                teamId: components["parameters"]["TeamId"];
-                /** @description Идентификатор приглашения. */
-                id: components["parameters"]["InviteId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Приглашение перевыпущено. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TeamInviteWithLink"];
-                };
-            };
-            403: components["responses"]["Forbidden"];
-            /** @description Приглашение не найдено. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TeamInvitesAdmin_DeleteTeamInvite: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description Сегмент адреса, значение которого ручка не использует: рабочее
-                 *     пространство берётся из identity. Описан строкой, потому что до
-                 *     contract-first этот сегмент не связывался вовсе — любой мусор в нём
-                 *     доезжал до действия, а не отбивался как 400.
-                 */
-                workspaceId: components["parameters"]["WorkspaceIdIgnored"];
-                /** @description Идентификатор команды. */
-                teamId: components["parameters"]["TeamId"];
-                /** @description Идентификатор приглашения. */
-                id: components["parameters"]["InviteId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Приглашение удалено. Тело пустое. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    TeamInvites_AcceptTeamInvite: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AcceptInviteRequest"];
-            };
-        };
-        responses: {
-            /** @description Приглашение принято. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AcceptedInvite"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            /** @description Приглашение не найдено либо просрочено. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
         };
     };
 }

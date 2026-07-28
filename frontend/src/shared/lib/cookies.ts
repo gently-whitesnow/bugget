@@ -22,9 +22,3 @@ export function deleteCookie(name: string) {
   if (typeof document === "undefined") return;
   document.cookie = `${name}=; path=/; max-age=0`;
 }
-
-/**
- * Константы для работы с invite токеном
- */
-export const inviteTokenCookie = "invite_token";
-export const inviteCookieMaxAge = 7 * 24 * 60 * 60; // 7 days in seconds

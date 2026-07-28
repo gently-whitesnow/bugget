@@ -88,6 +88,7 @@ const setupResponseInterceptors = (axiosInstance: AxiosInstance) => {
       if (
         error?.response?.data &&
         isJsonResponse(error.response.headers) &&
+        !shouldSkipCaseConversion(error.config?.url) &&
         !isProblemDetailsResponse(error.response.headers)
       ) {
         error.response.data = convertObjectToCamel(error.response.data);

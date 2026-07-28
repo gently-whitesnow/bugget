@@ -34,9 +34,12 @@ const respondWithError = (
   return instance;
 };
 
-const failedRequest = async (instance: AxiosInstance): Promise<unknown> => {
+const failedRequest = async (
+  instance: AxiosInstance,
+  url = "/api/users/v1/workspaces/1/teams"
+): Promise<unknown> => {
   try {
-    await instance.get("/api/users/v1/workspaces/1/teams");
+    await instance.get(url);
     throw new Error("запрос обязан был упасть");
   } catch (error) {
     return error;
@@ -114,6 +117,22 @@ describe("путь ошибки: ключи словаря errors", () => {
     expect((error as AxiosError).response?.data).toEqual({
       reportTitle: "x",
       errorList: [{ error: "a", reason: "b" }],
+    });
+  });
+
+  it("analytics JSON-ошибка сохраняет snake_case wire-формата", async () => {
+    const error = await failedRequest(
+      respondWithError(
+        400,
+        { report_title: "x", error_list: [{ error: "a" }] },
+        { "content-type": "application/json" }
+      ),
+      "/v2/analytics/summary"
+    );
+
+    expect((error as AxiosError).response?.data).toEqual({
+      report_title: "x",
+      error_list: [{ error: "a" }],
     });
   });
 

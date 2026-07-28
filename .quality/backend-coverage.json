@@ -18,7 +18,7 @@
   "$comment-gapsFocus": "Сборки, по которым backend-coverage.py --gaps строит список приоритетных дыр: бизнес-логика, где непокрытая ветка стоит дороже всего.",
   "baseline": {
     "total": {
-      "line": 72.3,
+      "line": 72.4,
       "branch": 41.4
     },
     "assemblies": {
@@ -39,8 +39,8 @@
         "branch": 0.0
       },
       "Bugget": {
-        "line": 82.5,
-        "branch": 36.7
+        "line": 84.2,
+        "branch": 36.9
       },
       "Bugget.BO": {
         "line": 81.9,
@@ -87,11 +87,11 @@
         "branch": null
       },
       "Users.Api": {
-        "line": 91.6,
+        "line": 90.0,
         "branch": 75.0
       },
       "Users.BO": {
-        "line": 90.2,
+        "line": 89.7,
         "branch": 50.0
       },
       "Users.DA": {

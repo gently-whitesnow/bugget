@@ -33,13 +33,27 @@ const shouldSkipCaseConversion = (url: string | undefined): boolean => {
  * но в `errors` лежит словарь «имя поля → ошибки», и рекурсивная конверсия ключей
  * переписала бы имена полей формы. Поэтому problem+json не конвертируем вовсе.
  */
+const contentTypeFrom = (headers: unknown): unknown => {
+  const get = (headers as { get?: unknown } | undefined)?.get;
+  if (typeof get === "function") return get.call(headers, "content-type");
+  return Object.entries(
+    (headers as Record<string, unknown> | undefined) ?? {}
+  ).find(([name]) => name.toLowerCase() === "content-type")?.[1];
+};
+
 const isProblemDetailsResponse = (headers: unknown): boolean => {
-  const contentType = (headers as Record<string, unknown> | undefined)?.[
-    "content-type"
-  ];
+  const contentType = contentTypeFrom(headers);
   return (
     typeof contentType === "string" &&
     contentType.toLowerCase().includes("application/problem+json")
+  );
+};
+
+const isJsonResponse = (headers: unknown): boolean => {
+  const contentType = contentTypeFrom(headers);
+  return (
+    typeof contentType === "string" &&
+    contentType.toLowerCase().includes("application/json")
   );
 };
 
@@ -69,6 +83,14 @@ const setupResponseInterceptors = (axiosInstance: AxiosInstance) => {
           error.response.status
         } ${error.config?.method?.toUpperCase()} ${error.config?.url}`.trim();
         console.error(issueName);
+      }
+
+      if (
+        error?.response?.data &&
+        isJsonResponse(error.response.headers) &&
+        !isProblemDetailsResponse(error.response.headers)
+      ) {
+        error.response.data = convertObjectToCamel(error.response.data);
       }
       return Promise.reject(error);
     }

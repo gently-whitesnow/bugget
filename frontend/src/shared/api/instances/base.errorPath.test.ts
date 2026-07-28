@@ -102,20 +102,7 @@ describe("путь ошибки: ключи словаря errors", () => {
     ]);
   });
 
-  /**
-   * ДЕФЕКТ 1 (документирующий тест, поведение сегодня корректно по итогу, но не по причине).
-   *
-   * Конвертацию кейсов делает второй response-интерцептор, зарегистрированный
-   * ТОЛЬКО с fulfilled-обработчиком (`base.ts:77`). Ответы 4xx/5xx идут по
-   * rejected-ветке и до него не доходят вовсе — значит guard
-   * `isProblemDetailsResponse` (`base.ts:81`) на телах ошибок никогда не
-   * исполняется. Инвариант «ключи errors не переименовываются» держится не
-   * границей problem+json, а тем, что тела ошибок не конвертируются в принципе.
-   *
-   * Доказательство: ответ 400 с обычным `application/json` и snake-ключами тоже
-   * остаётся неконвертированным.
-   */
-  it("граница problem+json не участвует в пути ошибок: 400 с application/json тоже не конвертируется", async () => {
+  it("обычный application/json на пути ошибки конвертируется в camelCase", async () => {
     const error = await failedRequest(
       respondWithError(
         400,
@@ -125,8 +112,8 @@ describe("путь ошибки: ключи словаря errors", () => {
     );
 
     expect((error as AxiosError).response?.data).toEqual({
-      report_title: "x",
-      error_list: [{ error: "a", reason: "b" }],
+      reportTitle: "x",
+      errorList: [{ error: "a", reason: "b" }],
     });
   });
 

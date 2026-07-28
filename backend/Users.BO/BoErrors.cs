@@ -13,7 +13,6 @@ public static class BoErrors
     public static readonly ForbiddenError SelfHostedModeError = new ForbiddenError("self_hosted_mode_error", "Действие не доступно в self-hosted режиме");
     public static readonly ForbiddenError SelfHostedModeRequiredError = new ForbiddenError("self_hosted_mode_required_error", "Действие доступно только в self-hosted режиме");
     public static readonly BadRequestError UserAlreadyInTeamError = new BadRequestError("user_already_in_team_error", "Пользователь уже в команде");
-    public static readonly BadRequestError TeamInviteExpiredError = new BadRequestError("team_invite_expired_error", "Инвайт истек");
     public static readonly BadRequestError TeamMaxUsersCountError = new BadRequestError("team_max_users_count_error", "Превышено максимальное количество пользователей в команде");
     public static readonly ForbiddenError UserNotInTeamError = new ForbiddenError("user_not_in_team_error", "Пользователь не состоит ни в одной команде");
 }

@@ -8,14 +8,12 @@ using Users.Api.BackgroundServices;
 using Users.BO;
 using Users.BO.Avatars;
 using Users.BO.Interfaces;
-using Users.BO.TeamInvites;
 using Users.BO.TeamMembers;
 using Users.BO.WorkspaceMembers;
 using Users.BO.Workspaces;
 using Users.DA.DbClients;
 using Users.DA.Files;
 using Users.DA.Interfaces;
-using Users.DA.TeamInvites;
 using Users.DA.TeamMembers;
 using Users.DbUp;
 using Users.Entities.Options;
@@ -44,7 +42,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IWorkspaceMembersRepository, WorkspaceMembersDbClient>();
         services.AddSingleton<ITeamMembersRepository, TeamMembersDbClient>();
         services.AddSingleton<IMembersRepository, MembersDbClient>();
-        services.AddSingleton<ITeamInvitesRepository, TeamInvitesDbClient>();
         services.AddSingleton<IUserExternalLinksRepository, UserExternalLinksDbClient>();
         services.AddSingleton<IFileStorageClient, LocalFileStorageClient>();
 
@@ -63,7 +60,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IUsersService, UsersService>();
         services.AddSingleton<ITeamsService, TeamsService>();
         services.AddSingleton<IWorkspacesService, WorkspacesService>();
-        services.AddSingleton<ITeamInvitesService, TeamInvitesService>();
         services.AddSingleton<ITeamMembersService, TeamMembersService>();
         services.AddSingleton<IWorkspaceMembersService, WorkspaceMembersService>();
         services.AddSingleton<IUserExternalLinksService, UserExternalLinksService>();

@@ -89,11 +89,6 @@ internal static class PublicContractInventory
         ["POST /v1/workspaces/{workspaceId}/teams/{teamId}/members/join"] = new(Frontend, "UsersWorkspacesContractTests"),
         ["DELETE /v1/workspaces/{workspaceId}/teams/{teamId}/members"] = new(Frontend, "UsersWorkspacesContractTests"),
         ["DELETE /v1/workspaces/{workspaceId}/teams/{teamId}/members/{userId}"] = new(Frontend, "UsersWorkspacesContractTests"),
-        ["POST /v1/workspaces/{workspaceId}/teams/{teamId}/invites"] = new(Frontend, "UsersWorkspacesContractTests"),
-        ["GET /v1/workspaces/{workspaceId}/teams/{teamId}/invites"] = new(Frontend, "UsersWorkspacesContractTests"),
-        ["PUT /v1/workspaces/{workspaceId}/teams/{teamId}/invites/{id}"] = new(Frontend, "UsersWorkspacesContractTests"),
-        ["DELETE /v1/workspaces/{workspaceId}/teams/{teamId}/invites/{id}"] = new(Frontend, "UsersWorkspacesContractTests"),
-        ["POST /v1/invites/accept"] = new(Frontend, "UsersWorkspacesContractTests"),
 
         // --- users: профиль в контексте workspace/team ---
         ["GET /v1/workspaces/{workspaceId}/teams/{teamId}/users"] = new(Frontend, "UsersProfileContractTests"),

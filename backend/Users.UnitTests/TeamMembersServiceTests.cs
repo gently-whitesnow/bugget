@@ -32,8 +32,6 @@ public class TeamMembersServiceTests
         {
             DefaultSizeLimit = _defaultSizeLimit,
             DefaultTeamsCountLimit = 5,
-            ExpiresIn = TimeSpan.FromDays(7),
-            Pepper = "test_pepper"
         });
         _sut = new TeamMembersService(_teamMembersRepo.Object, _options.Object, _workspaceMembersRepo.Object, _authorizationRepo.Object, _selfHostedOptions.Object);
     }
@@ -140,8 +138,6 @@ public class TeamMembersServiceTests
         {
             DefaultSizeLimit = customLimit,
             DefaultTeamsCountLimit = 5,
-            ExpiresIn = TimeSpan.FromDays(7),
-            Pepper = "test_pepper"
         });
 
         var customSut = new TeamMembersService(_teamMembersRepo.Object, customOptions.Object, _workspaceMembersRepo.Object, _authorizationRepo.Object, _selfHostedOptions.Object);
@@ -306,4 +302,3 @@ public class TeamMembersServiceTests
         Assert.Equal("InvalidateCache", callOrder[2]);
     }
 }
-

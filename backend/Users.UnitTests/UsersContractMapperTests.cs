@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Users.Api.Controllers.TeamInvites;
 using Users.Api.Controllers.TeamMembers;
 using Users.Api.Controllers.Teams;
 using Users.Api.Controllers.Users;
@@ -162,25 +161,6 @@ public class UsersContractMapperTests
         Assert.Equal(1, contract.Workspace_id);
         Assert.Equal(42, contract.User_id);
         Assert.Equal("admin", contract.Role);
-    }
-
-    [Fact(DisplayName = "Приглашения: ссылка отдаётся только там, где она есть")]
-    public void Invites_map_link_only_where_present()
-    {
-        var withLink = new TeamCreateInviteView
-        {
-            Id = 3,
-            InviteLink = "https://bugget/invite/token",
-            CreatedAt = Moment,
-            ExpiresAt = Moment,
-        }.ToContract();
-        var withoutLink = new TeamInviteView { Id = 3, CreatedAt = Moment, ExpiresAt = Moment }.ToContract();
-        var accepted = new AcceptInviteView(3, 7, 1).ToContract();
-
-        Assert.Equal("https://bugget/invite/token", withLink.Invite_link);
-        Assert.Equal(3, withoutLink.Id);
-        Assert.Equal(7, accepted.Team_id);
-        Assert.Equal(1, accepted.Workspace_id);
     }
 
     [Fact(DisplayName = "Привязка провайдера: почты может не быть")]

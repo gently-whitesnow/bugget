@@ -168,32 +168,6 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
         await ContractSnapshot.MatchAsync("users.v1.team-members-by-id.delete", response);
     }
 
-    [Fact(DisplayName = "Инвайты команды: POST, GET, PUT, приём и DELETE")]
-    public async Task TeamInviteLifecycle()
-    {
-        var scenario = await UsersScenario.CreateAsync(fixture);
-
-        var created = await scenario.Client.PostAsync(scenario.TeamPath("/invites"), null);
-        await ContractSnapshot.MatchAsync("users.v1.team-invites.post", created);
-
-        var listed = await scenario.Client.GetAsync(scenario.TeamPath("/invites"));
-        await ContractSnapshot.MatchAsync("users.v1.team-invites.get", listed);
-
-        // Токен фронт достаёт из ссылки-приглашения: отдельного поля в ответе нет.
-        var inviteLink = (await ContractScenario.ReadJsonAsync(created)).GetProperty("invite_link").GetString()!;
-        var token = inviteLink[(inviteLink.IndexOf("token=", StringComparison.Ordinal) + "token=".Length)..];
-
-        var accepted = await scenario.Client.PostAsJsonAsync("/v1/invites/accept", new { token });
-        await ContractSnapshot.MatchAsync("users.v1.invites-accept.post", accepted);
-
-        var inviteId = (await ContractScenario.ReadJsonAsync(listed)).GetProperty("id").GetInt32();
-        var regenerated = await scenario.Client.PutAsync(scenario.TeamPath($"/invites/{inviteId}"), null);
-        await ContractSnapshot.MatchAsync("users.v1.team-invites.put", regenerated);
-
-        var deleted = await scenario.Client.DeleteAsync(scenario.TeamPath($"/invites/{inviteId}"));
-        await ContractSnapshot.MatchAsync("users.v1.team-invites.delete", deleted);
-    }
-
     [Fact(DisplayName = "DELETE /v1/workspaces/{workspaceId}: в self-hosted режиме 403")]
     public async Task DeleteWorkspace()
     {

@@ -15,7 +15,6 @@
 | [0005](0005-contract-first-openapi.md) | Contract-first — источник правды `specs/contracts/**/openapi.yaml` | Accepted | 2026-07-26 |
 | [0006](0006-integration-tests-in-ci.md) | Интеграционные тесты в полном прогоне и в CI, категория по имени проекта | Accepted | 2026-07-26 |
 | [0007](0007-realtime-events-contract.md) | Контракт realtime-событий — `specs/contracts/events.yaml` и гейт покрытия по четырём сторонам | Accepted | 2026-07-27 |
-| [0008](0008-remove-legacy-team-invites.md) | Удаление legacy TTL-token инвайтов команд из публичного API | Accepted | 2026-07-28 |
 
 Идентификатор `ADR-20260518`, который встречается в описаниях контрактов и в
 сгенерированных `.g.cs`, — из старой схемы нумерации по дате. Он относится к решению

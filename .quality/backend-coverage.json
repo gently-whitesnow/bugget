@@ -18,8 +18,8 @@
   "$comment-gapsFocus": "Сборки, по которым backend-coverage.py --gaps строит список приоритетных дыр: бизнес-логика, где непокрытая ветка стоит дороже всего.",
   "baseline": {
     "total": {
-      "line": 72.4,
-      "branch": 41.4
+      "line": 73.6,
+      "branch": 43.4
     },
     "assemblies": {
       "Authentication": {
@@ -39,8 +39,8 @@
         "branch": 0.0
       },
       "Bugget": {
-        "line": 84.2,
-        "branch": 36.9
+        "line": 84.7,
+        "branch": 37.3
       },
       "Bugget.BO": {
         "line": 81.9,
@@ -58,6 +58,10 @@
         "line": 72.2,
         "branch": 47.2
       },
+      "Bugget.Http": {
+        "line": 100.0,
+        "branch": 86.7
+      },
       "Caching.Local": {
         "line": 0.0,
         "branch": 0.0
@@ -67,8 +71,8 @@
         "branch": 0.0
       },
       "Flow": {
-        "line": 47.4,
-        "branch": 39.5
+        "line": 62.5,
+        "branch": 50.0
       },
       "MattermostOAuth": {
         "line": 0.0,
@@ -87,7 +91,7 @@
         "branch": null
       },
       "Users.Api": {
-        "line": 90.0,
+        "line": 90.4,
         "branch": 75.0
       },
       "Users.BO": {

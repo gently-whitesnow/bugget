@@ -30,7 +30,10 @@ HTTP-контракт после contract-first защищён гейтом back
   * рамку вокруг payload навешивает сам SignalR, и она описана в контракте вместе с
     именем доверенного типа: тип обязан существовать и наследовать HubException, фильтр
     границы — пропускать именно его и не пропускать базовый HubException, а собранный
-    из контракта префикс — совпадать с тем, что проверяет characterization-тест;
+    из контракта префикс — совпадать с тем, что проверяет characterization-тест. Само
+    значение рамки защищено целиком: каждая подстановка ровно одна, порядок фиксирован,
+    <payload> закрывает строку — иначе рамку можно переставить или дописать ей хвост
+    незаметно для сравнения;
   * во всём бекенде нет публикации в обход объявленных publisher-файлов.
 
   realtime-contract.py              проверить
@@ -325,15 +328,57 @@ def parse_error_envelope(text: str, type_name: str, source: str) -> list[tuple[s
     raise ContractError(f"{source}: не найдена запись {type_name} — форму ошибки разобрать нечем")
 
 
+# Порядок значим: он же и есть требуемый порядок подстановок в envelope.
 ENVELOPE_PLACEHOLDERS = ("<method>", "<trustedException>", "<payload>")
 
 
-def render_envelope_prefix(envelope: str, type_name: str, method: str) -> str:
-    """Рамка SignalR до нашего payload — ровно то, что видит клиент перед JSON."""
+def check_envelope_shape(envelope: str) -> list[str]:
+    """Форма самого значения envelope, до всякого сравнения с кодом.
+
+    Значение объявлено полной рамкой, а не префиксом, поэтому защищать его надо целиком.
+    Сравнить с проводом дословно можно только ту часть, что стоит до <payload>, — значит
+    всё остальное обязано быть предсказуемым: каждая подстановка ровно одна, порядок
+    фиксирован, <payload> закрывает строку. Иначе рамку можно переставить или дописать ей
+    хвост, и проверка ниже этого не заметит: у переставленной рамки сравниваемая часть
+    пуста, а пустая строка находится в любом файле.
+    """
+    problems: list[str] = []
+
+    for name in ENVELOPE_PLACEHOLDERS:
+        count = envelope.count(name)
+        if count != 1:
+            problems.append(
+                f"{CONTRACT}: в methodError.envelope подстановка {name} встречается "
+                f"{count} раз(а), а должна ровно один"
+            )
+    if problems:
+        return problems
+
+    positions = [envelope.index(name) for name in ENVELOPE_PLACEHOLDERS]
+    if positions != sorted(positions):
+        problems.append(
+            f"{CONTRACT}: подстановки в methodError.envelope идут не в порядке "
+            f"{' → '.join(ENVELOPE_PLACEHOLDERS)}"
+        )
+    if not envelope.endswith("<payload>"):
+        problems.append(
+            f"{CONTRACT}: methodError.envelope не заканчивается на <payload>. "
+            "Хвост после payload сравнить с проводом нечем: в снимке там лежит JSON"
+        )
+
+    return problems
+
+
+def render_envelope_head(envelope: str, type_name: str, method: str) -> str:
+    """Рамка до payload — всё значение envelope, кроме самой подстановки <payload>.
+
+    Отбрасывать здесь нечего: check_envelope_shape уже потребовал, чтобы <payload>
+    закрывал строку.
+    """
     return (envelope
             .replace("<method>", method)
             .replace("<trustedException>", type_name)
-            .split("<payload>")[0])
+            .removesuffix("<payload>"))
 
 
 def check_trusted_exception(declared: dict, read) -> list[str]:
@@ -405,18 +450,15 @@ def check_error_envelope(hub: dict, read) -> list[str]:
     problems.extend(check_trusted_exception(trusted, read))
 
     envelope = declared["envelope"]
-    missing = [name for name in ENVELOPE_PLACEHOLDERS if name not in envelope]
-    if missing:
-        return problems + [
-            f"{CONTRACT}: в methodError.envelope нет подстановок {', '.join(missing)} — "
-            "рамку не из чего собрать"
-        ]
+    malformed = check_envelope_shape(envelope)
+    if malformed:
+        return problems + malformed
 
     characterization = declared["characterization"]
-    prefix = render_envelope_prefix(envelope, trusted["type"], characterization["method"])
-    if prefix not in read(characterization["source"]):
+    head = render_envelope_head(envelope, trusted["type"], characterization["method"])
+    if head not in read(characterization["source"]):
         problems.append(
-            f"рамка разошлась со снимком провода: из {CONTRACT} собирается {prefix!r}, "
+            f"рамка разошлась со снимком провода: из {CONTRACT} собирается {head!r}, "
             f"а {characterization['source']} ожидает не её. Снимок живого соединения — "
             "единственное доказательство формы, и он обязан проверять описанную рамку"
         )
@@ -731,6 +773,20 @@ def self_test() -> int:
                 CONTRACT,
                 'envelope: "An unexpected error occurred invoking',
                 'envelope: "An error occurred invoking',
+            ),
+            True,
+        ),
+        (
+            "рамке ошибки дописан хвост после payload",
+            mutation(CONTRACT, '<payload>"', '<payload> suffix"'),
+            True,
+        ),
+        (
+            "подстановки в рамке ошибки переставлены",
+            mutation(
+                CONTRACT,
+                'envelope: "An unexpected error occurred invoking \'<method>\' on the server. <trustedException>: <payload>"',
+                'envelope: "<payload> <method> <trustedException>"',
             ),
             True,
         ),

@@ -181,25 +181,20 @@ export interface components {
             /** @description Человекочитаемый ярлык периода. */
             label: string;
         };
-        /**
-         * @description RFC 9457 Problem Details. `type` и машинный `code` всегда выводятся из
-         *     одного дескриптора: `urn:bugget:error:<code>`.
-         */
-        ProblemDetails: {
+        /** @description RFC 9457 Problem Details для ошибок валидации. */
+        ValidationProblemDetails: {
             /** Format: uri */
             type: string;
             title: string;
             status: number;
             detail?: string;
             instance?: string;
-            /** @description Стабильный машинно-читаемый код ошибки. */
             code: string;
-            /** @description Идентификатор трассы для корреляции с журналом. */
             traceId?: string;
-            /** @description Допустимое число элементов в запросе. */
-            limit?: number;
-            /** @description Ключ элемента, нарушившего ограничение. */
-            key?: string;
+            /** @description Wire-имена полей тела запроса, которые отправляет клиент. */
+            errors: {
+                [key: string]: string[];
+            };
         };
         /**
          * @description Идентификатор пользователя. Строка, а не число: источник — внешний
@@ -214,7 +209,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["ProblemDetails"];
+                "application/problem+json": components["schemas"]["ValidationProblemDetails"];
             };
         };
     };

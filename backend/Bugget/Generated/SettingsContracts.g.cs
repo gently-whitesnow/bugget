@@ -175,12 +175,10 @@ namespace Bugget.Api.Contracts.Settings.Generated
     }
 
     /// <summary>
-    /// RFC 9457 Problem Details. `type` и машинный `code` всегда выводятся из
-    /// <br/>одного дескриптора: `urn:bugget:error:&lt;code&gt;`.
-    /// <br/>
+    /// RFC 9457 Problem Details для ошибок валидации.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ProblemDetails
+    public partial class ValidationProblemDetails
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("type")]
@@ -200,30 +198,19 @@ namespace Bugget.Api.Contracts.Settings.Generated
         [System.Text.Json.Serialization.JsonPropertyName("instance")]
         public string Instance { get; set; }
 
-        /// <summary>
-        /// Стабильный машинно-читаемый код ошибки.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("code")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Code { get; set; }
 
-        /// <summary>
-        /// Идентификатор трассы для корреляции с журналом.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("traceId")]
         public string TraceId { get; set; }
 
         /// <summary>
-        /// Допустимое число элементов в запросе.
+        /// Wire-имена полей тела запроса, которые отправляет клиент.
         /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("limit")]
-        public int Limit { get; set; }
-
-        /// <summary>
-        /// Ключ элемента, нарушившего ограничение.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("key")]
-        public string Key { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("errors")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<string>> Errors { get; set; } = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IReadOnlyList<string>>();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 

@@ -227,11 +227,11 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+            $ref: '../shared.yaml#/components/schemas/ValidationProblemDetails'
 
     NotFound:
       description: Секция или настройка не найдена.
       content:
         application/problem+json:
           schema:
-            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+            $ref: '../shared.yaml#/components/schemas/ValidationProblemDetails'

@@ -1943,4 +1943,4 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+            $ref: '../shared.yaml#/components/schemas/ValidationProblemDetails'

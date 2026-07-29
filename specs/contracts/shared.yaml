@@ -47,27 +47,39 @@ components:
         traceId:
           type: string
           description: Идентификатор трассы для корреляции с журналом.
-        limit:
-          type: integer
-          description: Допустимое число элементов в запросе.
-        key:
-          type: string
-          description: Ключ элемента, нарушившего ограничение.
 
     ValidationProblemDetails:
-      allOf:
-        - $ref: '#/components/schemas/ProblemDetails'
-        - type: object
-          required:
-            - errors
-          properties:
-            errors:
-              type: object
-              description: Wire-имена полей тела запроса, которые отправляет клиент.
-              additionalProperties:
-                type: array
-                items:
-                  type: string
+      type: object
+      description: RFC 9457 Problem Details для ошибок валидации.
+      required:
+        - type
+        - title
+        - status
+        - code
+        - errors
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        traceId:
+          type: string
+        errors:
+          type: object
+          description: Wire-имена полей тела запроса, которые отправляет клиент.
+          additionalProperties:
+            type: array
+            items:
+              type: string
 
     Period:
       type: object

@@ -64,12 +64,12 @@ public sealed class AvatarController(
         var content = file.Data;
         if (content.Length > MaxAvatarSize)
         {
-            return Flow.ProblemDetailsFactory.Create("avatar_too_large", "Размер файла не должен превышать 200 КБ", 400);
+            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.AvatarTooLarge);
         }
 
         if (!AllowedAvatarContentTypes.Contains(file.ContentType))
         {
-            return Flow.ProblemDetailsFactory.Create("avatar_format_not_allowed", "Недопустимый формат файла. Разрешены: JPEG, PNG, GIF, WebP", 400);
+            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.AvatarFormatNotAllowed);
         }
 
         var user = User.GetIdentity();

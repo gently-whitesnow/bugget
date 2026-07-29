@@ -19,21 +19,13 @@ public class ResultExceptionHandlerMiddleware(ILogger<ResultExceptionHandlerMidd
         }
         catch (PostgresException ex) when (ex.SqlState == "P0404")
         {
-            await ProblemDetailsFactory.WriteAsync(
-                context,
-                BoErrors.NotFoundError.Error,
-                BoErrors.NotFoundError.Reason,
-                (int)HttpStatusCode.NotFound);
+            await ProblemDetailsFactory.WriteAsync(context, ProblemDescriptors.NotFound);
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Обработана ошибка на мидлваре");
 
-            await ProblemDetailsFactory.WriteAsync(
-                context,
-                BoErrors.InternalServerError.Error,
-                BoErrors.InternalServerError.Reason,
-                (int)HttpStatusCode.InternalServerError);
+            await ProblemDetailsFactory.WriteAsync(context, ProblemDescriptors.InternalServerError);
         }
     }
 }

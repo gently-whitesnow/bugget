@@ -46,7 +46,7 @@ public sealed class AnalyticsController(AnalyticsService analyticsService) : Ana
         {
             // PeriodResolver.Resolve бросает ArgumentException на невалидный period —
             // отдаём 400 c человекочитаемым сообщением (без stack-трейса).
-            return Flow.ProblemDetailsFactory.Create("invalid_period", "Некорректный период", 400, ex.Message);
+            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.InvalidPeriod, ex.Message);
         }
     }
 
@@ -69,7 +69,7 @@ public sealed class AnalyticsController(AnalyticsService analyticsService) : Ana
         }
         catch (ArgumentException ex) when (ex.ParamName == "period")
         {
-            return Flow.ProblemDetailsFactory.Create("invalid_period", "Некорректный период", 400, ex.Message);
+            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.InvalidPeriod, ex.Message);
         }
     }
 }

@@ -25,7 +25,7 @@ public sealed class ReportCountsController(ReportsService reportsService) : Repo
     {
         if (body?.Scopes is null)
         {
-            return Flow.ProblemDetailsFactory.Create("scopes_required", "Не переданы области подсчёта", 400);
+            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.ScopesRequired);
         }
 
         if (body.Scopes.Count == 0)
@@ -36,7 +36,7 @@ public sealed class ReportCountsController(ReportsService reportsService) : Repo
         if (body.Scopes.Count > MaxScopes)
         {
             return Flow.ProblemDetailsFactory.Create(
-                "scopes_limit_exceeded", "Превышен лимит областей подсчёта", 400,
+                Flow.ProblemDescriptors.ScopesLimitExceeded,
                 extensions: new Dictionary<string, object?> { ["limit"] = MaxScopes });
         }
 
@@ -45,13 +45,13 @@ public sealed class ReportCountsController(ReportsService reportsService) : Repo
         {
             if (string.IsNullOrEmpty(scope.Key))
             {
-                return Flow.ProblemDetailsFactory.Create("scope_key_required", "Не передан ключ области", 400);
+                return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.ScopeKeyRequired);
             }
 
             if (!seenKeys.Add(scope.Key))
             {
                 return Flow.ProblemDetailsFactory.Create(
-                    "duplicate_scope_key", "Ключ области повторяется", 400,
+                    Flow.ProblemDescriptors.DuplicateScopeKey,
                     extensions: new Dictionary<string, object?> { ["key"] = scope.Key });
             }
         }

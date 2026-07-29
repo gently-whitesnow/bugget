@@ -18,6 +18,6 @@ public static class ErrorExtensions
             _ => throw new NotImplementedException("Данный тип ошибки не определен")
         };
 
-        return Flow.ProblemDetailsFactory.Create(code, title, (int)status);
+        return Flow.ProblemDetailsFactory.Create(new Flow.ProblemDescriptor(code, title, (int)status));
     }
 }

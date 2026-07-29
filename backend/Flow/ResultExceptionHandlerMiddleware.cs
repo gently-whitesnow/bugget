@@ -21,11 +21,7 @@ public class ResultExceptionHandlerMiddleware(ILogger<ResultExceptionHandlerMidd
         {
             logger.LogError(e, "Обработана ошибка на мидлваре");
 
-            await ProblemDetailsFactory.WriteAsync(
-                context,
-                InternalServerError.Error,
-                InternalServerError.Reason,
-                (int)HttpStatusCode.InternalServerError);
+            await ProblemDetailsFactory.WriteAsync(context, ProblemDescriptors.InternalServerError);
         }
     }
 }

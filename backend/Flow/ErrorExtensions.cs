@@ -18,6 +18,6 @@ public static class ErrorExtensions
             _ => throw new NotImplementedException("Данный тип ошибки не определен")
         };
 
-        return ProblemDetailsFactory.Create(code, title, (int)status);
+        return ProblemDetailsFactory.Create(new ProblemDescriptor(code, title, (int)status));
     }
 }

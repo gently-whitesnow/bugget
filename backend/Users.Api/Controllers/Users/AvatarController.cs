@@ -1,10 +1,12 @@
 using Authentication;
+using Bugget.Http;
 using Flow.Routing;
 using Microsoft.AspNetCore.Mvc;
 using Users.Api.Generated;
 using Users.BO.Interfaces;
 using Users.DA.Interfaces;
 using FileParameter = Users.Api.Generated.FileParameter;
+using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 
 namespace Users.Api.Controllers.Users;
 
@@ -63,12 +65,12 @@ public sealed class AvatarController(
         var content = file.Data;
         if (content.Length > MaxAvatarSize)
         {
-            return BadRequest("Размер файла не должен превышать 200 КБ");
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.AvatarTooLarge);
         }
 
         if (!AllowedAvatarContentTypes.Contains(file.ContentType))
         {
-            return BadRequest("Недопустимый формат файла. Разрешены: JPEG, PNG, GIF, WebP");
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.AvatarFormatNotAllowed);
         }
 
         var user = User.GetIdentity();

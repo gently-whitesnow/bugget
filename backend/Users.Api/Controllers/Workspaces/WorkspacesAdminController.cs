@@ -29,7 +29,7 @@ public sealed class WorkspacesAdminController(IWorkspacesService workspacesServi
         var user = User.GetIdentity();
 
         return workspacesService.UpdateWorkspaceAsync(user.Id, workspaceId, body.Name)
-            .AsContractResultAsync(model => model.ToContract());
+            .AsContractResultAsync(HttpContext, model => model.ToContract());
     }
 
     /// <summary>
@@ -46,6 +46,6 @@ public sealed class WorkspacesAdminController(IWorkspacesService workspacesServi
         var user = User.GetIdentity();
 
         return workspacesService.DeleteWorkspaceAsync(user.Id, user.WorkspaceId!.Value)
-            .AsActionResultAsync();
+            .AsActionResultAsync(HttpContext);
     }
 }

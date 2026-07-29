@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Bugget.Http;
 using Flow.Errors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -21,8 +22,7 @@ public class ResultExceptionHandlerMiddleware(ILogger<ResultExceptionHandlerMidd
         {
             logger.LogError(e, "Обработана ошибка на мидлваре");
 
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            await context.Response.WriteAsJsonAsync(InternalServerError);
+            await ProblemDetailsFactory.WriteAsync(context, CommonProblemDescriptors.InternalServerError);
         }
     }
 }

@@ -27,7 +27,7 @@ public sealed class WorkspacesController(IWorkspacesService workspacesService) :
         var user = User.GetIdentity();
 
         return workspacesService.CreateWorkspaceAsync(user.Id, body.Name)
-            .AsContractResultAsync(model => model.ToContract());
+            .AsContractResultAsync(HttpContext, model => model.ToContract());
     }
 
     /// <summary>

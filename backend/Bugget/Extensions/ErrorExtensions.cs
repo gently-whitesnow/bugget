@@ -1,4 +1,7 @@
 using System.Net;
+using Bugget.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Monade;
 using Monade.Errors;
 
@@ -6,12 +9,17 @@ namespace Bugget.Extensions;
 
 public static class ErrorExtensions
 {
-    public static int ExtractStatusCode(this Error error) => (int)(error switch
+    public static ActionResult ToProblemDetails(this Error error, HttpContext context)
     {
-        BadRequestError => HttpStatusCode.BadRequest,
-        NotFoundError => HttpStatusCode.NotFound,
-        ConflictError => HttpStatusCode.Conflict,
-        InternalServerError => HttpStatusCode.InternalServerError,
-        _ => throw new NotImplementedException("Данный тип ошибки не определен")
-    });
+        var (code, title, status) = error switch
+        {
+            BadRequestError e => (e.Error, e.Reason, HttpStatusCode.BadRequest),
+            NotFoundError e => (e.Error, e.Reason, HttpStatusCode.NotFound),
+            ConflictError e => (e.Error, e.Reason, HttpStatusCode.Conflict),
+            InternalServerError e => (e.Error, e.Reason, HttpStatusCode.InternalServerError),
+            _ => throw new NotImplementedException("Данный тип ошибки не определен")
+        };
+
+        return ProblemDetailsFactory.Create(context, new ProblemDescriptor(code, title, (int)status));
+    }
 }

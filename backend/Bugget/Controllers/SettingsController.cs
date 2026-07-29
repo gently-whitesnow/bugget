@@ -30,12 +30,12 @@ public sealed class SettingsController(SettingsService settingsService) : Settin
 
         if (user.OrganizationId is null)
         {
-            return BadRequest(BoErrors.OrganizationIdRequired);
+            return BoErrors.OrganizationIdRequired.ToProblemDetails(HttpContext);
         }
 
         if (user.TeamId is null)
         {
-            return BadRequest(BoErrors.TeamIdRequired);
+            return BoErrors.TeamIdRequired.ToProblemDetails(HttpContext);
         }
 
         var sections = await settingsService.GetSettingsSectionsAsync(user.OrganizationId, user.TeamId, user.Id);
@@ -52,12 +52,12 @@ public sealed class SettingsController(SettingsService settingsService) : Settin
 
         if (user.OrganizationId is null)
         {
-            return BadRequest(BoErrors.OrganizationIdRequired);
+            return BoErrors.OrganizationIdRequired.ToProblemDetails(HttpContext);
         }
 
         return await settingsService
             .UpdateWorkspaceSettingAsync(user.OrganizationId, sectionId, settingId, [.. body])
-            .AsContractResultAsync(view => view.ToContract());
+            .AsContractResultAsync(HttpContext, view => view.ToContract());
     }
 
     public override async Task<ActionResult<Setting>> UpdateTeamSetting(
@@ -70,12 +70,12 @@ public sealed class SettingsController(SettingsService settingsService) : Settin
 
         if (user.TeamId is null)
         {
-            return BadRequest(BoErrors.TeamIdRequired);
+            return BoErrors.TeamIdRequired.ToProblemDetails(HttpContext);
         }
 
         return await settingsService
             .UpdateTeamSettingAsync(user.TeamId, sectionId, settingId, [.. body])
-            .AsContractResultAsync(view => view.ToContract());
+            .AsContractResultAsync(HttpContext, view => view.ToContract());
     }
 
     public override Task<ActionResult<Setting>> UpdateUserSetting(
@@ -88,6 +88,6 @@ public sealed class SettingsController(SettingsService settingsService) : Settin
 
         return settingsService
             .UpdateUserSettingAsync(user.Id, sectionId, settingId, [.. body])
-            .AsContractResultAsync(view => view.ToContract());
+            .AsContractResultAsync(HttpContext, view => view.ToContract());
     }
 }

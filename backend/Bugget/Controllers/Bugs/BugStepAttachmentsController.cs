@@ -38,7 +38,7 @@ public sealed class BugStepAttachmentsController(AttachmentService attachmentSer
             content,
             meta,
             cancellationToken)
-            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract(), 201);
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract(), 201);
     }
 
     public override Task<ActionResult<AttachmentSummary>> RenameBugStepAttachment(
@@ -51,7 +51,7 @@ public sealed class BugStepAttachmentsController(AttachmentService attachmentSer
     {
         var user = User.GetIdentity();
         return attachmentService.RenameBugStepAttachmentAsync(user, aliasId, bugId, stepId, id, body.File_name)
-            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract());
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract());
     }
 
     public override Task<IActionResult> DeleteBugStepAttachment(
@@ -62,7 +62,7 @@ public sealed class BugStepAttachmentsController(AttachmentService attachmentSer
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return attachmentService.DeleteBugStepAttachmentAsync(user, aliasId, bugId, stepId, id).AsActionResultAsync();
+        return attachmentService.DeleteBugStepAttachmentAsync(user, aliasId, bugId, stepId, id).AsActionResultAsync(HttpContext);
     }
 
     public override async Task<IActionResult> GetBugStepAttachmentContent(
@@ -76,7 +76,7 @@ public sealed class BugStepAttachmentsController(AttachmentService attachmentSer
         var attachResult = await attachmentService.GetBugStepAttachmentContentAsync(user, aliasId, bugId, stepId, id);
         if (attachResult.HasError)
         {
-            return attachResult.AsActionResult();
+            return attachResult.AsActionResult(HttpContext);
         }
 
         var (content, attachmentDbModel) = attachResult.Value;
@@ -99,7 +99,7 @@ public sealed class BugStepAttachmentsController(AttachmentService attachmentSer
         var attachResult = await attachmentService.GetBugStepAttachmentPreviewContentAsync(user, aliasId, bugId, stepId, id);
         if (attachResult.HasError)
         {
-            return attachResult.AsActionResult();
+            return attachResult.AsActionResult(HttpContext);
         }
 
         return new FileStreamResult(attachResult.Value!, AttachmentConstants.PreviewMimeType);

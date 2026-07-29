@@ -1,11 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using Authentication;
+using Bugget.Http;
 using Microsoft.AspNetCore.Mvc;
 using Users.Api.Contracts.Generated;
 using Users.Api.Controllers.Users;
 using Users.Api.Generated;
 using Users.Api.Mappers;
 using Users.BO.Interfaces;
+using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 
 namespace Users.Api.Controllers;
 
@@ -158,7 +160,7 @@ public sealed class UsersController(
         var links = await externalLinksService.GetLinksAsync(user.Id);
         if (links.Length <= 1)
         {
-            return BadRequest("Нельзя отвязать единственный способ входа");
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.LastLoginMethod);
         }
 
         if (links.All(l => l.Provider != provider))
@@ -183,12 +185,12 @@ public sealed class UsersController(
 
         if (!long.TryParse(body.Source_user_id, out var sourceUserId))
         {
-            return BadRequest("Некорректный sourceUserId");
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.InvalidSourceUserId);
         }
 
         if (sourceUserId == user.Id)
         {
-            return BadRequest("Нельзя объединить аккаунт сам с собой");
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.SameSourceUser);
         }
 
         var (success, errorCode) = await userService.MergeUsersAsync(user.Id, sourceUserId);
@@ -196,9 +198,9 @@ public sealed class UsersController(
         {
             return errorCode switch
             {
-                "source_not_found" => NotFound("Исходный аккаунт не найден"),
-                "source_owns_workspaces" => Conflict(new { error = errorCode }),
-                _ => BadRequest(errorCode)
+                "source_not_found" => HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.SourceNotFound),
+                "source_owns_workspaces" => HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.SourceOwnsWorkspaces),
+                _ => HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.MergeFailed)
             };
         }
 
@@ -216,7 +218,7 @@ public sealed class UsersController(
     {
         if (string.IsNullOrWhiteSpace(body.Mattermost_user_id) || body.Mattermost_user_id.Length > 64)
         {
-            return BadRequest("Некорректный Mattermost User ID");
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.InvalidMattermostUserId);
         }
 
         var user = User.GetIdentity();

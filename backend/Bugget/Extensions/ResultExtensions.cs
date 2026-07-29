@@ -1,4 +1,5 @@
 using System.Collections;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Monade;
 
@@ -8,30 +9,33 @@ public static class ResultExtensions
 {
     public static async Task<IActionResult> AsActionResultAsync(
     this Task<MonadeStruct> operationTask,
+    HttpContext context,
     int successStatusCode = 200)
     {
         var operation = await operationTask;
 
-        return operation.AsActionResult(successStatusCode);
+        return operation.AsActionResult(context, successStatusCode);
     }
 
     public static async Task<IActionResult> AsActionResultAsync<TValue>(
         this Task<MonadeStruct<TValue>> operationTask,
+        HttpContext context,
         int successStatusCode = 200)
     {
         var operation = await operationTask;
 
-        return operation.AsActionResult(successStatusCode);
+        return operation.AsActionResult(context, successStatusCode);
     }
 
     public static async Task<IActionResult> AsActionResultAsync<TValue, TView>(
         this Task<MonadeStruct<TValue>> operationTask,
+        HttpContext context,
         Func<TValue, TView> toView,
         int successStatusCode = 200)
     {
         var operation = await operationTask;
 
-        return operation.AsActionResult(toView, successStatusCode);
+        return operation.AsActionResult(context, toView, successStatusCode);
     }
 
     /// <summary>
@@ -42,16 +46,18 @@ public static class ResultExtensions
     /// </summary>
     public static async Task<ActionResult<TContract>> AsContractResultAsync<TValue, TContract>(
         this Task<MonadeStruct<TValue>> operationTask,
+        HttpContext context,
         Func<TValue, TContract> toContract,
         int successStatusCode = 200)
     {
         var operation = await operationTask;
 
-        return operation.AsActionResult(toContract, successStatusCode);
+        return operation.AsActionResult(context, toContract, successStatusCode);
     }
 
     public static ActionResult AsActionResult(
         this MonadeStruct operation,
+        HttpContext context,
         int successStatusCode = 200)
     {
         if (operation.IsSuccess)
@@ -59,14 +65,12 @@ public static class ResultExtensions
             return new StatusCodeResult(successStatusCode);
         }
 
-        return new JsonResult(operation.Error)
-        {
-            StatusCode = operation.Error!.ExtractStatusCode()
-        };
+        return operation.Error!.ToProblemDetails(context);
     }
 
     public static ActionResult AsActionResult<TValue>(
         this MonadeStruct<TValue> operation,
+        HttpContext context,
         int successStatusCode = 200)
     {
         if (operation.IsSuccess)
@@ -77,23 +81,18 @@ public static class ResultExtensions
             };
         }
 
-        return new JsonResult(operation.Error)
-        {
-            StatusCode = operation.Error!.ExtractStatusCode()
-        };
+        return operation.Error!.ToProblemDetails(context);
     }
 
     public static ActionResult AsActionResult<TValue, TView>(
         this MonadeStruct<TValue> operation,
+        HttpContext context,
         Func<TValue, TView> toView,
         int successStatusCode = 200)
     {
         if (operation.HasError)
         {
-            return new JsonResult(operation.Error)
-            {
-                StatusCode = operation.Error!.ExtractStatusCode()
-            };
+            return operation.Error!.ToProblemDetails(context);
         }
 
         if (operation.Value == null)

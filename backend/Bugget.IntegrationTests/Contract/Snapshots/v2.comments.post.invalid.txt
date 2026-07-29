@@ -1,10 +1,12 @@
 status: 400
-content-type: application/json
+content-type: application/problem+json
 body:
 $: object
-$.error: string
-$.errorList: array
-$.errorList[]: object
-$.errorList[].error: string
-$.errorList[].reason: string
-$.reason: string
+$.code: string
+$.errors: object
+$.errors.text: array
+$.errors.text[]: string
+$.status: number
+$.title: string
+$.traceId: string
+$.type: string

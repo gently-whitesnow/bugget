@@ -227,9 +227,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ReportCountsBatchResponse'
         '400':
-          description: |-
-            Некорректный запрос: срезов нет, их больше лимита, ключ пустой либо
-            повторяется. Тело — `{"error": "..."}` с полями, зависящими от причины.
+          $ref: '#/components/responses/CountsBadRequest'
 
   /v2/reports/{aliasId}/links:
     post:
@@ -1140,6 +1138,18 @@ components:
             type: integer
             format: int64
 
+    ReportCountsProblemDetails:
+      allOf:
+        - $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+        - type: object
+          properties:
+            limit:
+              type: integer
+              description: Допустимое число срезов в запросе.
+            key:
+              type: string
+              description: Ключ среза, нарушившего ограничение.
+
     LegacyReportResolve:
       type: object
       description: Координаты репорта для редиректа со старой ссылки.
@@ -1941,6 +1951,12 @@ components:
     BadRequest:
       description: Некорректные параметры запроса.
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: '../shared.yaml#/components/schemas/ErrorResponse'
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+    CountsBadRequest:
+      description: Некорректный батч срезов.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ReportCountsProblemDetails'

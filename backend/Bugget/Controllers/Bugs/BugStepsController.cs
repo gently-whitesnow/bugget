@@ -24,7 +24,7 @@ public sealed class BugStepsController(BugStepsService bugStepsService) : BugSte
     {
         var user = User.GetIdentity();
         return bugStepsService.CreateBugStepAsync(user, aliasId, bugId, ToDto(body))
-            .AsContractResultAsync(dbModel => dbModel.ToContract(), 201);
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToContract(), 201);
     }
 
     public override Task<ActionResult<BugStep>> PatchBugStep(
@@ -36,7 +36,7 @@ public sealed class BugStepsController(BugStepsService bugStepsService) : BugSte
     {
         var user = User.GetIdentity();
         return bugStepsService.PatchBugStepAsync(user, aliasId, bugId, stepId, ToDto(body))
-            .AsContractResultAsync(dbModel => dbModel.ToContract());
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToContract());
     }
 
     public override Task<ActionResult<ICollection<BugStep>>> UpdateBugStepsOrder(
@@ -49,7 +49,7 @@ public sealed class BugStepsController(BugStepsService bugStepsService) : BugSte
         var orderDto = new BugStepsOrderDto { StepIds = body.Step_ids.ToArray() };
 
         return bugStepsService.UpdateBugStepsOrderAsync(user, aliasId, bugId, orderDto)
-            .AsContractResultAsync(ICollection<BugStep> (dbModels) => [.. dbModels.Select(step => step.ToContract())]);
+            .AsContractResultAsync(HttpContext, ICollection<BugStep> (dbModels) => [.. dbModels.Select(step => step.ToContract())]);
     }
 
     public override Task<IActionResult> DeleteBugStep(
@@ -59,7 +59,7 @@ public sealed class BugStepsController(BugStepsService bugStepsService) : BugSte
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return bugStepsService.DeleteBugStepAsync(user, aliasId, bugId, stepId).AsActionResultAsync();
+        return bugStepsService.DeleteBugStepAsync(user, aliasId, bugId, stepId).AsActionResultAsync(HttpContext);
     }
 
     private static BugStepDto ToDto(BugStepRequest body) => new() { Text = body.Text };

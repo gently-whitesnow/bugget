@@ -1,6 +1,9 @@
 status: 403
-content-type: application/json
+content-type: application/problem+json
 body:
 $: object
-$.error: string
-$.reason: string
+$.code: string
+$.status: number
+$.title: string
+$.traceId: string
+$.type: string

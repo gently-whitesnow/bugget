@@ -19,26 +19,42 @@ paths: {}
 components:
   schemas:
 
-    ErrorResponse:
+    ProblemDetails:
       type: object
       description: |
-        Канонический формат ошибки для всех API в bugget/. Не RFC 7807 — намеренно (см. ADR-20260518).
-        Используется JSON wire-форма snake_case.
+        RFC 9457 Problem Details. `type` и машинный `code` всегда выводятся из
+        одного дескриптора: `urn:bugget:error:<code>`.
       required:
-        - error
-        - reason
+        - type
+        - title
+        - status
+        - code
+        - traceId
       properties:
-        error:
+        type:
           type: string
-          description: Машинно-читаемый код ошибки. Стабильный.
-        reason:
+          format: uri
+        title:
           type: string
-          description: Человекочитаемая причина для логов/UI.
-        error_list:
-          type: array
-          description: Опциональный список структурных ошибок (валидации полей и т.п.).
-          items:
-            type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          description: Стабильный машинно-читаемый код ошибки.
+        traceId:
+          type: string
+          description: Идентификатор трассы для корреляции с журналом.
+        errors:
+          type: object
+          description: Wire-имена полей тела запроса, которые отправляет клиент.
+          additionalProperties:
+            type: array
+            items:
+              type: string
 
     Period:
       type: object
@@ -65,3 +81,11 @@ components:
       description: |-
         Идентификатор пользователя. Строка, а не число: источник — внешний
         провайдер аутентификации, формат идентификатора им и определяется.
+
+  responses:
+    Problem:
+      description: Ошибка обработки запроса.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'

@@ -28,7 +28,7 @@ public sealed class TeamsAdminController(ITeamsService teamsService) : TeamsAdmi
         var user = User.GetIdentity();
 
         return teamsService.CreateTeamAsync(workspaceId, body.Name, user.Id, user.TeamId)
-            .AsContractResultAsync(model => model.ToContract());
+            .AsContractResultAsync(HttpContext, model => model.ToContract());
     }
 
     /// <summary>

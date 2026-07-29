@@ -27,7 +27,3 @@ export type ExternalLink = {
 export type MergeAccountsRequest = {
   sourceUserId: string;
 };
-
-export type MergeAccountsErrorResponse = {
-  error: string;
-};

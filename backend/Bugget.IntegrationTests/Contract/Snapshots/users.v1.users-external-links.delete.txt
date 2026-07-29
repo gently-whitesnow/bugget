@@ -1,3 +1,9 @@
 status: 400
-content-type: text/plain
-body: non-json
+content-type: application/problem+json
+body:
+$: object
+$.code: string
+$.status: number
+$.title: string
+$.traceId: string
+$.type: string

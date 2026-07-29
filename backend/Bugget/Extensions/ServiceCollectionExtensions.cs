@@ -154,7 +154,9 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddWebApi(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
     {
         services.AddExternalClients(configuration);
-        services.AddProblemDetails();
+        // services.AddProblemDetails() здесь нет намеренно: IProblemDetailsService строит
+        // ответ по правилам ASP.NET, а адаптер границы у нас один — Bugget.Http
+        // (ADR-0008). Регистрация была мёртвой: ею никто не пользовался.
         services.AddHealthChecks();
         services.AddAuthHeaders();
         services.AddSwaggerConfiguration(configuration);

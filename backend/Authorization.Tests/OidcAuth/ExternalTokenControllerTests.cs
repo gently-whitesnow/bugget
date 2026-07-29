@@ -156,8 +156,8 @@ public class OidcControllerTests
         var result = await controller.CallbackAsync();
 
         // Assert
-        var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
-        Assert.Equal("No OIDC token found", unauthorized.Value);
+        // Тело собирает общий адаптер границы, а не контроллер: причина остаётся в журнале.
+        Assert.IsType<UnauthorizedResult>(result);
     }
 
     [Fact]
@@ -177,8 +177,8 @@ public class OidcControllerTests
         var result = await controller.CallbackAsync();
 
         // Assert
-        var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
-        Assert.Equal("Invalid OIDC token", unauthorized.Value);
+        // Тело собирает общий адаптер границы, а не контроллер: причина остаётся в журнале.
+        Assert.IsType<UnauthorizedResult>(result);
     }
 
     [Fact]
@@ -202,8 +202,8 @@ public class OidcControllerTests
         var result = await controller.CallbackAsync();
 
         // Assert
-        var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
-        Assert.Equal("No subject in token", unauthorized.Value);
+        // Тело собирает общий адаптер границы, а не контроллер: причина остаётся в журнале.
+        Assert.IsType<UnauthorizedResult>(result);
     }
 
     [Fact]

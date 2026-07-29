@@ -55,6 +55,10 @@ paths:
                 $ref: '#/components/schemas/ExternalSearchResult'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/external/search/apply:
     post:
@@ -71,6 +75,10 @@ paths:
           description: Элемент привязан. Тело пустое.
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/external/kaiten/boards:
     get:
@@ -111,6 +119,10 @@ paths:
                   $ref: '#/components/schemas/KaitenBoard'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/external/kaiten/boards/batch-get:
     post:
@@ -136,6 +148,10 @@ paths:
                   $ref: '#/components/schemas/KaitenBoard'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
 
@@ -234,6 +250,22 @@ components:
 
     BadRequest:
       description: Некорректные параметры запроса.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+
+    Unauthorized:
+      description: Запрос без действующей identity либо с недействительной сессией.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+
+    InternalServerError:
+      description: |-
+        Внутренняя ошибка сервера. Тело не раскрывает деталей: `detail` для 5xx не
+        публикуется, для корреляции с журналом служит `traceId`.
       content:
         application/problem+json:
           schema:

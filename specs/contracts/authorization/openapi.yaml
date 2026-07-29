@@ -32,7 +32,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/LogoutResult'
         '401':
-          description: Токена нет либо он невалиден.
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
 
@@ -47,3 +49,21 @@ components:
         redirect_url:
           type: string
           description: Адрес страницы входа.
+
+  responses:
+
+    Unauthorized:
+      description: Запрос без действующей identity либо с недействительной сессией.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+
+    InternalServerError:
+      description: |-
+        Внутренняя ошибка сервера. Тело не раскрывает деталей: `detail` для 5xx не
+        публикуется, для корреляции с журналом служит `traceId`.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'

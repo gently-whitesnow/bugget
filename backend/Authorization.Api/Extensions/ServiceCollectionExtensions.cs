@@ -118,7 +118,7 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddSingleton<ProblemDetailsMiddleware>();
+        services.AddSingleton<NotFoundExceptionMiddleware>();
 
         return services;
     }

@@ -1162,6 +1162,27 @@ export interface components {
                 "application/problem+json": components["schemas"]["ReportCountsProblemDetails"];
             };
         };
+        /** @description Запрос без действующей identity либо с недействительной сессией. */
+        Unauthorized: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /**
+         * @description Внутренняя ошибка сервера. Тело не раскрывает деталей: `detail` для 5xx не
+         *     публикуется, для корреляции с журналом служит `traceId`.
+         */
+        InternalServerError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
     };
     parameters: {
         /**
@@ -1218,6 +1239,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Reports_CreateReport: {
@@ -1243,6 +1266,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Reports_GetReport: {
@@ -1270,6 +1295,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Reports_PatchReport: {
@@ -1301,6 +1328,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Reports_ResolveLegacyReport: {
@@ -1324,6 +1353,7 @@ export interface operations {
                     "application/json": components["schemas"]["LegacyReportResolve"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description Репорт не найден либо у него нет команды и номера в команде. */
             404: {
                 headers: {
@@ -1331,6 +1361,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            500: components["responses"]["InternalServerError"];
         };
     };
     Reports_GetReportAnalytics: {
@@ -1355,6 +1386,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     ReportCounts_CountReportsBatch: {
@@ -1380,6 +1413,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["CountsBadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     ReportLinks_CreateReportLink: {
@@ -1411,6 +1446,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     ReportLinks_UpdateReportLink: {
@@ -1444,6 +1481,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     ReportLinks_DeleteReportLink: {
@@ -1471,6 +1510,8 @@ export interface operations {
                 content?: never;
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Search_SearchReports: {
@@ -1509,6 +1550,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Bugs_CreateBug: {
@@ -1540,6 +1583,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Bugs_PatchBug: {
@@ -1573,6 +1618,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugSteps_CreateBugStep: {
@@ -1606,6 +1653,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugSteps_UpdateBugStepsOrder: {
@@ -1639,6 +1688,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugSteps_DeleteBugStep: {
@@ -1668,6 +1719,8 @@ export interface operations {
                 content?: never;
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugSteps_PatchBugStep: {
@@ -1703,6 +1756,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Comments_CreateComment: {
@@ -1736,6 +1791,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Comments_UpdateComment: {
@@ -1771,6 +1828,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Comments_DeleteComment: {
@@ -1800,6 +1859,8 @@ export interface operations {
                 content?: never;
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugAttachments_CreateBugAttachment: {
@@ -1836,6 +1897,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugAttachments_DeleteBugAttachment: {
@@ -1865,6 +1928,8 @@ export interface operations {
                 content?: never;
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugAttachments_RenameBugAttachment: {
@@ -1900,6 +1965,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugAttachments_GetBugAttachmentContent: {
@@ -1923,6 +1990,8 @@ export interface operations {
         responses: {
             200: components["responses"]["AttachmentContent"];
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugAttachments_GetBugAttachmentPreview: {
@@ -1946,6 +2015,8 @@ export interface operations {
         responses: {
             200: components["responses"]["AttachmentContent"];
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugStepAttachments_CreateBugStepAttachment: {
@@ -1981,6 +2052,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugStepAttachments_DeleteBugStepAttachment: {
@@ -2012,6 +2085,8 @@ export interface operations {
                 content?: never;
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugStepAttachments_RenameBugStepAttachment: {
@@ -2049,6 +2124,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugStepAttachments_GetBugStepAttachmentContent: {
@@ -2074,6 +2151,8 @@ export interface operations {
         responses: {
             200: components["responses"]["AttachmentContent"];
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     BugStepAttachments_GetBugStepAttachmentPreview: {
@@ -2099,6 +2178,8 @@ export interface operations {
         responses: {
             200: components["responses"]["AttachmentContent"];
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     CommentAttachments_CreateCommentAttachment: {
@@ -2134,6 +2215,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     CommentAttachments_DeleteCommentAttachment: {
@@ -2165,6 +2248,8 @@ export interface operations {
                 content?: never;
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     CommentAttachments_RenameCommentAttachment: {
@@ -2202,6 +2287,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     CommentAttachments_GetCommentAttachmentContent: {
@@ -2227,6 +2314,8 @@ export interface operations {
         responses: {
             200: components["responses"]["AttachmentContent"];
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     CommentAttachments_GetCommentAttachmentPreview: {
@@ -2252,6 +2341,8 @@ export interface operations {
         responses: {
             200: components["responses"]["AttachmentContent"];
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
 }

@@ -35,6 +35,10 @@ paths:
                 $ref: '#/components/schemas/SettingsSections'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/workspace-settings-sections/{sectionId}/settings/{settingId}:
     put:
@@ -58,8 +62,12 @@ paths:
                 $ref: '#/components/schemas/Setting'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/team-settings-sections/{sectionId}/settings/{settingId}:
     put:
@@ -83,8 +91,12 @@ paths:
                 $ref: '#/components/schemas/Setting'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/user-settings-sections/{sectionId}/settings/{settingId}:
     put:
@@ -108,8 +120,12 @@ paths:
                 $ref: '#/components/schemas/Setting'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
 
@@ -231,6 +247,22 @@ components:
 
     NotFound:
       description: Секция или настройка не найдена.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+
+    Unauthorized:
+      description: Запрос без действующей identity либо с недействительной сессией.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+
+    InternalServerError:
+      description: |-
+        Внутренняя ошибка сервера. Тело не раскрывает деталей: `detail` для 5xx не
+        публикуется, для корреляции с журналом служит `traceId`.
       content:
         application/problem+json:
           schema:

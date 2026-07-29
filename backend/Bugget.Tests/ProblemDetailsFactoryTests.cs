@@ -32,6 +32,11 @@ public sealed class ProblemDetailsFactoryTests
             ["avatar_too_large"] = 400,
             ["avatar_format_not_allowed"] = 400,
             ["model_state_validation_error"] = 400,
+            ["bad_request"] = 400,
+            ["unauthorized"] = 401,
+            ["forbidden"] = 403,
+            ["method_not_allowed"] = 405,
+            ["unsupported_media_type"] = 415,
             ["internal_server_error"] = 500,
             ["not_found"] = 404
         };
@@ -47,11 +52,18 @@ public sealed class ProblemDetailsFactoryTests
 
         Assert.Equal(
             expectedStatuses.Keys.OrderBy(code => code, StringComparer.Ordinal),
-            descriptors.Select(descriptor => descriptor.Code).OrderBy(code => code, StringComparer.Ordinal));
+            descriptors.Select(descriptor => descriptor.Code).Distinct().OrderBy(code => code, StringComparer.Ordinal));
 
         foreach (var descriptor in descriptors)
         {
             Assert.Equal(expectedStatuses[descriptor.Code], descriptor.Status);
+        }
+
+        // Один код — один заголовок и один статус. Каталог общий, и разъехавшийся
+        // заголовок под тем же `type` означал бы, что дескриптор всё-таки не один.
+        foreach (var byCode in descriptors.GroupBy(descriptor => descriptor.Code))
+        {
+            Assert.Single(byCode.Select(descriptor => (descriptor.Title, descriptor.Status)).Distinct());
         }
     }
 

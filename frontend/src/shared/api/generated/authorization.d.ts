@@ -34,8 +34,50 @@ export interface components {
             /** @description Адрес страницы входа. */
             redirect_url: string;
         };
+        /**
+         * @description RFC 9457 Problem Details. `type` и машинный `code` всегда выводятся из
+         *     одного дескриптора: `urn:bugget:error:<code>`.
+         */
+        ProblemDetails: {
+            /** Format: uri */
+            type: string;
+            title: string;
+            status: number;
+            detail?: string;
+            instance?: string;
+            /** @description Стабильный машинно-читаемый код ошибки. */
+            code: string;
+            /** @description Идентификатор трассы для корреляции с журналом. */
+            traceId: string;
+            /** @description Wire-имена полей тела запроса, которые отправляет клиент. */
+            errors?: {
+                [key: string]: string[];
+            };
+        };
     };
-    responses: never;
+    responses: {
+        /** @description Запрос без действующей identity либо с недействительной сессией. */
+        Unauthorized: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /**
+         * @description Внутренняя ошибка сервера. Тело не раскрывает деталей: `detail` для 5xx не
+         *     публикуется, для корреляции с журналом служит `traceId`.
+         */
+        InternalServerError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+    };
     parameters: never;
     requestBodies: never;
     headers: never;
@@ -61,13 +103,8 @@ export interface operations {
                     "application/json": components["schemas"]["LogoutResult"];
                 };
             };
-            /** @description Токена нет либо он невалиден. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
 }

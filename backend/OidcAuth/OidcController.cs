@@ -30,7 +30,7 @@ public sealed class OidcController(
         if (string.IsNullOrEmpty(token))
         {
             logger.LogWarning("OIDC redirect: no token found");
-            return Unauthorized("No OIDC token found");
+            return Unauthorized();
         }
 
         // 2. Валидируем токен
@@ -38,7 +38,7 @@ public sealed class OidcController(
         if (principal == null)
         {
             logger.LogWarning("OIDC redirect: token validation failed");
-            return Unauthorized("Invalid OIDC token");
+            return Unauthorized();
         }
 
         // 3. Извлекаем external_id (sub claim)
@@ -46,7 +46,7 @@ public sealed class OidcController(
         if (string.IsNullOrEmpty(externalId))
         {
             logger.LogWarning("OIDC redirect: no subject claim in token");
-            return Unauthorized("No subject in token");
+            return Unauthorized();
         }
 
         // 4. Создаём external user и привязываем OIDC identity.

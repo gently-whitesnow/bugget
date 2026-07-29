@@ -12,12 +12,6 @@ namespace Bugget.Http;
 
 public sealed record ProblemDescriptor(string Code, string Title, int Status);
 
-public static class CommonProblemDescriptors
-{
-    public static readonly ProblemDescriptor ModelStateValidation = new("model_state_validation_error", "Ошибка валидации модели запроса", StatusCodes.Status400BadRequest);
-    public static readonly ProblemDescriptor InternalServerError = new("internal_server_error", "Внутренняя ошибка сервера", StatusCodes.Status500InternalServerError);
-}
-
 public static class ProblemDetailsFactory
 {
     private const string TypePrefix = "urn:bugget:error:";

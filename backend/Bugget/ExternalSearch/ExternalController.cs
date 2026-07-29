@@ -33,12 +33,12 @@ public sealed class ExternalController(
 
         if (user.OrganizationId is null)
         {
-            return BadRequest(BoErrors.OrganizationIdRequired);
+            return BoErrors.OrganizationIdRequired.ToProblemDetails();
         }
 
         if (user.TeamId is null)
         {
-            return BadRequest(BoErrors.TeamIdRequired);
+            return BoErrors.TeamIdRequired.ToProblemDetails();
         }
 
         var searchResult = await externalSearchService.SearchAsync(
@@ -59,7 +59,7 @@ public sealed class ExternalController(
 
         if (user.OrganizationId is null)
         {
-            return BadRequest(BoErrors.OrganizationIdRequired);
+            return BoErrors.OrganizationIdRequired.ToProblemDetails();
         }
 
         return await externalSearchService.ApplySearchResultAsync(
@@ -81,7 +81,7 @@ public sealed class ExternalController(
 
         if (user.OrganizationId is null)
         {
-            return BadRequest(BoErrors.OrganizationIdRequired);
+            return BoErrors.OrganizationIdRequired.ToProblemDetails();
         }
 
         var boards = await kaitenBoardsService.GetBoardsAsync(
@@ -101,7 +101,7 @@ public sealed class ExternalController(
 
         if (user.OrganizationId is null)
         {
-            return BadRequest(BoErrors.OrganizationIdRequired);
+            return BoErrors.OrganizationIdRequired.ToProblemDetails();
         }
 
         var boards = await kaitenBoardsService.BatchGetBoardsAsync(user.OrganizationId, [.. body.Ids]);

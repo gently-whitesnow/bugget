@@ -64,7 +64,8 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = await ContractScenario.ReadJsonAsync(response);
-        Assert.Equal("attachment_type_not_allowed", body.GetProperty("error").GetString());
+        Assert.Equal("attachment_type_not_allowed", body.GetProperty("code").GetString());
+        Assert.Equal("urn:bugget:error:attachment_type_not_allowed", body.GetProperty("type").GetString());
     }
 
     [Fact(DisplayName = "GET .../attachments/{id}/content: содержимое вложения")]

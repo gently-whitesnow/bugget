@@ -1,4 +1,5 @@
 using Authentication;
+using Flow;
 using Flow.Routing;
 using Microsoft.AspNetCore.Mvc;
 using Users.Api.Generated;
@@ -63,12 +64,12 @@ public sealed class AvatarController(
         var content = file.Data;
         if (content.Length > MaxAvatarSize)
         {
-            return BadRequest("Размер файла не должен превышать 200 КБ");
+            return Flow.ProblemDetailsFactory.Create("avatar_too_large", "Размер файла не должен превышать 200 КБ", 400);
         }
 
         if (!AllowedAvatarContentTypes.Contains(file.ContentType))
         {
-            return BadRequest("Недопустимый формат файла. Разрешены: JPEG, PNG, GIF, WebP");
+            return Flow.ProblemDetailsFactory.Create("avatar_format_not_allowed", "Недопустимый формат файла. Разрешены: JPEG, PNG, GIF, WebP", 400);
         }
 
         var user = User.GetIdentity();

@@ -4,6 +4,7 @@ using Bugget.BO.Services.Analytics;
 using Bugget.Entities.Authentication;
 using Bugget.Extensions;
 using Bugget.Mappers;
+using Flow;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bugget.Controllers;
@@ -45,7 +46,7 @@ public sealed class AnalyticsController(AnalyticsService analyticsService) : Ana
         {
             // PeriodResolver.Resolve бросает ArgumentException на невалидный period —
             // отдаём 400 c человекочитаемым сообщением (без stack-трейса).
-            return BadRequest(new { error = "invalid_period", reason = ex.Message });
+            return Flow.ProblemDetailsFactory.Create("invalid_period", "Некорректный период", 400, ex.Message);
         }
     }
 
@@ -68,7 +69,7 @@ public sealed class AnalyticsController(AnalyticsService analyticsService) : Ana
         }
         catch (ArgumentException ex) when (ex.ParamName == "period")
         {
-            return BadRequest(new { error = "invalid_period", reason = ex.Message });
+            return Flow.ProblemDetailsFactory.Create("invalid_period", "Некорректный период", 400, ex.Message);
         }
     }
 }

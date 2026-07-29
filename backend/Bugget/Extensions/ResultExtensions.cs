@@ -59,10 +59,7 @@ public static class ResultExtensions
             return new StatusCodeResult(successStatusCode);
         }
 
-        return new JsonResult(operation.Error)
-        {
-            StatusCode = operation.Error!.ExtractStatusCode()
-        };
+        return operation.Error!.ToProblemDetails();
     }
 
     public static ActionResult AsActionResult<TValue>(
@@ -77,10 +74,7 @@ public static class ResultExtensions
             };
         }
 
-        return new JsonResult(operation.Error)
-        {
-            StatusCode = operation.Error!.ExtractStatusCode()
-        };
+        return operation.Error!.ToProblemDetails();
     }
 
     public static ActionResult AsActionResult<TValue, TView>(
@@ -90,10 +84,7 @@ public static class ResultExtensions
     {
         if (operation.HasError)
         {
-            return new JsonResult(operation.Error)
-            {
-                StatusCode = operation.Error!.ExtractStatusCode()
-            };
+            return operation.Error!.ToProblemDetails();
         }
 
         if (operation.Value == null)

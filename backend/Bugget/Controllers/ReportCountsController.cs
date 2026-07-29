@@ -4,6 +4,7 @@ using Bugget.Entities.Authentication;
 using Bugget.Entities.DTO.Report;
 using Bugget.Mappers;
 using Bugget.Reports.Contracts.Generated;
+using Flow;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bugget.Controllers;
@@ -24,7 +25,7 @@ public sealed class ReportCountsController(ReportsService reportsService) : Repo
     {
         if (body?.Scopes is null)
         {
-            return BadRequest(new { error = "scopes_required" });
+            return Flow.ProblemDetailsFactory.Create("scopes_required", "Не переданы области подсчёта", 400);
         }
 
         if (body.Scopes.Count == 0)
@@ -34,7 +35,9 @@ public sealed class ReportCountsController(ReportsService reportsService) : Repo
 
         if (body.Scopes.Count > MaxScopes)
         {
-            return BadRequest(new { error = "scopes_limit_exceeded", limit = MaxScopes });
+            return Flow.ProblemDetailsFactory.Create(
+                "scopes_limit_exceeded", "Превышен лимит областей подсчёта", 400,
+                extensions: new Dictionary<string, object?> { ["limit"] = MaxScopes });
         }
 
         var seenKeys = new HashSet<string>(body.Scopes.Count);
@@ -42,12 +45,14 @@ public sealed class ReportCountsController(ReportsService reportsService) : Repo
         {
             if (string.IsNullOrEmpty(scope.Key))
             {
-                return BadRequest(new { error = "scope_key_required" });
+                return Flow.ProblemDetailsFactory.Create("scope_key_required", "Не передан ключ области", 400);
             }
 
             if (!seenKeys.Add(scope.Key))
             {
-                return BadRequest(new { error = "duplicate_scope_key", key = scope.Key });
+                return Flow.ProblemDetailsFactory.Create(
+                    "duplicate_scope_key", "Ключ области повторяется", 400,
+                    extensions: new Dictionary<string, object?> { ["key"] = scope.Key });
             }
         }
 

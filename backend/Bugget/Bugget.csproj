@@ -20,6 +20,7 @@
         <ProjectReference Include="..\Bugget.DbUp\Bugget.DbUp.csproj" />
         <ProjectReference Include="..\Bugget.Analytics.Contracts\Bugget.Analytics.Contracts.csproj" />
         <ProjectReference Include="..\Bugget.Reports.Contracts\Bugget.Reports.Contracts.csproj" />
+        <ProjectReference Include="..\Flow\Flow.csproj" />
         <!-- Модули объединённого bugget-api -->
         <ProjectReference Include="..\Users.Api\Users.Api.csproj" />
         <ProjectReference Include="..\Authorization.Api\Authorization.Api.csproj" />

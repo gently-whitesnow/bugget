@@ -1941,6 +1941,6 @@ components:
     BadRequest:
       description: Некорректные параметры запроса.
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: '../shared.yaml#/components/schemas/ErrorResponse'
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'

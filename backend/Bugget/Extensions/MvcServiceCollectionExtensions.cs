@@ -27,7 +27,8 @@ public static class MvcServiceCollectionExtensions
             options.ModelBinderProviders.Insert(0, new FileParameterModelBinderProvider());
         })
         .AddJsonOptions(options => { options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower; })
-        .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = _ => new ModelStateInvalidHandler());
+        .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = context =>
+            Flow.ProblemDetailsFactory.CreateValidation(context.HttpContext, context.ModelState));
 
         return services;
     }

@@ -645,16 +645,20 @@ export interface components {
          */
         UserId: string;
         /**
-         * @description Канонический формат ошибки для всех API в bugget/. Не RFC 7807 — намеренно (см. ADR-20260518).
-         *     Используется JSON wire-форма snake_case.
+         * @description RFC 9457 Problem Details. `type` и машинный `code` всегда выводятся из
+         *     одного дескриптора: `urn:bugget:error:<code>`.
          */
-        ErrorResponse: {
-            /** @description Машинно-читаемый код ошибки. Стабильный. */
-            error: string;
-            /** @description Человекочитаемая причина для логов/UI. */
-            reason: string;
-            /** @description Опциональный список структурных ошибок (валидации полей и т.п.). */
-            error_list?: string[];
+        ProblemDetails: {
+            /** Format: uri */
+            type: string;
+            title: string;
+            status: number;
+            detail?: string;
+            instance?: string;
+            /** @description Стабильный машинно-читаемый код ошибки. */
+            code: string;
+            /** @description Идентификатор трассы для корреляции с журналом. */
+            traceId?: string;
         };
     };
     responses: {
@@ -673,7 +677,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["ErrorResponse"];
+                "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
         /** @description Недостаточно прав. */
@@ -682,7 +686,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": components["schemas"]["ErrorResponse"];
+                "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
     };

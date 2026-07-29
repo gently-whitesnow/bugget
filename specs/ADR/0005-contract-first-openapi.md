@@ -43,6 +43,9 @@ Contract-first в проекте был начат и сломан. На мом�
 (`error`, `reason`, `error_list`) в snake_case. Это уже публичный контракт, который ест
 фронтенд; переход на `application/problem+json` был бы ломающим изменением без выгоды.
 
+> Superseded by ADR-0008 в части формата HTTP-ошибок. Contract-first и правила
+> генерации этого ADR остаются Accepted.
+
 **Тот же yaml генерирует типы фронта.** `scripts/quality/frontend-openapi-generate.sh`
 раскладывает `openapi-typescript` по `frontend/src/shared/api/generated/<module>.d.ts`;
 дрейф держит гейт `frontend-contracts`. Правило то же: руками не правим.

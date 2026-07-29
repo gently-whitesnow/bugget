@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Authentication;
+using Flow;
 using Microsoft.AspNetCore.Mvc;
 using Users.Api.Contracts.Generated;
 using Users.Api.Controllers.Users;
@@ -158,7 +159,7 @@ public sealed class UsersController(
         var links = await externalLinksService.GetLinksAsync(user.Id);
         if (links.Length <= 1)
         {
-            return BadRequest("Нельзя отвязать единственный способ входа");
+            return Flow.ProblemDetailsFactory.Create("last_login_method", "Нельзя отвязать единственный способ входа", 400);
         }
 
         if (links.All(l => l.Provider != provider))
@@ -183,12 +184,12 @@ public sealed class UsersController(
 
         if (!long.TryParse(body.Source_user_id, out var sourceUserId))
         {
-            return BadRequest("Некорректный sourceUserId");
+            return Flow.ProblemDetailsFactory.Create("invalid_source_user_id", "Некорректный sourceUserId", 400);
         }
 
         if (sourceUserId == user.Id)
         {
-            return BadRequest("Нельзя объединить аккаунт сам с собой");
+            return Flow.ProblemDetailsFactory.Create("same_source_user", "Нельзя объединить аккаунт сам с собой", 400);
         }
 
         var (success, errorCode) = await userService.MergeUsersAsync(user.Id, sourceUserId);
@@ -196,9 +197,9 @@ public sealed class UsersController(
         {
             return errorCode switch
             {
-                "source_not_found" => NotFound("Исходный аккаунт не найден"),
-                "source_owns_workspaces" => Conflict(new { error = errorCode }),
-                _ => BadRequest(errorCode)
+                "source_not_found" => Flow.ProblemDetailsFactory.Create("source_not_found", "Исходный аккаунт не найден", 404),
+                "source_owns_workspaces" => Flow.ProblemDetailsFactory.Create("source_owns_workspaces", "Исходный аккаунт владеет рабочими пространствами", 409),
+                _ => Flow.ProblemDetailsFactory.Create(errorCode!, "Не удалось объединить аккаунты", 400)
             };
         }
 
@@ -216,7 +217,7 @@ public sealed class UsersController(
     {
         if (string.IsNullOrWhiteSpace(body.Mattermost_user_id) || body.Mattermost_user_id.Length > 64)
         {
-            return BadRequest("Некорректный Mattermost User ID");
+            return Flow.ProblemDetailsFactory.Create("invalid_mattermost_user_id", "Некорректный Mattermost User ID", 400);
         }
 
         var user = User.GetIdentity();

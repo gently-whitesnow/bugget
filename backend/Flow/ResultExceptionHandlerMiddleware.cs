@@ -21,8 +21,11 @@ public class ResultExceptionHandlerMiddleware(ILogger<ResultExceptionHandlerMidd
         {
             logger.LogError(e, "Обработана ошибка на мидлваре");
 
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            await context.Response.WriteAsJsonAsync(InternalServerError);
+            await ProblemDetailsFactory.WriteAsync(
+                context,
+                InternalServerError.Error,
+                InternalServerError.Reason,
+                (int)HttpStatusCode.InternalServerError);
         }
     }
 }

@@ -30,12 +30,12 @@ public sealed class SettingsController(SettingsService settingsService) : Settin
 
         if (user.OrganizationId is null)
         {
-            return BadRequest(BoErrors.OrganizationIdRequired);
+            return BoErrors.OrganizationIdRequired.ToProblemDetails();
         }
 
         if (user.TeamId is null)
         {
-            return BadRequest(BoErrors.TeamIdRequired);
+            return BoErrors.TeamIdRequired.ToProblemDetails();
         }
 
         var sections = await settingsService.GetSettingsSectionsAsync(user.OrganizationId, user.TeamId, user.Id);
@@ -52,7 +52,7 @@ public sealed class SettingsController(SettingsService settingsService) : Settin
 
         if (user.OrganizationId is null)
         {
-            return BadRequest(BoErrors.OrganizationIdRequired);
+            return BoErrors.OrganizationIdRequired.ToProblemDetails();
         }
 
         return await settingsService
@@ -70,7 +70,7 @@ public sealed class SettingsController(SettingsService settingsService) : Settin
 
         if (user.TeamId is null)
         {
-            return BadRequest(BoErrors.TeamIdRequired);
+            return BoErrors.TeamIdRequired.ToProblemDetails();
         }
 
         return await settingsService

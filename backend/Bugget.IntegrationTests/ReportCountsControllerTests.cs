@@ -121,6 +121,34 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 
+    /// <summary>
+    /// Ключ ошибки валидации приходит из настоящего model binding, а не из руками собранного
+    /// ModelStateDictionary: только так видно, что нормализуется весь body-путь, включая
+    /// вложенный сегмент и индекс массива. Клиент отправляет `scopes[0].key` — его и обязан
+    /// увидеть в ответе, а не CLR-путь `Scopes[0].Key`.
+    /// </summary>
+    [Fact(DisplayName = "POST /v2/reports/counts:batch — отсутствует вложенный key → errors по wire-пути scopes[0].key")]
+    public async Task Batch_MissingNestedKey_ReportsWireErrorPath()
+    {
+        var resp = await PostAsync(new { scopes = new object[] { new { statuses = new[] { 0 } } } });
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        Assert.Equal("application/problem+json", resp.Content.Headers.ContentType?.MediaType);
+
+        using var document = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+        var root = document.RootElement;
+
+        Assert.Equal("model_state_validation_error", root.GetProperty("code").GetString());
+
+        var errors = root.GetProperty("errors");
+        Assert.True(errors.TryGetProperty("scopes[0].key", out var messages), "ключ ошибки обязан быть wire-путём");
+        Assert.NotEmpty(messages.EnumerateArray());
+        foreach (var name in errors.EnumerateObject())
+        {
+            Assert.DoesNotContain("Scopes", name.Name, StringComparison.Ordinal);
+        }
+    }
+
     private Task<HttpResponseMessage> PostAsync(object payload)
     {
         var content = JsonContent.Create(payload, options: JsonOptions);

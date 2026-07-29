@@ -29,6 +29,7 @@ components:
         - title
         - status
         - code
+        - traceId
       properties:
         type:
           type: string

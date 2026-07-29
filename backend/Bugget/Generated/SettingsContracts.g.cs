@@ -211,6 +211,7 @@ namespace Bugget.Api.Contracts.Settings.Generated
         /// Идентификатор трассы для корреляции с журналом.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("traceId")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string TraceId { get; set; }
 
         /// <summary>

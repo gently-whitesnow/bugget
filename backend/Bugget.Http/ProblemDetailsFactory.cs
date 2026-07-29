@@ -1,7 +1,5 @@
 using System.Diagnostics;
-using System.Reflection;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +22,20 @@ public static class ProblemDetailsFactory
 {
     private const string TypePrefix = "urn:bugget:error:";
     private const string InternalTitle = "Внутренняя ошибка сервера";
+    private const string ProblemContentType = "application/problem+json";
+
+    /// <summary>
+    /// Имена, которые прикладной словарь extensions занять не может: RFC-поля и вычисляемые
+    /// фабрикой <c>code</c>/<c>traceId</c>. Инвариант «type и code выводятся из одного
+    /// дескриптора» иначе разваливается снаружи — достаточно передать свой <c>code</c>.
+    /// Конфликт не 500-ит запрос: прикладное значение молча не попадает в ответ, канонические
+    /// поля всегда выигрывают. Сравнение регистронезависимое: под snake_case-политикой
+    /// <c>Code</c> уехал бы отдельным ключом рядом с каноническим.
+    /// </summary>
+    private static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "type", "title", "status", "detail", "instance", "code", "traceId"
+    };
 
     public static ObjectResult Create(HttpContext context, ProblemDescriptor descriptor, string? detail = null, IReadOnlyDictionary<string, object?>? extensions = null)
     {
@@ -35,15 +47,21 @@ public static class ProblemDetailsFactory
             Status = descriptor.Status,
             Detail = isServerError ? null : detail
         };
-        problem.Extensions["code"] = descriptor.Code;
-        problem.Extensions["traceId"] = GetTraceId(context);
         if (extensions is not null)
         {
             foreach (var (key, value) in extensions)
             {
+                if (ReservedNames.Contains(key))
+                {
+                    continue;
+                }
+
                 problem.Extensions[key] = value;
             }
         }
+
+        problem.Extensions["code"] = descriptor.Code;
+        problem.Extensions["traceId"] = GetTraceId(context);
 
         return AsResult(problem, descriptor.Status);
     }
@@ -51,7 +69,11 @@ public static class ProblemDetailsFactory
     public static ObjectResult CreateValidation(ActionContext context)
     {
         var descriptor = CommonProblemDescriptors.ModelStateValidation;
-        var problem = new ValidationProblemDetails(NormalizeBodyKeys(context))
+        // Ключи уже в wire-форме: за это отвечает SystemTextJsonValidationMetadataProvider,
+        // зарегистрированный в MVC-пайплайне. Он знает JSON-имя каждого свойства на любой
+        // глубине, поэтому вложенный путь `scopes[0].key` нормализуется целиком — своей
+        // таблицы имён здесь нет и быть не должно.
+        var problem = new ValidationProblemDetails(context.ModelState)
         {
             Type = TypePrefix + descriptor.Code,
             Title = descriptor.Title,
@@ -69,14 +91,16 @@ public static class ProblemDetailsFactory
     {
         var result = Create(context, descriptor);
         context.Response.StatusCode = descriptor.Status;
-        context.Response.ContentType = "application/problem+json";
-        return context.Response.WriteAsJsonAsync(result.Value, GetJsonOptions(context));
+        // Content-type задаётся аргументом, а не свойством Response: WriteAsJsonAsync
+        // перетирает ранее выставленное значение своим application/json, и ответ middleware
+        // переставал быть problem+json.
+        return context.Response.WriteAsJsonAsync(result.Value, GetJsonOptions(context), ProblemContentType);
     }
 
     private static ObjectResult AsResult(ProblemDetails problem, int status)
     {
         var result = new ObjectResult(problem) { StatusCode = status };
-        result.ContentTypes.Add("application/problem+json");
+        result.ContentTypes.Add(ProblemContentType);
         return result;
     }
 
@@ -87,33 +111,4 @@ public static class ProblemDetailsFactory
         (context.Features.Get<IServiceProvidersFeature>()?.RequestServices
             .GetService(typeof(IOptions<JsonOptions>)) as IOptions<JsonOptions>)?.Value.JsonSerializerOptions
         ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
-
-    private static ModelStateDictionary NormalizeBodyKeys(ActionContext context)
-    {
-        var bodyType = context.ActionDescriptor.Parameters
-            .SingleOrDefault(parameter => parameter.BindingInfo?.BindingSource == BindingSource.Body)?.ParameterType;
-        if (bodyType is null)
-        {
-            return context.ModelState;
-        }
-
-        var namingPolicy = (context.HttpContext.RequestServices
-            .GetService(typeof(IOptions<JsonOptions>)) as IOptions<JsonOptions>)?.Value.JsonSerializerOptions.PropertyNamingPolicy;
-        var wireNames = bodyType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-            .Select(property => (Property: property.Name, WireName: property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? namingPolicy?.ConvertName(property.Name) ?? property.Name))
-            .ToDictionary(item => item.Property, item => item.WireName, StringComparer.OrdinalIgnoreCase);
-        var normalized = new ModelStateDictionary();
-
-        foreach (var (key, value) in context.ModelState)
-        {
-            var normalizedKey = wireNames.TryGetValue(key, out var wireName) ? wireName : key;
-            normalized.SetModelValue(normalizedKey, value.RawValue, value.AttemptedValue);
-            foreach (var error in value.Errors)
-            {
-                normalized.AddModelError(normalizedKey, error.ErrorMessage);
-            }
-        }
-
-        return normalized;
-    }
 }

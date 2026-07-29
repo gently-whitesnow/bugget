@@ -195,7 +195,7 @@ export interface components {
             /** @description Стабильный машинно-читаемый код ошибки. */
             code: string;
             /** @description Идентификатор трассы для корреляции с журналом. */
-            traceId?: string;
+            traceId: string;
             /** @description Wire-имена полей тела запроса, которые отправляет клиент. */
             errors?: {
                 [key: string]: string[];

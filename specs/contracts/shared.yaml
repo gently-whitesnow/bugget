@@ -47,32 +47,6 @@ components:
         traceId:
           type: string
           description: Идентификатор трассы для корреляции с журналом.
-
-    ValidationProblemDetails:
-      type: object
-      description: RFC 9457 Problem Details для ошибок валидации.
-      required:
-        - type
-        - title
-        - status
-        - code
-        - errors
-      properties:
-        type:
-          type: string
-          format: uri
-        title:
-          type: string
-        status:
-          type: integer
-        detail:
-          type: string
-        instance:
-          type: string
-        code:
-          type: string
-        traceId:
-          type: string
         errors:
           type: object
           description: Wire-имена полей тела запроса, которые отправляет клиент.
@@ -114,9 +88,3 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
-    ValidationProblem:
-      description: Ошибка валидации параметров или тела запроса.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ValidationProblemDetails'

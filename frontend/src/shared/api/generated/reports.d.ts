@@ -638,6 +638,12 @@ export interface components {
                 [key: string]: number;
             };
         };
+        ReportCountsProblemDetails: components["schemas"]["ProblemDetails"] & {
+            /** @description Допустимое число срезов в запросе. */
+            limit?: number;
+            /** @description Ключ среза, нарушившего ограничение. */
+            key?: string;
+        };
         /** @description Координаты репорта для редиректа со старой ссылки. */
         LegacyReportResolve: {
             /** @description Команда-создатель репорта. */
@@ -1104,18 +1110,23 @@ export interface components {
              */
             bugs_added_during_regression: number;
         };
-        /** @description RFC 9457 Problem Details для ошибок валидации. */
-        ValidationProblemDetails: {
+        /**
+         * @description RFC 9457 Problem Details. `type` и машинный `code` всегда выводятся из
+         *     одного дескриптора: `urn:bugget:error:<code>`.
+         */
+        ProblemDetails: {
             /** Format: uri */
             type: string;
             title: string;
             status: number;
             detail?: string;
             instance?: string;
+            /** @description Стабильный машинно-читаемый код ошибки. */
             code: string;
+            /** @description Идентификатор трассы для корреляции с журналом. */
             traceId?: string;
             /** @description Wire-имена полей тела запроса, которые отправляет клиент. */
-            errors: {
+            errors?: {
                 [key: string]: string[];
             };
         };
@@ -1139,7 +1150,16 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["ValidationProblemDetails"];
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description Некорректный батч срезов. */
+        CountsBadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ReportCountsProblemDetails"];
             };
         };
     };
@@ -1359,16 +1379,7 @@ export interface operations {
                     "application/json": components["schemas"]["ReportCountsBatchResponse"];
                 };
             };
-            /**
-             * @description Некорректный запрос: срезов нет, их больше лимита, ключ пустой либо
-             *     повторяется. Тело — `{"error": "..."}` с полями, зависящими от причины.
-             */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            400: components["responses"]["CountsBadRequest"];
         };
     };
     ReportLinks_CreateReportLink: {

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Options;
 
 namespace Bugget.Http;
 
@@ -65,9 +66,7 @@ public static class ProblemDetailsFactory
     public static Task WriteAsync(HttpContext context, ProblemDescriptor descriptor)
     {
         var result = Create(context, descriptor);
-        context.Response.StatusCode = descriptor.Status;
-        context.Response.ContentType = "application/problem+json";
-        return context.Response.WriteAsJsonAsync(result.Value);
+        return result.ExecuteResultAsync(new ActionContext(context, new RouteData(), new ActionDescriptor()));
     }
 
     private static ObjectResult AsResult(ProblemDetails problem, int status)
@@ -83,14 +82,16 @@ public static class ProblemDetailsFactory
     private static ModelStateDictionary NormalizeBodyKeys(ActionContext context)
     {
         var bodyType = context.ActionDescriptor.Parameters
-            .SingleOrDefault(parameter => parameter.Name == "body")?.ParameterType;
+            .SingleOrDefault(parameter => parameter.BindingInfo?.BindingSource == BindingSource.Body)?.ParameterType;
         if (bodyType is null)
         {
             return context.ModelState;
         }
 
+        var namingPolicy = (context.HttpContext.RequestServices
+            .GetService(typeof(IOptions<JsonOptions>)) as IOptions<JsonOptions>)?.Value.JsonSerializerOptions.PropertyNamingPolicy;
         var wireNames = bodyType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-            .Select(property => (Property: property.Name, WireName: property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? property.Name))
+            .Select(property => (Property: property.Name, WireName: property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? namingPolicy?.ConvertName(property.Name) ?? property.Name))
             .ToDictionary(item => item.Property, item => item.WireName, StringComparer.OrdinalIgnoreCase);
         var normalized = new ModelStateDictionary();
 

@@ -121,18 +121,23 @@ export interface components {
             /** @description Секции уровня пользователя. */
             user_sections: components["schemas"]["SettingsSection"][];
         };
-        /** @description RFC 9457 Problem Details для ошибок валидации. */
-        ValidationProblemDetails: {
+        /**
+         * @description RFC 9457 Problem Details. `type` и машинный `code` всегда выводятся из
+         *     одного дескриптора: `urn:bugget:error:<code>`.
+         */
+        ProblemDetails: {
             /** Format: uri */
             type: string;
             title: string;
             status: number;
             detail?: string;
             instance?: string;
+            /** @description Стабильный машинно-читаемый код ошибки. */
             code: string;
+            /** @description Идентификатор трассы для корреляции с журналом. */
             traceId?: string;
             /** @description Wire-имена полей тела запроса, которые отправляет клиент. */
-            errors: {
+            errors?: {
                 [key: string]: string[];
             };
         };
@@ -144,7 +149,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["ValidationProblemDetails"];
+                "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
         /** @description Секция или настройка не найдена. */
@@ -153,7 +158,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["ValidationProblemDetails"];
+                "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
     };

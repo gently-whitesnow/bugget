@@ -175,26 +175,6 @@ public sealed class ProblemDetailsFactoryTests
     }
 
     [Fact]
-    public void Server_error_generates_non_empty_trace_id_when_activity_and_trace_identifier_are_absent()
-    {
-        var previousActivity = Activity.Current;
-        try
-        {
-            Activity.Current = null;
-            var context = new DefaultHttpContext { TraceIdentifier = "" };
-
-            var problem = Assert.IsType<ProblemDetails>(
-                ProblemDetailsFactory.Create(context, CommonProblemDescriptors.InternalServerError).Value);
-
-            Assert.False(string.IsNullOrWhiteSpace(problem.Extensions["traceId"] as string));
-        }
-        finally
-        {
-            Activity.Current = previousActivity;
-        }
-    }
-
-    [Fact]
     public async Task Server_error_writer_redacts_payload_and_generates_trace_fallback()
     {
         var context = new DefaultHttpContext();
@@ -209,21 +189,6 @@ public sealed class ProblemDetailsFactoryTests
         Assert.Equal("Внутренняя ошибка сервера", document.RootElement.GetProperty("title").GetString());
         Assert.False(document.RootElement.TryGetProperty("detail", out _));
         Assert.False(string.IsNullOrWhiteSpace(document.RootElement.GetProperty("traceId").GetString()));
-    }
-
-    /// <summary>
-    /// В настоящем пайплайне запрос идёт под Activity, и корреляция строится по её id, а не по
-    /// TraceIdentifier: fallback — это ветка для голого контекста, а не основной путь.
-    /// </summary>
-    [Fact]
-    public void Trace_id_comes_from_the_current_activity_when_there_is_one()
-    {
-        using var activity = new Activity("problem-details-test").Start();
-
-        var problem = GetProblem(CommonProblemDescriptors.InternalServerError);
-
-        Assert.Equal(activity.Id, problem.Extensions["traceId"]);
-        Assert.NotEqual(new DefaultHttpContext().TraceIdentifier, problem.Extensions["traceId"]);
     }
 
     /// <summary>

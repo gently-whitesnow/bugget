@@ -39,7 +39,7 @@ public sealed class RealtimeErrorPayloadTests
     [Fact]
     public void Hub_exception_message_is_the_payload_and_nothing_else()
     {
-        var exception = RealtimeHubException.From(CommonProblemDescriptors.Unauthorized);
+        var exception = new RealtimeProblemException(CommonProblemDescriptors.Unauthorized);
 
         Assert.Equal(RealtimeErrorPayload.Create(CommonProblemDescriptors.Unauthorized), exception.Message);
     }

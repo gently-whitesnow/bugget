@@ -135,7 +135,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IUserIdProvider, SignalRUserIdProvider>();
         services.AddSignalR(options =>
         {
-            options.EnableDetailedErrors = true;
+            // Detailed errors отдают клиенту текст любого необработанного исключения в
+            // обход HubExceptionHandlerFilter — ровно та утечка, которую граница
+            // закрывает (ADR-0008). Причина остаётся в журнале.
+            options.EnableDetailedErrors = false;
             options.KeepAliveInterval = TimeSpan.FromSeconds(15);
             options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
         })

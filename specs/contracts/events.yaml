@@ -42,6 +42,37 @@ hubs:
       - name: LeaveReportGroupAsync
         description: "Покинуть группу репорта."
 
+    # Отказ метода приезжает клиенту как completion error — это тот же публичный провод,
+    # что и события, только в обратную сторону.
+    #
+    # Строка ошибки состоит из двух слоёв, и первый нам не принадлежит. SignalR всегда
+    # оборачивает сообщение HubException своей рамкой:
+    #
+    #   An unexpected error occurred invoking '<метод>' on the server. <Тип>: <payload>
+    #
+    # Рамку задаёт фреймворк (`ErrorMessageHelper`), убрать её из хаба нельзя, поэтому
+    # она зафиксирована здесь как есть — вместе с именем типа исключения, которое в неё
+    # попадает. Наш слой — только payload, хвост после первого `": "`. Форма снята с
+    # живого соединения тестом ReportPageHubContractTests, а не выведена из кода.
+    #
+    # Payload — НЕ RFC 9457: в сокете нет ни Content-Type, ни статуса, ни instance. Общий
+    # с HTTP только каталог кодов: `code` совпадает с тем, что клиент увидел бы в
+    # problem+json на ту же ошибку (ADR-0008). Имена полей — snake_case, как и у остальных
+    # сообщений хаба.
+    #
+    # Гейт сверяет fields с записью в source: переименовали или добавили поле в C# и не
+    # отразили здесь — красный.
+    methodError:
+      source: backend/Bugget.Http/RealtimeErrorPayload.cs
+      type: RealtimeError
+      envelope: "An unexpected error occurred invoking '<method>' on the server. RealtimeProblemException: <payload>"
+      description: "Ошибка вызова метода хаба. Наружу уходит только payload из каталога: любое другое исключение фильтр сводит к internal_server_error."
+      fields:
+        - name: code
+          type: string
+        - name: title
+          type: string
+
     # Сервер → клиент. Порядок аргументов в args — это порядок аргументов в SendAsync,
     # то есть позиционный контракт провода. Типы указаны как в publisherInterface.
     #

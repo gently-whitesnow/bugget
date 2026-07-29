@@ -25,6 +25,8 @@ HTTP-контракт после contract-first защищён гейтом back
     дефолтное правило фронта берёт только первый аргумент, остальные молча теряются;
   * методы хаба (клиент → сервер) описаны в контракте, объявлены в самом хабе и
     ровно они зовутся через conn.invoke;
+  * форма completion error методов хаба совпадает с записью, которой её сериализует
+    бекенд: отказ метода — такой же публичный провод, как событие;
   * во всём бекенде нет публикации в обход объявленных publisher-файлов.
 
   realtime-contract.py              проверить
@@ -292,6 +294,60 @@ def parse_publisher(text: str) -> dict[str, list[Published]]:
     return published
 
 
+RECORD_DECLARATION = re.compile(r"\brecord\s+(\w+)\s*\(([^)]*)\)")
+
+
+def to_wire_name(name: str) -> str:
+    """PascalCase свойства → имя в проводе.
+
+    Сериализатор realtime-payload настроен на SnakeCaseLower, и то же правило нужно
+    здесь: гейт сверяет контракт с проводом, а не с именами полей C#.
+    """
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+
+
+def parse_error_envelope(text: str, type_name: str, source: str) -> list[tuple[str, str]]:
+    """Поля записи, которой сериализуется ошибка вызова метода хаба."""
+    for match in RECORD_DECLARATION.finditer(text):
+        if match.group(1) != type_name:
+            continue
+        fields = []
+        for arg in split_args(match.group(2)):
+            parts = arg.split()
+            if len(parts) < 2:
+                raise ContractError(f"{source}: не разобран параметр записи {type_name}: {arg!r}")
+            fields.append((to_wire_name(parts[-1]), parts[-2]))
+        return fields
+    raise ContractError(f"{source}: не найдена запись {type_name} — форму ошибки разобрать нечем")
+
+
+def check_error_envelope(hub: dict, read) -> list[str]:
+    """Форма completion error методов хаба: контракт против записи в коде.
+
+    Публичный провод здесь такой же, как у событий, только в обратную сторону, и до
+    MAIN-69 он не был описан вовсе: гейт сверял имена методов и не видел, что именно
+    приезжает клиенту при отказе.
+    """
+    declared = hub.get("methodError")
+    if not declared:
+        return [f"{CONTRACT}: у хаба {hub['name']} не описан methodError — "
+                "форма ошибки вызова метода тоже публичный контракт"]
+
+    source = declared["source"]
+    expected = [(field["name"], field["type"]) for field in declared.get("fields") or []]
+    actual = parse_error_envelope(read(source), declared["type"], source)
+
+    if expected == actual:
+        return []
+
+    return [
+        f"форма ошибки разошлась: {CONTRACT} описывает "
+        f"{', '.join(f'{n}: {t}' for n, t in expected) or '(пусто)'}, "
+        f"а {source} отдаёт {', '.join(f'{n}: {t}' for n, t in actual) or '(пусто)'}. "
+        "Это публичный провод — правь контракт и код вместе"
+    ]
+
+
 def parse_hub(text: str) -> set[str]:
     """Публичные методы хаба, которые зовёт клиент. Переопределения Hub — не контракт."""
     names = set()
@@ -431,6 +487,9 @@ def check_hub(hub: dict, read, invocations: set[str]) -> list[str]:
            f"метод описан, но ни один conn.invoke на фронте его не зовёт")
     report("вызов в пустоту", facts.invocations - methods,
            f"фронт зовёт метод, которого нет в {CONTRACT}")
+
+    # 6. Форма отказа метода — тот же публичный провод, что и события.
+    problems.extend(check_error_envelope(hub, read))
 
     return problems
 
@@ -576,6 +635,16 @@ def self_test() -> int:
                 "    }\n\n"
                 "    // Отключение от группы",
             ),
+            True,
+        ),
+        (
+            "поле формы ошибки переименовано в контракте",
+            mutation(CONTRACT, "        - name: title\n          type: string\n", "        - name: reason\n          type: string\n"),
+            True,
+        ),
+        (
+            "поле формы ошибки переименовано в коде",
+            mutation("backend/Bugget.Http/RealtimeErrorPayload.cs", "string Title)", "string Reason)"),
             True,
         ),
         (

@@ -69,4 +69,20 @@ public sealed class PeriodResolverTests
         act.Should().Throw<ArgumentException>()
             .Which.ParamName.Should().Be("period");
     }
+
+    /// <summary>
+    /// Список допустимых значений публичен и попадает в тело ответа 400, поэтому он
+    /// обязан совпадать с тем, что резолвер реально принимает: разъехавшись, он начнёт
+    /// врать клиенту.
+    /// </summary>
+    [Fact]
+    public void AllowedValues_matches_what_the_resolver_accepts()
+    {
+        foreach (var value in PeriodResolver.AllowedValues)
+        {
+            var act = () => PeriodResolver.Resolve(value, Now);
+
+            act.Should().NotThrow($"значение {value} объявлено допустимым");
+        }
+    }
 }

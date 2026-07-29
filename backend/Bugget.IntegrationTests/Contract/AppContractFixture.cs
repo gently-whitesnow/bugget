@@ -62,6 +62,15 @@ public sealed class AppContractFixture
     /// Клиент без identity-заголовков — запрос, не прошедший auth_request.
     /// </summary>
     public HttpClient CreateAnonymousClient() => SharedApp.Value.CreateClient();
+
+    /// <summary>Адрес тестового хоста — от него строится URL хаба.</summary>
+    public Uri BaseAddress => SharedApp.Value.Server.BaseAddress;
+
+    /// <summary>
+    /// Транспорт in-memory хоста для SignalR-клиента: настоящего сокета у
+    /// <c>TestServer</c> нет, поэтому клиент ходит long polling'ом через этот handler.
+    /// </summary>
+    public HttpMessageHandler CreateHandler() => SharedApp.Value.Server.CreateHandler();
 }
 
 /// <summary>

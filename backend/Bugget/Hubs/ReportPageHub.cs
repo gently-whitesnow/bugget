@@ -17,7 +17,7 @@ public sealed class ReportPageHub(
     // Подключение к группе комментариев по reportId
     public async Task JoinReportGroupAsync(string aliasId)
     {
-        var user = (Context.User?.GetIdentity()) ?? throw RealtimeHubException.From(CommonProblemDescriptors.Unauthorized);
+        var user = (Context.User?.GetIdentity()) ?? throw new RealtimeProblemException(CommonProblemDescriptors.Unauthorized);
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
             user.OrganizationId,
@@ -25,7 +25,7 @@ public sealed class ReportPageHub(
             reportId,
             publicId,
             teamReportId
-        ) ?? throw RealtimeHubException.From(BoErrors.ReportNotFoundError.ToDescriptor());
+        ) ?? throw new RealtimeProblemException(BoErrors.ReportNotFoundError.ToDescriptor());
         var groupKey = new Bugget.Entities.BO.ReportBo.ReportIdContext(
             resolvedReport.Id,
             aliasId,
@@ -39,7 +39,7 @@ public sealed class ReportPageHub(
     // Отключение от группы
     public async Task LeaveReportGroupAsync(string aliasId)
     {
-        var user = (Context.User?.GetIdentity()) ?? throw RealtimeHubException.From(CommonProblemDescriptors.Unauthorized);
+        var user = (Context.User?.GetIdentity()) ?? throw new RealtimeProblemException(CommonProblemDescriptors.Unauthorized);
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
             user.OrganizationId,

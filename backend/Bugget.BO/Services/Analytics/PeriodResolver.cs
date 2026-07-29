@@ -18,6 +18,13 @@ public static class PeriodResolver
         new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
     /// <summary>
+    /// Допустимые wire-значения. Публичны потому, что это часть контракта, а не деталь
+    /// реализации: транспорт строит из них причину отказа, не заглядывая в текст
+    /// исключения. Список и <c>switch</c> ниже обязаны совпадать — за этим следит тест.
+    /// </summary>
+    public static readonly IReadOnlyList<string> AllowedValues = ["7d", "30d", "60d", "180d", "360d", "all"];
+
+    /// <summary>
     /// Разбирает строковый wire-ключ периода и возвращает окно. На неизвестное
     /// значение / null / whitespace бросает <see cref="ArgumentException"/> —
     /// контроллер ловит её и отдаёт 400.
@@ -27,7 +34,7 @@ public static class PeriodResolver
         if (string.IsNullOrWhiteSpace(period))
         {
             throw new ArgumentException(
-                "Period query parameter is required. Allowed: 7d, 30d, 60d, 180d, 360d, all.",
+                $"Period query parameter is required. Allowed: {string.Join(", ", AllowedValues)}.",
                 nameof(period));
         }
 
@@ -40,7 +47,7 @@ public static class PeriodResolver
             "360d" => (360, "last_360_days"),
             "all" => (-1, "all_time"),
             _ => throw new ArgumentException(
-                $"Unknown period value: '{period}'. Allowed: 7d, 30d, 60d, 180d, 360d, all.",
+                $"Unknown period value: '{period}'. Allowed: {string.Join(", ", AllowedValues)}.",
                 nameof(period)),
         };
 

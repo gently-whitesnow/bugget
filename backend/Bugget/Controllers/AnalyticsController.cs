@@ -45,9 +45,7 @@ public sealed class AnalyticsController(AnalyticsService analyticsService) : Ana
         }
         catch (ArgumentException ex) when (ex.ParamName == "period")
         {
-            // PeriodResolver.Resolve бросает ArgumentException на невалидный period —
-            // отдаём 400 c человекочитаемым сообщением (без stack-трейса).
-            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.InvalidPeriod, ex.Message);
+            return InvalidPeriod();
         }
     }
 
@@ -70,7 +68,19 @@ public sealed class AnalyticsController(AnalyticsService analyticsService) : Ana
         }
         catch (ArgumentException ex) when (ex.ParamName == "period")
         {
-            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.InvalidPeriod, ex.Message);
+            return InvalidPeriod();
         }
     }
+
+    /// <summary>
+    /// Причина отказа собирается из публичного списка допустимых значений, а не из
+    /// текста исключения: сообщение исключения — внутренняя деталь, и вдобавок оно
+    /// отражает обратно присланное клиентом значение. Наружу уходит только то, что
+    /// и так записано в контракте.
+    /// </summary>
+    private ActionResult InvalidPeriod() =>
+        HttpProblemDetailsFactory.Create(
+            HttpContext,
+            ProblemDescriptors.InvalidPeriod,
+            $"Допустимые значения: {string.Join(", ", PeriodResolver.AllowedValues)}.");
 }

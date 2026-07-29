@@ -104,8 +104,30 @@ public static class ProblemDetailsFactory
         return result;
     }
 
-    private static string GetTraceId(HttpContext context) =>
-        Activity.Current?.Id ?? context.TraceIdentifier;
+    /// <summary>
+    /// <c>traceId</c> — обязательное поле ответа, а оба обычных источника могут быть пустыми:
+    /// <see cref="Activity.Current"/> отсутствует без включённой трассировки, а
+    /// <see cref="HttpContext.TraceIdentifier"/> — пустая строка, если его обнулили выше по
+    /// пайплайну. Приоритет источников прежний; сгенерированный fallback записывается обратно в
+    /// контекст, чтобы логи и ответ ссылались на один и тот же идентификатор.
+    /// </summary>
+    private static string GetTraceId(HttpContext context)
+    {
+        var activityId = Activity.Current?.Id;
+        if (!string.IsNullOrEmpty(activityId))
+        {
+            return activityId;
+        }
+
+        if (!string.IsNullOrEmpty(context.TraceIdentifier))
+        {
+            return context.TraceIdentifier;
+        }
+
+        var generated = Guid.NewGuid().ToString("n");
+        context.TraceIdentifier = generated;
+        return generated;
+    }
 
     private static JsonSerializerOptions GetJsonOptions(HttpContext context) =>
         (context.Features.Get<IServiceProvidersFeature>()?.RequestServices

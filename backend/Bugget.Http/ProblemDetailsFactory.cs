@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -66,7 +68,9 @@ public static class ProblemDetailsFactory
     public static Task WriteAsync(HttpContext context, ProblemDescriptor descriptor)
     {
         var result = Create(context, descriptor);
-        return result.ExecuteResultAsync(new ActionContext(context, new RouteData(), new ActionDescriptor()));
+        context.Response.StatusCode = descriptor.Status;
+        context.Response.ContentType = "application/problem+json";
+        return context.Response.WriteAsJsonAsync(result.Value, GetJsonOptions(context));
     }
 
     private static ObjectResult AsResult(ProblemDetails problem, int status)
@@ -78,6 +82,11 @@ public static class ProblemDetailsFactory
 
     private static string GetTraceId(HttpContext context) =>
         Activity.Current?.Id ?? context.TraceIdentifier;
+
+    private static JsonSerializerOptions GetJsonOptions(HttpContext context) =>
+        (context.Features.Get<IServiceProvidersFeature>()?.RequestServices
+            .GetService(typeof(IOptions<JsonOptions>)) as IOptions<JsonOptions>)?.Value.JsonSerializerOptions
+        ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
     private static ModelStateDictionary NormalizeBodyKeys(ActionContext context)
     {

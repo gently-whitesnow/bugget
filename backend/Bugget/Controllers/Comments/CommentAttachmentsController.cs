@@ -38,7 +38,7 @@ public sealed class CommentAttachmentsController(AttachmentService attachmentSer
             content,
             meta,
             cancellationToken)
-            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract(), 201);
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract(), 201);
     }
 
     public override Task<ActionResult<AttachmentSummary>> RenameCommentAttachment(
@@ -51,7 +51,7 @@ public sealed class CommentAttachmentsController(AttachmentService attachmentSer
     {
         var user = User.GetIdentity();
         return attachmentService.RenameCommentAttachmentAsync(user, aliasId, bugId, commentId, id, body.File_name)
-            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract());
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract());
     }
 
     public override Task<IActionResult> DeleteCommentAttachment(
@@ -62,7 +62,7 @@ public sealed class CommentAttachmentsController(AttachmentService attachmentSer
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return attachmentService.DeleteCommentAttachmentAsync(user, aliasId, bugId, commentId, id).AsActionResultAsync();
+        return attachmentService.DeleteCommentAttachmentAsync(user, aliasId, bugId, commentId, id).AsActionResultAsync(HttpContext);
     }
 
     public override async Task<IActionResult> GetCommentAttachmentContent(
@@ -76,7 +76,7 @@ public sealed class CommentAttachmentsController(AttachmentService attachmentSer
         var attachResult = await attachmentService.GetCommentAttachmentContentAsync(user, aliasId, bugId, commentId, id);
         if (attachResult.HasError)
         {
-            return attachResult.AsActionResult();
+            return attachResult.AsActionResult(HttpContext);
         }
 
         var (content, attachmentDbModel) = attachResult.Value;
@@ -99,7 +99,7 @@ public sealed class CommentAttachmentsController(AttachmentService attachmentSer
         var attachResult = await attachmentService.GetCommentAttachmentPreviewContentAsync(user, aliasId, bugId, commentId, id);
         if (attachResult.HasError)
         {
-            return attachResult.AsActionResult();
+            return attachResult.AsActionResult(HttpContext);
         }
 
         return new FileStreamResult(attachResult.Value!, AttachmentConstants.PreviewMimeType);

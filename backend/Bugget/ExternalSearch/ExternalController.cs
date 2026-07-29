@@ -33,12 +33,12 @@ public sealed class ExternalController(
 
         if (user.OrganizationId is null)
         {
-            return BoErrors.OrganizationIdRequired.ToProblemDetails();
+            return BoErrors.OrganizationIdRequired.ToProblemDetails(HttpContext);
         }
 
         if (user.TeamId is null)
         {
-            return BoErrors.TeamIdRequired.ToProblemDetails();
+            return BoErrors.TeamIdRequired.ToProblemDetails(HttpContext);
         }
 
         var searchResult = await externalSearchService.SearchAsync(
@@ -59,7 +59,7 @@ public sealed class ExternalController(
 
         if (user.OrganizationId is null)
         {
-            return BoErrors.OrganizationIdRequired.ToProblemDetails();
+            return BoErrors.OrganizationIdRequired.ToProblemDetails(HttpContext);
         }
 
         return await externalSearchService.ApplySearchResultAsync(
@@ -68,7 +68,7 @@ public sealed class ExternalController(
             user.TeamId!,
             body.Id,
             body.Source,
-            body.Report_id).AsActionResultAsync();
+            body.Report_id).AsActionResultAsync(HttpContext);
     }
 
     public override async Task<ActionResult<ICollection<KaitenBoard>>> ListKaitenBoards(
@@ -81,7 +81,7 @@ public sealed class ExternalController(
 
         if (user.OrganizationId is null)
         {
-            return BoErrors.OrganizationIdRequired.ToProblemDetails();
+            return BoErrors.OrganizationIdRequired.ToProblemDetails(HttpContext);
         }
 
         var boards = await kaitenBoardsService.GetBoardsAsync(
@@ -101,7 +101,7 @@ public sealed class ExternalController(
 
         if (user.OrganizationId is null)
         {
-            return BoErrors.OrganizationIdRequired.ToProblemDetails();
+            return BoErrors.OrganizationIdRequired.ToProblemDetails(HttpContext);
         }
 
         var boards = await kaitenBoardsService.BatchGetBoardsAsync(user.OrganizationId, [.. body.Ids]);

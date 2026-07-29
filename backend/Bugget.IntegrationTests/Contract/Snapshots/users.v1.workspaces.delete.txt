@@ -3,7 +3,6 @@ content-type: application/problem+json
 body:
 $: object
 $.code: string
-$.detail: string
 $.status: number
 $.title: string
 $.traceId: string

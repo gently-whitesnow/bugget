@@ -41,7 +41,7 @@ public sealed class BugAttachmentsController(AttachmentService attachmentService
             (AttachType)attachType,
             meta,
             cancellationToken)
-            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract(), 201);
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract(), 201);
     }
 
     public override Task<ActionResult<AttachmentSummary>> RenameBugAttachment(
@@ -53,7 +53,7 @@ public sealed class BugAttachmentsController(AttachmentService attachmentService
     {
         var user = User.GetIdentity();
         return attachmentService.RenameBugAttachmentAsync(user, aliasId, bugId, id, body.File_name)
-            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract());
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract());
     }
 
     public override Task<IActionResult> DeleteBugAttachment(
@@ -63,7 +63,7 @@ public sealed class BugAttachmentsController(AttachmentService attachmentService
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return attachmentService.DeleteBugAttachmentAsync(user, aliasId, bugId, id).AsActionResultAsync();
+        return attachmentService.DeleteBugAttachmentAsync(user, aliasId, bugId, id).AsActionResultAsync(HttpContext);
     }
 
     public override async Task<IActionResult> GetBugAttachmentContent(
@@ -76,7 +76,7 @@ public sealed class BugAttachmentsController(AttachmentService attachmentService
         var attachResult = await attachmentService.GetBugAttachmentContentAsync(user, aliasId, bugId, id);
         if (attachResult.HasError)
         {
-            return attachResult.AsActionResult();
+            return attachResult.AsActionResult(HttpContext);
         }
 
         var (content, attachmentDbModel) = attachResult.Value;
@@ -98,7 +98,7 @@ public sealed class BugAttachmentsController(AttachmentService attachmentService
         var attachResult = await attachmentService.GetBugAttachmentPreviewContentAsync(user, aliasId, bugId, id);
         if (attachResult.HasError)
         {
-            return attachResult.AsActionResult();
+            return attachResult.AsActionResult(HttpContext);
         }
 
         return new FileStreamResult(attachResult.Value!, AttachmentConstants.PreviewMimeType);

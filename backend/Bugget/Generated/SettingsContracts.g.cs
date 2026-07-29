@@ -213,6 +213,18 @@ namespace Bugget.Api.Contracts.Settings.Generated
         [System.Text.Json.Serialization.JsonPropertyName("traceId")]
         public string TraceId { get; set; }
 
+        /// <summary>
+        /// Допустимое число элементов в запросе.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("limit")]
+        public int Limit { get; set; }
+
+        /// <summary>
+        /// Ключ элемента, нарушившего ограничение.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("key")]
+        public string Key { get; set; }
+
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

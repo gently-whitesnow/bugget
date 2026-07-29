@@ -1,7 +1,11 @@
 using System.Diagnostics;
+using System.Reflection;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Routing;
 
 namespace Bugget.Http;
 
@@ -18,9 +22,6 @@ public static class ProblemDetailsFactory
     private const string TypePrefix = "urn:bugget:error:";
     private const string InternalTitle = "Внутренняя ошибка сервера";
 
-    public static ObjectResult Create(ProblemDescriptor descriptor, string? detail = null, IReadOnlyDictionary<string, object?>? extensions = null) =>
-        Create(new DefaultHttpContext(), descriptor, detail, extensions);
-
     public static ObjectResult Create(HttpContext context, ProblemDescriptor descriptor, string? detail = null, IReadOnlyDictionary<string, object?>? extensions = null)
     {
         var isServerError = descriptor.Status >= StatusCodes.Status500InternalServerError;
@@ -34,25 +35,32 @@ public static class ProblemDetailsFactory
         problem.Extensions["code"] = descriptor.Code;
         problem.Extensions["traceId"] = GetTraceId(context);
         if (extensions is not null)
+        {
             foreach (var (key, value) in extensions)
+            {
                 problem.Extensions[key] = value;
+            }
+        }
 
         return AsResult(problem, descriptor.Status);
     }
 
-    public static ObjectResult CreateValidation(HttpContext context, ModelStateDictionary modelState)
+    public static ObjectResult CreateValidation(ActionContext context)
     {
         var descriptor = CommonProblemDescriptors.ModelStateValidation;
-        var problem = new ValidationProblemDetails(modelState)
+        var problem = new ValidationProblemDetails(NormalizeBodyKeys(context))
         {
             Type = TypePrefix + descriptor.Code,
             Title = descriptor.Title,
             Status = descriptor.Status
         };
         problem.Extensions["code"] = descriptor.Code;
-        problem.Extensions["traceId"] = GetTraceId(context);
+        problem.Extensions["traceId"] = GetTraceId(context.HttpContext);
         return AsResult(problem, descriptor.Status);
     }
+
+    public static ObjectResult CreateValidation(HttpContext context, ModelStateDictionary modelState) =>
+        CreateValidation(new ActionContext(context, new RouteData(), new ActionDescriptor(), modelState));
 
     public static Task WriteAsync(HttpContext context, ProblemDescriptor descriptor)
     {
@@ -70,5 +78,32 @@ public static class ProblemDetailsFactory
     }
 
     private static string GetTraceId(HttpContext context) =>
-        Activity.Current?.Id ?? (!string.IsNullOrWhiteSpace(context.TraceIdentifier) ? context.TraceIdentifier : Guid.NewGuid().ToString("N"));
+        Activity.Current?.Id ?? context.TraceIdentifier;
+
+    private static ModelStateDictionary NormalizeBodyKeys(ActionContext context)
+    {
+        var bodyType = context.ActionDescriptor.Parameters
+            .SingleOrDefault(parameter => parameter.Name == "body")?.ParameterType;
+        if (bodyType is null)
+        {
+            return context.ModelState;
+        }
+
+        var wireNames = bodyType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .Select(property => (Property: property.Name, WireName: property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? property.Name))
+            .ToDictionary(item => item.Property, item => item.WireName, StringComparer.OrdinalIgnoreCase);
+        var normalized = new ModelStateDictionary();
+
+        foreach (var (key, value) in context.ModelState)
+        {
+            var normalizedKey = wireNames.TryGetValue(key, out var wireName) ? wireName : key;
+            normalized.SetModelValue(normalizedKey, value.RawValue, value.AttemptedValue);
+            foreach (var error in value.Errors)
+            {
+                normalized.AddModelError(normalizedKey, error.ErrorMessage);
+            }
+        }
+
+        return normalized;
+    }
 }

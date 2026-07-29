@@ -3,7 +3,6 @@ content-type: application/problem+json
 body:
 $: object
 $.code: string
-$.detail: string
 $.errors: object
 $.errors.take: array
 $.errors.take[]: string

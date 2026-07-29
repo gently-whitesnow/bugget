@@ -2,11 +2,11 @@ using Bugget.Api.Generated.Reports;
 using Bugget.BO.Services.Reports;
 using Bugget.Entities.Authentication;
 using Bugget.Entities.DTO.Report;
+using Bugget.Http;
 using Bugget.Mappers;
 using Bugget.Reports.Contracts.Generated;
-using Bugget.Http;
-using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 using Microsoft.AspNetCore.Mvc;
+using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 
 namespace Bugget.Controllers;
 

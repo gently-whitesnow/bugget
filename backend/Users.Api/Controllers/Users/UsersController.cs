@@ -1,13 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using Authentication;
 using Bugget.Http;
-using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 using Microsoft.AspNetCore.Mvc;
 using Users.Api.Contracts.Generated;
 using Users.Api.Controllers.Users;
 using Users.Api.Generated;
 using Users.Api.Mappers;
 using Users.BO.Interfaces;
+using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 
 namespace Users.Api.Controllers;
 

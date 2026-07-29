@@ -48,7 +48,7 @@ public sealed class ReportsController(
     {
         var user = User.GetIdentity();
         return reportsService.GetReportAsync(aliasId, user.OrganizationId, user.TeamId)
-            .AsContractResultAsync(dbModel => dbModel.ToViewModel(reportAliasOptions.Value).ToContract());
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToViewModel(reportAliasOptions.Value).ToContract());
     }
 
     public override Task<ActionResult<ReportPatchResult>> PatchReport(
@@ -66,7 +66,7 @@ public sealed class ReportsController(
         };
 
         return reportsService.PatchReportAsync(aliasId, user, patchDto)
-            .AsContractResultAsync(result => result.ToPatchResultViewModel(reportAliasOptions.Value).ToContract());
+            .AsContractResultAsync(HttpContext, result => result.ToPatchResultViewModel(reportAliasOptions.Value).ToContract());
     }
 
     /// <remarks>

@@ -24,7 +24,6 @@
     <ProjectReference Include="..\BugReport.Logging\BugReport.Logging.csproj" />
     <ProjectReference Include="..\MattermostOAuth\MattermostOAuth.csproj" />
     <ProjectReference Include="..\Bugget.Http\Bugget.Http.csproj" />
-    <ProjectReference Include="..\Flow\Flow.csproj" />
   </ItemGroup>
 
 </Project>

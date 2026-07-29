@@ -4,9 +4,9 @@ using Bugget.BO.Services.Analytics;
 using Bugget.Entities.Authentication;
 using Bugget.Extensions;
 using Bugget.Http;
-using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 using Bugget.Mappers;
 using Microsoft.AspNetCore.Mvc;
+using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 
 namespace Bugget.Controllers;
 

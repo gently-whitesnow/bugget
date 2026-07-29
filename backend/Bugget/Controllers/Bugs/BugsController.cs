@@ -30,7 +30,7 @@ public sealed class BugsController(BugsService bugsService) : BugsControllerBase
         };
 
         return bugsService.CreateBugAsync(user, aliasId, createDto)
-            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract(), 201);
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract(), 201);
     }
 
     public override Task<ActionResult<BugPatchResult>> PatchBug(
@@ -49,6 +49,6 @@ public sealed class BugsController(BugsService bugsService) : BugsControllerBase
         };
 
         return bugsService.PatchBugAsync(user, aliasId, bugId, patchDto)
-            .AsContractResultAsync(dbModel => dbModel.ToContract());
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToContract());
     }
 }

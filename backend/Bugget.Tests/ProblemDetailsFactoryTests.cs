@@ -39,7 +39,7 @@ public sealed class ProblemDetailsFactoryTests
     [Fact]
     public void Rfc_fields_and_extensions_preserve_their_wire_names_under_snake_case_policy()
     {
-        var json = JsonSerializer.Serialize(GetProblem(global::Bugget.ProblemDescriptors.InvalidPeriod), new JsonSerializerOptions
+        var json = JsonSerializer.Serialize(GetProblem(global::Bugget.ProblemDescriptors.InvalidPeriod, "Некорректный период"), new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
         });
@@ -126,7 +126,7 @@ public sealed class ProblemDetailsFactoryTests
             _ => new InternalServerError("internal_server_error", "Секретная причина")
         };
 
-        var result = Assert.IsType<ObjectResult>(error.ToProblemDetails());
+        var result = Assert.IsType<ObjectResult>(error.ToProblemDetails(new DefaultHttpContext()));
         var problem = Assert.IsType<ProblemDetails>(result.Value);
 
         Assert.Equal(expectedStatus, result.StatusCode);
@@ -134,5 +134,5 @@ public sealed class ProblemDetailsFactoryTests
     }
 
     private static ProblemDetails GetProblem(ProblemDescriptor descriptor, string? detail = null) =>
-        Assert.IsType<ProblemDetails>(ProblemDetailsFactory.Create(descriptor, detail).Value);
+        Assert.IsType<ProblemDetails>(ProblemDetailsFactory.Create(new DefaultHttpContext(), descriptor, detail).Value);
 }

@@ -24,7 +24,7 @@ public sealed class CommentsController(CommentsService commentsService) : Commen
     {
         var user = User.GetIdentity();
         return commentsService.CreateCommentAsync(user, aliasId, bugId, ToDto(body))
-            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract(), 201);
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract(), 201);
     }
 
     public override Task<ActionResult<CommentSummary>> UpdateComment(
@@ -36,7 +36,7 @@ public sealed class CommentsController(CommentsService commentsService) : Commen
     {
         var user = User.GetIdentity();
         return commentsService.UpdateCommentAsync(user, aliasId, bugId, commentId, ToDto(body))
-            .AsContractResultAsync(dbModel => dbModel.ToSummaryContract());
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract());
     }
 
     public override Task<IActionResult> DeleteComment(
@@ -46,7 +46,7 @@ public sealed class CommentsController(CommentsService commentsService) : Commen
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return commentsService.DeleteCommentAsync(user, aliasId, bugId, commentId).AsActionResultAsync();
+        return commentsService.DeleteCommentAsync(user, aliasId, bugId, commentId).AsActionResultAsync(HttpContext);
     }
 
     private static CommentDto ToDto(CommentRequest body) => new()

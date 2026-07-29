@@ -23,7 +23,7 @@ public sealed class ReportLinksController(ReportLinksService reportLinksService)
     {
         var user = User.GetIdentity();
         return reportLinksService.CreateReportLinkAsync(user, aliasId, ToDto(body))
-            .AsContractResultAsync(dbModel => dbModel.ToContract(), 201);
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToContract(), 201);
     }
 
     public override Task<ActionResult<ReportLink>> UpdateReportLink(
@@ -34,7 +34,7 @@ public sealed class ReportLinksController(ReportLinksService reportLinksService)
     {
         var user = User.GetIdentity();
         return reportLinksService.UpdateReportLinkAsync(user, aliasId, linkId, ToDto(body))
-            .AsContractResultAsync(dbModel => dbModel.ToContract());
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToContract());
     }
 
     public override Task<IActionResult> DeleteReportLink(
@@ -43,7 +43,7 @@ public sealed class ReportLinksController(ReportLinksService reportLinksService)
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        return reportLinksService.DeleteReportLinkAsync(user, aliasId, linkId).AsActionResultAsync();
+        return reportLinksService.DeleteReportLinkAsync(user, aliasId, linkId).AsActionResultAsync(HttpContext);
     }
 
     private static ReportLinkDto ToDto(ReportLinkRequest body) => new()

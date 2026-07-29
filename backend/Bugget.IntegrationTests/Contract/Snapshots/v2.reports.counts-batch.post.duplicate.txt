@@ -3,7 +3,6 @@ content-type: application/problem+json
 body:
 $: object
 $.code: string
-$.detail: string
 $.key: string
 $.status: number
 $.title: string

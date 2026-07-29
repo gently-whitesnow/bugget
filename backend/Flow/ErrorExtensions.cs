@@ -1,13 +1,14 @@
 using System.Net;
 using Bugget.Http;
 using Flow.Errors;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Flow.Extensions;
 
 public static class ErrorExtensions
 {
-    public static ActionResult ToProblemDetails(this Error error)
+    public static ActionResult ToProblemDetails(this Error error, HttpContext context)
     {
         var (code, title, status) = error switch
         {
@@ -19,6 +20,6 @@ public static class ErrorExtensions
             _ => throw new NotImplementedException("Данный тип ошибки не определен")
         };
 
-        return ProblemDetailsFactory.Create(new ProblemDescriptor(code, title, (int)status));
+        return ProblemDetailsFactory.Create(context, new ProblemDescriptor(code, title, (int)status));
     }
 }

@@ -17,7 +17,8 @@ HTTP-граница возвращает RFC 9457 `application/problem+json`. Е
 ошибки и не получают зависимость от ASP.NET `ProblemDetails`.
 
 Model-state использует встроенный `ValidationProblemDetails`: словарь `errors` содержит
-имена полей, полученные ASP.NET model binding, и сообщения. Для 5xx detail не публикуется;
+wire-имена полей тела запроса, которые отправляет клиент, и сообщения. Имена query- и
+route-параметров сохраняют camelCase по ADR-0005. Для 5xx detail не публикуется;
 в ответ включается traceId для корреляции с журналом.
 
 HTTP-adapter живёт в API-слое, а не в `Flow`: общий код знает только RFC-механику и

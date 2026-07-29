@@ -63,7 +63,7 @@ components:
           properties:
             errors:
               type: object
-              description: Имена полей в ModelState после ASP.NET model binding.
+              description: Wire-имена полей тела запроса, которые отправляет клиент.
               additionalProperties:
                 type: array
                 items:

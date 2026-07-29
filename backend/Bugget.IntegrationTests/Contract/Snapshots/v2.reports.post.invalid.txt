@@ -3,10 +3,9 @@ content-type: application/problem+json
 body:
 $: object
 $.code: string
-$.detail: string
 $.errors: object
-$.errors.Title: array
-$.errors.Title[]: string
+$.errors.title: array
+$.errors.title[]: string
 $.status: number
 $.title: string
 $.traceId: string

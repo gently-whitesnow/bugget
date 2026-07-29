@@ -196,6 +196,10 @@ export interface components {
             code: string;
             /** @description Идентификатор трассы для корреляции с журналом. */
             traceId?: string;
+            /** @description Допустимое число элементов в запросе. */
+            limit?: number;
+            /** @description Ключ элемента, нарушившего ограничение. */
+            key?: string;
         };
         /**
          * @description Идентификатор пользователя. Строка, а не число: источник — внешний

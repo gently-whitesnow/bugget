@@ -29,7 +29,7 @@ public static class MvcServiceCollectionExtensions
         })
         .AddJsonOptions(options => { options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower; })
         .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = context =>
-            ProblemDetailsFactory.CreateValidation(context.HttpContext, context.ModelState));
+            ProblemDetailsFactory.CreateValidation(context));
 
         return services;
     }

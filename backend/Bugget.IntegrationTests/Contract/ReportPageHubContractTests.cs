@@ -60,6 +60,9 @@ public sealed class ReportPageHubContractTests(AppContractFixture fixture) : ICl
         var exception = await Assert.ThrowsAsync<HubException>(
             () => connection.InvokeAsync("JoinReportGroupAsync", "404404404"));
 
+        // Источник истины по рамке — methodError.envelope в events.yaml, а не эта
+        // строка: гейт realtime-contract собирает префикс из контракта и требует, чтобы
+        // он встречался здесь дословно. Правка в одиночку — с любой из сторон — красная.
         Assert.StartsWith(
             "An unexpected error occurred invoking 'JoinReportGroupAsync' on the server. RealtimeProblemException: ",
             exception.Message,

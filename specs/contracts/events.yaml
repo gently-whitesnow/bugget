@@ -60,13 +60,29 @@ hubs:
     # problem+json на ту же ошибку (ADR-0008). Имена полей — snake_case, как и у остальных
     # сообщений хаба.
     #
-    # Гейт сверяет fields с записью в source: переименовали или добавили поле в C# и не
-    # отразили здесь — красный.
+    # Здесь нет деклараций без потребителя — гейт читает каждое поле блока:
+    #
+    #   fields            сверяются с записью в source;
+    #   trustedException  обязан существовать в своём source и наследовать HubException,
+    #                     и ровно его — и никакой другой тип — пропускает filter наружу;
+    #   envelope          обязан содержать все три подстановки, а собранный из него
+    #                     префикс — совпадать с тем, что ожидает characterization-тест.
+    #
+    # Поэтому изолированная правка любой из четырёх сторон красит гейт: переименовали
+    # тип в C#, поменяли текст рамки здесь, поправили ожидание в тесте, ослабили фильтр
+    # до базового HubException — красный.
     methodError:
       source: backend/Bugget.Http/RealtimeErrorPayload.cs
       type: RealtimeError
-      envelope: "An unexpected error occurred invoking '<method>' on the server. RealtimeProblemException: <payload>"
       description: "Ошибка вызова метода хаба. Наружу уходит только payload из каталога: любое другое исключение фильтр сводит к internal_server_error."
+      envelope: "An unexpected error occurred invoking '<method>' on the server. <trustedException>: <payload>"
+      trustedException:
+        source: backend/Bugget/Hubs/RealtimeProblemException.cs
+        type: RealtimeProblemException
+        filter: backend/Bugget/Middlewares/HubExceptionHandlerFilter.cs
+      characterization:
+        source: backend/Bugget.IntegrationTests/Contract/ReportPageHubContractTests.cs
+        method: JoinReportGroupAsync
       fields:
         - name: code
           type: string

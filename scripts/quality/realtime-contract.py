@@ -27,6 +27,10 @@ HTTP-контракт после contract-first защищён гейтом back
     ровно они зовутся через conn.invoke;
   * форма completion error методов хаба совпадает с записью, которой её сериализует
     бекенд: отказ метода — такой же публичный провод, как событие;
+  * рамку вокруг payload навешивает сам SignalR, и она описана в контракте вместе с
+    именем доверенного типа: тип обязан существовать и наследовать HubException, фильтр
+    границы — пропускать именно его и не пропускать базовый HubException, а собранный
+    из контракта префикс — совпадать с тем, что проверяет characterization-тест;
   * во всём бекенде нет публикации в обход объявленных publisher-файлов.
 
   realtime-contract.py              проверить
@@ -321,12 +325,63 @@ def parse_error_envelope(text: str, type_name: str, source: str) -> list[tuple[s
     raise ContractError(f"{source}: не найдена запись {type_name} — форму ошибки разобрать нечем")
 
 
+ENVELOPE_PLACEHOLDERS = ("<method>", "<trustedException>", "<payload>")
+
+
+def render_envelope_prefix(envelope: str, type_name: str, method: str) -> str:
+    """Рамка SignalR до нашего payload — ровно то, что видит клиент перед JSON."""
+    return (envelope
+            .replace("<method>", method)
+            .replace("<trustedException>", type_name)
+            .split("<payload>")[0])
+
+
+def check_trusted_exception(declared: dict, read) -> list[str]:
+    """Тип, которому разрешено доехать до клиента, и фильтр, который это разрешает.
+
+    Имя типа попадает в публичный провод внутри рамки SignalR, поэтому оно — часть
+    контракта, а не деталь реализации. Заодно проверяется, что граница осталась
+    fail-closed: фильтр обязан пропускать именно этот тип, а не базовый HubException,
+    неотличимый от чужого.
+    """
+    type_name = declared["type"]
+    source = declared["source"]
+    problems: list[str] = []
+
+    # Первичный конструктор и базовый тип переносятся на разные строки — сигнатуру
+    # ищем целиком, а не построчно.
+    declaration = rf"\bclass\s+{type_name}\b\s*(?:\([^)]*\))?\s*:\s*HubException\b"
+    if not re.search(declaration, read(source)):
+        problems.append(
+            f"доверенный тип разошёлся: {CONTRACT} называет {type_name}, но в {source} "
+            "нет такого класса, наследующего HubException. Имя типа уходит клиенту "
+            "внутри рамки SignalR — это публичный провод"
+        )
+
+    filter_source = declared["filter"]
+    filter_text = read(filter_source)
+    if f"catch ({type_name})" not in filter_text:
+        problems.append(
+            f"граница не fail-closed: {filter_source} не пропускает {type_name} — "
+            f"либо тип переименован мимо {CONTRACT}, либо ветку убрали"
+        )
+    if "catch (HubException" in filter_text:
+        problems.append(
+            f"граница не fail-closed: {filter_source} пропускает базовый HubException. "
+            "Он неотличим от чужого, и его сообщение SignalR отдаёт клиенту дословно"
+        )
+
+    return problems
+
+
 def check_error_envelope(hub: dict, read) -> list[str]:
-    """Форма completion error методов хаба: контракт против записи в коде.
+    """Форма completion error методов хаба: контракт против кода и против снимка провода.
 
     Публичный провод здесь такой же, как у событий, только в обратную сторону, и до
     MAIN-69 он не был описан вовсе: гейт сверял имена методов и не видел, что именно
-    приезжает клиенту при отказе.
+    приезжает клиенту при отказе. Сторон четыре — контракт, запись payload, доверенный
+    тип с фильтром и characterization-тест живого соединения; расхождение любой красит
+    гейт, иначе объявление рамки было бы декларацией без потребителя.
     """
     declared = hub.get("methodError")
     if not declared:
@@ -337,15 +392,36 @@ def check_error_envelope(hub: dict, read) -> list[str]:
     expected = [(field["name"], field["type"]) for field in declared.get("fields") or []]
     actual = parse_error_envelope(read(source), declared["type"], source)
 
-    if expected == actual:
-        return []
+    problems: list[str] = []
+    if expected != actual:
+        problems.append(
+            f"форма ошибки разошлась: {CONTRACT} описывает "
+            f"{', '.join(f'{n}: {t}' for n, t in expected) or '(пусто)'}, "
+            f"а {source} отдаёт {', '.join(f'{n}: {t}' for n, t in actual) or '(пусто)'}. "
+            "Это публичный провод — правь контракт и код вместе"
+        )
 
-    return [
-        f"форма ошибки разошлась: {CONTRACT} описывает "
-        f"{', '.join(f'{n}: {t}' for n, t in expected) or '(пусто)'}, "
-        f"а {source} отдаёт {', '.join(f'{n}: {t}' for n, t in actual) or '(пусто)'}. "
-        "Это публичный провод — правь контракт и код вместе"
-    ]
+    trusted = declared["trustedException"]
+    problems.extend(check_trusted_exception(trusted, read))
+
+    envelope = declared["envelope"]
+    missing = [name for name in ENVELOPE_PLACEHOLDERS if name not in envelope]
+    if missing:
+        return problems + [
+            f"{CONTRACT}: в methodError.envelope нет подстановок {', '.join(missing)} — "
+            "рамку не из чего собрать"
+        ]
+
+    characterization = declared["characterization"]
+    prefix = render_envelope_prefix(envelope, trusted["type"], characterization["method"])
+    if prefix not in read(characterization["source"]):
+        problems.append(
+            f"рамка разошлась со снимком провода: из {CONTRACT} собирается {prefix!r}, "
+            f"а {characterization['source']} ожидает не её. Снимок живого соединения — "
+            "единственное доказательство формы, и он обязан проверять описанную рамку"
+        )
+
+    return problems
 
 
 def parse_hub(text: str) -> set[str]:
@@ -645,6 +721,49 @@ def self_test() -> int:
         (
             "поле формы ошибки переименовано в коде",
             mutation("backend/Bugget.Http/RealtimeErrorPayload.cs", "string Title)", "string Reason)"),
+            True,
+        ),
+        (
+            "текст рамки ошибки правлен только в контракте",
+            # Текст рамки встречается в файле дважды — в пояснении и в самом значении.
+            # Мутировать нужно значение: комментарии разборщик выбрасывает.
+            mutation(
+                CONTRACT,
+                'envelope: "An unexpected error occurred invoking',
+                'envelope: "An error occurred invoking',
+            ),
+            True,
+        ),
+        (
+            "доверенный тип переименован только в контракте",
+            mutation(CONTRACT, "        type: RealtimeProblemException\n", "        type: RealtimeProblemExceptionX\n"),
+            True,
+        ),
+        (
+            "доверенный тип переименован только в коде",
+            mutation(
+                "backend/Bugget/Hubs/RealtimeProblemException.cs",
+                "class RealtimeProblemException(",
+                "class RealtimeProblemExceptionX(",
+            ),
+            True,
+        ),
+        (
+            "ожидание рамки правлено только в снимке провода",
+            mutation(
+                "backend/Bugget.IntegrationTests/Contract/ReportPageHubContractTests.cs",
+                "An unexpected error occurred invoking 'JoinReportGroupAsync' on the server.",
+                "An error occurred invoking 'JoinReportGroupAsync' on the server.",
+            ),
+            True,
+        ),
+        (
+            "граница перестала быть fail-closed",
+            mutation(
+                "backend/Bugget/Middlewares/HubExceptionHandlerFilter.cs",
+                "catch (RealtimeProblemException)",
+                "catch (HubException)",
+            ),
             True,
         ),
         (

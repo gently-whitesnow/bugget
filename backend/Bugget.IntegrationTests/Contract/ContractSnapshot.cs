@@ -3,15 +3,16 @@ using System.IO;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Снимок публичного контракта одного вызова: статус, media type и форма тела
-/// (<see cref="JsonShape"/>). Снимки лежат текстом в <c>Contract/Snapshots</c> —
-/// изменение контракта видно прямо в дифффе PR.
+/// Снимок публичного контракта одного вызова: запрос (метод и путь), статус, media type
+/// и форма тела (<see cref="JsonShape"/>). Снимки лежат текстом в
+/// <c>Contract/Snapshots</c> — изменение контракта видно прямо в дифффе PR.
 /// </summary>
 /// <remarks>
 /// Снимок падает и на смене статуса, и на переименовании поля. Перезаписать все
@@ -19,8 +20,14 @@ namespace Bugget.IntegrationTests.Contract;
 /// <c>UPDATE_CONTRACT_SNAPSHOTS=1 dotnet test backend/Bugget.IntegrationTests</c>.
 /// Отсутствующий снимок создаётся, но тест при этом падает: молча зелёный первый
 /// прогон означал бы, что контракт никто не посмотрел.
+/// <para>
+/// Строка <c>request:</c> — не украшение: по ней гейт <c>backend-contract-snapshots</c>
+/// (<c>scripts/quality/contract-snapshots.py</c>) находит операцию в
+/// <c>specs/contracts/**/openapi.yaml</c> и сверяет форму снимка со схемой ответа.
+/// Без неё соответствие снимка контракту приходилось бы угадывать по имени файла.
+/// </para>
 /// </remarks>
-internal static class ContractSnapshot
+internal static partial class ContractSnapshot
 {
     private const string UpdateEnvironmentVariable = "UPDATE_CONTRACT_SNAPSHOTS";
 
@@ -92,6 +99,7 @@ internal static class ContractSnapshot
     {
         var lines = new List<string>
         {
+            $"request: {DescribeRequest(response)}",
             $"status: {(int)response.StatusCode}",
             $"content-type: {response.Content.Headers.ContentType?.MediaType ?? "-"}",
         };
@@ -110,6 +118,47 @@ internal static class ContractSnapshot
 
         return string.Join('\n', lines);
     }
+
+    /// <summary>
+    /// Метод и шаблон маршрута — то, по чему снимок сопоставляется с операцией контракта.
+    /// Query-строка не пишется: схему ответа она не выбирает, а сценарии с разными
+    /// параметрами и без того разведены по именам снимков.
+    /// </summary>
+    /// <remarks>
+    /// Шаблон приходит заголовком <see cref="ContractHeaders.MatchedRoute"/> из таблицы
+    /// маршрутов живого хоста. Если запрос ни во что не смаршрутизировался (404 на
+    /// несуществующем пути), пишется сам путь — угадывать шаблон нечем и незачем.
+    /// </remarks>
+    private static string DescribeRequest(HttpResponseMessage response)
+    {
+        var request = response.RequestMessage;
+        if (request?.RequestUri is null)
+        {
+            // HttpClient проставляет RequestMessage на каждый ответ; пустое значение
+            // означало бы снимок, собранный не из настоящего вызова.
+            throw new InvalidOperationException(
+                "у ответа нет запроса — снимок контракта снимается только с настоящего вызова");
+        }
+
+        var path = response.Headers.TryGetValues(ContractHeaders.MatchedRoute, out var routes)
+            ? StripRouteConstraints(routes.First())
+            : request.RequestUri.IsAbsoluteUri
+                ? request.RequestUri.AbsolutePath
+                : request.RequestUri.OriginalString.Split('?')[0];
+
+        return $"{request.Method.Method} /{path.TrimStart('/')}";
+    }
+
+    /// <summary>
+    /// Убирает из шаблона ограничения маршрута: <c>{legacyId:int}</c> → <c>{legacyId}</c>.
+    /// В OpenAPI ограничений нет, а сопоставление снимка с контрактом должно быть
+    /// сравнением строк, а не разбором синтаксиса ASP.NET.
+    /// </summary>
+    private static string StripRouteConstraints(string pattern) =>
+        RouteConstraint().Replace(pattern, "{$1}");
+
+    [GeneratedRegex(@"\{([A-Za-z_][A-Za-z0-9_]*)[^}]*\}")]
+    private static partial Regex RouteConstraint();
 
     private static bool IsJson(HttpResponseMessage response)
     {

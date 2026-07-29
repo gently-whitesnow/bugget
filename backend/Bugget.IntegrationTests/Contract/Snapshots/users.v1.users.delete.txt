@@ -1,3 +1,4 @@
+request: DELETE /v1/workspaces/{workspaceId}/teams/{teamId}/users
 status: 200
 content-type: -
 body: empty

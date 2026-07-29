@@ -1,3 +1,4 @@
+request: DELETE /v2/reports/{aliasId}/links/{linkId}
 status: 200
 content-type: -
 body: empty

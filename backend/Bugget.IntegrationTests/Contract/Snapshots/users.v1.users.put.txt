@@ -1,3 +1,4 @@
+request: PUT /v1/workspaces/{workspaceId}/teams/{teamId}/users
 status: 200
 content-type: application/json
 body:

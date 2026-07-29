@@ -1,3 +1,4 @@
+request: DELETE /v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links/{provider}
 status: 400
 content-type: application/problem+json
 body:

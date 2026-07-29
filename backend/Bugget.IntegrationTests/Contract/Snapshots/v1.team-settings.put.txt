@@ -1,3 +1,4 @@
+request: PUT /v1/team-settings-sections/{sectionId}/settings/{settingId}
 status: 200
 content-type: application/json
 body:

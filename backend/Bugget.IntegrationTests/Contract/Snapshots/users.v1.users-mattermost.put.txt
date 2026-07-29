@@ -1,3 +1,4 @@
+request: PUT /v1/workspaces/{workspaceId}/teams/{teamId}/users/mattermost
 status: 204
 content-type: -
 body: empty

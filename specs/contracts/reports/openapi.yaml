@@ -131,6 +131,11 @@ paths:
                 $ref: '#/components/schemas/Report'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '404':
+          # Репорт чужой команды не отдаётся — тем же 404, что и несуществующий:
+          # существование чужого репорта не разглашается. Статус уходил на провод, не
+          # будучи описанным; нашёл гейт backend-contract-snapshots, MAIN-124.
+          $ref: '#/components/responses/NotFound'
     patch:
       operationId: Reports_PatchReport
       summary: Частичное обновление репорта.
@@ -1954,6 +1959,14 @@ components:
         application/problem+json:
           schema:
             $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+
+    NotFound:
+      description: Ресурс не найден либо принадлежит другой команде.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+
     CountsBadRequest:
       description: Некорректный батч срезов.
       content:

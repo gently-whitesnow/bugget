@@ -53,6 +53,18 @@
       ]
     },
     {
+      "id": "backend-contract-snapshots",
+      "scope": "backend",
+      "enabled": true,
+      "slow": false,
+      "workdir": ".",
+      "description": "Соответствие снимков публичного контракта (backend/Bugget.IntegrationTests/Contract/Snapshots/*.txt) схемам ответов из specs/contracts/**/openapi.yaml и shared.yaml. Закрывает щель между двумя половинами контракта: backend-contracts проверяет, что из спецификации сгенерирован код, снимок фиксирует форму ответа, но со схемой её до этого гейта не сверял никто — и поля, которых в контракте нет, спокойно уезжали на фронт (MAIN-67 дважды). Краснеет на поле снимка вне схемы, на пропавшем в снимке required-поле схемы, на разошедшемся типе (в том числе null у не-nullable), на статусе и media type, которых контракт не объявляет, и на снимке без строки request. Операция ищется по строке request: снимка — методу и шаблону маршрута, который снимок пишет из таблицы маршрутов живого хоста, а не угадывается по имени файла. Пути вне OpenAPI (handshake SignalR) перечислены в EXCEPTIONS скрипта и проверяются на протухание. Второй командой идёт самопроверка гейта. Docker не нужен: снимки — текст в репозитории. Нужен python3.",
+      "commands": [
+        "python3 scripts/quality/contract-snapshots.py",
+        "python3 scripts/quality/contract-snapshots.py --self-test"
+      ]
+    },
+    {
       "id": "backend-realtime-contract",
       "scope": "backend",
       "enabled": true,

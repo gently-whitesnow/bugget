@@ -1,3 +1,4 @@
+request: POST /v1/report-page-hub/negotiate
 status: 200
 content-type: application/json
 body:

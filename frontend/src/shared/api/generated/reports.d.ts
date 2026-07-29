@@ -1153,6 +1153,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
+        /** @description Ресурс не найден либо принадлежит другой команде. */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
         /** @description Некорректный батч срезов. */
         CountsBadRequest: {
             headers: {
@@ -1270,6 +1279,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
         };
     };
     Reports_PatchReport: {

@@ -1,3 +1,4 @@
+request: PATCH /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}
 status: 200
 content-type: application/json
 body:

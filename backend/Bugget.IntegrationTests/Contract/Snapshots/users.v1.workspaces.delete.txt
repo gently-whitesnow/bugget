@@ -1,3 +1,4 @@
+request: DELETE /v1/workspaces/{workspaceId}
 status: 403
 content-type: application/problem+json
 body:

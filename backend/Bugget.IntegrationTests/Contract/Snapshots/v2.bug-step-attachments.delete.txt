@@ -1,3 +1,4 @@
+request: DELETE /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}
 status: 200
 content-type: -
 body: empty

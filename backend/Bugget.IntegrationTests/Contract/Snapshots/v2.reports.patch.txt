@@ -1,3 +1,4 @@
+request: PATCH /v2/reports/{aliasId}
 status: 200
 content-type: application/json
 body:

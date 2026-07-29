@@ -164,7 +164,7 @@ paths:
       operationId: Users_UnlinkProviderInContext
       summary: Отвязать способ входа.
       description: |-
-        Единственный способ входа отвязать нельзя — 400 с текстовым телом.
+        Единственный способ входа отвязать нельзя — 400 с Problem Details.
       parameters:
         - $ref: '#/components/parameters/WorkspaceIdIgnored'
         - $ref: '#/components/parameters/TeamIdIgnored'
@@ -173,7 +173,10 @@ paths:
         '204':
           description: Способ входа отвязан.
         '400':
-          description: Это единственный способ входа. Тело — текст, не JSON.
+          # Описание «тело — текст, не JSON» разошлось с проводом: приложение отдаёт
+          # application/problem+json, как и остальные 400. Нашёл гейт
+          # backend-contract-snapshots, MAIN-124.
+          $ref: '#/components/responses/BadRequest'
         '404':
           description: Такой привязки у пользователя нет.
 

@@ -1,3 +1,4 @@
+request: GET /v1/reports/search
 status: 200
 content-type: application/json
 body:

@@ -1,3 +1,4 @@
+request: DELETE /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}
 status: 200
 content-type: -
 body: empty

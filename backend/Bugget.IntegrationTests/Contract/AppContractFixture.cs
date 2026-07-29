@@ -96,6 +96,9 @@ internal sealed class ContractWebApplicationFactory : WebApplicationFactory<Prog
 
         builder.ConfigureTestServices(services =>
         {
+            // Снимку контракта нужен шаблон маршрута, а не путь с идентификаторами сида.
+            services.AddSingleton<IStartupFilter, MatchedRouteStartupFilter>();
+
             // DbUp, поллеры и очереди не нужны: схему накатывает PostgresContainerFixture.
             services.RemoveAll<IHostedService>();
 

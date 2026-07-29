@@ -13,4 +13,12 @@ internal static class ContractHeaders
     public const string TeamId = "Auth-Request-Team-Id";
     public const string WorkspaceId = "Auth-Request-Workspace-Id";
     public const string WorkspaceRole = "Auth-Request-Workspace-Role";
+
+    /// <summary>
+    /// Шаблон маршрута, по которому запрос был обслужен. В боевом контуре такого
+    /// заголовка нет: его проставляет только тестовый хост
+    /// (<see cref="MatchedRouteStartupFilter"/>), чтобы снимок контракта писал шаблон
+    /// (<c>/v2/reports/{aliasId}</c>), а не конкретный путь с идентификаторами сида.
+    /// </summary>
+    public const string MatchedRoute = "X-Contract-Matched-Route";
 }

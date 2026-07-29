@@ -1,3 +1,4 @@
+request: GET /v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links
 status: 200
 content-type: application/json
 body:

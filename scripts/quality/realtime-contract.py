@@ -41,6 +41,7 @@ import sys
 from dataclasses import dataclass, field
 
 import quality_csharp as q
+from quality_yaml import YamlError, parse_yaml
 
 CONTRACT = "specs/contracts/events.yaml"
 
@@ -57,105 +58,12 @@ NON_WIRE_PARAMS = ("groupKey", "signalRConnectionId")
 
 
 #-----------------------------------------------------------------------------------------
-# Разбор YAML
-#
-# Свой разборщик, а не PyYAML: гейт обязан одинаково работать на машине разработчика и
-# на раннере CI, где ставится только dotnet и node. Поддерживается ровно то подмножество,
-# которым написан events.yaml, всё остальное — явная ошибка, а не молчаливый пропуск.
+# Разбор YAML — общий для гейтов контрактов модуль scripts/quality/quality_yaml.py.
+# Ошибка разбора того же класса, что и остальные ошибки гейта, поэтому имя оставлено
+# прежним.
 #-----------------------------------------------------------------------------------------
 
-class ContractError(SystemExit):
-    pass
-
-
-def _strip_comment(line: str) -> str:
-    quote = None
-    for i, ch in enumerate(line):
-        if quote:
-            if ch == quote:
-                quote = None
-        elif ch in "\"'":
-            quote = ch
-        elif ch == "#" and (i == 0 or line[i - 1] in " \t"):
-            return line[:i].rstrip()
-    return line.rstrip()
-
-
-def _scalar(raw: str, where: str):
-    raw = raw.strip()
-    if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in "\"'":
-        return raw[1:-1]
-    if raw in ("true", "false"):
-        return raw == "true"
-    if re.fullmatch(r"-?\d+", raw):
-        return int(raw)
-    if raw.startswith(("|", ">", "&", "*", "{", "[")):
-        raise ContractError(f"{where}: неподдерживаемый синтаксис YAML — {raw!r}")
-    return raw
-
-
-def parse_yaml(text: str, source: str):
-    """Подмножество YAML: вложенные отображения, списки, однострочные скаляры."""
-    lines: list[tuple[int, str, int]] = []
-    for number, raw in enumerate(text.splitlines(), start=1):
-        if "\t" in raw[: len(raw) - len(raw.lstrip())]:
-            raise ContractError(f"{source}:{number}: отступ табуляцией не поддерживается")
-        content = _strip_comment(raw)
-        if not content.strip():
-            continue
-        lines.append((len(content) - len(content.lstrip()), content.strip(), number))
-
-    value, pos = _parse_block(lines, 0, lines[0][0] if lines else 0, source)
-    if pos != len(lines):
-        raise ContractError(f"{source}:{lines[pos][2]}: неожиданный отступ")
-    return value
-
-
-def _parse_block(lines, pos: int, indent: int, source: str):
-    if lines[pos][1].startswith("- "):
-        return _parse_sequence(lines, pos, indent, source)
-    return _parse_mapping(lines, pos, indent, source)
-
-
-def _parse_sequence(lines, pos: int, indent: int, source: str):
-    result = []
-    while pos < len(lines) and lines[pos][0] == indent and lines[pos][1].startswith("- "):
-        item_indent, content, number = lines[pos]
-        # «- key: value» — это блок, начинающийся правее дефиса: подменяем строку и
-        # отдаём вместе с тем, что вложено под ней.
-        virtual = [(item_indent + 2, content[2:].strip(), number)]
-        pos += 1
-        while pos < len(lines) and lines[pos][0] > item_indent:
-            virtual.append(lines[pos])
-            pos += 1
-        value, consumed = _parse_block(virtual, 0, virtual[0][0], source)
-        if consumed != len(virtual):
-            raise ContractError(f"{source}:{virtual[consumed][2]}: неожиданный отступ")
-        result.append(value)
-    return result, pos
-
-
-def _parse_mapping(lines, pos: int, indent: int, source: str):
-    result: dict = {}
-    while pos < len(lines) and lines[pos][0] == indent:
-        _, content, number = lines[pos]
-        if content.startswith("- "):
-            break
-        if ":" not in content:
-            raise ContractError(f"{source}:{number}: ожидалось «ключ: значение», получено {content!r}")
-        key, _, rest = content.partition(":")
-        key = key.strip()
-        if key in result:
-            raise ContractError(f"{source}:{number}: ключ {key!r} повторяется")
-        pos += 1
-        if rest.strip():
-            result[key] = _scalar(rest, f"{source}:{number}")
-            continue
-        if pos < len(lines) and lines[pos][0] > indent:
-            result[key], pos = _parse_block(lines, pos, lines[pos][0], source)
-        else:
-            result[key] = None
-    return result, pos
+ContractError = YamlError
 
 
 #-----------------------------------------------------------------------------------------

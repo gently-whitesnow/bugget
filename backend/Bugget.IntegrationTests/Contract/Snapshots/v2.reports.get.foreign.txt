@@ -1,3 +1,4 @@
+request: GET /v2/reports/{aliasId}
 status: 404
 content-type: application/problem+json
 body:

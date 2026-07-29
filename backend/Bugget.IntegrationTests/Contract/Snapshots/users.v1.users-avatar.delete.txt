@@ -1,3 +1,4 @@
+request: DELETE /v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar
 status: 204
 content-type: -
 body: empty

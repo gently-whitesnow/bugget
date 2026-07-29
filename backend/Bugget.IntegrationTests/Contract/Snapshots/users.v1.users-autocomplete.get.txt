@@ -1,3 +1,4 @@
+request: GET /v1/workspaces/{workspaceId}/teams/{teamId}/users/autocomplete
 status: 200
 content-type: application/json
 body:

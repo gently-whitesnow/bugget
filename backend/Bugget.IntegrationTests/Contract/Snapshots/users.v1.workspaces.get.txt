@@ -1,3 +1,4 @@
+request: GET /v1/workspaces
 status: 200
 content-type: application/json
 body:

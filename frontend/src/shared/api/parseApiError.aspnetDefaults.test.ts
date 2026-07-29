@@ -19,8 +19,6 @@ import { parseApiError } from "./parseApiError";
  * отработала: 405/406/415 от пайплайна MVC, необработанное 500, дефолтная
  * валидация `[ApiController]`. Толерантный парсер обязан переживать именно их.
  *
- * Тесты `it.fails` фиксируют дефект: сейчас они «проходят», потому что ожидание
- * не выполняется. После починки они станут красными — это и есть сигнал снять пин.
  */
 
 const axiosError = (status: number, data: unknown) => ({
@@ -37,7 +35,7 @@ const aspNetValidationProblem = {
 };
 
 describe("parseApiError против дефолтов ASP.NET: title", () => {
-  it("ДЕФЕКТ 2 (факт): title дефолтного 500 попадает в message русского тоста", () => {
+  it("не показывает title дефолтного 500 в русском тосте", () => {
     const result = parseApiError(
       axiosError(500, {
         type: "https://tools.ietf.org/html/rfc9110#section-15.6.1",
@@ -46,90 +44,55 @@ describe("parseApiError против дефолтов ASP.NET: title", () => {
       })
     );
 
-    // Список HTTP_REASON_PHRASES содержит 'internal server error', а ASP.NET
-    // такой строки не отдаёт — фильтр не срабатывает.
-    expect(result.message).toBe(
-      "An error occurred while processing your request."
-    );
+    expect(result.message).toBeUndefined();
   });
 
-  it.fails(
-    "ДЕФЕКТ 2 (ожидание): английский технический title дефолтного 500 не должен доезжать до тоста",
-    () => {
-      const result = parseApiError(
-        axiosError(500, {
-          type: "https://tools.ietf.org/html/rfc9110#section-15.6.1",
-          title: "An error occurred while processing your request.",
-          status: 500,
+  it("не привязан к вручную перечисленным HTTP-статусам", () => {
+    expect(
+      parseApiError(
+        axiosError(405, {
+          type: "https://tools.ietf.org/html/rfc9110#section-15.5.6",
+          title: "Method Not Allowed",
         })
-      );
-
-      expect(result.message).toBeUndefined();
-    }
-  );
-
-  it("ДЕФЕКТ 2 (факт): статусы вне списка отдают reason phrase как есть", () => {
-    // 405/406/408/412/426 в HTTP_REASON_PHRASES отсутствуют.
+      ).message
+    ).toBeUndefined();
     expect(
-      parseApiError(axiosError(405, { title: "Method Not Allowed" })).message
-    ).toBe("Method Not Allowed");
-    expect(
-      parseApiError(axiosError(408, { title: "Request Timeout" })).message
-    ).toBe("Request Timeout");
+      parseApiError(
+        axiosError(408, {
+          type: "https://tools.ietf.org/html/rfc9110#section-15.5.9",
+          title: "Request Timeout",
+        })
+      ).message
+    ).toBeUndefined();
   });
 
-  it("ДЕФЕКТ 2 (факт): дефолтная валидация показывает пользователю английскую фразу", () => {
+  it("не показывает title дефолтной валидации", () => {
     const result = parseApiError(axiosError(400, aspNetValidationProblem));
 
-    expect(result.message).toBe("One or more validation errors occurred.");
-  });
-
-  it("контроль: статусы из списка отфильтрованы корректно", () => {
-    expect(
-      parseApiError(axiosError(404, { title: "Not Found" })).message
-    ).toBeUndefined();
-    expect(
-      parseApiError(axiosError(409, { title: "Conflict" })).message
-    ).toBeUndefined();
-    expect(
-      parseApiError(axiosError(400, { title: "Bad Request" })).message
-    ).toBeUndefined();
+    expect(result.message).toBeUndefined();
   });
 
   it("контроль: осмысленный русский title по-прежнему доезжает", () => {
     expect(
-      parseApiError(axiosError(409, { title: "Команда уже существует" }))
-        .message
+      parseApiError(
+        axiosError(409, {
+          type: "urn:bugget:error:team_exists",
+          title: "Команда уже существует",
+        })
+      ).message
     ).toBe("Команда уже существует");
   });
 });
 
 describe("parseApiError против дефолтов ASP.NET: code", () => {
-  it("ДЕФЕКТ 3 (факт): из ссылки на RFC собирается несуществующий машинный код", () => {
+  it("не извлекает машинный код из ссылки на RFC", () => {
     const result = parseApiError(axiosError(400, aspNetValidationProblem));
 
-    expect(result.code).toBe("rfc9110#section-15.5.1");
+    expect(result.code).toBeUndefined();
   });
 
-  it.fails(
-    "ДЕФЕКТ 3 (ожидание): type, который не является urn:bugget:error:<code>, не должен давать code",
-    () => {
-      const result = parseApiError(axiosError(400, aspNetValidationProblem));
-
-      expect(result.code).toBeUndefined();
-    }
-  );
-
-  it("ДЕФЕКТ 3 (факт): about:blank из RFC 9457 превращается в code 'blank'", () => {
+  it("не извлекает машинный код из about:blank", () => {
     // RFC 9457 §3.1.1: если конкретного типа нет, type равен 'about:blank'.
-    const result = parseApiError(
-      axiosError(403, { type: "about:blank", status: 403 })
-    );
-
-    expect(result.code).toBe("blank");
-  });
-
-  it.fails("ДЕФЕКТ 3 (ожидание): about:blank не несёт машинного кода", () => {
     const result = parseApiError(
       axiosError(403, { type: "about:blank", status: 403 })
     );

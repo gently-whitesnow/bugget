@@ -31,26 +31,7 @@ export interface ApiError {
   message?: string;
 }
 
-/**
- * Стандартные reason phrase из HTTP: ASP.NET подставляет их в `title` дефолтной
- * фабрики Problem Details. Английская техническая строка вида «Not Found» в русском
- * тосте хуже, чем статический текст-заглушка, поэтому такой `title` считаем
- * небезопасным для показа и отбрасываем.
- */
-const HTTP_REASON_PHRASES: Record<number, string> = {
-  400: "bad request",
-  401: "unauthorized",
-  403: "forbidden",
-  404: "not found",
-  409: "conflict",
-  415: "unsupported media type",
-  422: "unprocessable entity",
-  429: "too many requests",
-  500: "internal server error",
-  502: "bad gateway",
-  503: "service unavailable",
-  504: "gateway timeout",
-};
+const BUGGET_ERROR_TYPE_PREFIX = "urn:bugget:error:";
 
 const asRecord = (value: unknown): Record<string, unknown> | undefined =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -65,11 +46,11 @@ const asFilledString = (value: unknown): string | undefined => {
 
 const toSafeTitle = (
   title: string | undefined,
-  status: number | undefined
+  type: string | undefined
 ): string | undefined => {
   if (!title) return undefined;
-  const phrase = status === undefined ? undefined : HTTP_REASON_PHRASES[status];
-  return phrase && title.toLowerCase() === phrase ? undefined : title;
+  // Стандартный Problem Details ASP.NET несёт не наш URI type и технический title.
+  return !type || type.startsWith(BUGGET_ERROR_TYPE_PREFIX) ? title : undefined;
 };
 
 /**
@@ -78,9 +59,9 @@ const toSafeTitle = (
  * который у нас есть.
  */
 const codeFromType = (type: string | undefined): string | undefined => {
-  if (!type) return undefined;
-  const tail = type.split(/[:/]/).pop();
-  return asFilledString(tail);
+  return type?.startsWith(BUGGET_ERROR_TYPE_PREFIX)
+    ? asFilledString(type.slice(BUGGET_ERROR_TYPE_PREFIX.length))
+    : undefined;
 };
 
 /** Разбирает ошибку axios (или что угодно другое) в `ApiError`. */
@@ -98,7 +79,10 @@ export const parseApiError = (error: unknown): ApiError => {
     asFilledString(body.error) ??
     codeFromType(asFilledString(body.type));
   const detail = asFilledString(body.detail) ?? asFilledString(body.reason);
-  const title = toSafeTitle(asFilledString(body.title), status);
+  const title = toSafeTitle(
+    asFilledString(body.title),
+    asFilledString(body.type)
+  );
 
   return { status, code, detail, title, message: detail ?? title };
 };

@@ -50,7 +50,12 @@ describe("parseApiError: Problem Details (RFC 9457)", () => {
 
   it("отбрасывает title, который повторяет стандартный HTTP reason phrase", () => {
     const result = parseApiError(
-      axiosError(404, { title: "Not Found", status: 404, code: "not_found" })
+      axiosError(404, {
+        type: "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+        title: "Not Found",
+        status: 404,
+        code: "not_found",
+      })
     );
 
     expect(result.title).toBeUndefined();

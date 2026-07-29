@@ -37,6 +37,10 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
             ContractScenario.FileContent("shot.png"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await ValidationProblemDetailsContract.AssertSingleErrorAsync(
+            response,
+            "attachType",
+            "The attachType field is required.");
         await ContractSnapshot.MatchAsync("v2.bug-attachments.post.invalid", response);
     }
 

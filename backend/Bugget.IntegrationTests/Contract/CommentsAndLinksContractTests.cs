@@ -38,6 +38,11 @@ public sealed class CommentsAndLinksContractTests(AppContractFixture fixture) : 
             new { text = "" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await ValidationProblemDetailsContract.AssertSingleErrorAsync(
+            response,
+            "text",
+            "The text field is required.",
+            "The field text must be a string with a minimum length of 1 and a maximum length of 2048.");
         await ContractSnapshot.MatchAsync("v2.comments.post.invalid", response);
     }
 

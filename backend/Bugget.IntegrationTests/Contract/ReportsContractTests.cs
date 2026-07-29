@@ -35,6 +35,11 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         var response = await scenario.Client.PostAsJsonAsync("/v2/reports", new { title = "" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await ValidationProblemDetailsContract.AssertSingleErrorAsync(
+            response,
+            "title",
+            "The title field is required.",
+            "The field title must be a string with a minimum length of 1 and a maximum length of 128.");
         await ContractSnapshot.MatchAsync("v2.reports.post.invalid", response);
     }
 
@@ -263,7 +268,27 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         var response = await scenario.Client.GetAsync("/v2/reports?skip=0&take=1000");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await ValidationProblemDetailsContract.AssertSingleErrorAsync(
+            response,
+            "take",
+            "The field take must be between 1 and 100.");
         await ContractSnapshot.MatchAsync("v2.reports.list.invalid", response);
+    }
+
+    [Fact(DisplayName = "POST /v2/reports/counts:batch: вложенный ключ errors использует wire-путь scopes[0].key")]
+    public async Task CountsBatchWithoutNestedScopeKey()
+    {
+        var scenario = ContractScenario.Create(fixture);
+
+        var response = await scenario.Client.PostAsJsonAsync(
+            "/v2/reports/counts:batch",
+            new { scopes = new[] { new { statuses = new[] { 0 } } } });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await ValidationProblemDetailsContract.AssertSingleErrorAsync(
+            response,
+            "scopes[0].key",
+            "The key field is required.");
     }
 
     [Fact(DisplayName = "GET /v2/reports/legacy/{legacyId}: teamId + teamReportId для редиректа")]

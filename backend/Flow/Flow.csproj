@@ -9,5 +9,9 @@
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" />
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Bugget.Http\Bugget.Http.csproj" />
+    </ItemGroup>
     
 </Project>

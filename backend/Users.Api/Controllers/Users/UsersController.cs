@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Authentication;
-using Flow;
+using Bugget.Http;
+using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 using Microsoft.AspNetCore.Mvc;
 using Users.Api.Contracts.Generated;
 using Users.Api.Controllers.Users;
@@ -159,7 +160,7 @@ public sealed class UsersController(
         var links = await externalLinksService.GetLinksAsync(user.Id);
         if (links.Length <= 1)
         {
-            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.LastLoginMethod);
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.LastLoginMethod);
         }
 
         if (links.All(l => l.Provider != provider))
@@ -184,12 +185,12 @@ public sealed class UsersController(
 
         if (!long.TryParse(body.Source_user_id, out var sourceUserId))
         {
-            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.InvalidSourceUserId);
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.InvalidSourceUserId);
         }
 
         if (sourceUserId == user.Id)
         {
-            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.SameSourceUser);
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.SameSourceUser);
         }
 
         var (success, errorCode) = await userService.MergeUsersAsync(user.Id, sourceUserId);
@@ -197,9 +198,9 @@ public sealed class UsersController(
         {
             return errorCode switch
             {
-                "source_not_found" => Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.SourceNotFound),
-                "source_owns_workspaces" => Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.SourceOwnsWorkspaces),
-                _ => Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.MergeFailed)
+                "source_not_found" => HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.SourceNotFound),
+                "source_owns_workspaces" => HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.SourceOwnsWorkspaces),
+                _ => HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.MergeFailed)
             };
         }
 
@@ -217,7 +218,7 @@ public sealed class UsersController(
     {
         if (string.IsNullOrWhiteSpace(body.Mattermost_user_id) || body.Mattermost_user_id.Length > 64)
         {
-            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.InvalidMattermostUserId);
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.InvalidMattermostUserId);
         }
 
         var user = User.GetIdentity();

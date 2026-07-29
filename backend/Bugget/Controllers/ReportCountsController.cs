@@ -4,7 +4,8 @@ using Bugget.Entities.Authentication;
 using Bugget.Entities.DTO.Report;
 using Bugget.Mappers;
 using Bugget.Reports.Contracts.Generated;
-using Flow;
+using Bugget.Http;
+using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bugget.Controllers;
@@ -25,7 +26,7 @@ public sealed class ReportCountsController(ReportsService reportsService) : Repo
     {
         if (body?.Scopes is null)
         {
-            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.ScopesRequired);
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.ScopesRequired);
         }
 
         if (body.Scopes.Count == 0)
@@ -35,8 +36,8 @@ public sealed class ReportCountsController(ReportsService reportsService) : Repo
 
         if (body.Scopes.Count > MaxScopes)
         {
-            return Flow.ProblemDetailsFactory.Create(
-                Flow.ProblemDescriptors.ScopesLimitExceeded,
+            return HttpProblemDetailsFactory.Create(HttpContext,
+                ProblemDescriptors.ScopesLimitExceeded,
                 extensions: new Dictionary<string, object?> { ["limit"] = MaxScopes });
         }
 
@@ -45,13 +46,13 @@ public sealed class ReportCountsController(ReportsService reportsService) : Repo
         {
             if (string.IsNullOrEmpty(scope.Key))
             {
-                return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.ScopeKeyRequired);
+                return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.ScopeKeyRequired);
             }
 
             if (!seenKeys.Add(scope.Key))
             {
-                return Flow.ProblemDetailsFactory.Create(
-                    Flow.ProblemDescriptors.DuplicateScopeKey,
+                return HttpProblemDetailsFactory.Create(HttpContext,
+                    ProblemDescriptors.DuplicateScopeKey,
                     extensions: new Dictionary<string, object?> { ["key"] = scope.Key });
             }
         }

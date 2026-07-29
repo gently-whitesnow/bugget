@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Bugget.Authentication;
 using Bugget.Binders;
+using Bugget.Http;
 using Bugget.Middlewares;
 
 namespace Bugget.Extensions;
@@ -28,7 +29,7 @@ public static class MvcServiceCollectionExtensions
         })
         .AddJsonOptions(options => { options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower; })
         .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = context =>
-            Flow.ProblemDetailsFactory.CreateValidation(context.HttpContext, context.ModelState));
+            ProblemDetailsFactory.CreateValidation(context.HttpContext, context.ModelState));
 
         return services;
     }

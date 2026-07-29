@@ -16,9 +16,13 @@ HTTP-граница возвращает RFC 9457 `application/problem+json`. Е
 `urn:bugget:error:<code>`. Domain/Application продолжают передавать только свои
 ошибки и не получают зависимость от ASP.NET `ProblemDetails`.
 
-Model-state использует встроенный `ValidationProblemDetails`: словарь `errors` сохраняет
-оригинальные имена полей и сообщения. Для 5xx detail не публикуется; в ответ включается
-traceId для корреляции с журналом.
+Model-state использует встроенный `ValidationProblemDetails`: словарь `errors` содержит
+имена полей, полученные ASP.NET model binding, и сообщения. Для 5xx detail не публикуется;
+в ответ включается traceId для корреляции с журналом.
+
+HTTP-adapter живёт в API-слое, а не в `Flow`: общий код знает только RFC-механику и
+generic-дескрипторы. Каталоги прикладных ошибок принадлежат своим API-модулям; доменные
+ошибки передают свой code/title и получают HTTP-статус в adapter-расширении.
 
 ## Последствия
 

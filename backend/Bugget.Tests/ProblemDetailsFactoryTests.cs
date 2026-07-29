@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Bugget.Extensions;
-using Flow;
+using Bugget.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -19,10 +19,10 @@ public sealed class ProblemDetailsFactoryTests
     {
         var descriptor = code switch
         {
-            "invalid_period" => ProblemDescriptors.InvalidPeriod,
-            "not_found" => ProblemDescriptors.NotFound,
-            "source_owns_workspaces" => ProblemDescriptors.SourceOwnsWorkspaces,
-            _ => ProblemDescriptors.InternalServerError
+            "invalid_period" => global::Bugget.ProblemDescriptors.InvalidPeriod,
+            "not_found" => new ProblemDescriptor("not_found", "Объект не найден", 404),
+            "source_owns_workspaces" => new ProblemDescriptor("source_owns_workspaces", "Исходный аккаунт владеет рабочими пространствами", 409),
+            _ => CommonProblemDescriptors.InternalServerError
         };
 
         Assert.Equal(expectedStatus, descriptor.Status);
@@ -31,7 +31,7 @@ public sealed class ProblemDetailsFactoryTests
     [Fact]
     public void Type_and_code_are_derived_from_the_same_descriptor_code()
     {
-        var problem = GetProblem(ProblemDescriptors.DuplicateScopeKey);
+        var problem = GetProblem(global::Bugget.ProblemDescriptors.DuplicateScopeKey);
 
         Assert.Equal("urn:bugget:error:" + problem.Extensions["code"], problem.Type);
     }
@@ -39,7 +39,7 @@ public sealed class ProblemDetailsFactoryTests
     [Fact]
     public void Rfc_fields_and_extensions_preserve_their_wire_names_under_snake_case_policy()
     {
-        var json = JsonSerializer.Serialize(GetProblem(ProblemDescriptors.InvalidPeriod), new JsonSerializerOptions
+        var json = JsonSerializer.Serialize(GetProblem(global::Bugget.ProblemDescriptors.InvalidPeriod), new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
         });
@@ -88,7 +88,7 @@ public sealed class ProblemDetailsFactoryTests
     [Fact]
     public void Server_error_redacts_detail_and_has_trace_fallback()
     {
-        var problem = GetProblem(ProblemDescriptors.InternalServerError, "секрет исключения");
+        var problem = GetProblem(CommonProblemDescriptors.InternalServerError, "секрет исключения");
 
         Assert.Equal("Внутренняя ошибка сервера", problem.Title);
         Assert.Null(problem.Detail);
@@ -101,7 +101,7 @@ public sealed class ProblemDetailsFactoryTests
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 
-        await ProblemDetailsFactory.WriteAsync(context, ProblemDescriptors.InternalServerError);
+        await ProblemDetailsFactory.WriteAsync(context, CommonProblemDescriptors.InternalServerError);
         context.Response.Body.Position = 0;
         using var document = await JsonDocument.ParseAsync(context.Response.Body);
 

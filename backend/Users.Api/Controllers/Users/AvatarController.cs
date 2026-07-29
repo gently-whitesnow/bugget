@@ -1,5 +1,6 @@
 using Authentication;
-using Flow;
+using Bugget.Http;
+using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 using Flow.Routing;
 using Microsoft.AspNetCore.Mvc;
 using Users.Api.Generated;
@@ -64,12 +65,12 @@ public sealed class AvatarController(
         var content = file.Data;
         if (content.Length > MaxAvatarSize)
         {
-            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.AvatarTooLarge);
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.AvatarTooLarge);
         }
 
         if (!AllowedAvatarContentTypes.Contains(file.ContentType))
         {
-            return Flow.ProblemDetailsFactory.Create(Flow.ProblemDescriptors.AvatarFormatNotAllowed);
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.AvatarFormatNotAllowed);
         }
 
         var user = User.GetIdentity();

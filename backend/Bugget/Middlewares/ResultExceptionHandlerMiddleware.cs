@@ -1,6 +1,6 @@
 using System.Net;
 using Bugget.BO.Errors;
-using Flow;
+using Bugget.Http;
 using Monade;
 using Monade.Errors;
 using Npgsql;
@@ -19,13 +19,13 @@ public class ResultExceptionHandlerMiddleware(ILogger<ResultExceptionHandlerMidd
         }
         catch (PostgresException ex) when (ex.SqlState == "P0404")
         {
-            await ProblemDetailsFactory.WriteAsync(context, ProblemDescriptors.NotFound);
+            await ProblemDetailsFactory.WriteAsync(context, new ProblemDescriptor(BoErrors.NotFoundError.Error, BoErrors.NotFoundError.Reason, StatusCodes.Status404NotFound));
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Обработана ошибка на мидлваре");
 
-            await ProblemDetailsFactory.WriteAsync(context, ProblemDescriptors.InternalServerError);
+            await ProblemDetailsFactory.WriteAsync(context, CommonProblemDescriptors.InternalServerError);
         }
     }
 }

@@ -68,6 +68,42 @@ const wireReport: reportsComponents["schemas"]["AnalyticsReport"] = {
   bugs_added_during_regression: 1,
 };
 
+const expectedSummary: AnalyticsSummary = {
+  period: {
+    from: "2026-07-01T00:00:00Z",
+    to: "2026-07-30T00:00:00Z",
+    label: "Июль",
+  },
+  avgPhaseDurationDays: { testInitial: 2.5, testRetest: null, fix: 1 },
+  avgFullCycleDays: null,
+  reworkRate: 0.25,
+  avgRegressionCyclesWhenPresent: null,
+  reportsClosed: 4,
+  phaseTimeDistribution: { testPct: 0.6, fixPct: 0.4 },
+  topRegressionReports: [
+    { reportId: 12, title: "Падает карточка", regressionCycles: 2 },
+  ],
+  phaseTrendsWeekly: [
+    { isoWeek: "2026-W30", testDays: 1.5, fixDays: 0.5, reportsClosed: 2 },
+  ],
+};
+
+const expectedReport: AnalyticsReport = {
+  reportId: 12,
+  phaseTimeline: [
+    {
+      phase: "Test",
+      enteredAt: "2026-07-01T10:00:00Z",
+      exitedAt: null,
+      durationDays: null,
+      regressionCycleIndex: 0,
+    },
+  ],
+  regressionCycles: 2,
+  bugsByStatus: { open: 1, fixed: 2, verified: 3, rejected: 0 },
+  bugsAddedDuringRegression: 1,
+};
+
 describe("analytics на общей case-границе", () => {
   it("конверсия доходит до дна: snake_case ключей в ответе не остаётся", () => {
     const summary = convertObjectToCamel(wireSummary);
@@ -80,19 +116,18 @@ describe("analytics на общей case-границе", () => {
     ).toEqual([]);
   });
 
-  it("camelCase-форма присваивается типу модуля — второго DTO не появляется", () => {
-    const summary = convertObjectToCamel(wireSummary) as AnalyticsSummary;
-    const report = convertObjectToCamel(wireReport) as AnalyticsReport;
+  it("runtime-форма в точности совпадает с Camelized<generated>, без type assertion", () => {
+    expect(convertObjectToCamel(wireSummary)).toEqual(expectedSummary);
+    expect(convertObjectToCamel(wireReport)).toEqual(expectedReport);
 
-    expect(summary.avgPhaseDurationDays.testInitial).toBe(2.5);
-    expect(summary.avgPhaseDurationDays.testRetest).toBeNull();
-    expect(summary.phaseTimeDistribution.testPct).toBe(0.6);
-    expect(summary.topRegressionReports[0].reportId).toBe(12);
-    expect(summary.phaseTrendsWeekly[0].isoWeek).toBe("2026-W30");
-    // Значения enum-подобных схем — данные, конверсия их не трогает.
-    expect(report.phaseTimeline[0].phase).toBe("Test");
-    expect(report.phaseTimeline[0].exitedAt).toBeNull();
-    expect(report.bugsByStatus.verified).toBe(3);
-    expect(report.bugsAddedDuringRegression).toBe(1);
+    // Значения, null и исходный wire-объект конверсия не переписывает.
+    expect(expectedSummary.avgPhaseDurationDays.testInitial).toBe(2.5);
+    expect(expectedSummary.avgPhaseDurationDays.testRetest).toBeNull();
+    expect(expectedReport.phaseTimeline[0].phase).toBe("Test");
+    expect(expectedReport.phaseTimeline[0].exitedAt).toBeNull();
+    expect(wireSummary.avg_phase_duration_days.test_initial).toBe(2.5);
+    expect(wireReport.phase_timeline[0].entered_at).toBe(
+      "2026-07-01T10:00:00Z"
+    );
   });
 });

@@ -59,4 +59,15 @@ describe("searchReports", () => {
       `${contextPrefix}/v1/reports/search?skip=0&take=10`
     );
   });
+
+  /**
+   * Characterization: до миграции поиск всегда клеил `?${searchParams}`, поэтому
+   * при пустых фильтрах адрес заканчивался одиноким `?`. Провод в этом слайсе не
+   * меняется — значит и этот адрес остаётся прежним.
+   */
+  it("совсем пустой набор фильтров сохраняет хвостовой «?»", async () => {
+    await searchReports({});
+
+    expect(captured?.url).toBe(`${contextPrefix}/v1/reports/search?`);
+  });
 });

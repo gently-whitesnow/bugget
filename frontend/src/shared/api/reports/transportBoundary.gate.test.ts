@@ -44,6 +44,37 @@ describe("гейт прямых вызовов путей reports", () => {
     ).toHaveLength(1);
   });
 
+  it("краснеет на config-form: путь в поле url у .request", () => {
+    const messages = lint(
+      'appApi.request({ url: "/v2/reports", method: "get" });'
+    );
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].message).toContain("src/shared/api/reports");
+  });
+
+  it("краснеет на config-form с template-путём и на разложенном конфиге", () => {
+    expect(
+      lint("appApi.request({ method: `get`, url: `/v2/reports/${id}/bugs` });")
+    ).toHaveLength(1);
+    expect(
+      lint('appApi.request({ ...config, url: "/v2/reports/counts:batch" });')
+    ).toHaveLength(1);
+  });
+
+  it("краснеет на вызове самого инстанса и на пути внутри config второго аргумента", () => {
+    expect(lint('appApi({ url: "/v2/reports" });')).toHaveLength(1);
+    expect(
+      lint("appApi.get(base, { url: `/v2/reports/${id}`, timeout: 1000 });")
+    ).toHaveLength(1);
+  });
+
+  it("краснеет на обходе axios через fetch", () => {
+    expect(
+      lint('fetch("/v2/reports/counts:batch", { method: "POST" });')
+    ).toHaveLength(1);
+  });
+
   it("вызов операции контракта не трогает", () => {
     const messages = lint(
       'request("/v2/reports/{aliasId}", "get", { path: { aliasId } });'

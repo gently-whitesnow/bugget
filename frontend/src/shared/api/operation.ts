@@ -39,6 +39,8 @@ type OperationOf<
   M extends MethodsOf<TPaths[P]>,
 > = M extends keyof TPaths[P] ? Present<TPaths[P][M]> : never;
 
+type ParametersOf<O> = O extends { parameters: infer P } ? P : never;
+
 type PathParamsOf<O> = O extends { parameters: { path?: infer T } }
   ? Present<T>
   : never;
@@ -46,6 +48,22 @@ type PathParamsOf<O> = O extends { parameters: { path?: infer T } }
 type QueryOf<O> = O extends { parameters: { query?: infer T } }
   ? Present<T>
   : never;
+
+/**
+ * Обязателен ли query у операции. Контракт различает две вещи: `query?: {...}` —
+ * фильтры, которых может не быть (список, поиск), и `query: {...}` — параметр,
+ * без которого ручка не имеет смысла (`attachType` у загрузки вложения). Если
+ * стереть эту разницу, пропуск обязательного query пройдёт компиляцию и ручка
+ * ответит 400 в рантайме.
+ *
+ * Признак — `undefined` в типе свойства: у необязательного свойства он есть,
+ * у обязательного нет.
+ */
+type QueryIsOptional<O> = "query" extends keyof ParametersOf<O>
+  ? undefined extends ParametersOf<O>["query"]
+    ? true
+    : false
+  : true;
 
 type BodyContentOf<O> = O extends { requestBody: { content: infer C } }
   ? C
@@ -94,7 +112,9 @@ type PathArg<O> = [PathParamsOf<O>] extends [never]
 
 type QueryArg<O> = [QueryOf<O>] extends [never]
   ? object
-  : { query?: QueryOf<O> };
+  : QueryIsOptional<O> extends true
+    ? { query?: QueryOf<O> }
+    : { query: QueryOf<O> };
 
 type BodyArg<O> = [JsonBodyOf<O>] extends [never]
   ? object
@@ -131,6 +151,17 @@ export type OperationQuery<
   P extends keyof TPaths,
   M extends MethodsOf<TPaths[P]>,
 > = QueryOf<OperationOf<TPaths, P, M>>;
+
+/**
+ * Аргументы вызова операции — ровно то, что требует её запись в контракте.
+ * Экспортируется для type-level проверок: обязательность query и тела должна
+ * фиксироваться тестом, а не только читаться в этом файле.
+ */
+export type OperationCallArgs<
+  TPaths,
+  P extends keyof TPaths,
+  M extends MethodsOf<TPaths[P]>,
+> = OperationArgs<OperationOf<TPaths, P, M>>;
 
 const interpolatePath = (
   template: string,
@@ -175,10 +206,16 @@ export const createOperationRequest =
     const { path: pathParams, query, body, multipart } = args as RuntimeArgs;
 
     const url = interpolatePath(path, pathParams);
-    const search = query ? buildQueryString(query) : "";
+
+    // «Query не передан» и «query передан, но пуст» — разные адреса, и провод
+    // здесь менять нельзя: рукописные вызовы списка и поиска всегда клеили
+    // `?${searchParams}`, поэтому у пустых фильтров хвостовой `?` был и остаётся.
+    // Ручка без query (карточка, DELETE) как раньше уходит без него вовсе.
+    const search =
+      query === undefined ? undefined : `?${buildQueryString(query)}`;
 
     const response = await instance.request({
-      url: search ? `${url}?${search}` : url,
+      url: search === undefined ? url : `${url}${search}`,
       method: method as HttpMethod,
       data: multipart ? toFormData(multipart) : body,
       // Тот же заголовок, что и раньше: по нему интерсептор понимает, что тело

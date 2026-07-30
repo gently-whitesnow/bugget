@@ -1,6 +1,11 @@
 type Props = {
   title: string;
-  description?: string;
+  /**
+   * `null` — законное значение с провода: в контракте `Setting.description`
+   * обязателен по присутствию ключа и nullable по значению. Рендер этого и так
+   * не различал, тип теперь говорит правду.
+   */
+  description?: string | null;
 };
 
 export const SettingLabel = ({ title, description }: Props) => {

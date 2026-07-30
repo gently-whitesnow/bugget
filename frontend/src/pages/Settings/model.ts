@@ -7,7 +7,7 @@ import {
   updateUserSetting,
   updateWorkspaceSetting,
 } from "./api/settings";
-import type { SettingsSectionsResponse } from "./api/contracts";
+import type { SettingValues, SettingsSectionsResponse } from "./api/contracts";
 import { notificationMessages, notifyErrorRequested } from "@/shared/model";
 
 // Kaiten Boards
@@ -57,7 +57,7 @@ type SettingsStore = {
 type UpdateSettingParams = {
   sectionId: string;
   settingId: string;
-  values: string[];
+  values: SettingValues;
 };
 
 // Events

@@ -2,7 +2,7 @@ import { SettingLabel } from "./SettingLabel";
 
 type Props = {
   title: string;
-  description?: string;
+  description?: string | null;
   isChecked: boolean;
   onChange: (checked: boolean) => void;
   isUpdating: boolean;

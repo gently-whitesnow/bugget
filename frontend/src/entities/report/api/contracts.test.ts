@@ -1,18 +1,26 @@
 import { describe, expect, it } from "vitest";
 import type { components } from "@/shared/api/generated/reports";
 import type { Camelized } from "@/shared/lib/types";
-import type { AttachmentResponse } from "./contracts";
+import type { BugClientEntity } from "../model/types";
+import type {
+  AttachmentResponse,
+  BugResponse,
+  CommentResponse,
+  CommentSummaryResponse,
+  ReportResponse,
+} from "./contracts";
 
 /**
- * Карточка репорта (`GET /v2/reports/{aliasId}`) пока читается рукописным DTO —
- * перевод на сгенерированный `Report` идёт отдельным слайсом. Пока так, форма
- * вложения в этом DTO обязана совпадать с публичной формой контракта: сужение
- * MAIN-63 убрало с провода `storage_key`, `storage_kind`, `length_bytes`,
- * `mime_type` и `is_gzip_compressed`, и рукописный тип не должен их вернуть —
- * ни объявлением мёртвого поля, ни потерей живого.
+ * Формы модуля `reports` выведены из контракта, поэтому проверять «совпадает ли
+ * DTO с yaml» больше нечего — совпадение обеспечено выводом типа. Что проверять
+ * нужно, так это сужения, которые фронт делает поверх контракта: у каждого есть
+ * причина, и ни одно не должно съесть живое поле провода молча.
+ *
+ * Равенства держит `tsc --noEmit` (гейт `frontend-typecheck`); тест фиксирует
+ * намерение и падает вместе с типами.
  */
 
-type WireAttachment = components["schemas"]["AttachmentSummary"];
+type Schemas = components["schemas"];
 
 /** Строгое равенство типов: при расхождении `false` не присвоится `true`. */
 type Equal<A, B> =
@@ -20,14 +28,64 @@ type Equal<A, B> =
     ? true
     : false;
 
-const cardAttachmentMatchesWire: Equal<
-  keyof Camelized<WireAttachment>,
-  keyof AttachmentResponse
+const cardIsWireReport: Equal<
+  ReportResponse,
+  Camelized<Schemas["Report"]>
 > = true;
 
-describe("DTO карточки репорта", () => {
-  it("описывает ровно публичную форму вложения из контракта", () => {
-    // Равенство держит `tsc --noEmit` (гейт frontend-typecheck); тест фиксирует намерение.
-    expect(cardAttachmentMatchesWire).toBe(true);
+const bugIsWireBug: Equal<BugResponse, Camelized<Schemas["Bug"]>> = true;
+
+const attachmentIsWireSummary: Equal<
+  AttachmentResponse,
+  Camelized<Schemas["AttachmentSummary"]>
+> = true;
+
+const commentIsWireComment: Equal<
+  CommentResponse,
+  Camelized<Schemas["Comment"]>
+> = true;
+
+/**
+ * Ответ создания и обновления комментария вложений не отдаёт: `CommentSummary`
+ * отличается от `Comment` ровно отсутствием `attachments`.
+ */
+const commentSummaryHasNoAttachments: Equal<
+  keyof CommentSummaryResponse,
+  Exclude<keyof CommentResponse, "attachments">
+> = true;
+
+/**
+ * Баг в сторе — тот же баг провода без `steps` (у шагов свой стор) плюс
+ * клиентские поля. `reportId` здесь alias репорта, а не числовой `report_id`
+ * провода: по нему баги группируются в сторе.
+ */
+const storeBugKeepsEveryWireField: Equal<
+  keyof BugClientEntity,
+  Exclude<keyof BugResponse, "steps"> | "clientId" | "isLocalOnly"
+> = true;
+
+const storeBugReportIdIsAlias: Equal<BugClientEntity["reportId"], string> =
+  true;
+const wireBugReportIdIsNumber: Equal<BugResponse["reportId"], number> = true;
+
+describe("контракт модуля reports на фронте", () => {
+  it("карточка, баг, вложение и комментарий описаны формой контракта", () => {
+    expect(cardIsWireReport).toBe(true);
+    expect(bugIsWireBug).toBe(true);
+    expect(attachmentIsWireSummary).toBe(true);
+    expect(commentIsWireComment).toBe(true);
+  });
+
+  it("ответ создания комментария — тот же комментарий без вложений", () => {
+    expect(commentSummaryHasNoAttachments).toBe(true);
+  });
+
+  it("баг в сторе не теряет полей провода, кроме шагов", () => {
+    expect(storeBugKeepsEveryWireField).toBe(true);
+  });
+
+  it("reportId в сторе — alias, на проводе — число; их не путают", () => {
+    expect(storeBugReportIdIsAlias).toBe(true);
+    expect(wireBugReportIdIsNumber).toBe(true);
   });
 });

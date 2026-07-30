@@ -1,6 +1,7 @@
 import { createReport, fetchReport, patchReport } from "./api";
 import type {
   CreateReportResponse,
+  PatchBugResponse,
   PatchReportRequest,
   PatchReportResponse,
   ReportResponse,
@@ -23,6 +24,7 @@ import type {
 } from "@/shared/model";
 import { notificationMessages, notifyErrorRequested } from "@/shared/model";
 import type { BugClientEntity } from "./model/types";
+import { bugFromSocket } from "./lib/fromSocket";
 
 /**
  * Эффекты
@@ -99,14 +101,8 @@ export const createBugSocketEvent = createEvent<{
   reportId: string;
   bug: CreateBugSocketResponse;
 }>();
-export const updateBugFxDoneDataEvent = createEvent<{
-  id: number;
-  title: string | null;
-  receive: string | null;
-  expect: string | null;
-  status: number;
-  updatedAt: string;
-}>();
+// Payload — ответ PATCH бага из контракта, а не его рукописная копия.
+export const updateBugFxDoneDataEvent = createEvent<PatchBugResponse>();
 export const patchBugSocketEvent = createEvent<{
   bugId: number;
   patch: PatchBugSocketResponse;
@@ -132,8 +128,11 @@ export const $initialReportStore = createStore<ReportResponse | null>(null)
     pastResponsibleUserId: report.responsibleUserId,
     creatorUserId: report.creatorUserId,
     creatorType: report.creatorType,
+    creatorTeamId: report.creatorTeamId,
     createdAt: report.createdAt,
     updatedAt: report.updatedAt,
+    // Свежесозданный репорт: аналитика его учитывает, содержимого ещё нет.
+    isExcludedFromAnalytics: false,
     participantsUserIds: [],
     links: [],
     bugs: [],
@@ -185,10 +184,7 @@ export const $updatedAtStore = createStore<string>(new Date().toISOString())
   .on(getReportFx.doneData, (_, report) => report.updatedAt)
   .on(createReportFx.doneData, (_, report) => report.updatedAt)
   .on(patchReportFx.doneData, (_, report) => report.updatedAt)
-  .on(patchReportSocketEvent, (_, report) => {
-    console.log("🔄 [Report] Updated at:", report.updatedAt);
-    return report.updatedAt;
-  })
+  .on(patchReportSocketEvent, (_, report) => report.updatedAt)
   .reset(clearReport);
 
 export const $reportIdStore = createStore<string | null>(null)
@@ -309,24 +305,9 @@ export const $bugsStore = createStore<Record<number, BugClientEntity>>({})
   .on(createBugSocketEvent, (state, { bug, reportId }) => {
     if (state[bug.id]) return state;
 
-    return {
-      ...state,
-      [bug.id]: {
-        id: bug.id,
-        reportId,
-        title: bug.title,
-        receive: bug.receive,
-        expect: bug.expect,
-        creatorUserId: bug.creatorUserId,
-        createdAt: bug.createdAt,
-        updatedAt: bug.updatedAt,
-        status: bug.status,
-        attachments: null,
-        comments: null,
-        clientId: bug.id,
-        isLocalOnly: false,
-      },
-    };
+    // Payload realtime-события переводит в сущность стора явный адаптер:
+    // все поля, включая `creatorType`, приходят с провода, а не из константы.
+    return { ...state, [bug.id]: bugFromSocket(bug, reportId) };
   })
   .on(updateBugFxDoneDataEvent, (state, updatedBug) => {
     const existingBug = state[updatedBug.id];

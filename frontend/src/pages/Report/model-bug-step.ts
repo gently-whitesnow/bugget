@@ -10,22 +10,46 @@ import {
   renameBugStepAttachment,
 } from "@/entities/report";
 import type { BugStepRequest, BugStepResponse } from "@/entities/report";
+import { attachmentFromSocket, bugStepFromSocket } from "@/entities/report";
 import { AttachmentTypes } from "@/shared/config";
 import type { BugStep, Attachment } from "@/entities/report";
+import type {
+  AttachmentSocketResponse,
+  BugStepSocketResponse,
+} from "@/shared/model";
 
 const sortSteps = (steps: BugStep[]) =>
   [...steps].sort((a, b) => a.stepNumber - b.stepNumber);
 
-const mapStepResponse = (step: BugStepResponse): BugStep => ({
-  id: step.id,
-  bugId: step.bugId,
-  text: step.text,
-  stepNumber: step.stepNumber,
-  creatorUserId: step.creatorUserId,
-  createdAt: step.createdAt,
-  updatedAt: step.updatedAt,
-  attachments: step.attachments || null,
-});
+/**
+ * Обновляет шаг по его id, не зная бага: события SignalR о вложениях приносят
+ * только `entityId` шага. Если шага нет или обновление ничего не меняет
+ * (`patch` вернул `null`), стор остаётся прежним.
+ */
+const patchStepById = (
+  state: Record<number, BugStep[]>,
+  stepId: number,
+  patch: (step: BugStep) => BugStep | null
+): Record<number, BugStep[]> => {
+  for (const [bugId, steps] of Object.entries(state)) {
+    const idx = steps.findIndex((step) => step.id === stepId);
+    if (idx === -1) continue;
+
+    const updated = patch(steps[idx]);
+    if (!updated) return state;
+
+    return {
+      ...state,
+      [Number(bugId)]: [
+        ...steps.slice(0, idx),
+        updated,
+        ...steps.slice(idx + 1),
+      ],
+    };
+  }
+
+  return state;
+};
 
 /**
  * Сторы
@@ -39,16 +63,14 @@ export const createBugStepFx = createEffect<
   { reportId: string; bugId: number; payload: BugStepRequest },
   BugStep
 >(async ({ reportId, bugId, payload }) => {
-  const step = await createBugStep(reportId, bugId, payload);
-  return mapStepResponse(step);
+  return await createBugStep(reportId, bugId, payload);
 });
 
 export const patchBugStepFx = createEffect<
   { reportId: string; bugId: number; stepId: number; payload: BugStepRequest },
   BugStep
 >(async ({ reportId, bugId, stepId, payload }) => {
-  const step = await patchBugStep(reportId, bugId, stepId, payload);
-  return mapStepResponse(step);
+  return await patchBugStep(reportId, bugId, stepId, payload);
 });
 
 export const deleteBugStepFx = createEffect<
@@ -64,23 +86,19 @@ export const updateBugStepsOrderFx = createEffect<
   { bugId: number; steps: BugStep[] }
 >(async ({ reportId, bugId, stepIds }) => {
   const steps = await updateBugStepsOrder(reportId, bugId, { stepIds });
-  return { bugId, steps: steps.map(mapStepResponse) };
+  return { bugId, steps };
 });
 
 export const createBugStepAttachmentFx = createEffect<
   { reportId: string; bugId: number; stepId: number; file: File },
   { bugId: number; stepId: number; attachment: Attachment }
 >(async ({ reportId, bugId, stepId, file }) => {
-  const result = await createBugStepAttachment(reportId, bugId, stepId, file);
-  const attachment: Attachment = {
-    id: result.id,
-    entityId: result.entityId,
-    attachType: result.attachType,
-    createdAt: result.createdAt,
-    creatorUserId: result.creatorUserId,
-    fileName: result.fileName,
-    hasPreview: result.hasPreview,
-  };
+  const attachment = await createBugStepAttachment(
+    reportId,
+    bugId,
+    stepId,
+    file
+  );
   return { bugId, stepId, attachment };
 });
 
@@ -143,11 +161,12 @@ export const updateBugStepsOrderEvent = createEvent<{
   stepIds: number[];
 }>();
 
-// socket события
-export const createBugStepSocketEvent = createEvent<BugStepResponse>();
+// socket события: payload описан типами realtime-контракта (`events.yaml`), а не
+// HTTP-схемами; в сущности стора его переводят адаптеры `*FromSocket` (ADR-0007).
+export const createBugStepSocketEvent = createEvent<BugStepSocketResponse>();
 export const patchBugStepSocketEvent = createEvent<{
   bugId: number;
-  step: BugStepResponse;
+  step: BugStepSocketResponse;
 }>();
 export const deleteBugStepSocketEvent = createEvent<{
   bugId: number;
@@ -155,10 +174,12 @@ export const deleteBugStepSocketEvent = createEvent<{
 }>();
 export const updateBugStepsOrderSocketEvent = createEvent<{
   bugId: number;
-  steps: BugStepResponse[];
+  steps: BugStepSocketResponse[];
 }>();
-export const createBugStepAttachmentSocketEvent = createEvent<Attachment>();
-export const bugStepAttachmentChangedSocketEvent = createEvent<Attachment>();
+export const createBugStepAttachmentSocketEvent =
+  createEvent<AttachmentSocketResponse>();
+export const bugStepAttachmentChangedSocketEvent =
+  createEvent<AttachmentSocketResponse>();
 export const deleteBugStepAttachmentSocketEvent = createEvent<{
   stepId: number;
   attachmentId: number;
@@ -171,7 +192,7 @@ $bugStepsStore
   .on(setBugStepsEvent, (state, payload) => {
     const updatedState = { ...state };
     payload.forEach(({ bugId, steps }) => {
-      updatedState[bugId] = sortSteps(steps.map(mapStepResponse));
+      updatedState[bugId] = sortSteps(steps);
     });
     return updatedState;
   })
@@ -275,8 +296,8 @@ $bugStepsStore
       };
     }
   )
-  .on(createBugStepSocketEvent, (state, step) => {
-    const mappedStep = mapStepResponse(step);
+  .on(createBugStepSocketEvent, (state, payload) => {
+    const mappedStep = bugStepFromSocket(payload);
     const existingSteps = state[mappedStep.bugId] || [];
     if (existingSteps.some((item) => item.id === mappedStep.id)) return state;
 
@@ -289,7 +310,7 @@ $bugStepsStore
     const existingSteps = state[bugId] || [];
     if (!existingSteps.length) return state;
 
-    const mappedStep = mapStepResponse({ ...step, bugId });
+    const mappedStep = bugStepFromSocket({ ...step, bugId });
 
     return {
       ...state,
@@ -314,7 +335,7 @@ $bugStepsStore
     );
 
     const mergedSteps = steps.map((step) => {
-      const mapped = mapStepResponse(step);
+      const mapped = bugStepFromSocket(step);
       return {
         ...mapped,
         attachments:
@@ -327,103 +348,38 @@ $bugStepsStore
       [bugId]: sortSteps(mergedSteps),
     };
   })
-  .on(createBugStepAttachmentSocketEvent, (state, attachment) => {
-    if (attachment.attachType !== AttachmentTypes.BUG_STEP) return state;
-    const stepId = attachment.entityId;
+  .on(createBugStepAttachmentSocketEvent, (state, payload) => {
+    if (payload.attachType !== AttachmentTypes.BUG_STEP) return state;
 
-    let updatedState = state;
+    const attachment = attachmentFromSocket(payload);
 
-    for (const [bugId, steps] of Object.entries(state)) {
-      const idx = steps.findIndex((step) => step.id === stepId);
-      if (idx === -1) continue;
+    return patchStepById(state, payload.entityId, (step) => {
+      const currentAttachments = step.attachments || [];
+      if (currentAttachments.some((a) => a.id === attachment.id)) return null;
 
-      const currentStep = steps[idx];
-      const currentAttachments = currentStep.attachments || [];
-
-      if (currentAttachments.some((a) => a.id === attachment.id)) {
-        return state;
-      }
-
-      const updatedStep = {
-        ...currentStep,
-        attachments: [...currentAttachments, attachment],
-      };
-
-      updatedState = {
-        ...state,
-        [Number(bugId)]: [
-          ...steps.slice(0, idx),
-          updatedStep,
-          ...steps.slice(idx + 1),
-        ],
-      };
-
-      break;
-    }
-
-    return updatedState;
+      return { ...step, attachments: [...currentAttachments, attachment] };
+    });
   })
-  .on(bugStepAttachmentChangedSocketEvent, (state, attachment) => {
-    if (attachment.attachType !== AttachmentTypes.BUG_STEP) return state;
+  .on(bugStepAttachmentChangedSocketEvent, (state, payload) => {
+    if (payload.attachType !== AttachmentTypes.BUG_STEP) return state;
 
-    const stepId = attachment.entityId;
-    let updatedState = state;
+    const attachment = attachmentFromSocket(payload);
 
-    for (const [bugId, steps] of Object.entries(state)) {
-      const idx = steps.findIndex((step) => step.id === stepId);
-      if (idx === -1) continue;
-
-      const currentStep = steps[idx];
-      const updatedStep = {
-        ...currentStep,
-        attachments: (currentStep.attachments || []).map((item) =>
-          item.id === attachment.id ? { ...item, ...attachment } : item
-        ),
-      };
-
-      updatedState = {
-        ...state,
-        [Number(bugId)]: [
-          ...steps.slice(0, idx),
-          updatedStep,
-          ...steps.slice(idx + 1),
-        ],
-      };
-
-      break;
-    }
-
-    return updatedState;
+    return patchStepById(state, payload.entityId, (step) => ({
+      ...step,
+      attachments: (step.attachments || []).map((item) =>
+        item.id === attachment.id ? attachment : item
+      ),
+    }));
   })
-  .on(deleteBugStepAttachmentSocketEvent, (state, { stepId, attachmentId }) => {
-    let updatedState = state;
-
-    for (const [bugId, steps] of Object.entries(state)) {
-      const idx = steps.findIndex((step) => step.id === stepId);
-      if (idx === -1) continue;
-
-      const currentStep = steps[idx];
-      const updatedStep = {
-        ...currentStep,
-        attachments: (currentStep.attachments || []).filter(
-          (item) => item.id !== attachmentId
-        ),
-      };
-
-      updatedState = {
-        ...state,
-        [Number(bugId)]: [
-          ...steps.slice(0, idx),
-          updatedStep,
-          ...steps.slice(idx + 1),
-        ],
-      };
-
-      break;
-    }
-
-    return updatedState;
-  });
+  .on(deleteBugStepAttachmentSocketEvent, (state, { stepId, attachmentId }) =>
+    patchStepById(state, stepId, (step) => ({
+      ...step,
+      attachments: (step.attachments || []).filter(
+        (item) => item.id !== attachmentId
+      ),
+    }))
+  );
 
 /**
  * Сэмплы

@@ -1,13 +1,13 @@
 import { createEffect } from "effector";
-import { appApi } from "@/shared/api";
+import { reportsApi } from "@/shared/api";
 
 /**
  * Effector-модель тогла «исключить репорт из аналитики».
  *
- * PATCH /v2/reports/{id}. Тело пишется в camelCase, как и весь код фронта:
- * `is_excluded_from_analytics` на проводе делает интерсептор
- * (`shared/api/instances/base.ts`). Рукописный snake_case здесь означал бы
- * второе, независимое от контракта представление тела запроса.
+ * Вызывает операцию `PATCH /v2/reports/{aliasId}` из `shared/api/reports`: путь,
+ * метод и форма тела приходят из контракта. Тело пишется в camelCase, как и весь
+ * код фронта, — `is_excluded_from_analytics` на проводе делает интерсептор
+ * (ADR-0009).
  */
 
 type ToggleArgs = {
@@ -17,7 +17,7 @@ type ToggleArgs = {
 
 export const toggleExcludeFromAnalyticsFx = createEffect<ToggleArgs, void>(
   async ({ reportId, value }) => {
-    await appApi.patch(`/v2/reports/${reportId}`, {
+    await reportsApi.patchReport(String(reportId), {
       isExcludedFromAnalytics: value,
     });
   }

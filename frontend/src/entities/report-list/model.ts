@@ -1,5 +1,5 @@
 import { createEffect, createStore, sample } from "effector";
-import { appApi, fetchUsers } from "@/shared/api";
+import { fetchUsers, reportsApi } from "@/shared/api";
 import { ReportStatuses } from "@/shared/config";
 import type {
   ListReportsResponse,
@@ -38,26 +38,16 @@ export const loadReportsFx = createEffect<
     offset = 0,
     take,
   }) => {
-    const searchParams = new URLSearchParams();
-    if (userId) searchParams.append("userId", userId);
-    if (teamId) searchParams.append("teamId", teamId);
-    if (statuses) {
-      for (const status of statuses) {
-        searchParams.append("reportStatuses", String(status));
-      }
-    }
-    if (creatorTypes) {
-      for (const ct of creatorTypes) {
-        searchParams.append("creatorTypes", String(ct));
-      }
-    }
-    searchParams.append("skip", String(offset));
-    if (take != null) searchParams.append("take", String(take));
-
-    const { data } = await appApi.get<ListReportsResponse>(
-      `/v2/reports?${searchParams.toString()}`
-    );
-    return data;
+    // Одна реализация операции LIST на весь фронт — в shared/api/reports.
+    // Пустой фильтр по пользователю и команде не отправляется, как и раньше.
+    return await reportsApi.listReports({
+      userId: userId || undefined,
+      teamId: teamId || undefined,
+      reportStatuses: statuses,
+      creatorTypes,
+      skip: offset,
+      take,
+    });
   }
 );
 

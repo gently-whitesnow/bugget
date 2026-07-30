@@ -1,11 +1,13 @@
-import { AttachmentTypes } from "@/shared/config";
+import type { AttachmentWire } from "./wire";
 
-export type Attachment = {
-  id: number;
-  entityId: number;
-  attachType: AttachmentTypes;
-  createdAt: string;
-  creatorUserId: string;
-  fileName: string;
-  hasPreview: boolean;
-};
+/**
+ * Вложение в том виде, в котором его отдаёт контракт модуля `reports`: и внутри
+ * репорта, и в ответах ручек загрузки и переименования форма одна.
+ *
+ * Выведена из операции, а не описана руками: рукописный DTO — второе
+ * представление тела, которое расходится с yaml молча (ADR-0009).
+ *
+ * `attachType` здесь `number`, как в контракте; значения перечислены в
+ * `AttachmentTypes` (`shared/config`) и совпадают с ним 0..3.
+ */
+export type Attachment = AttachmentWire;

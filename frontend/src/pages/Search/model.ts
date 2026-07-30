@@ -12,19 +12,17 @@ import { fetchUsers } from "@/entities/user";
 
 export const searchFx = createEffect<SearchRequestQueryParams, SearchResponse>(
   async (params: SearchRequestQueryParams) => {
-    const searchParams = new URLSearchParams();
-    if (params.query) searchParams.append("query", params.query);
-    if (params.sort) searchParams.append("sort", params.sort);
-    if (params.userId) searchParams.append("userId", params.userId);
-    if (params.teamId) searchParams.append("teamId", params.teamId);
-    if (params.skip != null) searchParams.append("skip", String(params.skip));
-    if (params.take != null) searchParams.append("take", String(params.take));
-    if (params.reportStatuses) {
-      for (const status of params.reportStatuses) {
-        searchParams.append("reportStatuses", String(status));
-      }
-    }
-    const result = await searchReports(searchParams.toString());
+    // Пустые фильтры не уходят в URL — как и раньше; имена параметров теперь
+    // берутся из контракта (`Search_SearchReports`), а не набираются строками.
+    const result = await searchReports({
+      query: params.query || undefined,
+      sort: params.sort || undefined,
+      userId: params.userId || undefined,
+      teamId: params.teamId || undefined,
+      skip: params.skip,
+      take: params.take,
+      reportStatuses: params.reportStatuses,
+    });
     return result || { reports: [], total: 0 };
   }
 );

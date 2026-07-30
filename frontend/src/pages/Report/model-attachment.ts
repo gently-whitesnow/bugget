@@ -12,8 +12,9 @@ import {
   uploadAttachment,
 } from "@/entities/report";
 import type { AttachmentResponse } from "@/entities/report";
-import { Attachment } from "@/entities/report";
+import { Attachment, attachmentFromSocket } from "@/entities/report";
 import { notificationMessages, notifyErrorRequested } from "@/shared/model";
+import type { AttachmentSocketResponse } from "@/shared/model";
 
 import { setBugsEvent } from "@/entities/report";
 
@@ -123,9 +124,12 @@ export const deleteAttachmentEvent = createEvent<{
   attachmentId: number;
 }>();
 
-// socket события
-export const bugAttachmentCreatedSocketEvent = createEvent<Attachment>();
-export const bugAttachmentChangedSocketEvent = createEvent<Attachment>();
+// socket события: payload realtime-контракта, в сущность стора его переводит
+// адаптер `attachmentFromSocket` (ADR-0007).
+export const bugAttachmentCreatedSocketEvent =
+  createEvent<AttachmentSocketResponse>();
+export const bugAttachmentChangedSocketEvent =
+  createEvent<AttachmentSocketResponse>();
 export const bugAttachmentDeletedSocketEvent = createEvent<{
   bugId: number;
   attachmentId: number;
@@ -167,21 +171,14 @@ $attachmentsStore.on(uploadAttachmentFx.doneData, (state, { attachment }) => {
 });
 
 $attachmentsStore
-  .on(bugAttachmentCreatedSocketEvent, (state, attachment) => ({
+  .on(bugAttachmentCreatedSocketEvent, (state, payload) => ({
     ...state,
-    [attachment.id]: attachment,
+    [payload.id]: attachmentFromSocket(payload),
   }))
-  .on(bugAttachmentChangedSocketEvent, (state, attachment) => {
-    const current = state[attachment.id];
-    if (!current) return state;
+  .on(bugAttachmentChangedSocketEvent, (state, payload) => {
+    if (!state[payload.id]) return state;
 
-    return {
-      ...state,
-      [attachment.id]: {
-        ...current,
-        ...attachment,
-      },
-    };
+    return { ...state, [payload.id]: attachmentFromSocket(payload) };
   })
   .on(bugAttachmentDeletedSocketEvent, (state, { attachmentId }) => {
     const newState = { ...state };

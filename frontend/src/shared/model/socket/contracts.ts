@@ -1,6 +1,19 @@
 import { ReportStatuses } from "@/shared/config";
 
-type Attachment = {
+/**
+ * Payload'ы realtime-событий.
+ *
+ * Это отдельный контракт: он описан в `specs/contracts/events.yaml`, ничего из
+ * него не генерируется, форму сообщений менять нельзя (ADR-0007). Поэтому типы
+ * здесь свои и HTTP-схемы модуля `reports` сюда не подставляются, даже когда
+ * формы сегодня совпадают: изменение OpenAPI не должно молча менять типы
+ * realtime-пути. Перевод payload'а в сущность стора делают явные адаптеры
+ * (`entities/report/lib/fromSocket.ts`).
+ *
+ * Сообщения SignalR приходят в camelCase и конверсию регистра не проходят.
+ */
+
+export type AttachmentSocketResponse = {
   id: number;
   entityId: number;
   attachType: number;
@@ -10,7 +23,7 @@ type Attachment = {
   hasPreview: boolean;
 };
 
-type BugStep = {
+export type BugStepSocketResponse = {
   id: number;
   bugId: number;
   text: string;
@@ -18,12 +31,18 @@ type BugStep = {
   creatorUserId: string;
   createdAt: string;
   updatedAt: string;
-  attachments: Attachment[] | null;
+  attachments: AttachmentSocketResponse[] | null;
 };
 
-type ReportLink = {
+/**
+ * `reportId` — число: по SignalR уходит `ReportLinkDbModel` с `int ReportId`,
+ * то же значение и того же типа, что в HTTP-ответе (`ReportLink` в контракте
+ * модуля `reports`, снимок `v2.reports.get`). Раньше здесь стояла строка —
+ * зеркало SignalR расходилось с фактическим проводом.
+ */
+export type ReportLinkSocketResponse = {
   id: number;
-  reportId: string;
+  reportId: number;
   link: string;
   name: string;
   createdAt: string;
@@ -45,6 +64,12 @@ export type PatchBugSocketResponse = {
   status?: number | null;
 };
 
+/**
+ * `ReceiveBugCreate` публикует `BugSummaryDbModel`, где `CreatorType` обязателен
+ * (`backend/Bugget.Entities/DbModels/Bug/BugSummaryDbModel.cs`). Зеркало это поле
+ * теряло, и в сторе на его месте стояла константа — расхождение, замаскированное
+ * значением по умолчанию.
+ */
 export type CreateBugSocketResponse = {
   id: number;
   title: string | null;
@@ -53,6 +78,7 @@ export type CreateBugSocketResponse = {
   createdAt: string;
   updatedAt: string;
   creatorUserId: string;
+  creatorType: number;
   status: number;
 };
 
@@ -66,18 +92,6 @@ export type CommentSocketResponse = {
   createdAt: string;
   updatedAt: string;
 };
-
-export type AttachmentSocketResponse = {
-  id: number;
-  entityId: number;
-  attachType: number;
-  createdAt: string;
-  creatorUserId: string;
-  fileName: string;
-  hasPreview: boolean;
-};
-
-export type BugStepResponse = BugStep;
 
 export enum SocketEvent {
   ReportParticipant = "ReceiveReportParticipant",
@@ -108,8 +122,8 @@ export enum SocketEvent {
 export type SocketPayload = {
   [SocketEvent.ReportPatch]: PatchReportSocketResponse;
   [SocketEvent.ReportParticipant]: string;
-  [SocketEvent.ReportLinkCreate]: ReportLink;
-  [SocketEvent.ReportLinkUpdate]: ReportLink;
+  [SocketEvent.ReportLinkCreate]: ReportLinkSocketResponse;
+  [SocketEvent.ReportLinkUpdate]: ReportLinkSocketResponse;
   [SocketEvent.ReportLinkDelete]: number;
   [SocketEvent.BugPatch]: { bugId: number; patch: PatchBugSocketResponse };
   [SocketEvent.BugCreate]: CreateBugSocketResponse;
@@ -137,11 +151,11 @@ export type SocketPayload = {
   [SocketEvent.CommentCreate]: CommentSocketResponse;
   [SocketEvent.CommentDelete]: { bugId: number; commentId: number };
   [SocketEvent.CommentUpdate]: CommentSocketResponse;
-  [SocketEvent.BugStepCreate]: BugStepResponse;
-  [SocketEvent.BugStepPatch]: { bugId: number; step: BugStepResponse };
+  [SocketEvent.BugStepCreate]: BugStepSocketResponse;
+  [SocketEvent.BugStepPatch]: { bugId: number; step: BugStepSocketResponse };
   [SocketEvent.BugStepsOrderUpdate]: {
     bugId: number;
-    steps: BugStepResponse[];
+    steps: BugStepSocketResponse[];
   };
   [SocketEvent.BugStepDelete]: { bugId: number; stepId: number };
 };
@@ -162,13 +176,13 @@ export const customParsers: Partial<
   },
 
   [SocketEvent.BugStepPatch]: (...args: unknown[]) => {
-    const [bugId, step] = args as [number, BugStepResponse];
+    const [bugId, step] = args as [number, BugStepSocketResponse];
 
     return { bugId, step };
   },
 
   [SocketEvent.BugStepsOrderUpdate]: (...args: unknown[]) => {
-    const [bugId, steps] = args as [number, BugStepResponse[]];
+    const [bugId, steps] = args as [number, BugStepSocketResponse[]];
 
     return { bugId, steps };
   },

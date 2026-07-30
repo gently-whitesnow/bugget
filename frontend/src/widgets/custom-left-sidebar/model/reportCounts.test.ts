@@ -1,32 +1,55 @@
-import { describe, expect, it, vi } from "vitest";
-
-const post = vi.fn();
-
-vi.mock("@/shared/api", () => ({
-  appApi: {
-    post: (...args: unknown[]) => post(...args),
-  },
-}));
-
-const { fetchReportCountsFx } = await import("./reportCounts");
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios";
+import { appApi, setAppContext } from "@/shared/api";
+import { fetchReportCountsFx } from "./reportCounts";
 
 /**
  * Счётчики приходят массивом `[{ key, count }]`, а не картой со свободными
  * ключами: ключ среза — данные клиента, и в объекте интерсептор переписал бы его
  * вместе с именами полей. Здесь проверяется, что ключ доезжает до стора
- * дословно — с `_` и заглавными.
+ * дословно — с `_` и заглавными, — а имена полей среза наоборот уходят на провод
+ * в snake_case.
+ *
+ * Тест идёт через настоящий транспорт (подменён только адаптер axios), поэтому
+ * проверяет и операцию из `shared/api/reports`, и интерсепторы, а не мок.
  */
+
+let captured: InternalAxiosRequestConfig | null = null;
+let originalAdapter: AxiosAdapter | undefined;
+let responseBody: unknown = { counts: [] };
+
+beforeEach(() => {
+  setAppContext(1, 2);
+  captured = null;
+  originalAdapter = appApi.defaults.adapter as AxiosAdapter | undefined;
+  appApi.defaults.adapter = (async (config) => {
+    captured = config;
+    return {
+      data: responseBody,
+      status: 200,
+      statusText: "OK",
+      headers: { "content-type": "application/json" },
+      config,
+    };
+  }) as AxiosAdapter;
+});
+
+afterEach(() => {
+  appApi.defaults.adapter = originalAdapter;
+  setAppContext(null, null);
+  responseBody = { counts: [] };
+});
+
 describe("батч-счётчики репортов", () => {
   it("массив counts раскладывается в карту, ключ среза не преобразуется", async () => {
-    post.mockResolvedValueOnce({
-      data: {
-        counts: [
-          { key: "my_scope_key", count: 3 },
-          { key: "MyScopeKey", count: 4 },
-          { key: "Mixed_Case_KEY", count: 0 },
-        ],
-      },
-    });
+    responseBody = {
+      counts: [
+        { key: "my_scope_key", count: 3 },
+        { key: "MyScopeKey", count: 4 },
+        { key: "Mixed_Case_KEY", count: 0 },
+      ],
+    };
 
     const counts = await fetchReportCountsFx([
       { key: "my_scope_key" },
@@ -41,19 +64,20 @@ describe("батч-счётчики репортов", () => {
     });
   });
 
-  it("срез уходит в теле запроса camelCase — в snake_case его переводит интерсептор", async () => {
-    post.mockResolvedValueOnce({ data: { counts: [] } });
-
+  it("срез уходит на провод в snake_case, значение ключа — дословно", async () => {
     await fetchReportCountsFx([
       { key: "beta-active", teamId: "t1", creatorTypes: [1], statuses: [0, 2] },
     ]);
 
-    expect(post).toHaveBeenLastCalledWith("/v2/reports/counts:batch", {
+    expect(captured?.url).toBe(
+      "/api/app/workspaces/1/teams/2/v2/reports/counts:batch"
+    );
+    expect(JSON.parse(captured?.data as string)).toEqual({
       scopes: [
         {
           key: "beta-active",
-          teamId: "t1",
-          creatorTypes: [1],
+          team_id: "t1",
+          creator_types: [1],
           statuses: [0, 2],
         },
       ],

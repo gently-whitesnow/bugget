@@ -1,13 +1,10 @@
-import { Attachment } from "./attachment";
+import type { CommentWire } from "./wire";
 
-export type Comment = {
-  id: number;
-  bugId: number;
-  text: string;
-  creatorUserId: string;
-  createdAt: string;
-  creatorType: number;
-  audience: number;
-  updatedAt: string;
-  attachments?: Attachment[] | null;
-};
+/**
+ * Комментарий к багу — форма из контракта модуля `reports`, выведенная из
+ * операции карточки репорта, а не описанная руками (ADR-0009).
+ *
+ * `attachments` — ключ обязательный, значение допускает `null`: контракт
+ * различает «вложений нет» (пустой массив) и «не запрашивались» (`null`).
+ */
+export type Comment = CommentWire;

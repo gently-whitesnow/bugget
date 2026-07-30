@@ -1,32 +1,19 @@
-import { appApi } from "@/shared/api";
-import type { ReportLink, ReportLinkDto } from "../model/types";
+import { reportsApi } from "@/shared/api";
+import type { ReportLinkRequest, ReportLinkResponse } from "./contracts";
 
 export const createReportLink = async (
   reportId: string,
-  dto: ReportLinkDto
-): Promise<ReportLink> => {
-  const { data } = await appApi.post<ReportLink>(
-    `/v2/reports/${reportId}/links`,
-    dto
-  );
-  return data;
-};
+  dto: ReportLinkRequest
+): Promise<ReportLinkResponse> => reportsApi.createReportLink(reportId, dto);
 
 export const updateReportLink = async (
   reportId: string,
   linkId: number,
-  dto: ReportLinkDto
-): Promise<ReportLink> => {
-  const { data } = await appApi.put<ReportLink>(
-    `/v2/reports/${reportId}/links/${linkId}`,
-    dto
-  );
-  return data;
-};
+  dto: ReportLinkRequest
+): Promise<ReportLinkResponse> =>
+  reportsApi.updateReportLink(reportId, linkId, dto);
 
 export const deleteReportLink = async (
   reportId: string,
   linkId: number
-): Promise<void> => {
-  await appApi.delete(`/v2/reports/${reportId}/links/${linkId}`);
-};
+): Promise<void> => reportsApi.deleteReportLink(reportId, linkId);

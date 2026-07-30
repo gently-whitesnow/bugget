@@ -1,158 +1,93 @@
-import { AttachmentTypes, BugStatuses, ReportStatuses } from "@/shared/config";
-import type { BugStep, ReportLink, ReportLinkDto } from "../model/types";
-
-export type CreateReportRequest = {
-  title: string; // required, min length 1, max length 128
-};
-
-export type CreateReportResponse = {
-  id: string;
-  title: string;
-  status: ReportStatuses;
-  responsibleUserId: string;
-  pastResponsibleUserId: string;
-  creatorUserId: string;
-  creatorType: number;
-  creatorTeamId?: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { reportsApi } from "@/shared/api";
+import type {
+  Attachment,
+  BugStep,
+  ReportLink,
+  ReportLinkDto,
+} from "../model/types";
 
 /**
- * Полная карточка репорта — ответ `GET /v2/reports/{aliasId}`, и только он.
- * Форма списка живёт отдельно (`ListReportsResponse` в `shared/api/contracts`):
- * LIST не отдаёт `links`, `bugs[].attachments` и `bugs[].steps`.
- * Перевод самой карточки на сгенерированный `Report` — отдельный слайс.
+ * Имена форм модуля `reports`, которыми пользуется страница репорта.
+ *
+ * Все они — типы операций из `shared/api/reports`, то есть выведены из
+ * `specs/contracts/reports/openapi.yaml` вместе с путём и методом: сменилась
+ * схема ответа у операции — здесь перестало компилироваться. Рукописных DTO и
+ * алиасов на «просто схему», не привязанную к операции, тут нет (ADR-0009).
+ *
+ * Формы, совпадающие с сущностями стора (`Attachment`, `BugStep`, `ReportLink`),
+ * выведены в `../model/types` из тех же операций и переиспользуются здесь: у
+ * одной формы контракта — одно представление в коде.
  */
-export type ReportResponse = {
-  id: string;
-  title: string;
-  status: ReportStatuses;
-  responsibleUserId: string;
-  pastResponsibleUserId: string;
-  creatorUserId: string;
-  creatorType: number;
-  creatorTeamId?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  participantsUserIds: string[];
-  links: ReportLink[] | null;
-  bugs: BugResponse[] | null;
-  isExcludedFromAnalytics?: boolean;
-};
 
-export type BugResponse = {
-  id: number;
-  reportId: string;
-  title: string | null;
-  receive: string | null;
-  expect: string | null;
-  creatorUserId: string;
-  creatorType: number;
-  createdAt: string;
-  updatedAt: string;
-  status: BugStatuses;
-  attachments: AttachmentResponse[] | null;
-  comments: CommentResponse[] | null;
-  steps: BugStepResponse[] | null;
-};
+/** `POST /v2/reports` — в теле только заголовок. */
+export type CreateReportRequest = reportsApi.CreateReportBody;
 
-export type AttachmentResponse = {
-  id: number;
-  entityId: number;
-  attachType: AttachmentTypes;
-  createdAt: string;
-  creatorUserId: string;
-  fileName: string;
-  hasPreview: boolean;
-};
+/** Ответ создания: репорт без вложенного содержимого. */
+export type CreateReportResponse = reportsApi.CreateReportResult;
 
-export type CommentResponse = {
-  id: number;
-  bugId: number;
-  text: string;
-  creatorUserId: string;
-  createdAt: string;
-  updatedAt: string;
-  creatorType: number;
-  audience: number;
-  attachments: AttachmentResponse[] | null;
-};
+/**
+ * Полная карточка репорта — ответ `GET /v2/reports/{aliasId}`.
+ * Форма списка живёт отдельно: LIST не отдаёт `links` и `bugs[].steps`.
+ */
+export type ReportResponse = reportsApi.ReportResult;
 
-export type BugStepResponse = BugStep & {
-  attachments: AttachmentResponse[] | null;
-};
+/** Баг внутри карточки: со вложениями, комментариями и шагами. */
+export type BugResponse = NonNullable<ReportResponse["bugs"]>[number];
 
-export type PatchReportRequest = {
-  title?: string | null;
-  status?: ReportStatuses | null;
-  responsibleUserId?: string | null;
-  isExcludedFromAnalytics?: boolean | null;
-};
+/** Публичная форма вложения — одна на весь модуль. */
+export type AttachmentResponse = Attachment;
 
-export type PatchReportResponse = {
-  id: number;
-  title: string;
-  status: ReportStatuses;
-  responsibleUserId: string;
-  pastResponsibleUserId: string;
-  updatedAt: string;
-};
+/** Комментарий внутри карточки — вместе с вложениями. */
+export type CommentResponse = NonNullable<BugResponse["comments"]>[number];
 
-export type LegacyReportResolveResponse = {
-  teamId: string;
-  teamReportId: number;
-};
+/**
+ * Ответ создания и обновления комментария: без `attachments` — у только что
+ * созданного комментария вложений ещё нет.
+ */
+export type CommentSummaryResponse = reportsApi.CommentResult;
 
-export type CreateBugRequest = {
-  title?: string | null; // optional, max length 128
-  receive?: string | null; // required, min length 1, max length 2048
-  expect?: string | null; // required, min length 1, max length 2048
-};
+/** Шаг воспроизведения — ответ ручек шагов и элемент `bugs[].steps`. */
+export type BugStepResponse = BugStep;
 
-export type PatchBugRequest = {
-  title?: string | null; // optional, max length 128
-  receive?: string | null; // required, min length 1, max length 2048
-  expect?: string | null; // required, min length 1, max length 2048
-  status?: number | null;
-};
+/** `PATCH /v2/reports/{aliasId}`: не переданное поле не меняется. */
+export type PatchReportRequest = reportsApi.PatchReportBody;
 
-export type CreateBugResponse = {
-  id: number;
-  title: string | null;
-  receive: string | null;
-  expect: string | null;
-  createdAt: string;
-  updatedAt: string;
-  creatorUserId: string;
-  status: number;
-};
+/** Что изменилось в репорте после PATCH. `id` — alias, как и в URL. */
+export type PatchReportResponse = reportsApi.PatchReportResult;
 
-export type PatchBugResponse = {
-  id: number;
-  title: string | null;
-  receive: string | null;
-  expect: string | null;
-  updatedAt: string;
-  status: number;
-};
+/** Координаты репорта для редиректа со старой ссылки. */
+export type LegacyReportResolveResponse = reportsApi.LegacyReportResolveResult;
 
-export type BugStepRequest = {
-  text: string;
-};
+/** `POST /v2/reports/{aliasId}/bugs`: полноту пары receive/expect проверяет сервер. */
+export type CreateBugRequest = reportsApi.CreateBugBody;
 
-export type BugStepOrderRequest = {
-  stepIds: number[];
-};
+/** `PATCH .../bugs/{bugId}`: не переданное поле не меняется. */
+export type PatchBugRequest = reportsApi.PatchBugBody;
 
-export type CreateCommentRequest = {
-  text: string; // required, min length 1, max length 2048
-  audience?: number; // 0 = Internal (default), 1 = External (пересылается тестеру)
-};
+/** Ответ создания бага: без вложенных коллекций и без `reportId`. */
+export type CreateBugResponse = reportsApi.CreateBugResult;
 
-export type UpdateCommentRequest = {
-  text: string; // required, min length 1, max length 2048
-};
+/** Что изменилось в баге после PATCH. */
+export type PatchBugResponse = reportsApi.PatchBugResult;
 
+/** Тело создания и обновления шага. */
+export type BugStepRequest = reportsApi.BugStepBody;
+
+/** Полный список шагов бага в нужном порядке. */
+export type BugStepOrderRequest = reportsApi.BugStepsOrderBody;
+
+/** Тело создания комментария: текст и (опционально) аудитория. */
+export type CreateCommentRequest = reportsApi.CommentBody;
+
+/** Тело обновления комментария — та же схема, что и у создания. */
+export type UpdateCommentRequest = reportsApi.CommentBody;
+
+/** Тело создания и обновления ссылки репорта. */
 export type ReportLinkRequest = ReportLinkDto;
+
+/** Ссылка репорта в ответе. */
 export type ReportLinkResponse = ReportLink;
+
+/** Страница списка репортов и query её операции. */
+export type ListReportsResponse = reportsApi.ListReportsResult;
+export type ListReportsQuery = reportsApi.ListReportsQuery;

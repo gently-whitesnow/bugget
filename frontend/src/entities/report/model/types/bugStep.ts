@@ -1,12 +1,7 @@
-import { Attachment } from "./attachment";
+import type { BugStepWire } from "./wire";
 
-export type BugStep = {
-  id: number;
-  bugId: number;
-  text: string;
-  stepNumber: number;
-  creatorUserId: string;
-  createdAt: string;
-  updatedAt: string;
-  attachments: Attachment[] | null;
-};
+/**
+ * Шаг воспроизведения — форма из контракта модуля `reports`, выведенная из
+ * операции карточки репорта, а не описанная руками (ADR-0009).
+ */
+export type BugStep = BugStepWire;

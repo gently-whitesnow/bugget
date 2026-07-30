@@ -34,8 +34,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: Пользователь не найден.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     put:
       operationId: Users_PutUserInContext
@@ -58,6 +62,10 @@ paths:
                 $ref: '#/components/schemas/UserProfile'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     delete:
       operationId: Users_DeleteUserInContext
@@ -68,6 +76,10 @@ paths:
       responses:
         '200':
           description: Пользователь удалён. Тело пустое.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/users/batch/list:
@@ -97,6 +109,10 @@ paths:
                   $ref: '#/components/schemas/User'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/users/autocomplete:
@@ -139,6 +155,10 @@ paths:
                 $ref: '#/components/schemas/AutocompleteUsers'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links:
@@ -157,6 +177,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ExternalLink'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links/{provider}:
@@ -174,8 +198,12 @@ paths:
           description: Способ входа отвязан.
         '400':
           description: Это единственный способ входа. Тело — текст, не JSON.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: Такой привязки у пользователя нет.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/users/merge:
@@ -198,10 +226,14 @@ paths:
           description: Аккаунты объединены. Тело пустое.
         '400':
           description: Некорректный идентификатор либо аккаунт объединяют сам с собой.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: Исходный аккаунт не найден.
         '409':
           description: Исходный аккаунт владеет рабочими пространствами.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/users/mattermost:
@@ -222,6 +254,10 @@ paths:
           description: Аккаунт привязан.
         '400':
           description: Некорректный идентификатор Mattermost.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     delete:
       operationId: Users_UnlinkMattermostInContext
@@ -232,6 +268,10 @@ paths:
       responses:
         '200':
           description: Аккаунт отвязан. Тело пустое.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar:
@@ -254,6 +294,10 @@ paths:
           description: Аватар загружен. Тело пустое.
         '400':
           description: Файл больше лимита либо формат не поддерживается.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
     delete:
       operationId: Avatar_DeleteAvatarInContext
@@ -264,6 +308,10 @@ paths:
       responses:
         '204':
           description: Аватар удалён.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar/content:
@@ -276,8 +324,12 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/AvatarContent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: Аватара нет.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/users/{userId}/avatar/content:
@@ -291,8 +343,12 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/AvatarContent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: Пользователь не найден либо у него нет аватара.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 
   /v1/workspaces:
@@ -314,8 +370,12 @@ paths:
                 $ref: '#/components/schemas/Workspace'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     get:
       operationId: Workspaces_GetWorkspacesContext
       summary: Рабочие пространства пользователя со всем контекстом.
@@ -329,6 +389,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WorkspacesContext'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/workspaces/{workspaceId}:
     put:
@@ -351,8 +415,12 @@ paths:
                 $ref: '#/components/schemas/Workspace'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: WorkspacesAdmin_DeleteWorkspace
       summary: Удалить рабочее пространство.
@@ -364,8 +432,12 @@ paths:
       responses:
         '200':
           description: Рабочее пространство удалено. Тело пустое.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/workspaces/{workspaceId}/members/join:
     post:
@@ -382,6 +454,10 @@ paths:
                 $ref: '#/components/schemas/WorkspaceMember'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/workspaces/{workspaceId}/teams:
     post:
@@ -404,8 +480,12 @@ paths:
                 $ref: '#/components/schemas/Team'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/workspaces/{workspaceId}/teams/{teamId}:
     put:
@@ -429,8 +509,12 @@ paths:
                 $ref: '#/components/schemas/Team'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: TeamsAdmin_DeleteTeam
       summary: Удалить команду.
@@ -440,8 +524,12 @@ paths:
       responses:
         '200':
           description: Команда удалена. Тело пустое.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/workspaces/{workspaceId}/teams/batch/list:
     post:
@@ -468,6 +556,10 @@ paths:
                   $ref: '#/components/schemas/TeamSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/workspaces/{workspaceId}/teams/autocomplete:
     get:
@@ -508,8 +600,12 @@ paths:
                 $ref: '#/components/schemas/AutocompleteTeams'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/members:
     get:
@@ -525,6 +621,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TeamMembers'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: TeamMembers_LeaveTeam
       summary: Выйти из команды.
@@ -534,6 +634,10 @@ paths:
       responses:
         '200':
           description: Пользователь вышел из команды. Тело пустое.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/members/join:
     post:
@@ -545,6 +649,10 @@ paths:
       responses:
         '200':
           description: Пользователь вступил в команду. Тело пустое.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/workspaces/{workspaceId}/teams/{teamId}/members/{userId}:
     delete:
@@ -557,8 +665,12 @@ paths:
       responses:
         '200':
           description: Участник удалён. Тело пустое.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
 
@@ -1106,6 +1218,22 @@ components:
 
     Forbidden:
       description: Недостаточно прав.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+
+    Unauthorized:
+      description: Запрос без действующей identity либо с недействительной сессией.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+
+    InternalServerError:
+      description: |-
+        Внутренняя ошибка сервера. Тело не раскрывает деталей: `detail` для 5xx не
+        публикуется, для корреляции с журналом служит `traceId`.
       content:
         application/problem+json:
           schema:

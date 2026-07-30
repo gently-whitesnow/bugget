@@ -42,6 +42,57 @@ hubs:
       - name: LeaveReportGroupAsync
         description: "Покинуть группу репорта."
 
+    # Отказ метода приезжает клиенту как completion error — это тот же публичный провод,
+    # что и события, только в обратную сторону.
+    #
+    # Строка ошибки состоит из двух слоёв, и первый нам не принадлежит. SignalR всегда
+    # оборачивает сообщение HubException своей рамкой:
+    #
+    #   An unexpected error occurred invoking '<метод>' on the server. <Тип>: <payload>
+    #
+    # Рамку задаёт фреймворк (`ErrorMessageHelper`), убрать её из хаба нельзя, поэтому
+    # она зафиксирована здесь как есть — вместе с именем типа исключения, которое в неё
+    # попадает. Наш слой — только payload, хвост после первого `": "`. Форма снята с
+    # живого соединения тестом ReportPageHubContractTests, а не выведена из кода.
+    #
+    # Payload — НЕ RFC 9457: в сокете нет ни Content-Type, ни статуса, ни instance. Общий
+    # с HTTP только каталог кодов: `code` совпадает с тем, что клиент увидел бы в
+    # problem+json на ту же ошибку (ADR-0008). Имена полей — snake_case, как и у остальных
+    # сообщений хаба.
+    #
+    # Здесь нет деклараций без потребителя — гейт читает каждое поле блока:
+    #
+    #   fields            сверяются с записью в source;
+    #   trustedException  обязан существовать в своём source и наследовать HubException,
+    #                     и ровно его — и никакой другой тип — пропускает filter наружу;
+    #   envelope          защищён целиком: каждая подстановка ровно одна, порядок
+    #                     <method> → <trustedException> → <payload> фиксирован,
+    #                     <payload> закрывает строку. Всё, что до него, обязано дословно
+    #                     совпадать с ожиданием characterization-теста. Без этих трёх
+    #                     требований рамку можно переставить или дописать ей хвост так,
+    #                     что сравнению нечего будет проверять.
+    #
+    # Поэтому изолированная правка любой из четырёх сторон красит гейт: переименовали
+    # тип в C#, поменяли текст рамки здесь, поправили ожидание в тесте, ослабили фильтр
+    # до базового HubException — красный.
+    methodError:
+      source: backend/Bugget.Http/RealtimeErrorPayload.cs
+      type: RealtimeError
+      description: "Ошибка вызова метода хаба. Наружу уходит только payload из каталога: любое другое исключение фильтр сводит к internal_server_error."
+      envelope: "An unexpected error occurred invoking '<method>' on the server. <trustedException>: <payload>"
+      trustedException:
+        source: backend/Bugget/Hubs/RealtimeProblemException.cs
+        type: RealtimeProblemException
+        filter: backend/Bugget/Middlewares/HubExceptionHandlerFilter.cs
+      characterization:
+        source: backend/Bugget.IntegrationTests/Contract/ReportPageHubContractTests.cs
+        method: JoinReportGroupAsync
+      fields:
+        - name: code
+          type: string
+        - name: title
+          type: string
+
     # Сервер → клиент. Порядок аргументов в args — это порядок аргументов в SendAsync,
     # то есть позиционный контракт провода. Типы указаны как в publisherInterface.
     #

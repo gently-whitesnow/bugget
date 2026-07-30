@@ -9,7 +9,12 @@ namespace Bugget.Extensions;
 
 public static class ErrorExtensions
 {
-    public static ActionResult ToProblemDetails(this Error error, HttpContext context)
+    /// <summary>
+    /// Доменная ошибка в дескриптор: код и заголовок приходят из неё самой, HTTP-статус
+    /// выводится здесь, в транспортном слое. Дескриптор транспорта не знает, поэтому из
+    /// него собирается и HTTP problem+json, и payload realtime-канала.
+    /// </summary>
+    public static ProblemDescriptor ToDescriptor(this Error error)
     {
         var (code, title, status) = error switch
         {
@@ -20,6 +25,9 @@ public static class ErrorExtensions
             _ => throw new NotImplementedException("Данный тип ошибки не определен")
         };
 
-        return ProblemDetailsFactory.Create(context, new ProblemDescriptor(code, title, (int)status));
+        return new ProblemDescriptor(code, title, (int)status);
     }
+
+    public static ActionResult ToProblemDetails(this Error error, HttpContext context) =>
+        ProblemDetailsFactory.Create(context, error.ToDescriptor());
 }

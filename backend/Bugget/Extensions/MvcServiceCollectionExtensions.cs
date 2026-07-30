@@ -37,8 +37,16 @@ public static class MvcServiceCollectionExtensions
                 new SystemTextJsonValidationMetadataProvider(JsonNamingPolicy.SnakeCaseLower));
         })
         .AddJsonOptions(options => { options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower; })
-        .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = context =>
-            ProblemDetailsFactory.CreateValidation(context));
+        .ConfigureApiBehaviorOptions(o =>
+        {
+            o.InvalidModelStateResponseFactory = context => ProblemDetailsFactory.CreateValidation(context);
+
+            // MVC сам превращает пустые 4xx (`NotFound()`, `Unauthorized()`, 415) в свой
+            // ProblemDetails — с чужим `type` и без нашего `code`. Это третья форма ошибки
+            // на проводе. Отключаем: пустой результат доезжает до UseProblemStatusCodes,
+            // и адаптер в контуре остаётся один (ADR-0008).
+            o.SuppressMapClientErrors = true;
+        });
 
         return services;
     }

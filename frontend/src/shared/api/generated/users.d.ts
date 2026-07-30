@@ -693,6 +693,27 @@ export interface components {
                 "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
+        /** @description Запрос без действующей identity либо с недействительной сессией. */
+        Unauthorized: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /**
+         * @description Внутренняя ошибка сервера. Тело не раскрывает деталей: `detail` для 5xx не
+         *     публикуется, для корреляции с журналом служит `traceId`.
+         */
+        InternalServerError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
     };
     parameters: {
         /** @description Идентификатор рабочего пространства. */
@@ -753,6 +774,7 @@ export interface operations {
                     "application/json": components["schemas"]["User"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
             /** @description Пользователь не найден. */
             404: {
                 headers: {
@@ -760,6 +782,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            500: components["responses"]["InternalServerError"];
         };
     };
     Users_PutUserInContext: {
@@ -798,6 +821,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Users_DeleteUserInContext: {
@@ -829,6 +854,8 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Users_ListUsersInContext: {
@@ -867,6 +894,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Users_AutocompleteUsersInContext: {
@@ -908,6 +937,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Users_GetExternalLinksInContext: {
@@ -941,6 +972,8 @@ export interface operations {
                     "application/json": components["schemas"]["ExternalLink"][];
                 };
             };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Users_UnlinkProviderInContext: {
@@ -981,6 +1014,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
             /** @description Такой привязки у пользователя нет. */
             404: {
                 headers: {
@@ -988,6 +1022,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            500: components["responses"]["InternalServerError"];
         };
     };
     Users_MergeUsersInContext: {
@@ -1030,6 +1065,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
             /** @description Исходный аккаунт не найден. */
             404: {
                 headers: {
@@ -1044,6 +1080,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            500: components["responses"]["InternalServerError"];
         };
     };
     Users_LinkMattermostInContext: {
@@ -1086,6 +1123,8 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Users_UnlinkMattermostInContext: {
@@ -1117,6 +1156,8 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Avatar_UploadAvatarInContext: {
@@ -1159,6 +1200,8 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Avatar_DeleteAvatarInContext: {
@@ -1190,6 +1233,8 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Avatar_GetAvatarContentInContext: {
@@ -1215,6 +1260,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["AvatarContent"];
+            401: components["responses"]["Unauthorized"];
             /** @description Аватара нет. */
             404: {
                 headers: {
@@ -1222,6 +1268,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            500: components["responses"]["InternalServerError"];
         };
     };
     Avatar_GetUserAvatarContentInContext: {
@@ -1249,6 +1296,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["AvatarContent"];
+            401: components["responses"]["Unauthorized"];
             /** @description Пользователь не найден либо у него нет аватара. */
             404: {
                 headers: {
@@ -1256,6 +1304,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            500: components["responses"]["InternalServerError"];
         };
     };
     Workspaces_GetWorkspacesContext: {
@@ -1276,6 +1325,8 @@ export interface operations {
                     "application/json": components["schemas"]["WorkspacesContext"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Workspaces_CreateWorkspace: {
@@ -1301,7 +1352,9 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     WorkspacesAdmin_UpdateWorkspace: {
@@ -1330,7 +1383,9 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     WorkspacesAdmin_DeleteWorkspace: {
@@ -1357,7 +1412,9 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     WorkspaceMembers_JoinWorkspace: {
@@ -1382,6 +1439,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     TeamsAdmin_CreateTeam: {
@@ -1410,7 +1469,9 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     TeamsAdmin_UpdateTeam: {
@@ -1441,7 +1502,9 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     TeamsAdmin_DeleteTeam: {
@@ -1465,7 +1528,9 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Teams_ListTeams: {
@@ -1494,6 +1559,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     Teams_AutocompleteTeams: {
@@ -1525,7 +1592,9 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     TeamMembers_ListTeamMembers: {
@@ -1556,6 +1625,8 @@ export interface operations {
                     "application/json": components["schemas"]["TeamMembers"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     TeamMembers_LeaveTeam: {
@@ -1584,6 +1655,8 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     TeamMembers_JoinTeam: {
@@ -1612,6 +1685,8 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     TeamMembersAdmin_DeleteTeamMember: {
@@ -1642,7 +1717,9 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
 }

@@ -1,4 +1,5 @@
 using Bugget.Configurations;
+using Bugget.Http;
 using Bugget.Hubs;
 using Bugget.Middlewares;
 using Serilog;
@@ -15,7 +16,11 @@ public static class ApplicationBuilderExtensions
         // Обработчики ошибок модулей users и authorization: необработанное исключение -> 500
         // в формате Flow, KeyNotFoundException -> 404.
         app.UseMiddleware<Flow.ResultExceptionHandlerMiddleware>();
-        app.UseMiddleware<Authorization.ProblemDetailsMiddleware>();
+        app.UseMiddleware<Authorization.NotFoundExceptionMiddleware>();
+        // Пустые ответы фреймворка (404 маршрутизации, 405, 401 challenge, 403 Forbid)
+        // получают тело problem+json из общего каталога. Обязан стоять до UseRouting
+        // и UseAuthentication — иначе их ответы пройдут мимо.
+        app.UseProblemStatusCodes();
         app.UseCors("CorsPolicy");
         app.UseRouting();
 

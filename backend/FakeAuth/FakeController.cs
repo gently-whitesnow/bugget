@@ -33,7 +33,7 @@ public sealed class FakeController(
     {
         if (string.IsNullOrWhiteSpace(externalId))
         {
-            return BadRequest("externalId is required");
+            return BadRequest();
         }
 
         var externalUser = new FakeExternalUser(externalId, name, imageUrl);

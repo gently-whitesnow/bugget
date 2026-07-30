@@ -47,6 +47,10 @@ paths:
                 $ref: '#/components/schemas/ReportSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     get:
       operationId: Reports_ListReports
       summary: Список репортов для главной страницы.
@@ -112,6 +116,10 @@ paths:
                 $ref: '#/components/schemas/ReportList'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}:
     get:
@@ -131,6 +139,10 @@ paths:
                 $ref: '#/components/schemas/Report'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     patch:
       operationId: Reports_PatchReport
       summary: Частичное обновление репорта.
@@ -154,6 +166,10 @@ paths:
                 $ref: '#/components/schemas/ReportPatchResult'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/legacy/{legacyId}:
     get:
@@ -176,8 +192,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LegacyReportResolve'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: Репорт не найден либо у него нет команды и номера в команде.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{id}/analytics:
     get:
@@ -205,6 +225,10 @@ paths:
                 $ref: '#/components/schemas/AnalyticsReport'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/counts:batch:
     post:
@@ -228,6 +252,10 @@ paths:
                 $ref: '#/components/schemas/ReportCountsBatchResponse'
         '400':
           $ref: '#/components/responses/CountsBadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/links:
     post:
@@ -250,6 +278,10 @@ paths:
                 $ref: '#/components/schemas/ReportLink'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/links/{linkId}:
     put:
@@ -273,6 +305,10 @@ paths:
                 $ref: '#/components/schemas/ReportLink'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: ReportLinks_DeleteReportLink
       summary: Удалить ссылку репорта.
@@ -284,6 +320,10 @@ paths:
           description: Ссылка удалена. Тело пустое.
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v1/reports/search:
     get:
@@ -365,6 +405,10 @@ paths:
                 $ref: '#/components/schemas/ReportList'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs:
     post:
@@ -387,6 +431,10 @@ paths:
                 $ref: '#/components/schemas/BugSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}:
     patch:
@@ -413,6 +461,10 @@ paths:
                 $ref: '#/components/schemas/BugPatchResult'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/steps:
     post:
@@ -436,6 +488,10 @@ paths:
                 $ref: '#/components/schemas/BugStep'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/steps/order:
     put:
@@ -464,6 +520,10 @@ paths:
                   $ref: '#/components/schemas/BugStep'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}:
     patch:
@@ -488,6 +548,10 @@ paths:
                 $ref: '#/components/schemas/BugStep'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: BugSteps_DeleteBugStep
       summary: Удалить шаг.
@@ -500,6 +564,10 @@ paths:
           description: Шаг удалён. Тело пустое.
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/comments:
     post:
@@ -523,6 +591,10 @@ paths:
                 $ref: '#/components/schemas/CommentSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}:
     put:
@@ -547,6 +619,10 @@ paths:
                 $ref: '#/components/schemas/CommentSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: Comments_DeleteComment
       summary: Удалить свой комментарий.
@@ -559,6 +635,10 @@ paths:
           description: Комментарий удалён. Тело пустое.
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/attachments:
     post:
@@ -591,6 +671,10 @@ paths:
                 $ref: '#/components/schemas/AttachmentSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}:
     patch:
@@ -615,6 +699,10 @@ paths:
                 $ref: '#/components/schemas/AttachmentSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: BugAttachments_DeleteBugAttachment
       summary: Удалить вложение бага.
@@ -627,6 +715,10 @@ paths:
           description: Вложение удалено. Тело пустое.
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content:
     get:
@@ -641,6 +733,10 @@ paths:
           $ref: '#/components/responses/AttachmentContent'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content/preview:
     get:
@@ -655,6 +751,10 @@ paths:
           $ref: '#/components/responses/AttachmentContent'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments:
     post:
@@ -679,6 +779,10 @@ paths:
                 $ref: '#/components/schemas/AttachmentSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}:
     patch:
@@ -704,6 +808,10 @@ paths:
                 $ref: '#/components/schemas/AttachmentSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: BugStepAttachments_DeleteBugStepAttachment
       summary: Удалить вложение шага.
@@ -717,6 +825,10 @@ paths:
           description: Вложение удалено. Тело пустое.
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content:
     get:
@@ -732,6 +844,10 @@ paths:
           $ref: '#/components/responses/AttachmentContent'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content/preview:
     get:
@@ -747,6 +863,10 @@ paths:
           $ref: '#/components/responses/AttachmentContent'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments:
     post:
@@ -771,6 +891,10 @@ paths:
                 $ref: '#/components/schemas/AttachmentSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}:
     patch:
@@ -796,6 +920,10 @@ paths:
                 $ref: '#/components/schemas/AttachmentSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     delete:
       operationId: CommentAttachments_DeleteCommentAttachment
       summary: Удалить вложение комментария.
@@ -809,6 +937,10 @@ paths:
           description: Вложение удалено. Тело пустое.
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content:
     get:
@@ -824,6 +956,10 @@ paths:
           $ref: '#/components/responses/AttachmentContent'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content/preview:
     get:
@@ -839,6 +975,10 @@ paths:
           $ref: '#/components/responses/AttachmentContent'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
 
@@ -1960,3 +2100,19 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ReportCountsProblemDetails'
+
+    Unauthorized:
+      description: Запрос без действующей identity либо с недействительной сессией.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
+
+    InternalServerError:
+      description: |-
+        Внутренняя ошибка сервера. Тело не раскрывает деталей: `detail` для 5xx не
+        публикуется, для корреляции с журналом служит `traceId`.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'

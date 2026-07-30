@@ -135,7 +135,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IUserIdProvider, SignalRUserIdProvider>();
         services.AddSignalR(options =>
         {
-            options.EnableDetailedErrors = true;
+            // Detailed errors отдают клиенту текст любого необработанного исключения в
+            // обход HubExceptionHandlerFilter — ровно та утечка, которую граница
+            // закрывает (ADR-0008). Причина остаётся в журнале.
+            options.EnableDetailedErrors = false;
             options.KeepAliveInterval = TimeSpan.FromSeconds(15);
             options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
         })
@@ -154,7 +157,9 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddWebApi(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
     {
         services.AddExternalClients(configuration);
-        services.AddProblemDetails();
+        // services.AddProblemDetails() здесь нет намеренно: IProblemDetailsService строит
+        // ответ по правилам ASP.NET, а адаптер границы у нас один — Bugget.Http
+        // (ADR-0008). Регистрация была мёртвой: ею никто не пользовался.
         services.AddHealthChecks();
         services.AddAuthHeaders();
         services.AddSwaggerConfiguration(configuration);

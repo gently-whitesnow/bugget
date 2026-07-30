@@ -15,12 +15,16 @@ public sealed class RealtimeErrorPayloadTests
     [Fact]
     public void Payload_carries_the_same_code_as_the_http_boundary()
     {
-        var payload = RealtimeErrorPayload.Create(Bugget.BO.Errors.BoErrors.ReportNotFoundError.ToDescriptor());
+        var descriptor = Bugget.BO.Errors.BoErrors.ReportNotFoundError.ToDescriptor();
+        var payload = RealtimeErrorPayload.Create(descriptor);
 
         using var document = JsonDocument.Parse(payload);
 
-        Assert.Equal("report_not_found", document.RootElement.GetProperty("code").GetString());
-        Assert.Equal("Репорт не найден", document.RootElement.GetProperty("title").GetString());
+        Assert.Equal(descriptor.Code, document.RootElement.GetProperty("code").GetString());
+        Assert.Equal(descriptor.Title, document.RootElement.GetProperty("title").GetString());
+        Assert.DoesNotContain(
+            typeof(Microsoft.AspNetCore.Mvc.ProblemDetails),
+            typeof(RealtimeError).GetProperties().Select(property => property.PropertyType));
     }
 
     [Fact]

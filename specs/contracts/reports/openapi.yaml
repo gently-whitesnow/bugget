@@ -1234,7 +1234,9 @@ components:
       properties:
         key:
           type: string
-          description: Ключ среза. Возвращается в ответе как ключ карты счётчиков.
+          description: |-
+            Ключ среза. Возвращается в ответе элементом `counts[].key` дословно,
+            без преобразования регистра.
         statuses:
           type: array
           nullable: true
@@ -1267,18 +1269,38 @@ components:
           items:
             $ref: '#/components/schemas/ReportCountsScope'
 
+    ReportCountsItem:
+      type: object
+      description: Счётчик одного среза.
+      required:
+        - key
+        - count
+      properties:
+        key:
+          type: string
+          description: |-
+            Ключ среза из запроса. Значение переносится дословно: это данные, а не
+            имя поля, и конверсия регистра к нему не применяется.
+        count:
+          type: integer
+          format: int64
+          description: Количество репортов в срезе.
+
     ReportCountsBatchResponse:
       type: object
-      description: Счётчики по ключам срезов из запроса.
+      description: |-
+        Счётчики по срезам запроса — массив, а не карта со свободными ключами:
+        ключ среза задаёт клиент, а имена полей тела на границе wire↔UI
+        преобразуются по регистру. Свободный ключ в объекте неотличим от имени
+        поля и был бы преобразован вместе с ними (ADR-0009).
       required:
         - counts
       properties:
         counts:
-          type: object
-          description: Ключ среза → количество репортов.
-          additionalProperties:
-            type: integer
-            format: int64
+          type: array
+          description: Счётчики в порядке срезов запроса.
+          items:
+            $ref: '#/components/schemas/ReportCountsItem'
 
     ReportCountsProblemDetails:
       allOf:

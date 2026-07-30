@@ -7,7 +7,7 @@ type Props = {
 };
 
 /**
- * Контракт analytics помечает обязательным только `iso_week`, поэтому числовые
+ * Контракт analytics помечает обязательным только `iso_week` (провод), поэтому числовые
  * агрегаты приходят как `number | undefined`. Бекенд их всегда считает; пока
  * `required` в specs/contracts/analytics/openapi.yaml не восстановлен, читаем
  * их через явный ноль — то же значение, что рисовалось до типизации.
@@ -49,7 +49,7 @@ const PhaseTrendsChart = ({ trends }: Props) => {
   const innerHeight = chartHeight - paddingTop - paddingBottom;
   const maxValue = Math.max(
     1,
-    ...trends.flatMap((t) => [days(t.test_days), days(t.fix_days)])
+    ...trends.flatMap((t) => [days(t.testDays), days(t.fixDays)])
   );
 
   const slotWidth = innerWidth / trends.length;
@@ -131,13 +131,13 @@ const PhaseTrendsChart = ({ trends }: Props) => {
               {/* Bars */}
               {trends.map((t, i) => {
                 const slotX = paddingLeft + slotWidth * i + barGroupPadding;
-                const testHeight = yScale(days(t.test_days));
-                const fixHeight = yScale(days(t.fix_days));
+                const testHeight = yScale(days(t.testDays));
+                const fixHeight = yScale(days(t.fixDays));
                 const baseY = paddingTop + innerHeight;
-                const label = formatWeek(t.iso_week);
+                const label = formatWeek(t.isoWeek);
                 const labelX = slotX + groupWidth / 2;
                 return (
-                  <g key={t.iso_week}>
+                  <g key={t.isoWeek}>
                     <rect
                       x={slotX}
                       y={baseY - testHeight}

@@ -119,9 +119,15 @@ internal static class ReportsMapper
         Reports = views.Reports.Select(ToListContract).ToArray(),
     };
 
-    public static ReportCountsBatchResponse ToCountsContract(this IReadOnlyDictionary<string, long> counts) => new()
+    /// <summary>
+    /// Счётчики уходят массивом в порядке срезов запроса: ключ среза задаёт клиент,
+    /// и в объекте со свободными ключами он был бы неотличим от имени поля (ADR-0009).
+    /// </summary>
+    public static ReportCountsBatchResponse ToCountsContract(this IEnumerable<KeyValuePair<string, long>> counts) => new()
     {
-        Counts = counts,
+        Counts = counts
+            .Select(pair => new ReportCountsItem { Key = pair.Key, Count = pair.Value })
+            .ToArray(),
     };
 
     public static ReportLink ToContract(this ReportLinkDbModel model) => new()

@@ -614,7 +614,10 @@ export interface components {
         };
         /** @description Один срез для счётчика: ключ и фильтры, совпадающие с фильтрами LIST. */
         ReportCountsScope: {
-            /** @description Ключ среза. Возвращается в ответе как ключ карты счётчиков. */
+            /**
+             * @description Ключ среза. Возвращается в ответе элементом `counts[].key` дословно,
+             *     без преобразования регистра.
+             */
             key: string;
             /** @description Фильтр по статусам репорта. */
             statuses?: number[] | null;
@@ -631,12 +634,28 @@ export interface components {
             /** @description Срезы, по которым считаются репорты. */
             scopes: components["schemas"]["ReportCountsScope"][];
         };
-        /** @description Счётчики по ключам срезов из запроса. */
+        /** @description Счётчик одного среза. */
+        ReportCountsItem: {
+            /**
+             * @description Ключ среза из запроса. Значение переносится дословно: это данные, а не
+             *     имя поля, и конверсия регистра к нему не применяется.
+             */
+            key: string;
+            /**
+             * Format: int64
+             * @description Количество репортов в срезе.
+             */
+            count: number;
+        };
+        /**
+         * @description Счётчики по срезам запроса — массив, а не карта со свободными ключами:
+         *     ключ среза задаёт клиент, а имена полей тела на границе wire↔UI
+         *     преобразуются по регистру. Свободный ключ в объекте неотличим от имени
+         *     поля и был бы преобразован вместе с ними (ADR-0009).
+         */
         ReportCountsBatchResponse: {
-            /** @description Ключ среза → количество репортов. */
-            counts: {
-                [key: string]: number;
-            };
+            /** @description Счётчики в порядке срезов запроса. */
+            counts: components["schemas"]["ReportCountsItem"][];
         };
         ReportCountsProblemDetails: components["schemas"]["ProblemDetails"] & {
             /** @description Допустимое число срезов в запросе. */

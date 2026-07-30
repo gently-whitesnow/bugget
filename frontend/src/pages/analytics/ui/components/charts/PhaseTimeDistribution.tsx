@@ -7,8 +7,8 @@ type Props = {
 const formatPct = (v: number): string => `${Math.round(v * 100)}%`;
 
 const PhaseTimeDistribution = ({ data }: Props) => {
-  const testPct = data?.test_pct ?? 0;
-  const fixPct = data?.fix_pct ?? 0;
+  const testPct = data?.testPct ?? 0;
+  const fixPct = data?.fixPct ?? 0;
   const total = testPct + fixPct;
   const hasData = total > 0;
 

@@ -114,6 +114,46 @@ rm -rf "$SANDBOX/contracts/external"
 run_gate
 expect "удалённый контракт краснеет" 1 "$?" "сирота:"
 
+# 7-10. Имена полей тела. Патчим одно и то же поле `user_sections` в контракте
+# settings разными способами и проверяем, что гейт краснеет на каждом. Кавыченные
+# имена и свободный словарь проверяются end-to-end намеренно: первая версия
+# проверки читала только некавыченные идентификаторы и такие поля молча пропускала.
+patch_user_sections() {
+  python3 "$ROOT/scripts/quality/frontend-openapi-selftest-patch.py" \
+    "$SANDBOX/contracts/settings/openapi.yaml" "$1"
+}
+
+roundtrip_case() {
+  local name="$1" mode="$2" needle="$3"
+  reset_sandbox
+  if ! patch_user_sections "$mode"; then
+    printf '  ПРОВАЛ  %s: не удалось пропатчить контракт, случай не проверен\n' "$name" >&2
+    FAILED=$(( FAILED + 1 ))
+    return
+  fi
+  run_gate
+  expect "$name" 1 "$?" "$needle"
+}
+
+# `user_ID` уедет в `userID` и вернётся `user_i_d`: фронт отправил бы на провод
+# не то имя, которое описано в контракте.
+roundtrip_case "необратимое имя поля краснеет" caps "не snake_case канона провода"
+# Кавыченное имя: openapi-typescript эмитит его как `"user-sections"`.
+roundtrip_case "кавыченное имя поля краснеет" hyphen "не snake_case канона провода"
+# Имя с ведущей цифрой — тоже кавыченное и тоже не канон провода.
+roundtrip_case "имя с ведущей цифрой краснеет" digit "не snake_case канона провода"
+# Свободный словарь: ключ задаёт клиент, конверсия переписала бы его как имя поля.
+roundtrip_case "свободный словарь в теле краснеет" freekey "свободный ключ"
+
+# 11. Самопроверка самой проверки имён.
+if ! python3 "$ROOT/scripts/quality/frontend-case-roundtrip.py" --self-test >"$SANDBOX/out" 2>&1; then
+  printf '  ПРОВАЛ  самопроверка frontend-case-roundtrip.py\n' >&2
+  sed 's/^/          /' "$SANDBOX/out" >&2
+  FAILED=$(( FAILED + 1 ))
+else
+  printf '  ok      самопроверка frontend-case-roundtrip.py\n'
+fi
+
 printf '\n'
 if [ "$FAILED" -ne 0 ]; then
   printf 'самопроверка не прошла: провалов %d\n' "$FAILED" >&2

@@ -6,6 +6,7 @@ using Bugget.DA.Interfaces;
 using Bugget.Entities.BO.Common;
 using Bugget.Entities.DTO.Report;
 using Bugget.IntegrationTests.Fixtures;
+using Bugget.Reports.Contracts.Generated;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Xunit;
@@ -31,7 +32,7 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
     }
 
     [Fact(DisplayName = "POST /v2/reports/counts:batch — happy path: возвращает counts для каждого scope key")]
-    public async Task Batch_HappyPath_ReturnsCountsKeyedByScope()
+    public async Task Batch_HappyPath_ReturnsCountsForEachScope()
     {
         var team = $"team_{Guid.NewGuid():N}";
         var userId = $"user_{Guid.NewGuid():N}";
@@ -52,22 +53,41 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
         var resp = await PostAsync(request);
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
-        var body = await resp.Content.ReadFromJsonAsync<ReportCountsBatchResponseDto>(JsonOptions);
+        var body = await resp.Content.ReadFromJsonAsync<ReportCountsBatchResponse>(JsonOptions);
         Assert.NotNull(body);
-        Assert.True(body!.Counts.ContainsKey("beta-active"));
-        Assert.True(body.Counts.ContainsKey("team-active"));
-        Assert.True(body.Counts["beta-active"] >= 1, "beta-active должен включать созданный нами beta-tester report");
-        Assert.True(body.Counts["team-active"] >= body.Counts["beta-active"],
-            "team-active без creator_types должен быть супермножеством beta-active");
+        Assert.Equal(["beta-active", "team-active"], body!.Counts.Select(item => item.Key));
+
+        var beta = body.Counts.Single(item => item.Key == "beta-active").Count;
+        var teamActive = body.Counts.Single(item => item.Key == "team-active").Count;
+        Assert.True(beta >= 1, "beta-active должен включать созданный нами beta-tester report");
+        Assert.True(teamActive >= beta, "team-active без creator_types должен быть супермножеством beta-active");
+    }
+
+    /// <summary>
+    /// Ключ среза — данные клиента, а не имя поля: `_` и заглавные в нём обязаны
+    /// доехать до ответа дословно. Ровно ради этого счётчики отдаются массивом,
+    /// а не картой со свободными ключами (ADR-0009).
+    /// </summary>
+    [Fact(DisplayName = "POST /v2/reports/counts:batch — ключ с `_` и заглавными возвращается дословно")]
+    public async Task Batch_KeyWithUnderscoreAndCaps_IsReturnedVerbatim()
+    {
+        string[] keys = ["my_scope_key", "MyScopeKey", "Mixed_Case_KEY"];
+
+        var resp = await PostAsync(new { scopes = keys.Select(key => new { key }).ToArray() });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<ReportCountsBatchResponse>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Equal(keys, body!.Counts.Select(item => item.Key));
     }
 
     [Fact(DisplayName = "POST /v2/reports/counts:batch — empty scopes → 200, пустой counts")]
-    public async Task Batch_EmptyScopes_ReturnsEmptyDict()
+    public async Task Batch_EmptyScopes_ReturnsEmptyList()
     {
         var resp = await PostAsync(new { scopes = Array.Empty<object>() });
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
-        var body = await resp.Content.ReadFromJsonAsync<ReportCountsBatchResponseDto>(JsonOptions);
+        var body = await resp.Content.ReadFromJsonAsync<ReportCountsBatchResponse>(JsonOptions);
         Assert.NotNull(body);
         Assert.Empty(body!.Counts);
     }

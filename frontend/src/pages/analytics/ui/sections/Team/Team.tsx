@@ -112,25 +112,23 @@ const AnalyticsTeam = ({ period, teamId, onTeamChange }: Props) => {
         </div>
       ) : (
         <>
-          <PhaseDurationCards data={summary?.avg_phase_duration_days ?? null} />
+          <PhaseDurationCards data={summary?.avgPhaseDurationDays ?? null} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <ReworkRateCard
-              reworkRate={summary?.rework_rate ?? null}
+              reworkRate={summary?.reworkRate ?? null}
               avgRegressionCyclesWhenPresent={
-                summary?.avg_regression_cycles_when_present ?? null
+                summary?.avgRegressionCyclesWhenPresent ?? null
               }
             />
             <PhaseTimeDistribution
-              data={summary?.phase_time_distribution ?? null}
+              data={summary?.phaseTimeDistribution ?? null}
             />
           </div>
 
-          <TopRegressionReports
-            reports={summary?.top_regression_reports ?? []}
-          />
+          <TopRegressionReports reports={summary?.topRegressionReports ?? []} />
 
-          <PhaseTrendsChart trends={summary?.phase_trends_weekly ?? []} />
+          <PhaseTrendsChart trends={summary?.phaseTrendsWeekly ?? []} />
         </>
       )}
     </div>

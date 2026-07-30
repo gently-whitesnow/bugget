@@ -14,19 +14,19 @@ export const setSignalRConnectionId = (id: string | null) => {
 export const getSignalRConnectionId = () => signalRConnectionId;
 
 /**
- * URL-паттерны, для которых wire-формат остаётся snake_case в обе стороны.
- * Используется для эндпоинтов, чьи типы сгенерированы из OpenAPI YAML
- * (см. shared/api/generated/*.d.ts) — там DTO-поля совпадают с протоколом.
+ * Граница wire↔UI одна на все HTTP-модули и не зависит от URL:
+ *
+ *   * JSON-тело ответа (успех и ошибка одинаково) → camelCase;
+ *   * JSON-тело запроса → snake_case;
+ *   * multipart, query и path не преобразуются — там имена и так camelCase и
+ *     принадлежат публичному контракту (ADR-0009);
+ *   * `application/problem+json` не преобразуется вовсе — см. ниже.
+ *
+ * URL-исключений из конверсии здесь нет намеренно: они делали форму данных
+ * функцией адреса, из-за чего один и тот же тип читался по-разному в разных
+ * модулях. Сгенерированные типы описывают провод, camelCase-форма выводится из
+ * них type-only мостом `Camelized<T>` (`shared/lib/types/camelize.ts`).
  */
-const skipCaseConversionPatterns: RegExp[] = [
-  /\/v2\/analytics(\/|$|\?)/,
-  /\/v2\/reports\/\d+\/analytics(\/|$|\?)/,
-];
-
-const shouldSkipCaseConversion = (url: string | undefined): boolean => {
-  if (!url) return false;
-  return skipCaseConversionPatterns.some((re) => re.test(url));
-};
 
 /**
  * RFC 9457 Problem Details. Все имена RFC однословные, конверсия их не изменила бы,
@@ -57,6 +57,21 @@ const isJsonResponse = (headers: unknown): boolean => {
   );
 };
 
+/**
+ * Конвертируем только тела, которые действительно JSON, — и на успешном пути, и на
+ * пути ошибки одинаково. Бинарный ответ (вложение) — не набор именованных полей:
+ * рекурсивный обход превратил бы его в пустой объект.
+ *
+ * Ответ без `Content-Type` конвертируется: так отвечают промежуточные узлы, тела у
+ * них либо JSON, либо строка, а строку обход возвращает как есть. Это осознанный
+ * fallback, а не недосмотр: он сохраняет поведение, на которое рассчитывает фронт.
+ */
+const shouldConvertBody = (headers: unknown): boolean => {
+  if (isProblemDetailsResponse(headers)) return false;
+  if (contentTypeFrom(headers) === undefined) return true;
+  return isJsonResponse(headers);
+};
+
 const setupResponseInterceptors = (axiosInstance: AxiosInstance) => {
   axiosInstance.interceptors.response.use(
     (response) => response,
@@ -85,12 +100,7 @@ const setupResponseInterceptors = (axiosInstance: AxiosInstance) => {
         console.error(issueName);
       }
 
-      if (
-        error?.response?.data &&
-        isJsonResponse(error.response.headers) &&
-        !shouldSkipCaseConversion(error.config?.url) &&
-        !isProblemDetailsResponse(error.response.headers)
-      ) {
+      if (error?.response?.data && shouldConvertBody(error.response.headers)) {
         error.response.data = convertObjectToCamel(error.response.data);
       }
       return Promise.reject(error);
@@ -98,11 +108,7 @@ const setupResponseInterceptors = (axiosInstance: AxiosInstance) => {
   );
 
   axiosInstance.interceptors.response.use((response) => {
-    if (
-      response.data &&
-      !shouldSkipCaseConversion(response.config?.url) &&
-      !isProblemDetailsResponse(response.headers)
-    ) {
+    if (response.data && shouldConvertBody(response.headers)) {
       response.data = convertObjectToCamel(response.data);
     }
     return response;
@@ -113,8 +119,7 @@ const setupRequestInterceptors = (axiosInstance: AxiosInstance) => {
   axiosInstance.interceptors.request.use((config) => {
     if (
       config.headers["Content-Type"] !== "multipart/form-data" &&
-      config.data &&
-      !shouldSkipCaseConversion(config.url)
+      config.data
     ) {
       config.data = convertObjectToSnake(config.data);
     }

@@ -31,7 +31,7 @@ public sealed class ReportCountsController(ReportsService reportsService) : Repo
 
         if (body.Scopes.Count == 0)
         {
-            return Ok(new Dictionary<string, long>().ToCountsContract());
+            return Ok(Array.Empty<KeyValuePair<string, long>>().ToCountsContract());
         }
 
         if (body.Scopes.Count > MaxScopes)
@@ -62,13 +62,13 @@ public sealed class ReportCountsController(ReportsService reportsService) : Repo
         var scopes = body.Scopes.Select(ToDto).ToArray();
         var counts = await reportsService.CountReportsBatchAsync(organizationId, scopes, cancellationToken);
 
-        var dict = new Dictionary<string, long>(scopes.Length);
+        var items = new KeyValuePair<string, long>[scopes.Length];
         for (var i = 0; i < scopes.Length; i++)
         {
-            dict[scopes[i].Key] = counts[i];
+            items[i] = new KeyValuePair<string, long>(scopes[i].Key, counts[i]);
         }
 
-        return Ok(dict.ToCountsContract());
+        return Ok(items.ToCountsContract());
     }
 
     private static ReportCountsScopeDto ToDto(ReportCountsScope scope) => new()

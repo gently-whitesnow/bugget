@@ -47,14 +47,14 @@ const PhaseTimeline = ({ entries }: Props) => {
   }
 
   // Рассчитываем относительную ширину для gantt-полосы. Активный интервал
-  // получает «фантомную» длительность от entered_at до now.
+  // получает «фантомную» длительность от enteredAt до now.
   const now = Date.now();
   const widths = entries.map((e) => {
-    if (typeof e.duration_days === "number" && e.duration_days > 0) {
-      return e.duration_days;
+    if (typeof e.durationDays === "number" && e.durationDays > 0) {
+      return e.durationDays;
     }
-    if (!e.exited_at) {
-      const start = new Date(e.entered_at).getTime();
+    if (!e.exitedAt) {
+      const start = new Date(e.enteredAt).getTime();
       if (!Number.isNaN(start)) {
         return Math.max(0.01, (now - start) / (1000 * 60 * 60 * 24));
       }
@@ -73,12 +73,12 @@ const PhaseTimeline = ({ entries }: Props) => {
       {/* Gantt-полоска */}
       <div className="mb-4 flex h-3 w-full overflow-hidden rounded-sm bg-base-200">
         {entries.map((e, idx) => {
-          const active = !e.exited_at;
+          const active = !e.exitedAt;
           const pct = (widths[idx] / totalWidth) * 100;
           return (
             <div
-              key={`${e.regression_cycle_index}-${idx}`}
-              title={`${phaseLabel(e.phase)} · цикл #${e.regression_cycle_index} · ${formatDuration(e.duration_days)}`}
+              key={`${e.regressionCycleIndex}-${idx}`}
+              title={`${phaseLabel(e.phase)} · цикл #${e.regressionCycleIndex} · ${formatDuration(e.durationDays)}`}
               className={`h-full ${phaseColor(e.phase, active)} ${
                 active ? "animate-pulse" : ""
               }`}
@@ -91,10 +91,10 @@ const PhaseTimeline = ({ entries }: Props) => {
       {/* Список интервалов */}
       <ul className="flex flex-col gap-1">
         {entries.map((e, idx) => {
-          const active = !e.exited_at;
+          const active = !e.exitedAt;
           return (
             <li
-              key={`${e.regression_cycle_index}-${idx}-row`}
+              key={`${e.regressionCycleIndex}-${idx}-row`}
               className={`flex flex-wrap items-center gap-2 rounded-sm px-2 py-1.5 ${
                 active ? "bg-base-200" : "hover:bg-base-200/50"
               }`}
@@ -108,16 +108,16 @@ const PhaseTimeline = ({ entries }: Props) => {
                 {phaseLabel(e.phase)}
               </span>
               <span className="text-xs text-base-content/60">
-                цикл #{e.regression_cycle_index}
+                цикл #{e.regressionCycleIndex}
               </span>
               <span className="text-xs tabular-nums">
-                {formatDuration(e.duration_days)}
+                {formatDuration(e.durationDays)}
               </span>
               <span className="ml-auto text-[11px] tabular-nums text-base-content/60">
-                {formatDateTime(e.entered_at)}
+                {formatDateTime(e.enteredAt)}
                 {" → "}
-                {e.exited_at ? (
-                  formatDateTime(e.exited_at)
+                {e.exitedAt ? (
+                  formatDateTime(e.exitedAt)
                 ) : (
                   <span className="font-medium text-warning">Идёт сейчас</span>
                 )}

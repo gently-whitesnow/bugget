@@ -70,7 +70,7 @@ const AnalyticsReport = ({ reportId }: Props) => {
 
   // Счётчик необязателен по контракту analytics (см. TopRegressionReports):
   // отсутствующее значение читаем как ноль — регрессии не было.
-  const regressionDetected = (report.bugs_added_during_regression ?? 0) > 0;
+  const regressionDetected = (report.bugsAddedDuringRegression ?? 0) > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -78,7 +78,7 @@ const AnalyticsReport = ({ reportId }: Props) => {
         <h2 className="text-base font-semibold">
           Репорт{" "}
           <span className="font-mono text-base-content/70">
-            #{report.report_id}
+            #{report.reportId}
           </span>
         </h2>
       </div>
@@ -89,7 +89,7 @@ const AnalyticsReport = ({ reportId }: Props) => {
             Regression-циклы
           </div>
           <div className="mt-2 text-2xl font-semibold tabular-nums">
-            {report.regression_cycles}
+            {report.regressionCycles}
           </div>
           <div className="mt-1 text-[11px] text-base-content/50">
             Полных циклов Test → Fix → Test
@@ -115,7 +115,7 @@ const AnalyticsReport = ({ reportId }: Props) => {
               regressionDetected ? "text-error" : ""
             }`}
           >
-            {report.bugs_added_during_regression}
+            {report.bugsAddedDuringRegression}
           </div>
           <div className="mt-1 text-[11px] text-base-content/50">
             {regressionDetected
@@ -125,9 +125,9 @@ const AnalyticsReport = ({ reportId }: Props) => {
         </div>
       </div>
 
-      <PhaseTimeline entries={report.phase_timeline} />
+      <PhaseTimeline entries={report.phaseTimeline} />
 
-      <BugsByStatusGrid data={report.bugs_by_status} />
+      <BugsByStatusGrid data={report.bugsByStatus} />
     </div>
   );
 };

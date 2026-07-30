@@ -8,8 +8,8 @@ const formatDays = (v: number | null | undefined): string =>
   typeof v === "number" ? `${v.toFixed(1)} дн` : "—";
 
 const cards: { key: keyof AvgPhaseDurationDays; title: string }[] = [
-  { key: "test_initial", title: "Test (первичный)" },
-  { key: "test_retest", title: "Test (повторный)" },
+  { key: "testInitial", title: "Test (первичный)" },
+  { key: "testRetest", title: "Test (повторный)" },
   { key: "fix", title: "Fix" },
 ];
 

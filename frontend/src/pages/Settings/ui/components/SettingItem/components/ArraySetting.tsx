@@ -5,7 +5,7 @@ import { SaveCancelButtons } from "./SaveCancelButtons";
 
 type Props = {
   title: string;
-  description?: string;
+  description?: string | null;
   values: string[];
   hasChanges: boolean;
   isEditing: boolean;

@@ -108,14 +108,6 @@ sample({
 
 sample({
   clock: updateBugFx.doneData,
-  fn: (updatedBug: PatchBugResponse) => ({
-    id: updatedBug.id,
-    title: updatedBug.title,
-    receive: updatedBug.receive,
-    expect: updatedBug.expect,
-    status: updatedBug.status,
-    updatedAt: updatedBug.updatedAt,
-  }),
   target: updateBugFxDoneDataEvent,
 });
 

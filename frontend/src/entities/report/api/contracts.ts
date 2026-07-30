@@ -1,158 +1,115 @@
-import { AttachmentTypes, BugStatuses, ReportStatuses } from "@/shared/config";
-import type { BugStep, ReportLink, ReportLinkDto } from "../model/types";
-
-export type CreateReportRequest = {
-  title: string; // required, min length 1, max length 128
-};
-
-export type CreateReportResponse = {
-  id: string;
-  title: string;
-  status: ReportStatuses;
-  responsibleUserId: string;
-  pastResponsibleUserId: string;
-  creatorUserId: string;
-  creatorType: number;
-  creatorTeamId?: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { components, operations } from "@/shared/api/generated/reports";
+import type { Camelized } from "@/shared/lib/types";
+import type {
+  Attachment,
+  BugStep,
+  ReportLink,
+  ReportLinkDto,
+} from "../model/types";
 
 /**
- * Полная карточка репорта — ответ `GET /v2/reports/{aliasId}`, и только он.
- * Форма списка живёт отдельно (`ListReportsResponse` в `shared/api/contracts`):
- * LIST не отдаёт `links`, `bugs[].attachments` и `bugs[].steps`.
- * Перевод самой карточки на сгенерированный `Report` — отдельный слайс.
+ * Тела запросов и ответов модуля `reports` — выведены из
+ * `shared/api/generated/reports.d.ts`, то есть из
+ * `specs/contracts/reports/openapi.yaml`.
+ *
+ * Рукописных DTO здесь больше нет: тело в коде фронта разрешено описывать только
+ * `Camelized<T>` над сгенерированной схемой (ADR-0009). Источник правды — yaml:
+ * пропало поле в контракте — обращение к нему перестало компилироваться.
+ *
+ * Query-параметры берутся из `operations[...]` напрямую, без `Camelized`: их
+ * camelCase — часть публичного контракта, конверсию они не проходят.
+ *
+ * Формы, совпадающие с сущностями стора (`Attachment`, `BugStep`, `ReportLink`),
+ * выведены в `../model/types` из тех же схем и переиспользуются здесь: у одной
+ * схемы контракта — ровно одно представление в коде.
  */
-export type ReportResponse = {
-  id: string;
-  title: string;
-  status: ReportStatuses;
-  responsibleUserId: string;
-  pastResponsibleUserId: string;
-  creatorUserId: string;
-  creatorType: number;
-  creatorTeamId?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  participantsUserIds: string[];
-  links: ReportLink[] | null;
-  bugs: BugResponse[] | null;
-  isExcludedFromAnalytics?: boolean;
-};
 
-export type BugResponse = {
-  id: number;
-  reportId: string;
-  title: string | null;
-  receive: string | null;
-  expect: string | null;
-  creatorUserId: string;
-  creatorType: number;
-  createdAt: string;
-  updatedAt: string;
-  status: BugStatuses;
-  attachments: AttachmentResponse[] | null;
-  comments: CommentResponse[] | null;
-  steps: BugStepResponse[] | null;
-};
+type Schemas = components["schemas"];
 
-export type AttachmentResponse = {
-  id: number;
-  entityId: number;
-  attachType: AttachmentTypes;
-  createdAt: string;
-  creatorUserId: string;
-  fileName: string;
-  hasPreview: boolean;
-};
+/** `POST /v2/reports` — в теле только заголовок. */
+export type CreateReportRequest = Camelized<Schemas["ReportCreateRequest"]>;
 
-export type CommentResponse = {
-  id: number;
-  bugId: number;
-  text: string;
-  creatorUserId: string;
-  createdAt: string;
-  updatedAt: string;
-  creatorType: number;
-  audience: number;
-  attachments: AttachmentResponse[] | null;
-};
+/** Ответ создания: репорт без вложенного содержимого. */
+export type CreateReportResponse = Camelized<Schemas["ReportSummary"]>;
 
-export type BugStepResponse = BugStep & {
-  attachments: AttachmentResponse[] | null;
-};
+/**
+ * Полная карточка репорта — ответ `GET /v2/reports/{aliasId}`.
+ * Форма списка живёт отдельно (`ListReportsResponse` в `shared/api/contracts`):
+ * LIST не отдаёт `links` и `bugs[].steps`.
+ */
+export type ReportResponse = Camelized<Schemas["Report"]>;
 
-export type PatchReportRequest = {
-  title?: string | null;
-  status?: ReportStatuses | null;
-  responsibleUserId?: string | null;
-  isExcludedFromAnalytics?: boolean | null;
-};
+/** Баг внутри карточки: со вложениями, комментариями и шагами. */
+export type BugResponse = Camelized<Schemas["Bug"]>;
 
-export type PatchReportResponse = {
-  id: number;
-  title: string;
-  status: ReportStatuses;
-  responsibleUserId: string;
-  pastResponsibleUserId: string;
-  updatedAt: string;
-};
+/** Публичная форма вложения — одна на весь модуль. */
+export type AttachmentResponse = Attachment;
 
-export type LegacyReportResolveResponse = {
-  teamId: string;
-  teamReportId: number;
-};
+/** Комментарий внутри карточки — вместе с вложениями. */
+export type CommentResponse = Camelized<Schemas["Comment"]>;
 
-export type CreateBugRequest = {
-  title?: string | null; // optional, max length 128
-  receive?: string | null; // required, min length 1, max length 2048
-  expect?: string | null; // required, min length 1, max length 2048
-};
+/**
+ * Ответ создания и обновления комментария: `CommentSummary`, без `attachments` —
+ * у только что созданного комментария вложений ещё нет.
+ */
+export type CommentSummaryResponse = Camelized<Schemas["CommentSummary"]>;
 
-export type PatchBugRequest = {
-  title?: string | null; // optional, max length 128
-  receive?: string | null; // required, min length 1, max length 2048
-  expect?: string | null; // required, min length 1, max length 2048
-  status?: number | null;
-};
+/** Шаг воспроизведения — ответ ручек шагов и элемент `bugs[].steps`. */
+export type BugStepResponse = BugStep;
 
-export type CreateBugResponse = {
-  id: number;
-  title: string | null;
-  receive: string | null;
-  expect: string | null;
-  createdAt: string;
-  updatedAt: string;
-  creatorUserId: string;
-  status: number;
-};
+/** `PATCH /v2/reports/{aliasId}`: не переданное поле не меняется. */
+export type PatchReportRequest = Camelized<Schemas["ReportPatchRequest"]>;
 
-export type PatchBugResponse = {
-  id: number;
-  title: string | null;
-  receive: string | null;
-  expect: string | null;
-  updatedAt: string;
-  status: number;
-};
+/** Что изменилось в репорте после PATCH. `id` — alias, как и в URL. */
+export type PatchReportResponse = Camelized<Schemas["ReportPatchResult"]>;
 
-export type BugStepRequest = {
-  text: string;
-};
+/** Координаты репорта для редиректа со старой ссылки. */
+export type LegacyReportResolveResponse = Camelized<
+  Schemas["LegacyReportResolve"]
+>;
 
-export type BugStepOrderRequest = {
-  stepIds: number[];
-};
+/** `POST /v2/reports/{aliasId}/bugs`: полноту пары receive/expect проверяет сервер. */
+export type CreateBugRequest = Camelized<Schemas["BugRequest"]>;
 
-export type CreateCommentRequest = {
-  text: string; // required, min length 1, max length 2048
-  audience?: number; // 0 = Internal (default), 1 = External (пересылается тестеру)
-};
+/** `PATCH .../bugs/{bugId}`: не переданное поле не меняется. */
+export type PatchBugRequest = Camelized<Schemas["BugPatchRequest"]>;
 
-export type UpdateCommentRequest = {
-  text: string; // required, min length 1, max length 2048
-};
+/** Ответ создания бага: без вложенных коллекций и без `reportId`. */
+export type CreateBugResponse = Camelized<Schemas["BugSummary"]>;
 
+/** Что изменилось в баге после PATCH. */
+export type PatchBugResponse = Camelized<Schemas["BugPatchResult"]>;
+
+/** Тело создания и обновления шага. */
+export type BugStepRequest = Camelized<Schemas["BugStepRequest"]>;
+
+/** Полный список шагов бага в нужном порядке. */
+export type BugStepOrderRequest = Camelized<Schemas["BugStepsOrderRequest"]>;
+
+/** Тело создания комментария: текст и (опционально) аудитория. */
+export type CreateCommentRequest = Camelized<Schemas["CommentRequest"]>;
+
+/** Тело обновления комментария — та же схема, что и у создания. */
+export type UpdateCommentRequest = Camelized<Schemas["CommentRequest"]>;
+
+/** Новое имя вложения. */
+export type AttachmentRenameRequest = Camelized<
+  Schemas["AttachmentRenameRequest"]
+>;
+
+/**
+ * Загружаемый файл. Тело multipart конверсию регистра не проходит, поэтому
+ * имя поля берётся из схемы как есть, без `Camelized`.
+ */
+export type AttachmentUploadForm = Schemas["AttachmentUpload"];
+
+/** Тело создания и обновления ссылки репорта. */
 export type ReportLinkRequest = ReportLinkDto;
+
+/** Ссылка репорта в ответе. */
 export type ReportLinkResponse = ReportLink;
+
+/** Query загрузки вложения бага: `attachType`. */
+export type UploadAttachmentQuery = NonNullable<
+  operations["BugAttachments_CreateBugAttachment"]["parameters"]["query"]
+>;

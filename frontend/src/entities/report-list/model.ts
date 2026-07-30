@@ -1,7 +1,8 @@
 import { createEffect, createStore, sample } from "effector";
-import { appApi, fetchUsers } from "@/shared/api";
+import { appApi, buildQueryString, fetchUsers } from "@/shared/api";
 import { ReportStatuses } from "@/shared/config";
 import type {
+  ListReportsQuery,
   ListReportsResponse,
   ReportListItem,
   UserResponse,
@@ -38,24 +39,18 @@ export const loadReportsFx = createEffect<
     offset = 0,
     take,
   }) => {
-    const searchParams = new URLSearchParams();
-    if (userId) searchParams.append("userId", userId);
-    if (teamId) searchParams.append("teamId", teamId);
-    if (statuses) {
-      for (const status of statuses) {
-        searchParams.append("reportStatuses", String(status));
-      }
-    }
-    if (creatorTypes) {
-      for (const ct of creatorTypes) {
-        searchParams.append("creatorTypes", String(ct));
-      }
-    }
-    searchParams.append("skip", String(offset));
-    if (take != null) searchParams.append("take", String(take));
+    // Имена параметров — из контракта (`Reports_ListReports`), а не из строк.
+    const query: ListReportsQuery = {
+      userId: userId || undefined,
+      teamId: teamId || undefined,
+      reportStatuses: statuses,
+      creatorTypes,
+      skip: offset,
+      take,
+    };
 
     const { data } = await appApi.get<ListReportsResponse>(
-      `/v2/reports?${searchParams.toString()}`
+      `/v2/reports?${buildQueryString(query)}`
     );
     return data;
   }

@@ -14,6 +14,10 @@ export {
   getSignalRConnectionId,
 } from "./instances";
 
+// Сборка query по именам из контракта
+export { buildQueryString } from "./buildQuery";
+export type { QueryValue } from "./buildQuery";
+
 // Разбор ошибок API
 export { parseApiError } from "./parseApiError";
 export type { ApiError } from "./parseApiError";

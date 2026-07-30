@@ -101,10 +101,24 @@ sample({
 // Set bugs when report is loaded
 sample({
   clock: getReportFx.doneData,
+  // `steps` в сторе багов не хранятся (у шагов свой стор), а `reportId` в сторе —
+  // alias репорта, по которому баги группируются, а не числовой `bug.reportId`
+  // с провода. Поэтому баг раскладывается по полям, а не копируется целиком.
   fn: (report: ReportResponse) => ({
     reportId: report.id,
     bugs: (report.bugs || []).map((bug) => ({
-      ...bug,
+      id: bug.id,
+      reportId: report.id,
+      title: bug.title,
+      receive: bug.receive,
+      expect: bug.expect,
+      creatorUserId: bug.creatorUserId,
+      creatorType: bug.creatorType,
+      createdAt: bug.createdAt,
+      updatedAt: bug.updatedAt,
+      status: bug.status,
+      attachments: bug.attachments,
+      comments: bug.comments,
       clientId: bug.id,
       isLocalOnly: false,
     })),

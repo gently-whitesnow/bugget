@@ -3,7 +3,7 @@ import { combine, sample } from "effector";
 import { createBugFx } from "./model-bug";
 import { $reportIdStore, $bugsData } from "@/entities/report";
 import { $authUserStore } from "@/entities/user";
-import { BugStatuses } from "@/shared/config";
+import { BugStatuses, CreatorTypes } from "@/shared/config";
 import type { BugFormData } from "@/entities/report";
 
 import {
@@ -60,6 +60,8 @@ export const $combinedBugsStore = combine(
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         creatorUserId: "",
+        // Локальный баг заводит текущий пользователь, не бот.
+        creatorType: CreatorTypes.USER,
         attachments: null,
         comments: null,
       };

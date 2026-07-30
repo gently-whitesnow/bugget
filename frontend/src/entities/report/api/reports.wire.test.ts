@@ -1,0 +1,193 @@
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios";
+import { appApi, setAppContext } from "@/shared/api";
+import { fetchReport, fetchReportsList, patchReport } from "./reports";
+import { createBug, updateBug } from "./bugs";
+import { updateBugStepsOrder } from "./bugSteps";
+import { createComment } from "./comments";
+import { createReportLink } from "./reportLinks";
+import { renameBugAttachment, uploadAttachment } from "./attachments";
+
+/**
+ * Провод модуля `reports` после перевода на сгенерированный контракт.
+ *
+ * Типы теперь выведены из yaml, но URL, имена query, форма тела и multipart
+ * обязаны остаться прежними 1:1 — фронт стоит в проде у заказчика. Поэтому тест
+ * смотрит не на типы (их держит `tsc`), а на то, что реально уходит в сеть:
+ * подменяем транспорт и читаем собранный запрос.
+ */
+
+const contextPrefix = "/api/app/workspaces/1/teams/2";
+
+let captured: InternalAxiosRequestConfig | null = null;
+let originalAdapter: AxiosAdapter | undefined;
+
+const sent = () => {
+  if (!captured) throw new Error("Запрос не был отправлен");
+  return captured;
+};
+
+/** Тело на уровне транспорта — уже сериализованный JSON. */
+const sentJsonBody = () => JSON.parse(sent().data as string);
+
+beforeEach(() => {
+  setAppContext(1, 2);
+  captured = null;
+  originalAdapter = appApi.defaults.adapter as AxiosAdapter | undefined;
+  appApi.defaults.adapter = (async (config) => {
+    captured = config;
+    return {
+      data: null,
+      status: 200,
+      statusText: "OK",
+      headers: { "content-type": "application/json" },
+      config,
+    };
+  }) as AxiosAdapter;
+});
+
+afterEach(() => {
+  appApi.defaults.adapter = originalAdapter;
+  setAppContext(null, null);
+});
+
+describe("пути репортов", () => {
+  it("карточка репорта запрашивается по alias в пути", async () => {
+    await fetchReport("team-42");
+
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/team-42`);
+    expect(sent().method).toBe("get");
+  });
+
+  it("список: имена query из контракта, статусы повторяющимся ключом", async () => {
+    await fetchReportsList("u-1", "t-1", [0, 2], 20, 10);
+
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports?userId=u-1&teamId=t-1&reportStatuses=0&reportStatuses=2&skip=20&take=10`
+    );
+  });
+
+  it("список без фильтров не отправляет пустые userId и teamId", async () => {
+    await fetchReportsList(null, null, null, 0, 10);
+
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports?skip=0&take=10`);
+  });
+});
+
+describe("тела запросов уходят в snake_case контракта", () => {
+  it("PATCH репорта: responsible_user_id и is_excluded_from_analytics", async () => {
+    await patchReport("team-42", {
+      responsibleUserId: "u-9",
+      isExcludedFromAnalytics: true,
+    });
+
+    expect(sent().method).toBe("patch");
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/team-42`);
+    expect(sentJsonBody()).toEqual({
+      responsible_user_id: "u-9",
+      is_excluded_from_analytics: true,
+    });
+  });
+
+  it("создание бага: receive и expect как есть", async () => {
+    await createBug("team-42", { receive: "падает", expect: null });
+
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/team-42/bugs`);
+    expect(sentJsonBody()).toEqual({ receive: "падает", expect: null });
+  });
+
+  it("PATCH бага: статус и текстовые поля", async () => {
+    await updateBug("team-42", 7, { status: 1, expect: "не падает" });
+
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/team-42/bugs/7`);
+    expect(sentJsonBody()).toEqual({ status: 1, expect: "не падает" });
+  });
+
+  it("порядок шагов: stepIds в коде — step_ids на проводе", async () => {
+    await updateBugStepsOrder("team-42", 7, { stepIds: [3, 1, 2] });
+
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports/team-42/bugs/7/steps/order`
+    );
+    expect(sent().method).toBe("put");
+    expect(sentJsonBody()).toEqual({ step_ids: [3, 1, 2] });
+  });
+
+  it("комментарий: text и audience", async () => {
+    await createComment("team-42", 7, { text: "воспроизвёл", audience: 1 });
+
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports/team-42/bugs/7/comments`
+    );
+    expect(sentJsonBody()).toEqual({ text: "воспроизвёл", audience: 1 });
+  });
+
+  it("ссылка репорта: link и name", async () => {
+    await createReportLink("team-42", { link: "https://ati.su", name: "ATI" });
+
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/team-42/links`);
+    expect(sentJsonBody()).toEqual({ link: "https://ati.su", name: "ATI" });
+  });
+
+  it("переименование вложения: fileName в коде — file_name на проводе", async () => {
+    await renameBugAttachment({
+      reportId: "team-42",
+      bugId: 7,
+      attachmentId: 11,
+      fileName: "скрин.png",
+    });
+
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports/team-42/bugs/7/attachments/11`
+    );
+    expect(sentJsonBody()).toEqual({ file_name: "скрин.png" });
+  });
+});
+
+describe("загрузка вложения — multipart, а не JSON", () => {
+  it("attachType уходит query-параметром, файл — полем file", async () => {
+    const file = new File(["данные"], "скрин.png", { type: "image/png" });
+
+    await uploadAttachment({
+      reportId: "team-42",
+      bugId: 7,
+      attachType: 2,
+      file,
+    });
+
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports/team-42/bugs/7/attachments?attachType=2`
+    );
+
+    const body = sent().data as FormData;
+    expect(body).toBeInstanceOf(FormData);
+    // Имя поля берётся из схемы AttachmentUpload и конверсию регистра не проходит.
+    expect(body.get("file")).toBe(file);
+    expect([...body.keys()]).toEqual(["file"]);
+  });
+});
+
+describe("ответы приходят в camelCase кода", () => {
+  it("тело ответа карточки конвертируется целиком, включая вложенное", async () => {
+    appApi.defaults.adapter = (async (config) => ({
+      data: {
+        id: "team-42",
+        creator_team_id: "t-1",
+        is_excluded_from_analytics: false,
+        bugs: [{ id: 7, report_id: 42, creator_user_id: "u-3" }],
+      },
+      status: 200,
+      statusText: "OK",
+      headers: { "content-type": "application/json" },
+      config,
+    })) as AxiosAdapter;
+
+    const report = await fetchReport("team-42");
+
+    expect(report.creatorTeamId).toBe("t-1");
+    expect(report.isExcludedFromAnalytics).toBe(false);
+    expect(report.bugs?.[0].reportId).toBe(42);
+    expect(report.bugs?.[0].creatorUserId).toBe("u-3");
+  });
+});

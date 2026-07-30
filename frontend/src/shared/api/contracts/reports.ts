@@ -1,4 +1,4 @@
-import type { components } from "@/shared/api/generated/reports";
+import type { components, operations } from "@/shared/api/generated/reports";
 import type { Camelized } from "@/shared/lib/types";
 
 /**
@@ -23,4 +23,21 @@ export type BugListItem = Camelized<components["schemas"]["BugListItem"]>;
 /** Страница списка репортов: `total` + `reports`. */
 export type ListReportsResponse = Camelized<
   components["schemas"]["ReportList"]
+>;
+
+/**
+ * Query обеих ручек, отдающих список: фильтры и пагинация.
+ *
+ * Берутся из `operations[...]` напрямую, без `Camelized`: имена query
+ * исторически в camelCase, конверсию они не проходят и принадлежат публичному
+ * контракту (ADR-0009). Живут в `shared`, потому что список запрашивают два
+ * потребителя — `entities/report` и `entities/report-list`.
+ */
+export type ListReportsQuery = NonNullable<
+  operations["Reports_ListReports"]["parameters"]["query"]
+>;
+
+/** Query полнотекстового поиска — та же форма ответа, свои фильтры. */
+export type SearchReportsQuery = NonNullable<
+  operations["Search_SearchReports"]["parameters"]["query"]
 >;

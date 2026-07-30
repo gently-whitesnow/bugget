@@ -18,7 +18,8 @@ const BugStatusStats = () => {
       acc[bug.status] = (acc[bug.status] || 0) + 1;
       return acc;
     },
-    {} as Record<BugStatuses, number>
+    // Ключ — числовой статус из контракта; значения перечислены в `BugStatuses`.
+    {} as Record<number, number>
   );
 
   const statuses = [

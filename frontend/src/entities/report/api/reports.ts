@@ -1,5 +1,5 @@
-import { appApi } from "@/shared/api";
-import type { ListReportsResponse } from "@/shared/api";
+import { appApi, buildQueryString } from "@/shared/api";
+import type { ListReportsQuery, ListReportsResponse } from "@/shared/api";
 import type {
   CreateReportRequest,
   CreateReportResponse,
@@ -58,19 +58,18 @@ export const fetchReportsList = async (
   take: number = 10
 ): Promise<ListReportsResponse> => {
   try {
-    const searchParams = new URLSearchParams();
-    if (userId) searchParams.append("userId", userId);
-    if (teamId) searchParams.append("teamId", teamId);
-    if (reportStatuses) {
-      for (const status of reportStatuses) {
-        searchParams.append("reportStatuses", String(status));
-      }
-    }
-    searchParams.append("skip", String(skip));
-    searchParams.append("take", String(take));
+    // Имена параметров — из контракта (`Reports_ListReports`), а не из строки.
+    // Пустой фильтр по пользователю и команде не отправляется, как и раньше.
+    const query: ListReportsQuery = {
+      userId: userId || undefined,
+      teamId: teamId || undefined,
+      reportStatuses,
+      skip,
+      take,
+    };
 
     const { data } = await appApi.get<ListReportsResponse>(
-      `/v2/reports?${searchParams.toString()}`
+      `/v2/reports?${buildQueryString(query)}`
     );
     return data;
   } catch (error) {

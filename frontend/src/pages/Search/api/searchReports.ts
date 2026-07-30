@@ -1,12 +1,12 @@
-import { appApi } from "@/shared/api";
-import type { SearchResponse } from "./contracts";
+import { appApi, buildQueryString } from "@/shared/api";
+import type { SearchRequestQueryParams, SearchResponse } from "./contracts";
 
 export const searchReports = async (
-  searchParams: string
+  query: SearchRequestQueryParams
 ): Promise<SearchResponse | void> => {
   try {
     const { data } = await appApi.get<SearchResponse>(
-      `/v1/reports/search?${searchParams}`
+      `/v1/reports/search?${buildQueryString(query)}`
     );
     return data;
   } catch (error) {

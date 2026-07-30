@@ -1,4 +1,4 @@
-import type { ListReportsResponse } from "@/shared/api";
+import type { ListReportsResponse, SearchReportsQuery } from "@/shared/api";
 
 /**
  * `GET /v1/reports/search` отдаёт ту же форму, что и список репортов
@@ -7,15 +7,8 @@ import type { ListReportsResponse } from "@/shared/api";
 export type SearchResponse = ListReportsResponse;
 
 /**
- * Параметры запроса поиска. Имена исторически в camelCase — они в URL,
- * менять их нельзя (см. ADR-0005).
+ * Параметры запроса поиска — из сгенерированной операции `Search_SearchReports`.
+ * Имена исторически в camelCase: они в URL, конверсию не проходят и менять их
+ * нельзя (ADR-0009). Рукописный список имён расходился бы с контрактом молча.
  */
-export type SearchRequestQueryParams = {
-  query?: string;
-  reportStatuses?: number[];
-  userId?: string;
-  teamId?: string;
-  sort?: string;
-  skip?: number;
-  take?: number;
-};
+export type SearchRequestQueryParams = SearchReportsQuery;

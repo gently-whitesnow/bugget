@@ -7,14 +7,56 @@ import {
   deleteCommentAttachment,
   renameCommentAttachment,
 } from "@/entities/report";
-import type { Comment, Attachment } from "@/entities/report";
+import type {
+  Comment,
+  CommentSummaryResponse,
+  Attachment,
+} from "@/entities/report";
 import { AttachmentTypes } from "@/shared/config";
 import { notificationMessages, notifyErrorRequested } from "@/shared/model";
 
 /**
  * Сторы
+ *
+ * Комментарий в сторе — форма контракта (`Comment`): с ключом `attachments`,
+ * где `null` значит «вложения не приезжали с этим ответом». Ручки создания и
+ * обновления, как и события SignalR, отдают `CommentSummary` — без вложений;
+ * такой комментарий кладётся в стор с `attachments: null`, а при обновлении
+ * существующего его вложения сохраняются.
  */
-export const $commentsByBugId = createStore<Record<number, Comment[]>>({});
+type CommentsByBugId = Record<number, Comment[]>;
+
+export const $commentsByBugId = createStore<CommentsByBugId>({});
+
+/**
+ * Обновляет комментарий по его id, не зная бага: события SignalR о вложениях
+ * приносят только `entityId` комментария. Если комментария в сторе нет или
+ * обновление ничего не меняет (`patch` вернул `null`), стор остаётся прежним.
+ */
+const patchCommentById = (
+  state: CommentsByBugId,
+  commentId: number,
+  patch: (comment: Comment) => Comment | null
+): CommentsByBugId => {
+  for (const [bugId, comments] of Object.entries(state)) {
+    const idx = comments.findIndex((comment) => comment.id === commentId);
+    if (idx === -1) continue;
+
+    const updated = patch(comments[idx]);
+    if (!updated) return state;
+
+    return {
+      ...state,
+      [Number(bugId)]: [
+        ...comments.slice(0, idx),
+        updated,
+        ...comments.slice(idx + 1),
+      ],
+    };
+  }
+
+  return state;
+};
 
 /**
  * Эффекты
@@ -40,7 +82,9 @@ export const createCommentFx = createEffect<
       createdAt: result.createdAt,
       updatedAt: result.updatedAt,
       creatorType: result.creatorType,
-      audience: result.audience ?? 0,
+      audience: result.audience,
+      // Ручка создания вложений не отдаёт: у нового комментария их ещё нет.
+      attachments: null,
     };
   } catch (error) {
     console.error("❌ createCommentFx error:", error);
@@ -62,7 +106,9 @@ export const updateCommentFx = createEffect<
     commentId: number;
     text: string;
   },
-  Comment,
+  // Ответ обновления — `CommentSummary`: вложения он не отдаёт, и стор их не
+  // теряет, потому что обновление накладывается на существующий комментарий.
+  CommentSummaryResponse,
   Error
 >(async ({ reportId, bugId, commentId, text }) => {
   try {
@@ -73,7 +119,7 @@ export const updateCommentFx = createEffect<
       text: result.text,
       creatorUserId: result.creatorUserId,
       creatorType: result.creatorType,
-      audience: result.audience ?? 0,
+      audience: result.audience,
       createdAt: result.createdAt,
       updatedAt: result.updatedAt,
     };
@@ -227,9 +273,10 @@ export const setCommentsByBugIdEvent = createEvent<
   }[]
 >();
 
-// socket события
-export const createCommentSocketEvent = createEvent<Comment>();
-export const updateCommentSocketEvent = createEvent<Comment>();
+// socket события. По SignalR приходит `CommentSummaryDbModel` — без вложений
+// (specs/contracts/events.yaml), поэтому payload описан формой summary.
+export const createCommentSocketEvent = createEvent<CommentSummaryResponse>();
+export const updateCommentSocketEvent = createEvent<CommentSummaryResponse>();
 export const deleteCommentSocketEvent = createEvent<{
   bugId: number;
   commentId: number;
@@ -260,7 +307,8 @@ $commentsByBugId
 
     return {
       ...state,
-      [comment.bugId]: [...existingComments, comment],
+      // `null` — «вложений с этим событием не приехало», а не «их нет».
+      [comment.bugId]: [...existingComments, { ...comment, attachments: null }],
     };
   })
   .on(updateCommentSocketEvent, (state, updatedComment) => {
@@ -325,40 +373,14 @@ $commentsByBugId
       };
     }
   )
-  .on(createCommentAttachmentSocketEvent, (state, attachment) => {
-    const commentId = attachment.entityId;
-    let updatedState = state;
-
-    for (const [bugId, comments] of Object.entries(state)) {
-      const idx = comments.findIndex((comment) => comment.id === commentId);
-      if (idx === -1) continue;
-
-      const comment = comments[idx];
+  .on(createCommentAttachmentSocketEvent, (state, attachment) =>
+    patchCommentById(state, attachment.entityId, (comment) => {
       const currentAttachments = comment.attachments || [];
+      if (currentAttachments.some((a) => a.id === attachment.id)) return null;
 
-      if (currentAttachments.some((a) => a.id === attachment.id)) {
-        return state;
-      }
-
-      const updatedComment = {
-        ...comment,
-        attachments: [...currentAttachments, attachment],
-      };
-
-      updatedState = {
-        ...state,
-        [Number(bugId)]: [
-          ...comments.slice(0, idx),
-          updatedComment,
-          ...comments.slice(idx + 1),
-        ],
-      };
-
-      break;
-    }
-
-    return updatedState;
-  })
+      return { ...comment, attachments: [...currentAttachments, attachment] };
+    })
+  )
   .on(
     deleteCommentAttachmentFx.doneData,
     (state, { bugId, commentId, attachmentId }) => {
@@ -399,67 +421,23 @@ $commentsByBugId
   )
   .on(
     deleteCommentAttachmentSocketEvent,
-    (state, { commentId, attachmentId }) => {
-      let updatedState = state;
-
-      for (const [bugId, comments] of Object.entries(state)) {
-        const idx = comments.findIndex((comment) => comment.id === commentId);
-        if (idx === -1) continue;
-
-        const comment = comments[idx];
-        const updatedComment = {
-          ...comment,
-          attachments: (comment.attachments || []).filter(
-            (a) => a.id !== attachmentId
-          ),
-        };
-
-        updatedState = {
-          ...state,
-          [Number(bugId)]: [
-            ...comments.slice(0, idx),
-            updatedComment,
-            ...comments.slice(idx + 1),
-          ],
-        };
-
-        break;
-      }
-
-      return updatedState;
-    }
+    (state, { commentId, attachmentId }) =>
+      patchCommentById(state, commentId, (comment) => ({
+        ...comment,
+        attachments: (comment.attachments || []).filter(
+          (a) => a.id !== attachmentId
+        ),
+      }))
   )
   .on(commentAttachmentChangedSocketEvent, (state, attachment) => {
     if (attachment.attachType !== AttachmentTypes.COMMENT) return state;
 
-    const commentId = attachment.entityId;
-    let updatedState = state;
-
-    for (const [bugId, comments] of Object.entries(state)) {
-      const idx = comments.findIndex((comment) => comment.id === commentId);
-      if (idx === -1) continue;
-
-      const comment = comments[idx];
-      const updatedComment = {
-        ...comment,
-        attachments: (comment.attachments || []).map((a) =>
-          a.id === attachment.id ? { ...a, ...attachment } : a
-        ),
-      };
-
-      updatedState = {
-        ...state,
-        [Number(bugId)]: [
-          ...comments.slice(0, idx),
-          updatedComment,
-          ...comments.slice(idx + 1),
-        ],
-      };
-
-      break;
-    }
-
-    return updatedState;
+    return patchCommentById(state, attachment.entityId, (comment) => ({
+      ...comment,
+      attachments: (comment.attachments || []).map((a) =>
+        a.id === attachment.id ? { ...a, ...attachment } : a
+      ),
+    }));
   });
 
 /**

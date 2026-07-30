@@ -1,11 +1,11 @@
 import { appApi } from "@/shared/api";
-import type { ReportLink, ReportLinkDto } from "../model/types";
+import type { ReportLinkRequest, ReportLinkResponse } from "./contracts";
 
 export const createReportLink = async (
   reportId: string,
-  dto: ReportLinkDto
-): Promise<ReportLink> => {
-  const { data } = await appApi.post<ReportLink>(
+  dto: ReportLinkRequest
+): Promise<ReportLinkResponse> => {
+  const { data } = await appApi.post<ReportLinkResponse>(
     `/v2/reports/${reportId}/links`,
     dto
   );
@@ -15,9 +15,9 @@ export const createReportLink = async (
 export const updateReportLink = async (
   reportId: string,
   linkId: number,
-  dto: ReportLinkDto
-): Promise<ReportLink> => {
-  const { data } = await appApi.put<ReportLink>(
+  dto: ReportLinkRequest
+): Promise<ReportLinkResponse> => {
+  const { data } = await appApi.put<ReportLinkResponse>(
     `/v2/reports/${reportId}/links/${linkId}`,
     dto
   );

@@ -1,5 +1,10 @@
-import { appApi } from "@/shared/api";
-import type { AttachmentResponse } from "./contracts";
+import { appApi, buildQueryString } from "@/shared/api";
+import type {
+  AttachmentRenameRequest,
+  AttachmentResponse,
+  AttachmentUploadForm,
+  UploadAttachmentQuery,
+} from "./contracts";
 
 type UploadAttachmentParameters = {
   reportId: string;
@@ -23,20 +28,36 @@ type RenameBugStepAttachmentParameters = RenameAttachmentParameters & {
   stepId: number;
 };
 
-export const uploadAttachment = async (params: UploadAttachmentParameters) => {
+/**
+ * Имя поля multipart — из схемы `AttachmentUpload`. Тело multipart регистр не
+ * конвертирует (ADR-0009), поэтому имя обязано совпадать с контрактом дословно;
+ * здесь это держит компилятор, а не внимательность на ревью.
+ */
+const attachmentFileField: keyof AttachmentUploadForm = "file";
+
+const attachmentFormData = (file: File): FormData => {
+  const formData = new FormData();
+  formData.append(attachmentFileField, file);
+  return formData;
+};
+
+const multipartHeaders = {
+  headers: { "Content-Type": "multipart/form-data" },
+};
+
+export const uploadAttachment = async (
+  params: UploadAttachmentParameters
+): Promise<AttachmentResponse> => {
   try {
     const { reportId, bugId, file, attachType } = params;
-    const formData = new FormData();
-    formData.append("file", file);
+    const query: UploadAttachmentQuery = { attachType };
 
-    const { data } = await appApi.post(
-      `/v2/reports/${reportId}/bugs/${bugId}/attachments?attachType=${attachType}`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+    const { data } = await appApi.post<AttachmentResponse>(
+      `/v2/reports/${reportId}/bugs/${bugId}/attachments?${buildQueryString(
+        query
+      )}`,
+      attachmentFormData(file),
+      multipartHeaders
     );
     return data;
   } catch (error) {
@@ -61,9 +82,10 @@ export const renameBugAttachment = async ({
   attachmentId,
   fileName,
 }: RenameAttachmentParameters): Promise<AttachmentResponse> => {
+  const request: AttachmentRenameRequest = { fileName };
   const { data } = await appApi.patch<AttachmentResponse>(
     `/v2/reports/${reportId}/bugs/${bugId}/attachments/${attachmentId}`,
-    { fileName }
+    request
   );
   return data;
 };
@@ -74,12 +96,10 @@ export const createCommentAttachment = async (
   commentId: number,
   file: File
 ): Promise<AttachmentResponse> => {
-  const formData = new FormData();
-  formData.append("file", file);
   const { data } = await appApi.post<AttachmentResponse>(
     `/v2/reports/${reportId}/bugs/${bugId}/comments/${commentId}/attachments`,
-    formData,
-    { headers: { "Content-Type": "multipart/form-data" } }
+    attachmentFormData(file),
+    multipartHeaders
   );
   return data;
 };
@@ -102,9 +122,10 @@ export const renameCommentAttachment = async ({
   attachmentId,
   fileName,
 }: RenameCommentAttachmentParameters): Promise<AttachmentResponse> => {
+  const request: AttachmentRenameRequest = { fileName };
   const { data } = await appApi.patch<AttachmentResponse>(
     `/v2/reports/${reportId}/bugs/${bugId}/comments/${commentId}/attachments/${attachmentId}`,
-    { fileName }
+    request
   );
   return data;
 };
@@ -115,12 +136,10 @@ export const createBugStepAttachment = async (
   stepId: number,
   file: File
 ): Promise<AttachmentResponse> => {
-  const formData = new FormData();
-  formData.append("file", file);
   const { data } = await appApi.post<AttachmentResponse>(
     `/v2/reports/${reportId}/bugs/${bugId}/steps/${stepId}/attachments`,
-    formData,
-    { headers: { "Content-Type": "multipart/form-data" } }
+    attachmentFormData(file),
+    multipartHeaders
   );
   return data;
 };
@@ -143,9 +162,10 @@ export const renameBugStepAttachment = async ({
   attachmentId,
   fileName,
 }: RenameBugStepAttachmentParameters): Promise<AttachmentResponse> => {
+  const request: AttachmentRenameRequest = { fileName };
   const { data } = await appApi.patch<AttachmentResponse>(
     `/v2/reports/${reportId}/bugs/${bugId}/steps/${stepId}/attachments/${attachmentId}`,
-    { fileName }
+    request
   );
   return data;
 };

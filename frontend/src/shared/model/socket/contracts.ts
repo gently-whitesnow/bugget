@@ -21,9 +21,15 @@ type BugStep = {
   attachments: Attachment[] | null;
 };
 
+/**
+ * `reportId` — число: по SignalR уходит `ReportLinkDbModel` с `int ReportId`,
+ * то же значение и того же типа, что в HTTP-ответе (`ReportLink` в контракте
+ * модуля `reports`, снимок `v2.reports.get`). Раньше здесь стояла строка —
+ * зеркало SignalR расходилось с фактическим проводом.
+ */
 type ReportLink = {
   id: number;
-  reportId: string;
+  reportId: number;
   link: string;
   name: string;
   createdAt: string;

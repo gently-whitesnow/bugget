@@ -128,6 +128,26 @@ describe("response-интерцептор: case-конверсия", () => {
     });
   });
 
+  it("одинаковое JSON-тело имеет одну runtime-форму независимо от URL", async () => {
+    const wire = {
+      nested_items: [{ nullable_value: null, zero_value: 0 }],
+      empty_items: [],
+    };
+    const ordinary = instanceRespondingWith(wire, "application/json");
+    const analytics = instanceRespondingWith(wire, "application/json");
+
+    const [ordinaryResponse, analyticsResponse] = await Promise.all([
+      ordinary.get("/v2/reports/7"),
+      analytics.get("/v2/analytics/summary"),
+    ]);
+
+    expect(analyticsResponse.data).toEqual(ordinaryResponse.data);
+    expect(analyticsResponse.data).toEqual({
+      nestedItems: [{ nullableValue: null, zeroValue: 0 }],
+      emptyItems: [],
+    });
+  });
+
   it("не-JSON тело не трогается: бинарное вложение доезжает целым", async () => {
     // Рекурсивный обход по ключам превратил бы Blob в пустой объект: у него нет
     // собственных перечислимых свойств.

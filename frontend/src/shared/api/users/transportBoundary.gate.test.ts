@@ -58,6 +58,26 @@ describe("гейт прямых вызовов путей users", () => {
     ).toHaveLength(1);
   });
 
+  it("краснеет на пути без префикса модуля — его дописывает интерсептор", () => {
+    // Обход, найденный архитектурным ревью PR #46: `/v1/...` доезжает до
+    // бекенда тем же адресом, что и полный `/api/users/v1/...`.
+    const messages = lint('usersApi.get("/v1/workspaces/1/teams/2/users");');
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].message).toContain("src/shared/api/users");
+
+    expect(
+      lint("usersApi.post(`/v1/workspaces/${workspaceId}/teams`, body);")
+    ).toHaveLength(1);
+    expect(
+      lint('usersApi.request({ url: "/v1/workspaces", method: "get" });')
+    ).toHaveLength(1);
+  });
+
+  it("краснеет и на легаси-форме адреса без сегмента контекста", () => {
+    expect(lint('usersApi.get("/v1/users/external-links");')).toHaveLength(1);
+  });
+
   it("вызов операции контракта не трогает", () => {
     expect(
       lint(
@@ -68,6 +88,8 @@ describe("гейт прямых вызовов путей users", () => {
 
   it("пути других модулей не трогает", () => {
     expect(lint('appApi.get("/v2/reports");')).toEqual([]);
+    expect(lint('appApi.get("/v1/reports/search?take=10");')).toEqual([]);
+    expect(lint("appApi.put(`/v1/user-settings/${id}`, body);")).toEqual([]);
     expect(
       lint('authorizationApi.post("/api/authorization/v1/logout");')
     ).toEqual([]);

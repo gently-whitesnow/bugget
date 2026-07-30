@@ -1162,6 +1162,18 @@ export interface components {
                 "application/problem+json": components["schemas"]["ReportCountsProblemDetails"];
             };
         };
+        /**
+         * @description Репорт не найден. Тот же ответ отдаётся на репорт чужой команды или
+         *     организации: существование чужого репорта не раскрывается.
+         */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
         /** @description Запрос без действующей identity либо с недействительной сессией. */
         Unauthorized: {
             headers: {
@@ -1296,6 +1308,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
             500: components["responses"]["InternalServerError"];
         };
     };

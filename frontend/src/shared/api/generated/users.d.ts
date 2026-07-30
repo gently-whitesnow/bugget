@@ -90,7 +90,7 @@ export interface paths {
         post?: never;
         /**
          * Отвязать способ входа.
-         * @description Единственный способ входа отвязать нельзя — 400 с текстовым телом.
+         * @description Единственный способ входа отвязать нельзя — 400 с кодом `last_login_method`.
          */
         delete: operations["Users_UnlinkProviderInContext"];
         options?: never;
@@ -1007,13 +1007,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Это единственный способ входа. Тело — текст, не JSON. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             /** @description Такой привязки у пользователя нет. */
             404: {

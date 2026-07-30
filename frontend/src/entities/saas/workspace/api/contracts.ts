@@ -2,7 +2,6 @@
 export type {
   TeamMemberResponse,
   TeamMembersResponse,
-  CreateTeamRequest,
   TeamResponse,
   WorkspaceResponse,
   CreateWorkspaceRequest,

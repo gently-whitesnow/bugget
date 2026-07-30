@@ -6,7 +6,7 @@ import type {
   PatchReportResponse,
   ReportResponse,
 } from "./api";
-import { fetchUsers } from "@/shared/api";
+import { usersApi } from "@/shared/api";
 import type { UserResponse } from "@/shared/api/contracts";
 
 import { ReportStatuses, BugStatuses, CreatorTypes } from "@/shared/config";
@@ -71,7 +71,7 @@ export const patchReportFx = createEffect<
 export const fetchUsersFx = createEffect<string[], UserResponse[]>(
   async (userIds) => {
     if (userIds.length === 0) return [];
-    return await fetchUsers(userIds);
+    return await usersApi.fetchUsers(userIds);
   }
 );
 

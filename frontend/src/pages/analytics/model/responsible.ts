@@ -2,7 +2,7 @@ import { createEffect, createEvent, createStore, sample } from "effector";
 
 import {
   analyticsApi,
-  fetchUsers,
+  usersApi,
   type AnalyticsResponsible,
   type UserResponse,
 } from "@/shared/api";
@@ -40,7 +40,7 @@ export const fetchResponsibleFx = createEffect<
 );
 
 const fetchSelectedUserFx = createEffect<string, UserResponse[]>(
-  async (userId) => fetchUsers([userId])
+  async (userId) => usersApi.fetchUsers([userId])
 );
 
 export const $periodStore = createStore<AnalyticsPeriod>(defaultPeriod).on(

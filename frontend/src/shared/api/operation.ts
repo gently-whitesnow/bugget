@@ -131,6 +131,17 @@ type OperationResult<O> = [JsonResponseOf<O>] extends [never]
   ? void
   : Camelized<JsonResponseOf<O>>;
 
+/**
+ * Результат вызова операции. Экспортируется затем же, зачем `OperationCallArgs`:
+ * обёртке над `request` (например context-форме адреса в модуле `users`) нужно
+ * объявить свой возвращаемый тип тем же, что у самой операции, а не «шире».
+ */
+export type OperationCallResult<
+  TPaths,
+  P extends keyof TPaths,
+  M extends MethodsOf<TPaths[P]>,
+> = OperationResult<OperationOf<TPaths, P, M>>;
+
 /** Форма тела запроса операции в том виде, в котором её пишет код фронта. */
 export type OperationBody<
   TPaths,
@@ -163,7 +174,14 @@ export type OperationCallArgs<
   M extends MethodsOf<TPaths[P]>,
 > = OperationArgs<OperationOf<TPaths, P, M>>;
 
-const interpolatePath = (
+/**
+ * Подстановка path-параметров в шаблон адреса из контракта.
+ *
+ * Экспортируется, потому что адрес операции нужен не только запросу: аватар
+ * уезжает в `src` картинки, а не в axios, и собирать его руками рядом значило бы
+ * снова развести адрес и контракт.
+ */
+export const buildOperationPath = (
   template: string,
   params: Record<string, unknown> | undefined
 ): string =>
@@ -205,7 +223,7 @@ export const createOperationRequest =
   ): Promise<OperationResult<OperationOf<TPaths, P, M>>> => {
     const { path: pathParams, query, body, multipart } = args as RuntimeArgs;
 
-    const url = interpolatePath(path, pathParams);
+    const url = buildOperationPath(path, pathParams);
 
     // «Query не передан» и «query передан, но пуст» — разные адреса, и провод
     // здесь менять нельзя: рукописные вызовы списка и поиска всегда клеили

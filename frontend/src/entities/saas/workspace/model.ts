@@ -1,6 +1,9 @@
 import { createEffect, sample } from "effector";
 import { createWorkspace, renameWorkspace, deleteWorkspace } from "./api";
-import type { CreateWorkspaceRequest } from "./api/contracts";
+import type {
+  CreateWorkspaceRequest,
+  WorkspaceResponse,
+} from "./api/contracts";
 import {
   $workspaces,
   addWorkspace,
@@ -11,10 +14,26 @@ import {
   resetWorkspaces,
 } from "@/shared/model";
 
+/**
+ * Созданное пространство в форме стартового экрана. Контракт описывает два
+ * разных ответа: создание отдаёт `Workspace` (идентификатор числом, команд нет),
+ * а стор держит `WorkspaceWithTeams` из контекста (идентификатор строкой, у
+ * пространства есть команды). Рукописный DTO смешивал их в один тип, и разница
+ * держалась на том, что потребители всюду пишут `String(id)` и `teams || []`.
+ * Приведение стало явным и живёт в одном месте — на проводе не изменилось ничего.
+ */
+const toWorkspaceWithTeams = (
+  workspace: Awaited<ReturnType<typeof createWorkspace>>
+): WorkspaceResponse => ({
+  ...workspace,
+  id: String(workspace.id),
+  teams: [],
+});
+
 export const createWorkspaceFx = createEffect(
   async (dto: CreateWorkspaceRequest) => {
     const workspace = await createWorkspace(dto);
-    return workspace;
+    return toWorkspaceWithTeams(workspace);
   }
 );
 

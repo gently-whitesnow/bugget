@@ -2,9 +2,6 @@
 export {
   authorizationApi,
   authorizationPath,
-  usersApi,
-  usersPath,
-  usersPathWithContext,
   appApi,
   parseAppContextFromPath,
   setAppContext,
@@ -40,8 +37,10 @@ export * from "./contracts";
 // Self-hosted API
 export * as selfHostedApi from "./selfHosted";
 
-// Users API helpers
-export * from "./users";
+// Операции модуля users — единственная транспортная граница этого модуля.
+// Имя `usersApi` теперь принадлежит им, а не axios-инстансу: инстанс из
+// публичного индекса убран, чтобы адрес модуля собирался только здесь.
+export * as usersApi from "./users";
 
 // Analytics API helpers
 export * as analyticsApi from "./analytics";

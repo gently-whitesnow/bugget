@@ -5,14 +5,20 @@ import {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { appApi, parseApiError, setAppContext } from "@/shared/api";
-import type { components, operations } from "@/shared/api/generated/settings";
+import type {
+  components,
+  operations,
+  paths,
+} from "@/shared/api/generated/settings";
 import type { Camelized } from "@/shared/lib/types";
 import {
   fetchSettingsSections,
+  settingsRoutes,
   updateTeamSetting,
   updateUserSetting,
   updateWorkspaceSetting,
 } from "./settings";
+import type { SettingsMethod } from "./settings";
 import type {
   SettingValues,
   SettingView,
@@ -126,6 +132,9 @@ const respondWithProblem = (status: number, data: unknown) => {
 
 const lastRequest = () => sent[sent.length - 1];
 
+/** Префикс, который навешивает интерсептор appApi на путь модуля. */
+const contextPrefix = "/api/app/workspaces/7/teams/11";
+
 beforeEach(() => {
   sent = [];
   // Контекст задаётся явно: путь ручки собирает интерсептор appApi.
@@ -143,9 +152,7 @@ describe("чтение секций настроек", () => {
     const sections = await fetchSettingsSections();
 
     expect(lastRequest().method).toBe("get");
-    expect(lastRequest().url).toBe(
-      "/api/app/workspaces/7/teams/11/v1/settings-sections"
-    );
+    expect(lastRequest().url).toBe(contextPrefix + settingsRoutes.sections);
 
     const [section] = sections.workspaceSections;
     expect(section.id).toBe("kaiten");
@@ -179,28 +186,36 @@ describe("обновление настройки", () => {
     {
       name: "workspace",
       call: updateWorkspaceSetting,
-      path: "/api/app/workspaces/7/teams/11/v1/workspace-settings-sections/kaiten/settings/kaiten_url",
+      route: settingsRoutes.workspaceSetting,
     },
     {
       name: "team",
       call: updateTeamSetting,
-      path: "/api/app/workspaces/7/teams/11/v1/team-settings-sections/kaiten/settings/kaiten_url",
+      route: settingsRoutes.teamSetting,
     },
     {
       name: "user",
       call: updateUserSetting,
-      path: "/api/app/workspaces/7/teams/11/v1/user-settings-sections/kaiten/settings/kaiten_url",
+      route: settingsRoutes.userSetting,
     },
   ] as const;
 
   it.each(cases)(
-    "$name: PUT по своему URL с массивом значений в теле",
-    async ({ call, path }) => {
+    "$name: PUT по маршруту контракта с массивом значений в теле",
+    async ({ call, route }) => {
       respondWith(wireSetting);
 
       const updated = await call("kaiten", "kaiten_url", [
         "https://kaiten.example/new",
       ]);
+
+      // Ожидаемый URL собран из того же route template, что и в production-коде:
+      // проверяется подстановка сегментов, а не переписанный руками путь.
+      const path =
+        contextPrefix +
+        route
+          .replace("{sectionId}", "kaiten")
+          .replace("{settingId}", "kaiten_url");
 
       expect(lastRequest().method).toBe("put");
       expect(lastRequest().url).toBe(path);
@@ -247,6 +262,86 @@ type Json200<O extends keyof operations> = Camelized<
   operations[O]["responses"][200]["content"]["application/json"]
 >;
 
+/*
+ * Связь «маршрут + метод → операция контракта». Это доказательство того, что URL и
+ * метод в `settings.ts` не второе ручное представление контракта: тот самый литерал,
+ * которым ходит production-код, вместе с методом резолвится в `paths` ровно в ту
+ * операцию, из которой выведены тело и ответ ручки. Переименовали путь или сменили
+ * метод в yaml — красным становится и вызов, и эта проверка.
+ */
+const sectionsRouteResolvesToOperation: Equal<
+  paths[typeof settingsRoutes.sections]["get"],
+  operations["Settings_GetSettingsSections"]
+> = true;
+const workspaceRouteResolvesToOperation: Equal<
+  paths[typeof settingsRoutes.workspaceSetting]["put"],
+  operations["Settings_UpdateWorkspaceSetting"]
+> = true;
+const teamRouteResolvesToOperation: Equal<
+  paths[typeof settingsRoutes.teamSetting]["put"],
+  operations["Settings_UpdateTeamSetting"]
+> = true;
+const userRouteResolvesToOperation: Equal<
+  paths[typeof settingsRoutes.userSetting]["put"],
+  operations["Settings_UpdateUserSetting"]
+> = true;
+
+// Метод тоже contract-bound: у маршрута секций в контракте объявлен только GET,
+// у ручек обновления — только PUT. Остальные в `paths` стоят `never`.
+const sectionsAllowsOnlyGet: Equal<
+  SettingsMethod<typeof settingsRoutes.sections>,
+  "get"
+> = true;
+const workspaceAllowsOnlyPut: Equal<
+  SettingsMethod<typeof settingsRoutes.workspaceSetting>,
+  "put"
+> = true;
+const teamAllowsOnlyPut: Equal<
+  SettingsMethod<typeof settingsRoutes.teamSetting>,
+  "put"
+> = true;
+const userAllowsOnlyPut: Equal<
+  SettingsMethod<typeof settingsRoutes.userSetting>,
+  "put"
+> = true;
+
+/*
+ * Сигнатуры экспортируемых ручек выведены из тех же операций: аргумент тела и
+ * возвращаемая форма не объявлены рядом отдельно.
+ */
+const sectionsReturnsOperationResponse: Equal<
+  Awaited<ReturnType<typeof fetchSettingsSections>>,
+  Json200<"Settings_GetSettingsSections">
+> = true;
+const workspaceTakesOperationBody: Equal<
+  Parameters<typeof updateWorkspaceSetting>[2],
+  operations["Settings_UpdateWorkspaceSetting"]["requestBody"]["content"]["application/json"]
+> = true;
+const workspaceReturnsOperationResponse: Equal<
+  Awaited<ReturnType<typeof updateWorkspaceSetting>>,
+  Json200<"Settings_UpdateWorkspaceSetting">
+> = true;
+const teamTakesOperationBody: Equal<
+  Parameters<typeof updateTeamSetting>[2],
+  operations["Settings_UpdateTeamSetting"]["requestBody"]["content"]["application/json"]
+> = true;
+const userTakesOperationBody: Equal<
+  Parameters<typeof updateUserSetting>[2],
+  operations["Settings_UpdateUserSetting"]["requestBody"]["content"]["application/json"]
+> = true;
+
+// Сегменты пути — тоже из операции, а не из рукописного `string`.
+const workspaceTakesOperationPathParams: Equal<
+  [
+    Parameters<typeof updateWorkspaceSetting>[0],
+    Parameters<typeof updateWorkspaceSetting>[1],
+  ],
+  [
+    operations["Settings_UpdateWorkspaceSetting"]["parameters"]["path"]["sectionId"],
+    operations["Settings_UpdateWorkspaceSetting"]["parameters"]["path"]["settingId"],
+  ]
+> = true;
+
 // Формы, которые читает UI, — ровно ответы операций контракта, без второго DTO.
 const sectionsMatchOperation: Equal<
   SettingsSectionsResponse,
@@ -287,6 +382,31 @@ const readDescriptionAsString = (setting: SettingView): string =>
   setting.description;
 
 describe("типизированная граница контракта", () => {
+  it("маршрут и метод каждой ручки резолвятся в операцию контракта", () => {
+    // Равенства держит `tsc --noEmit` (гейт frontend-typecheck); тест фиксирует намерение.
+    expect([
+      sectionsRouteResolvesToOperation,
+      workspaceRouteResolvesToOperation,
+      teamRouteResolvesToOperation,
+      userRouteResolvesToOperation,
+      sectionsAllowsOnlyGet,
+      workspaceAllowsOnlyPut,
+      teamAllowsOnlyPut,
+      userAllowsOnlyPut,
+    ]).toEqual(Array(8).fill(true));
+  });
+
+  it("сигнатуры ручек выведены из тех же операций", () => {
+    expect([
+      sectionsReturnsOperationResponse,
+      workspaceTakesOperationBody,
+      workspaceReturnsOperationResponse,
+      teamTakesOperationBody,
+      userTakesOperationBody,
+      workspaceTakesOperationPathParams,
+    ]).toEqual(Array(6).fill(true));
+  });
+
   it("формы выведены из операций settings", () => {
     expect([
       sectionsMatchOperation,

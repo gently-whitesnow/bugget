@@ -26,12 +26,16 @@
    клиента вместе с именами. Индексная сигнатура в схеме — красный гейт
    (ADR-0009); ровно поэтому счётчики репортов отдаются массивом.
 
-Исключены схемы `*ProblemDetails`: `application/problem+json` не конвертируется
-вовсе, поэтому и `traceId`, и словарь `errors` с wire-именами полей формы —
-законны (ADR-0008).
+Исключены схемы, которые документ отдаёт как `application/problem+json`: этот
+media type интерсептор не конвертирует вовсе, поэтому и `traceId`, и словарь
+`errors` с wire-именами полей формы законны (ADR-0008). Исключение выводится из
+самого документа, а не из имени схемы: имя — не признак, и `FakeProblemDetails`
+проверяется наравне со всеми.
 
-Имена читаются и в кавычках, и без: `openapi-typescript` кавычит всё, что не
-является идентификатором TS, и именно такие имена интереснее всего.
+Имена читаются и в кавычках, и без — и у полей, и у схем: `openapi-typescript`
+кавычит всё, что не является идентификатором TS, и именно такие имена интереснее
+всего. Заголовок схемы опознаётся по отступу: схема, не переключившая контекст
+разбора, отдала бы свои поля предыдущей схеме и унаследовала бы её исключение.
 
 Использование:
   scripts/quality/frontend-case-roundtrip.py            # каталог по умолчанию
@@ -50,13 +54,22 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_GENERATED = ROOT / "frontend/src/shared/api/generated"
 
 # Схемы, которые к границе wire<->UI не попадают: `application/problem+json`
-# интерсептор не конвертирует вовсе (ADR-0008).
-EXEMPT_SCHEMA_SUFFIX = "ProblemDetails"
-
-# Свойство схемы: `name?: ...`, `"quoted-name": ...`.
-PROPERTY = re.compile(
-    r'^(?P<indent> *)(?:"(?P<quoted>[^"]*)"|(?P<bare>[A-Za-z_$][A-Za-z0-9_$]*))\??:'
+# интерсептор не конвертирует вовсе (ADR-0008). Исключение выводится из самого
+# документа — из того, что схема действительно отдаётся с этим media type, — а не
+# из её имени: имя не признак, и схему можно назвать `*ProblemDetails` мимо
+# всякого problem+json.
+PROBLEM_JSON_BODY = re.compile(
+    r'"application/problem\+json": components\["schemas"\]\["([A-Za-z0-9_]+)"\]'
 )
+# Схема, объявленная через другую: `X: components["schemas"]["Base"] & {`.
+SCHEMA_BASE = re.compile(
+    r'^ {8}"?(?P<schema>[^"\s:]+)"?\??: components\["schemas"\]\["(?P<base>[A-Za-z0-9_]+)"\]'
+)
+
+# Свойство схемы: `name?: ...`, `"quoted-name": ...`. Некавыченное имя — любой
+# набор word-символов и `$`: TS допускает в идентификаторе не только латиницу, и
+# имя, которое разбор не узнал, молча выпало бы из проверки.
+PROPERTY = re.compile(r'^(?P<indent> *)(?:"(?P<quoted>[^"]*)"|(?P<bare>[\w$]+))\??:')
 # Индексная сигнатура: `[key: string]: ...` — свободный словарь.
 INDEX_SIGNATURE = re.compile(r"^(?P<indent> *)\[[^\]]*\]\??:")
 
@@ -124,19 +137,46 @@ def schema_entries(text: str) -> list[tuple[str, str, str]]:
         name = match.group("quoted")
         if name is None:
             name = match.group("bare")
-        if indent <= SCHEMA_INDENT and match.group("quoted") is None:
+        # Заголовок схемы определяется только отступом. Кавычки тут ничего не
+        # значат: `openapi-typescript` кавычит и имя схемы, если оно не
+        # идентификатор TS, — а схема, не переключившая контекст, отдала бы свои
+        # поля предыдущей и вместе с ними унаследовала бы её исключение.
+        if indent <= SCHEMA_INDENT:
             schema = name
             continue
         found.append((schema, PROPERTY_KIND, name))
     return found
 
 
+def exempt_schemas(text: str) -> set[str]:
+    """Схемы, которые отдаются как `application/problem+json`, и их базы."""
+    exempt = set(PROBLEM_JSON_BODY.findall(text))
+
+    bases = {
+        match.group("schema"): match.group("base")
+        for match in (SCHEMA_BASE.match(line) for line in text.splitlines())
+        if match
+    }
+    # Схема-наследник исключена — значит, исключена и её база: её поля уезжают
+    # клиенту в том же problem+json.
+    grew = True
+    while grew:
+        grew = False
+        for schema, base in bases.items():
+            if schema in exempt and base not in exempt:
+                exempt.add(base)
+                grew = True
+
+    return exempt
+
+
 def failures_for(text: str) -> tuple[list[tuple[str, str]], int]:
     """(что нарушено, почему) плюс число проверенных имён."""
+    exempt = exempt_schemas(text)
     failures: list[tuple[str, str]] = []
     checked = 0
     for schema, kind, name in schema_entries(text):
-        if schema.endswith(EXEMPT_SCHEMA_SUFFIX):
+        if schema in exempt:
             continue
         checked += 1
 
@@ -194,8 +234,13 @@ def check(generated_dir: pathlib.Path) -> int:
     return 0
 
 
-# Фикстура ровно того вида, который выдаёт openapi-typescript: кавыченные имена,
-# индексная сигнатура и исключённая схема problem+json.
+# Фикстура ровно того вида, который выдаёт openapi-typescript: кавыченные имена
+# полей и схем, индексная сигнатура и исключённая схема problem+json.
+#
+# Порядок в ней не случаен: `"Quoted-Body"` стоит сразу за `ProblemDetails`.
+# Схема с кавыченным именем, не переключившая контекст разбора, отдала бы свои
+# поля предыдущей схеме и вместе с ними унаследовала бы её исключение — гейт
+# остался бы зелёным на плохом имени и на свободном словаре.
 SELF_TEST_FIXTURE = """export interface components {
     schemas: {
         Good: {
@@ -221,8 +266,28 @@ SELF_TEST_FIXTURE = """export interface components {
                 [key: string]: string[];
             };
         };
+        "Quoted-Body": {
+            "bad-name": string;
+            values: {
+                [key: string]: number;
+            };
+        };
+        FakeProblemDetails: {
+            "bad-name": string;
+        };
+        "Weird-Extension": components["schemas"]["ProblemDetails"] & {
+            "bad-name": string;
+        };
     };
     responses: {
+        BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
     };
 }
 """
@@ -278,14 +343,48 @@ def self_test() -> int:
     expect(
         "разбор: свободный ключ виден",
         [(schema, name) for schema, kind, name in entries if kind == FREE_KEY_KIND],
-        [("FreeDict", "[key: string]: number"), ("ProblemDetails", "[key: string]: string[]")],
+        [
+            ("FreeDict", "[key: string]: number"),
+            ("ProblemDetails", "[key: string]: string[]"),
+            ("Quoted-Body", "[key: string]: number"),
+        ],
+    )
+    # Кавыченное имя схемы обязано переключить контекст: иначе её поля уедут в
+    # предыдущую схему и унаследуют её исключение.
+    expect(
+        "разбор: кавыченное имя схемы переключает контекст",
+        [name for schema, kind, name in entries if schema == "Quoted-Body"],
+        ["bad-name", "values", "[key: string]: number"],
+    )
+    expect(
+        "разбор: схема problem+json не получила чужих полей",
+        [name for schema, kind, name in entries if schema == "ProblemDetails"],
+        ["traceId", "errors", "[key: string]: string[]"],
+    )
+
+    # Исключение — от media type, а не от имени: `ProblemDetails` отдаётся как
+    # problem+json и исключён, `FakeProblemDetails` просто так назван и проверяется.
+    expect(
+        "исключение выводится из problem+json, а не из имени схемы",
+        sorted(exempt_schemas(SELF_TEST_FIXTURE)),
+        ["ProblemDetails"],
     )
 
     failures, _ = failures_for(SELF_TEST_FIXTURE)
     expect(
         "фикстура: краснеет на каждом дефекте и не трогает problem+json",
         sorted(where for where, _why in failures),
-        ["Bad.1bad", "Bad.bad-name", "Bad.user-ID", "Bad.user_ID", "FreeDict"],
+        [
+            "Bad.1bad",
+            "Bad.bad-name",
+            "Bad.user-ID",
+            "Bad.user_ID",
+            "FakeProblemDetails.bad-name",
+            "FreeDict",
+            "Quoted-Body",
+            "Quoted-Body.bad-name",
+            "Weird-Extension.bad-name",
+        ],
     )
 
     if failed:

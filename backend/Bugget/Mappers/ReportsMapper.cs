@@ -121,7 +121,7 @@ internal static class ReportsMapper
 
     /// <summary>
     /// Счётчики уходят массивом в порядке срезов запроса: ключ среза задаёт клиент,
-    /// и в объекте со свободными ключами он был бы неотличим от имени поля (ADR-0005).
+    /// и в объекте со свободными ключами он был бы неотличим от имени поля (ADR-0009).
     /// </summary>
     public static ReportCountsBatchResponse ToCountsContract(this IEnumerable<KeyValuePair<string, long>> counts) => new()
     {

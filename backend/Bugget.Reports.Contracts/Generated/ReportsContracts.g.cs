@@ -452,7 +452,7 @@ namespace Bugget.Reports.Contracts.Generated
     /// Счётчики по срезам запроса — массив, а не карта со свободными ключами:
     /// <br/>ключ среза задаёт клиент, а имена полей тела на границе wire↔UI
     /// <br/>преобразуются по регистру. Свободный ключ в объекте неотличим от имени
-    /// <br/>поля и был бы преобразован вместе с ними (MAIN-71).
+    /// <br/>поля и был бы преобразован вместе с ними (ADR-0009).
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ReportCountsBatchResponse

@@ -128,6 +128,17 @@ describe("response-интерцептор: case-конверсия", () => {
     });
   });
 
+  it("не-JSON тело не трогается: бинарное вложение доезжает целым", async () => {
+    // Рекурсивный обход по ключам превратил бы Blob в пустой объект: у него нет
+    // собственных перечислимых свойств.
+    const attachment = new Blob(["screenshot"], { type: "image/png" });
+    const instance = instanceRespondingWith(attachment, "image/png");
+
+    const response = await instance.get("/v2/attachments/1");
+
+    expect(response.data).toBe(attachment);
+  });
+
   it("значения не трогаются: ключи среза в counts доезжают дословно", async () => {
     const instance = instanceRespondingWith(
       {

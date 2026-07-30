@@ -6,6 +6,7 @@ using Bugget.DA.Interfaces;
 using Bugget.Entities.BO.Common;
 using Bugget.Entities.DTO.Report;
 using Bugget.IntegrationTests.Fixtures;
+using Bugget.Reports.Contracts.Generated;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Xunit;
@@ -52,7 +53,7 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
         var resp = await PostAsync(request);
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
-        var body = await resp.Content.ReadFromJsonAsync<ReportCountsBatchResponseDto>(JsonOptions);
+        var body = await resp.Content.ReadFromJsonAsync<ReportCountsBatchResponse>(JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(["beta-active", "team-active"], body!.Counts.Select(item => item.Key));
 
@@ -65,7 +66,7 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
     /// <summary>
     /// Ключ среза — данные клиента, а не имя поля: `_` и заглавные в нём обязаны
     /// доехать до ответа дословно. Ровно ради этого счётчики отдаются массивом,
-    /// а не картой со свободными ключами (ADR-0005).
+    /// а не картой со свободными ключами (ADR-0009).
     /// </summary>
     [Fact(DisplayName = "POST /v2/reports/counts:batch — ключ с `_` и заглавными возвращается дословно")]
     public async Task Batch_KeyWithUnderscoreAndCaps_IsReturnedVerbatim()
@@ -75,7 +76,7 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
         var resp = await PostAsync(new { scopes = keys.Select(key => new { key }).ToArray() });
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
-        var body = await resp.Content.ReadFromJsonAsync<ReportCountsBatchResponseDto>(JsonOptions);
+        var body = await resp.Content.ReadFromJsonAsync<ReportCountsBatchResponse>(JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(keys, body!.Counts.Select(item => item.Key));
     }
@@ -86,7 +87,7 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
         var resp = await PostAsync(new { scopes = Array.Empty<object>() });
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
-        var body = await resp.Content.ReadFromJsonAsync<ReportCountsBatchResponseDto>(JsonOptions);
+        var body = await resp.Content.ReadFromJsonAsync<ReportCountsBatchResponse>(JsonOptions);
         Assert.NotNull(body);
         Assert.Empty(body!.Counts);
     }

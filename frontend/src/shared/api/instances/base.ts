@@ -16,10 +16,10 @@ export const getSignalRConnectionId = () => signalRConnectionId;
 /**
  * Граница wire↔UI одна на все HTTP-модули и не зависит от URL:
  *
- *   * успешное и ошибочное JSON-тело ответа → camelCase;
+ *   * JSON-тело ответа (успех и ошибка одинаково) → camelCase;
  *   * JSON-тело запроса → snake_case;
  *   * multipart, query и path не преобразуются — там имена и так camelCase и
- *     принадлежат публичному контракту (ADR-0005);
+ *     принадлежат публичному контракту (ADR-0009);
  *   * `application/problem+json` не преобразуется вовсе — см. ниже.
  *
  * URL-исключений из конверсии здесь нет намеренно: они делали форму данных
@@ -57,6 +57,21 @@ const isJsonResponse = (headers: unknown): boolean => {
   );
 };
 
+/**
+ * Конвертируем только тела, которые действительно JSON, — и на успешном пути, и на
+ * пути ошибки одинаково. Бинарный ответ (вложение) — не набор именованных полей:
+ * рекурсивный обход превратил бы его в пустой объект.
+ *
+ * Ответ без `Content-Type` конвертируется: так отвечают промежуточные узлы, тела у
+ * них либо JSON, либо строка, а строку обход возвращает как есть. Это осознанный
+ * fallback, а не недосмотр: он сохраняет поведение, на которое рассчитывает фронт.
+ */
+const shouldConvertBody = (headers: unknown): boolean => {
+  if (isProblemDetailsResponse(headers)) return false;
+  if (contentTypeFrom(headers) === undefined) return true;
+  return isJsonResponse(headers);
+};
+
 const setupResponseInterceptors = (axiosInstance: AxiosInstance) => {
   axiosInstance.interceptors.response.use(
     (response) => response,
@@ -85,11 +100,7 @@ const setupResponseInterceptors = (axiosInstance: AxiosInstance) => {
         console.error(issueName);
       }
 
-      if (
-        error?.response?.data &&
-        isJsonResponse(error.response.headers) &&
-        !isProblemDetailsResponse(error.response.headers)
-      ) {
+      if (error?.response?.data && shouldConvertBody(error.response.headers)) {
         error.response.data = convertObjectToCamel(error.response.data);
       }
       return Promise.reject(error);
@@ -97,7 +108,7 @@ const setupResponseInterceptors = (axiosInstance: AxiosInstance) => {
   );
 
   axiosInstance.interceptors.response.use((response) => {
-    if (response.data && !isProblemDetailsResponse(response.headers)) {
+    if (response.data && shouldConvertBody(response.headers)) {
       response.data = convertObjectToCamel(response.data);
     }
     return response;

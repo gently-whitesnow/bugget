@@ -1,8 +1,7 @@
 import { createEffect, createStore, sample } from "effector";
-import { appApi, buildQueryString, fetchUsers } from "@/shared/api";
+import { fetchUsers, reportsApi } from "@/shared/api";
 import { ReportStatuses } from "@/shared/config";
 import type {
-  ListReportsQuery,
   ListReportsResponse,
   ReportListItem,
   UserResponse,
@@ -39,20 +38,16 @@ export const loadReportsFx = createEffect<
     offset = 0,
     take,
   }) => {
-    // Имена параметров — из контракта (`Reports_ListReports`), а не из строк.
-    const query: ListReportsQuery = {
+    // Одна реализация операции LIST на весь фронт — в shared/api/reports.
+    // Пустой фильтр по пользователю и команде не отправляется, как и раньше.
+    return await reportsApi.listReports({
       userId: userId || undefined,
       teamId: teamId || undefined,
       reportStatuses: statuses,
       creatorTypes,
       skip: offset,
       take,
-    };
-
-    const { data } = await appApi.get<ListReportsResponse>(
-      `/v2/reports?${buildQueryString(query)}`
-    );
-    return data;
+    });
   }
 );
 

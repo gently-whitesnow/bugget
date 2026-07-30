@@ -1,18 +1,24 @@
-import { appApi, buildQueryString } from "@/shared/api";
-import type { ListReportsQuery, ListReportsResponse } from "@/shared/api";
+import { reportsApi } from "@/shared/api";
 import type {
   CreateReportRequest,
   CreateReportResponse,
+  ListReportsQuery,
+  ListReportsResponse,
   PatchReportRequest,
   PatchReportResponse,
   ReportResponse,
   LegacyReportResolveResponse,
 } from "./contracts";
 
+/**
+ * Ручки репорта. Транспорт живёт в `shared/api/reports`: путь, метод, query и
+ * типы приходят из сгенерированной операции. Здесь остаётся только то, чего у
+ * транспорта нет и быть не должно — логирование для отладки страницы.
+ */
+
 export const fetchReport = async (id: string): Promise<ReportResponse> => {
   try {
-    const { data } = await appApi.get<ReportResponse>(`/v2/reports/${id}`);
-    return data;
+    return await reportsApi.getReport(id);
   } catch (error) {
     console.error(error);
     throw error;
@@ -23,11 +29,7 @@ export const createReport = async (
   request: CreateReportRequest
 ): Promise<CreateReportResponse> => {
   try {
-    const { data } = await appApi.post<CreateReportResponse>(
-      "/v2/reports",
-      request
-    );
-    return data;
+    return await reportsApi.createReport(request);
   } catch (error) {
     console.error(error);
     throw error;
@@ -39,17 +41,17 @@ export const patchReport = async (
   request: PatchReportRequest
 ): Promise<PatchReportResponse> => {
   try {
-    const { data } = await appApi.patch<PatchReportResponse>(
-      `/v2/reports/${id}`,
-      request
-    );
-    return data;
+    return await reportsApi.patchReport(id, request);
   } catch (error) {
     console.error(error);
     throw error;
   }
 };
 
+/**
+ * Список репортов. Реализация операции одна — `reportsApi.listReports`; здесь
+ * только значения по умолчанию для дашборда.
+ */
 export const fetchReportsList = async (
   userId: string | null = null,
   teamId: string | null = null,
@@ -58,9 +60,8 @@ export const fetchReportsList = async (
   take: number = 10
 ): Promise<ListReportsResponse> => {
   try {
-    // Имена параметров — из контракта (`Reports_ListReports`), а не из строки.
-    // Пустой фильтр по пользователю и команде не отправляется, как и раньше.
     const query: ListReportsQuery = {
+      // Пустой фильтр по пользователю и команде не отправляется, как и раньше.
       userId: userId || undefined,
       teamId: teamId || undefined,
       reportStatuses,
@@ -68,10 +69,7 @@ export const fetchReportsList = async (
       take,
     };
 
-    const { data } = await appApi.get<ListReportsResponse>(
-      `/v2/reports?${buildQueryString(query)}`
-    );
-    return data;
+    return await reportsApi.listReports(query);
   } catch (error) {
     console.error(error);
     throw error;
@@ -82,10 +80,7 @@ export const resolveLegacyReport = async (
   legacyId: string
 ): Promise<LegacyReportResolveResponse> => {
   try {
-    const { data } = await appApi.get<LegacyReportResolveResponse>(
-      `/v2/reports/legacy/${legacyId}`
-    );
-    return data;
+    return await reportsApi.resolveLegacyReport(legacyId);
   } catch (error) {
     console.error(error);
     throw error;

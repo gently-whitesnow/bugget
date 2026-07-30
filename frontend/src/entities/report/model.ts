@@ -24,6 +24,7 @@ import type {
 } from "@/shared/model";
 import { notificationMessages, notifyErrorRequested } from "@/shared/model";
 import type { BugClientEntity } from "./model/types";
+import { bugFromSocket } from "./lib/fromSocket";
 
 /**
  * Эффекты
@@ -304,26 +305,9 @@ export const $bugsStore = createStore<Record<number, BugClientEntity>>({})
   .on(createBugSocketEvent, (state, { bug, reportId }) => {
     if (state[bug.id]) return state;
 
-    return {
-      ...state,
-      [bug.id]: {
-        id: bug.id,
-        reportId,
-        title: bug.title,
-        receive: bug.receive,
-        expect: bug.expect,
-        creatorUserId: bug.creatorUserId,
-        // Событие SignalR тип автора не передаёт; баг завёл человек.
-        creatorType: CreatorTypes.USER,
-        createdAt: bug.createdAt,
-        updatedAt: bug.updatedAt,
-        status: bug.status,
-        attachments: null,
-        comments: null,
-        clientId: bug.id,
-        isLocalOnly: false,
-      },
-    };
+    // Payload realtime-события переводит в сущность стора явный адаптер:
+    // все поля, включая `creatorType`, приходят с провода, а не из константы.
+    return { ...state, [bug.id]: bugFromSocket(bug, reportId) };
   })
   .on(updateBugFxDoneDataEvent, (state, updatedBug) => {
     const existingBug = state[updatedBug.id];

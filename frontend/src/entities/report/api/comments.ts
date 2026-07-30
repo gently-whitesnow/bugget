@@ -1,4 +1,4 @@
-import { appApi } from "@/shared/api";
+import { reportsApi } from "@/shared/api";
 import type {
   CommentSummaryResponse,
   CreateCommentRequest,
@@ -14,33 +14,19 @@ export const createComment = async (
   reportId: string,
   bugId: number,
   request: CreateCommentRequest
-): Promise<CommentSummaryResponse> => {
-  const { data } = await appApi.post<CommentSummaryResponse>(
-    `/v2/reports/${reportId}/bugs/${bugId}/comments`,
-    request
-  );
-  return data;
-};
+): Promise<CommentSummaryResponse> =>
+  reportsApi.createComment(reportId, bugId, request);
 
 export const updateComment = async (
   reportId: string,
   bugId: number,
   commentId: number,
   request: UpdateCommentRequest
-): Promise<CommentSummaryResponse> => {
-  const { data } = await appApi.put<CommentSummaryResponse>(
-    `/v2/reports/${reportId}/bugs/${bugId}/comments/${commentId}`,
-    request
-  );
-  return data;
-};
+): Promise<CommentSummaryResponse> =>
+  reportsApi.updateComment(reportId, bugId, commentId, request);
 
 export const deleteComment = async (
   reportId: string,
   bugId: number,
   commentId: number
-): Promise<void> => {
-  await appApi.delete(
-    `/v2/reports/${reportId}/bugs/${bugId}/comments/${commentId}`
-  );
-};
+): Promise<void> => reportsApi.deleteComment(reportId, bugId, commentId);

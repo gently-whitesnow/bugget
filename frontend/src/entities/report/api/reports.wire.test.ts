@@ -2,11 +2,17 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios";
 import { appApi, setAppContext } from "@/shared/api";
-import { fetchReport, fetchReportsList, patchReport } from "./reports";
+import { analyticsApi } from "@/shared/api";
+import {
+  fetchReport,
+  fetchReportsList,
+  patchReport,
+  resolveLegacyReport,
+} from "./reports";
 import { createBug, updateBug } from "./bugs";
 import { updateBugStepsOrder } from "./bugSteps";
 import { createComment } from "./comments";
-import { createReportLink } from "./reportLinks";
+import { createReportLink, deleteReportLink } from "./reportLinks";
 import { renameBugAttachment, uploadAttachment } from "./attachments";
 
 /**
@@ -72,6 +78,27 @@ describe("пути репортов", () => {
     await fetchReportsList(null, null, null, 0, 10);
 
     expect(sent().url).toBe(`${contextPrefix}/v2/reports?skip=0&take=10`);
+  });
+
+  it("legacy-идентификатор разрешается по прежнему адресу", async () => {
+    await resolveLegacyReport("42");
+
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/legacy/42`);
+  });
+
+  it("аналитика репорта остаётся sub-resource репорта", async () => {
+    await analyticsApi.getReportAnalytics(7);
+
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/7/analytics`);
+    expect(sent().method).toBe("get");
+  });
+
+  it("удаление ссылки — DELETE без тела и без хвостового «?»", async () => {
+    await deleteReportLink("team-42", 11);
+
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/team-42/links/11`);
+    expect(sent().method).toBe("delete");
+    expect(sent().data).toBeUndefined();
   });
 });
 

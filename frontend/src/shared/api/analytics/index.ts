@@ -1,4 +1,5 @@
 import { appApi } from "@/shared/api/instances";
+import * as reportsApi from "@/shared/api/reports";
 import type { components as analyticsComponents } from "@/shared/api/generated/analytics";
 import type { components as reportsComponents } from "@/shared/api/generated/reports";
 import type { Camelized } from "@/shared/lib/types";
@@ -73,14 +74,13 @@ export const getAnalyticsSummary = async (
   return data;
 };
 
+/**
+ * Detail по репорту — sub-resource модуля `reports`, поэтому вызывается его
+ * операцией из `shared/api/reports`, а не собственным строковым путём.
+ */
 export const getReportAnalytics = async (
   reportId: number
-): Promise<AnalyticsReport> => {
-  const { data } = await appApi.get<AnalyticsReport>(
-    `/v2/reports/${reportId}/analytics`
-  );
-  return data;
-};
+): Promise<AnalyticsReport> => reportsApi.getReportAnalytics(reportId);
 
 export const getAnalyticsByResponsible = async (
   userId: string,

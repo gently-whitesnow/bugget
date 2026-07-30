@@ -1,10 +1,11 @@
-import { appApi, buildQueryString } from "@/shared/api";
-import type {
-  AttachmentRenameRequest,
-  AttachmentResponse,
-  AttachmentUploadForm,
-  UploadAttachmentQuery,
-} from "./contracts";
+import { reportsApi } from "@/shared/api";
+import type { AttachmentResponse } from "./contracts";
+
+/**
+ * Вложения бага, комментария и шага. Multipart, имя поля файла и `attachType`
+ * в query описаны операциями контракта в `shared/api/reports`; здесь остаётся
+ * форма аргументов, удобная моделям страницы.
+ */
 
 type UploadAttachmentParameters = {
   reportId: string;
@@ -28,38 +29,19 @@ type RenameBugStepAttachmentParameters = RenameAttachmentParameters & {
   stepId: number;
 };
 
-/**
- * Имя поля multipart — из схемы `AttachmentUpload`. Тело multipart регистр не
- * конвертирует (ADR-0009), поэтому имя обязано совпадать с контрактом дословно;
- * здесь это держит компилятор, а не внимательность на ревью.
- */
-const attachmentFileField: keyof AttachmentUploadForm = "file";
-
-const attachmentFormData = (file: File): FormData => {
-  const formData = new FormData();
-  formData.append(attachmentFileField, file);
-  return formData;
-};
-
-const multipartHeaders = {
-  headers: { "Content-Type": "multipart/form-data" },
-};
-
-export const uploadAttachment = async (
-  params: UploadAttachmentParameters
-): Promise<AttachmentResponse> => {
+export const uploadAttachment = async ({
+  reportId,
+  bugId,
+  attachType,
+  file,
+}: UploadAttachmentParameters): Promise<AttachmentResponse> => {
   try {
-    const { reportId, bugId, file, attachType } = params;
-    const query: UploadAttachmentQuery = { attachType };
-
-    const { data } = await appApi.post<AttachmentResponse>(
-      `/v2/reports/${reportId}/bugs/${bugId}/attachments?${buildQueryString(
-        query
-      )}`,
-      attachmentFormData(file),
-      multipartHeaders
+    return await reportsApi.createBugAttachment(
+      reportId,
+      bugId,
+      attachType,
+      file
     );
-    return data;
   } catch (error) {
     console.error("Ошибка при загрузке файла:", error);
     throw new Error("Не удалось загрузить файл", { cause: error });
@@ -70,50 +52,32 @@ export const deleteBugAttachment = async (
   reportId: string,
   bugId: number,
   attachmentId: number
-): Promise<void> => {
-  await appApi.delete(
-    `/v2/reports/${reportId}/bugs/${bugId}/attachments/${attachmentId}`
-  );
-};
+): Promise<void> =>
+  reportsApi.deleteBugAttachment(reportId, bugId, attachmentId);
 
 export const renameBugAttachment = async ({
   reportId,
   bugId,
   attachmentId,
   fileName,
-}: RenameAttachmentParameters): Promise<AttachmentResponse> => {
-  const request: AttachmentRenameRequest = { fileName };
-  const { data } = await appApi.patch<AttachmentResponse>(
-    `/v2/reports/${reportId}/bugs/${bugId}/attachments/${attachmentId}`,
-    request
-  );
-  return data;
-};
+}: RenameAttachmentParameters): Promise<AttachmentResponse> =>
+  reportsApi.renameBugAttachment(reportId, bugId, attachmentId, { fileName });
 
 export const createCommentAttachment = async (
   reportId: string,
   bugId: number,
   commentId: number,
   file: File
-): Promise<AttachmentResponse> => {
-  const { data } = await appApi.post<AttachmentResponse>(
-    `/v2/reports/${reportId}/bugs/${bugId}/comments/${commentId}/attachments`,
-    attachmentFormData(file),
-    multipartHeaders
-  );
-  return data;
-};
+): Promise<AttachmentResponse> =>
+  reportsApi.createCommentAttachment(reportId, bugId, commentId, file);
 
 export const deleteCommentAttachment = async (
   reportId: string,
   bugId: number,
   commentId: number,
   attachmentId: number
-): Promise<void> => {
-  await appApi.delete(
-    `/v2/reports/${reportId}/bugs/${bugId}/comments/${commentId}/attachments/${attachmentId}`
-  );
-};
+): Promise<void> =>
+  reportsApi.deleteCommentAttachment(reportId, bugId, commentId, attachmentId);
 
 export const renameCommentAttachment = async ({
   reportId,
@@ -121,39 +85,26 @@ export const renameCommentAttachment = async ({
   commentId,
   attachmentId,
   fileName,
-}: RenameCommentAttachmentParameters): Promise<AttachmentResponse> => {
-  const request: AttachmentRenameRequest = { fileName };
-  const { data } = await appApi.patch<AttachmentResponse>(
-    `/v2/reports/${reportId}/bugs/${bugId}/comments/${commentId}/attachments/${attachmentId}`,
-    request
-  );
-  return data;
-};
+}: RenameCommentAttachmentParameters): Promise<AttachmentResponse> =>
+  reportsApi.renameCommentAttachment(reportId, bugId, commentId, attachmentId, {
+    fileName,
+  });
 
 export const createBugStepAttachment = async (
   reportId: string,
   bugId: number,
   stepId: number,
   file: File
-): Promise<AttachmentResponse> => {
-  const { data } = await appApi.post<AttachmentResponse>(
-    `/v2/reports/${reportId}/bugs/${bugId}/steps/${stepId}/attachments`,
-    attachmentFormData(file),
-    multipartHeaders
-  );
-  return data;
-};
+): Promise<AttachmentResponse> =>
+  reportsApi.createBugStepAttachment(reportId, bugId, stepId, file);
 
 export const deleteBugStepAttachment = async (
   reportId: string,
   bugId: number,
   stepId: number,
   attachmentId: number
-): Promise<void> => {
-  await appApi.delete(
-    `/v2/reports/${reportId}/bugs/${bugId}/steps/${stepId}/attachments/${attachmentId}`
-  );
-};
+): Promise<void> =>
+  reportsApi.deleteBugStepAttachment(reportId, bugId, stepId, attachmentId);
 
 export const renameBugStepAttachment = async ({
   reportId,
@@ -161,11 +112,7 @@ export const renameBugStepAttachment = async ({
   stepId,
   attachmentId,
   fileName,
-}: RenameBugStepAttachmentParameters): Promise<AttachmentResponse> => {
-  const request: AttachmentRenameRequest = { fileName };
-  const { data } = await appApi.patch<AttachmentResponse>(
-    `/v2/reports/${reportId}/bugs/${bugId}/steps/${stepId}/attachments/${attachmentId}`,
-    request
-  );
-  return data;
-};
+}: RenameBugStepAttachmentParameters): Promise<AttachmentResponse> =>
+  reportsApi.renameBugStepAttachment(reportId, bugId, stepId, attachmentId, {
+    fileName,
+  });

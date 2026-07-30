@@ -1,8 +1,5 @@
-import type { components } from "@/shared/api/generated/reports";
-import type { Camelized } from "@/shared/lib/types";
 import { BugStatuses } from "@/shared/config";
-
-type WireBug = Camelized<components["schemas"]["Bug"]>;
+import type { BugWire } from "./wire";
 
 /**
  * Баг в сторе страницы репорта: форма из контракта плюс клиентские поля.
@@ -18,7 +15,7 @@ type WireBug = Camelized<components["schemas"]["Bug"]>;
  *     совпадать с ключом, по которому баги ищут;
  *   * `clientId` и `isLocalOnly` — оптимистичный баг, которого на сервере ещё нет.
  */
-export type BugClientEntity = Omit<WireBug, "steps" | "reportId"> & {
+export type BugClientEntity = Omit<BugWire, "steps" | "reportId"> & {
   reportId: string;
   clientId: number;
   isLocalOnly: boolean;

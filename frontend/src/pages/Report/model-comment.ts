@@ -7,6 +7,11 @@ import {
   deleteCommentAttachment,
   renameCommentAttachment,
 } from "@/entities/report";
+import {
+  attachmentFromSocket,
+  commentFromSocket,
+  commentUpdateFromSocket,
+} from "@/entities/report";
 import type {
   Comment,
   CommentSummaryResponse,
@@ -14,6 +19,10 @@ import type {
 } from "@/entities/report";
 import { AttachmentTypes } from "@/shared/config";
 import { notificationMessages, notifyErrorRequested } from "@/shared/model";
+import type {
+  AttachmentSocketResponse,
+  CommentSocketResponse,
+} from "@/shared/model";
 
 /**
  * Сторы
@@ -165,21 +174,12 @@ export const createCommentAttachmentFx = createEffect<
   { bugId: number; commentId: number; attachment: Attachment }
 >(async ({ reportId, bugId, commentId, file }) => {
   try {
-    const result = await createCommentAttachment(
+    const attachment = await createCommentAttachment(
       reportId,
       bugId,
       commentId,
       file
     );
-    const attachment: Attachment = {
-      id: result.id,
-      entityId: result.entityId,
-      attachType: result.attachType,
-      createdAt: result.createdAt,
-      creatorUserId: result.creatorUserId,
-      fileName: result.fileName,
-      hasPreview: result.hasPreview,
-    };
     return { bugId, commentId, attachment };
   } catch (error) {
     notifyErrorRequested({
@@ -273,17 +273,19 @@ export const setCommentsByBugIdEvent = createEvent<
   }[]
 >();
 
-// socket события. По SignalR приходит `CommentSummaryDbModel` — без вложений
-// (specs/contracts/events.yaml), поэтому payload описан формой summary.
-export const createCommentSocketEvent = createEvent<CommentSummaryResponse>();
-export const updateCommentSocketEvent = createEvent<CommentSummaryResponse>();
+// socket события: payload описан типами realtime-контракта, а не HTTP-схемами;
+// в сущности стора его переводят адаптеры `*FromSocket` (ADR-0007).
+export const createCommentSocketEvent = createEvent<CommentSocketResponse>();
+export const updateCommentSocketEvent = createEvent<CommentSocketResponse>();
 export const deleteCommentSocketEvent = createEvent<{
   bugId: number;
   commentId: number;
 }>();
 
-export const createCommentAttachmentSocketEvent = createEvent<Attachment>();
-export const commentAttachmentChangedSocketEvent = createEvent<Attachment>();
+export const createCommentAttachmentSocketEvent =
+  createEvent<AttachmentSocketResponse>();
+export const commentAttachmentChangedSocketEvent =
+  createEvent<AttachmentSocketResponse>();
 export const deleteCommentAttachmentSocketEvent = createEvent<{
   commentId: number;
   attachmentId: number;
@@ -301,24 +303,23 @@ $commentsByBugId
     });
     return newState;
   })
-  .on(createCommentSocketEvent, (state, comment) => {
-    const existingComments = state[comment.bugId] || [];
-    if (existingComments.some((c) => c.id === comment.id)) return state;
+  .on(createCommentSocketEvent, (state, payload) => {
+    const existingComments = state[payload.bugId] || [];
+    if (existingComments.some((c) => c.id === payload.id)) return state;
 
     return {
       ...state,
-      // `null` — «вложений с этим событием не приехало», а не «их нет».
-      [comment.bugId]: [...existingComments, { ...comment, attachments: null }],
+      [payload.bugId]: [...existingComments, commentFromSocket(payload)],
     };
   })
-  .on(updateCommentSocketEvent, (state, updatedComment) => {
-    const existingComments = state[updatedComment.bugId] || [];
+  .on(updateCommentSocketEvent, (state, payload) => {
+    const existingComments = state[payload.bugId] || [];
     if (!existingComments.length) return state;
 
     return {
       ...state,
-      [updatedComment.bugId]: existingComments.map((c) =>
-        c.id === updatedComment.id ? { ...c, ...updatedComment } : c
+      [payload.bugId]: existingComments.map((c) =>
+        c.id === payload.id ? commentUpdateFromSocket(c, payload) : c
       ),
     };
   })
@@ -373,14 +374,16 @@ $commentsByBugId
       };
     }
   )
-  .on(createCommentAttachmentSocketEvent, (state, attachment) =>
-    patchCommentById(state, attachment.entityId, (comment) => {
+  .on(createCommentAttachmentSocketEvent, (state, payload) => {
+    const attachment = attachmentFromSocket(payload);
+
+    return patchCommentById(state, payload.entityId, (comment) => {
       const currentAttachments = comment.attachments || [];
       if (currentAttachments.some((a) => a.id === attachment.id)) return null;
 
       return { ...comment, attachments: [...currentAttachments, attachment] };
-    })
-  )
+    });
+  })
   .on(
     deleteCommentAttachmentFx.doneData,
     (state, { bugId, commentId, attachmentId }) => {
@@ -429,13 +432,15 @@ $commentsByBugId
         ),
       }))
   )
-  .on(commentAttachmentChangedSocketEvent, (state, attachment) => {
-    if (attachment.attachType !== AttachmentTypes.COMMENT) return state;
+  .on(commentAttachmentChangedSocketEvent, (state, payload) => {
+    if (payload.attachType !== AttachmentTypes.COMMENT) return state;
 
-    return patchCommentById(state, attachment.entityId, (comment) => ({
+    const attachment = attachmentFromSocket(payload);
+
+    return patchCommentById(state, payload.entityId, (comment) => ({
       ...comment,
       attachments: (comment.attachments || []).map((a) =>
-        a.id === attachment.id ? { ...a, ...attachment } : a
+        a.id === attachment.id ? attachment : a
       ),
     }));
   });

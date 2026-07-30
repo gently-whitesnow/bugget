@@ -1,17 +1,13 @@
-import type { components } from "@/shared/api/generated/reports";
-import type { Camelized } from "@/shared/lib/types";
+import type { AttachmentWire } from "./wire";
 
 /**
- * Вложение в том виде, в котором его отдаёт контракт модуля `reports`
- * (`AttachmentSummary`): и внутри репорта, и в ответах ручек загрузки и
- * переименования форма одна.
+ * Вложение в том виде, в котором его отдаёт контракт модуля `reports`: и внутри
+ * репорта, и в ответах ручек загрузки и переименования форма одна.
  *
- * Форма выведена из контракта, а не описана руками: рукописный DTO — второе
- * представление тела, которое расходится с yaml молча (ADR-0009). `Camelized`
- * учитывает конверсию регистра в интерсепторе (`shared/api/instances/base.ts`):
- * провод — snake_case, код фронта — camelCase.
+ * Выведена из операции, а не описана руками: рукописный DTO — второе
+ * представление тела, которое расходится с yaml молча (ADR-0009).
  *
  * `attachType` здесь `number`, как в контракте; значения перечислены в
  * `AttachmentTypes` (`shared/config`) и совпадают с ним 0..3.
  */
-export type Attachment = Camelized<components["schemas"]["AttachmentSummary"]>;
+export type Attachment = AttachmentWire;

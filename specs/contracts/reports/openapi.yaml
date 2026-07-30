@@ -141,6 +141,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
     patch:
@@ -2100,6 +2102,15 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ReportCountsProblemDetails'
+
+    NotFound:
+      description: |-
+        Репорт не найден. Тот же ответ отдаётся на репорт чужой команды или
+        организации: существование чужого репорта не раскрывается.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../shared.yaml#/components/schemas/ProblemDetails'
 
     Unauthorized:
       description: Запрос без действующей identity либо с недействительной сессией.

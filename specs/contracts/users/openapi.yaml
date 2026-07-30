@@ -188,7 +188,7 @@ paths:
       operationId: Users_UnlinkProviderInContext
       summary: Отвязать способ входа.
       description: |-
-        Единственный способ входа отвязать нельзя — 400 с текстовым телом.
+        Единственный способ входа отвязать нельзя — 400 с кодом `last_login_method`.
       parameters:
         - $ref: '#/components/parameters/WorkspaceIdIgnored'
         - $ref: '#/components/parameters/TeamIdIgnored'
@@ -197,7 +197,7 @@ paths:
         '204':
           description: Способ входа отвязан.
         '400':
-          description: Это единственный способ входа. Тело — текст, не JSON.
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':

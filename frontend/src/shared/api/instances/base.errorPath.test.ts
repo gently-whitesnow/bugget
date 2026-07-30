@@ -120,7 +120,7 @@ describe("путь ошибки: ключи словаря errors", () => {
     });
   });
 
-  it("analytics JSON-ошибка сохраняет snake_case wire-формата", async () => {
+  it("analytics JSON-ошибка конвертируется так же, как остальные: URL-исключений больше нет", async () => {
     const error = await failedRequest(
       respondWithError(
         400,
@@ -131,8 +131,8 @@ describe("путь ошибки: ключи словаря errors", () => {
     );
 
     expect((error as AxiosError).response?.data).toEqual({
-      report_title: "x",
-      error_list: [{ error: "a" }],
+      reportTitle: "x",
+      errorList: [{ error: "a" }],
     });
   });
 

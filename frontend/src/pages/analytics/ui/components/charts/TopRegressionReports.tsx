@@ -8,7 +8,7 @@ type Props = {
 const TopRegressionReports = ({ reports }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Контракт analytics помечает обязательным только `title`, поэтому `report_id`
+  // Контракт analytics помечает обязательным только `title`, поэтому `report_id` (провод)
   // приходит как `number | undefined`. Бекенд его всегда отдаёт; пока `required`
   // в specs/contracts/analytics/openapi.yaml не восстановлен, без id просто
   // не навигируем — открывать репорт №0 хуже, чем не открывать никакой.
@@ -35,18 +35,18 @@ const TopRegressionReports = ({ reports }: Props) => {
       ) : (
         <ul className="flex flex-col divide-y divide-base-200">
           {reports.map((r) => (
-            <li key={r.report_id}>
+            <li key={r.reportId}>
               <button
                 type="button"
-                onClick={() => openReport(r.report_id)}
+                onClick={() => openReport(r.reportId)}
                 className="w-full text-left py-2 px-1 flex items-center gap-3 hover:bg-base-200 rounded-sm transition-colors"
               >
                 <span className="text-xs font-mono text-base-content/50 tabular-nums">
-                  #{r.report_id}
+                  #{r.reportId}
                 </span>
                 <span className="flex-1 truncate text-sm">{r.title}</span>
                 <span className="text-xs font-medium tabular-nums whitespace-nowrap">
-                  {r.regression_cycles}{" "}
+                  {r.regressionCycles}{" "}
                   <span className="text-base-content/50">циклов</span>
                 </span>
               </button>

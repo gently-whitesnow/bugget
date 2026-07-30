@@ -7,7 +7,7 @@ type Props = {
 };
 
 const phaseLabel = (
-  phase: AnalyticsResponsibleParticipatedReport["current_phase"]
+  phase: AnalyticsResponsibleParticipatedReport["currentPhase"]
 ): string => {
   switch (phase) {
     case "Test":
@@ -22,7 +22,7 @@ const phaseLabel = (
 const ParticipatedReports = ({ reports }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // `report_id` необязателен по контракту analytics (см. TopRegressionReports):
+  // `report_id` (провод) необязателен по контракту analytics (см. TopRegressionReports):
   // без id не навигируем, вместо того чтобы открывать репорт №0.
   const openReport = (reportId: number | undefined) => {
     if (reportId === undefined) return;
@@ -49,18 +49,18 @@ const ParticipatedReports = ({ reports }: Props) => {
       ) : (
         <ul className="flex flex-col divide-y divide-base-200">
           {reports.map((r) => (
-            <li key={r.report_id}>
+            <li key={r.reportId}>
               <button
                 type="button"
-                onClick={() => openReport(r.report_id)}
+                onClick={() => openReport(r.reportId)}
                 className="w-full text-left py-2 px-1 flex items-center gap-3 hover:bg-base-200 rounded-sm transition-colors"
               >
                 <span className="text-xs font-mono text-base-content/50 tabular-nums">
-                  #{r.report_id}
+                  #{r.reportId}
                 </span>
                 <span className="flex-1 truncate text-sm">{r.title}</span>
                 <span className="text-xs font-medium tabular-nums whitespace-nowrap">
-                  {phaseLabel(r.current_phase)}
+                  {phaseLabel(r.currentPhase)}
                 </span>
               </button>
             </li>

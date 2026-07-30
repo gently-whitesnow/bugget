@@ -371,7 +371,8 @@ namespace Bugget.Reports.Contracts.Generated
     {
 
         /// <summary>
-        /// Ключ среза. Возвращается в ответе как ключ карты счётчиков.
+        /// Ключ среза. Возвращается в ответе элементом `counts[].key` дословно,
+        /// <br/>без преобразования регистра.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("key")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -416,18 +417,53 @@ namespace Bugget.Reports.Contracts.Generated
     }
 
     /// <summary>
-    /// Счётчики по ключам срезов из запроса.
+    /// Счётчик одного среза.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ReportCountsItem
+    {
+
+        /// <summary>
+        /// Ключ среза из запроса. Значение переносится дословно: это данные, а не
+        /// <br/>имя поля, и конверсия регистра к нему не применяется.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("key")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Key { get; set; }
+
+        /// <summary>
+        /// Количество репортов в срезе.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("count")]
+        public long Count { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Счётчики по срезам запроса — массив, а не карта со свободными ключами:
+    /// <br/>ключ среза задаёт клиент, а имена полей тела на границе wire↔UI
+    /// <br/>преобразуются по регистру. Свободный ключ в объекте неотличим от имени
+    /// <br/>поля и был бы преобразован вместе с ними (MAIN-71).
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ReportCountsBatchResponse
     {
 
         /// <summary>
-        /// Ключ среза → количество репортов.
+        /// Счётчики в порядке срезов запроса.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("counts")]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.IReadOnlyDictionary<string, long> Counts { get; set; } = new System.Collections.Generic.Dictionary<string, long>();
+        public System.Collections.Generic.IReadOnlyList<ReportCountsItem> Counts { get; set; } = new System.Collections.Generic.List<ReportCountsItem>();
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 

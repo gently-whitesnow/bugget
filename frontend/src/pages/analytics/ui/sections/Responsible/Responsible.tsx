@@ -95,15 +95,13 @@ const AnalyticsResponsible = ({ period, userId, onUserChange }: Props) => {
         </div>
       ) : (
         <>
-          <AvgFixCard
-            avgFixPhaseDays={responsible?.avg_fix_phase_days ?? null}
-          />
+          <AvgFixCard avgFixPhaseDays={responsible?.avgFixPhaseDays ?? null} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <ParticipatedReports
-              reports={responsible?.reports_participated ?? []}
+              reports={responsible?.reportsParticipated ?? []}
             />
-            <CompletedReports reports={responsible?.reports_completed ?? []} />
+            <CompletedReports reports={responsible?.reportsCompleted ?? []} />
           </div>
         </>
       )}

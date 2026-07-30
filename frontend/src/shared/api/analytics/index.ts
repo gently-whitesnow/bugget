@@ -1,53 +1,67 @@
 import { appApi } from "@/shared/api/instances";
 import type { components as analyticsComponents } from "@/shared/api/generated/analytics";
 import type { components as reportsComponents } from "@/shared/api/generated/reports";
+import type { Camelized } from "@/shared/lib/types";
 import type { AnalyticsPeriod } from "@/shared/lib/time";
 
 /**
  * HTTP-клиенты для analytics-эндпоинтов.
  *
- * Wire-формат: snake_case в обе стороны. Case-conversion интерсептор
- * в `shared/api/instances/base.ts` точечно отключён для `/v2/analytics/*`,
- * поэтому возвращаемые DTO здесь совпадают с типами из generated/analytics.d.ts.
+ * Тела ответов приходят с провода в `snake_case` и перекладываются в `camelCase`
+ * общим интерсептором (`shared/api/instances/base.ts`) — как во всех остальных
+ * HTTP-модулях, без URL-исключений. Поэтому типы ответов выводятся из
+ * сгенерированных схем через `Camelized<T>`, а не дублируются рукописным DTO.
  *
- * После R6 контракт перешёл на resource-oriented форму:
+ * Query-параметры (`period`, `teamId`) и сегменты пути конверсию не проходят:
+ * их имена — часть публичного контракта и берутся из generated напрямую.
+ *
+ * Контракт resource-oriented:
  *   * `GET /v2/analytics/summary?period=...&teamId=...` — единый summary
  *     (workspace-wide или фильтр по команде).
  *   * `GET /v2/reports/{id}/analytics` — sub-resource (detail по репорту).
  *   * `GET /v2/analytics/responsible/{userId}?period=...` — отдельный shape.
  *
- * Detail-DTO `AnalyticsReport*` теперь живут в модуле `reports` (см. контракт);
+ * Detail-DTO `AnalyticsReport*` живут в модуле `reports` (см. контракт);
  * frontend это не волнует, мы просто реэкспортируем алиасы.
  */
 
-export type AnalyticsSummary =
-  analyticsComponents["schemas"]["AnalyticsSummary"];
-export type AnalyticsResponsible =
-  analyticsComponents["schemas"]["AnalyticsResponsible"];
-export type AnalyticsResponsibleParticipatedReport =
-  analyticsComponents["schemas"]["AnalyticsResponsibleParticipatedReport"];
-export type AnalyticsResponsibleCompletedReport =
-  analyticsComponents["schemas"]["AnalyticsResponsibleCompletedReport"];
-export type Period = analyticsComponents["schemas"]["Period"];
-export type ResponsibleOutcome =
-  analyticsComponents["schemas"]["ResponsibleOutcome"];
-export type AvgPhaseDurationDays =
-  analyticsComponents["schemas"]["AvgPhaseDurationDays"];
-export type PhaseTimeDistribution =
-  analyticsComponents["schemas"]["PhaseTimeDistribution"];
-export type TopRegressionReport =
-  analyticsComponents["schemas"]["TopRegressionReport"];
-export type PhaseTrendWeekly =
-  analyticsComponents["schemas"]["PhaseTrendWeekly"];
+type AnalyticsSchemas = analyticsComponents["schemas"];
+type ReportsSchemas = reportsComponents["schemas"];
 
-// Detail-DTO переехали в модуль reports; алиасим оттуда, чтобы виджеты могли
-// продолжать импортировать их из @/shared/api без знания о расщеплении контракта.
-export type AnalyticsReport = reportsComponents["schemas"]["AnalyticsReport"];
-export type AnalyticsReportPhaseEntry =
-  reportsComponents["schemas"]["AnalyticsReportPhaseEntry"];
-export type AnalyticsReportBugsByStatus =
-  reportsComponents["schemas"]["AnalyticsReportBugsByStatus"];
-export type PhaseName = reportsComponents["schemas"]["PhaseName"];
+export type AnalyticsSummary = Camelized<AnalyticsSchemas["AnalyticsSummary"]>;
+export type AnalyticsResponsible = Camelized<
+  AnalyticsSchemas["AnalyticsResponsible"]
+>;
+export type AnalyticsResponsibleParticipatedReport = Camelized<
+  AnalyticsSchemas["AnalyticsResponsibleParticipatedReport"]
+>;
+export type AnalyticsResponsibleCompletedReport = Camelized<
+  AnalyticsSchemas["AnalyticsResponsibleCompletedReport"]
+>;
+export type AvgPhaseDurationDays = Camelized<
+  AnalyticsSchemas["AvgPhaseDurationDays"]
+>;
+export type PhaseTimeDistribution = Camelized<
+  AnalyticsSchemas["PhaseTimeDistribution"]
+>;
+export type TopRegressionReport = Camelized<
+  AnalyticsSchemas["TopRegressionReport"]
+>;
+export type PhaseTrendWeekly = Camelized<AnalyticsSchemas["PhaseTrendWeekly"]>;
+
+export type Period = Camelized<AnalyticsSchemas["Period"]>;
+
+// Значения enum-подобных схем — данные, а не имена полей: конверсия их не трогает.
+export type ResponsibleOutcome = AnalyticsSchemas["ResponsibleOutcome"];
+
+export type AnalyticsReport = Camelized<ReportsSchemas["AnalyticsReport"]>;
+export type AnalyticsReportPhaseEntry = Camelized<
+  ReportsSchemas["AnalyticsReportPhaseEntry"]
+>;
+export type AnalyticsReportBugsByStatus = Camelized<
+  ReportsSchemas["AnalyticsReportBugsByStatus"]
+>;
+export type PhaseName = ReportsSchemas["PhaseName"];
 
 export const getAnalyticsSummary = async (
   period: AnalyticsPeriod,

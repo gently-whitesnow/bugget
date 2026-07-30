@@ -114,6 +114,30 @@ rm -rf "$SANDBOX/contracts/external"
 run_gate
 expect "удалённый контракт краснеет" 1 "$?" "сирота:"
 
+# 7. Имя поля тела, не переживающее round-trip wire -> camelCase -> wire.
+# `user_ID` уедет в `userID` и вернётся `user_i_d`: фронт отправил бы на провод
+# не то имя, которое описано в контракте.
+reset_sandbox
+sed 's/^        user_sections:$/        user_ID_sections:/' \
+  "$SANDBOX/contracts/settings/openapi.yaml" > "$SANDBOX/settings.roundtrip"
+if ! diff -q "$SANDBOX/settings.roundtrip" "$SANDBOX/contracts/settings/openapi.yaml" >/dev/null; then
+  mv "$SANDBOX/settings.roundtrip" "$SANDBOX/contracts/settings/openapi.yaml"
+  run_gate
+  expect "необратимое имя поля краснеет" 1 "$?" "round-trip имён полей не сходится"
+else
+  printf '  ПРОВАЛ  round-trip: поле user_sections не найдено, случай не проверен\n' >&2
+  FAILED=$(( FAILED + 1 ))
+fi
+
+# 8. Самопроверка самой проверки round-trip.
+if ! python3 "$ROOT/scripts/quality/frontend-case-roundtrip.py" --self-test >"$SANDBOX/out" 2>&1; then
+  printf '  ПРОВАЛ  самопроверка frontend-case-roundtrip.py\n' >&2
+  sed 's/^/          /' "$SANDBOX/out" >&2
+  FAILED=$(( FAILED + 1 ))
+else
+  printf '  ok      самопроверка frontend-case-roundtrip.py\n'
+fi
+
 printf '\n'
 if [ "$FAILED" -ne 0 ]; then
   printf 'самопроверка не прошла: провалов %d\n' "$FAILED" >&2

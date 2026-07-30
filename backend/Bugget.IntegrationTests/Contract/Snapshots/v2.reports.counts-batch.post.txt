@@ -2,5 +2,7 @@ status: 200
 content-type: application/json
 body:
 $: object
-$.counts: object
-$.counts.all: number
+$.counts: array
+$.counts[]: object
+$.counts[].count: number
+$.counts[].key: string

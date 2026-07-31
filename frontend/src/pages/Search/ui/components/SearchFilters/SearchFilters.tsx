@@ -1,6 +1,6 @@
 import { ReportStatusSelect } from "@/entities/report";
 import { autocompleteUsersForAutosuggest } from "@/entities/user";
-import { teamsAutocomplete } from "@/shared/api";
+import { usersApi } from "@/shared/api";
 import { Autosuggest } from "@/shared/ui";
 import {
   updateStatuses,
@@ -11,20 +11,14 @@ import {
   $teamFilter,
   updateTeamFilter,
 } from "../../../model";
-import { Team } from "@/shared/api";
 import { useUnit } from "effector-react";
 
 const autocompleteTeams = async (searchString: string) => {
-  const response = await teamsAutocomplete(searchString);
-  return (response.teams ?? [])
-    .filter(
-      (team: Team): team is Team & { id: string; name: string } =>
-        !!team.id && !!team.name
-    )
-    .map((team) => ({
-      id: team.id,
-      display: team.name,
-    }));
+  const response = await usersApi.teamsAutocomplete(searchString);
+  return response.teams.map((team) => ({
+    id: team.id,
+    display: team.name,
+  }));
 };
 
 const SearchFilters = () => {

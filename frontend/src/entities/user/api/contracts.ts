@@ -1,29 +1,17 @@
-import type { UserResponse } from "@/shared/api";
-
-export type AutocompleteUsersResponse = {
-  users: UserResponse[];
-  total: number;
-};
-
-export type CurrentUserResponse = {
-  id: string;
-  name: string;
-  imageUrl?: string | null;
-  workspaceRole?: string | null;
-  mattermostUserId?: string | null;
-};
-
-export type UpdateCurrentUserRequest = {
-  name: string;
-};
-
-export type ExternalLink = {
-  provider: string;
-  externalId: string;
-  email: string | null;
-  linkedAt: string;
-};
-
-export type MergeAccountsRequest = {
-  sourceUserId: string;
-};
+/**
+ * Формы текущего пользователя — те же, что у модуля `users` в
+ * `shared/api/contracts`, то есть выведенные из
+ * `specs/contracts/users/openapi.yaml`. Рукописных DTO здесь больше нет: этот
+ * файл остался только затем, чтобы имена, под которыми формы знает страница
+ * профиля, не разъехались с именами схем контракта.
+ *
+ * Текущий пользователь и пользователь из списковой ручки — одна схема `User`:
+ * рукописная копия отличалась от неё только необязательностью полей.
+ */
+export type {
+  AutocompleteUsersResponse,
+  UserResponse as CurrentUserResponse,
+  UpdateUserRequest as UpdateCurrentUserRequest,
+  ExternalLinkResponse as ExternalLink,
+  MergeUsersRequest as MergeAccountsRequest,
+} from "@/shared/api";

@@ -1,11 +1,4 @@
-import {
-  usersApi,
-  usersPath,
-  usersPathWithContext,
-  fetchUsers as fetchUsersShared,
-  mapUserResponse,
-  resolveAvatarUrl,
-} from "@/shared/api";
+import { usersApi } from "@/shared/api";
 import type {
   AutocompleteUsersResponse,
   CurrentUserResponse,
@@ -13,46 +6,43 @@ import type {
   UpdateCurrentUserRequest,
 } from "./contracts";
 
+/**
+ * Ручки текущего пользователя. Транспорт — операции контракта
+ * (`shared/api/users`); здесь остаётся только то, что к контракту отношения не
+ * имеет: разбор ключа аватара в адрес картинки.
+ */
+
 const mapCurrentUserResponse = (
   user: CurrentUserResponse
-): CurrentUserResponse => {
-  return {
-    ...user,
-    imageUrl: resolveAvatarUrl(user.id, user.imageUrl, {
-      useCurrentUserEndpoint: true,
-    }),
-  };
-};
+): CurrentUserResponse => ({
+  ...user,
+  imageUrl: usersApi.resolveAvatarUrl(user.id, user.imageUrl, {
+    useCurrentUserEndpoint: true,
+  }),
+});
 
 export const autocompleteUsers = async (
   searchString: string,
   skip: number = 0,
   take: number = 10
 ): Promise<AutocompleteUsersResponse> => {
-  const { data } = await usersApi.get<AutocompleteUsersResponse>(
-    usersPathWithContext("/users/autocomplete"),
-    { params: { searchString, skip, take } }
-  );
+  const data = await usersApi.autocompleteUsers({ searchString, skip, take });
+
   return {
     ...data,
-    users: data.users.map(mapUserResponse),
+    users: data.users.map(usersApi.mapUserResponse),
   };
 };
 
-export const fetchUsers = fetchUsersShared;
+export const fetchUsers = usersApi.fetchUsers;
 
-/**
- * Получить текущего пользователя
- * GET /api/users/v1/workspaces/{workspaceId}/teams/{teamId}/users
- */
+/** Текущий пользователь: рабочее пространство и команда приходят аргументами. */
 export const fetchCurrentUser = async (
   workspaceId?: string | number,
   teamId?: string | number
 ): Promise<CurrentUserResponse> => {
-  const { data } = await usersApi.get<CurrentUserResponse>(
-    usersPath(`/workspaces/${workspaceId}/teams/${teamId}/users`)
-  );
-  return mapCurrentUserResponse(data);
+  const user = await usersApi.getUser(workspaceId, teamId);
+  return mapCurrentUserResponse(user);
 };
 
 export const getUsersByIds = async (
@@ -60,94 +50,41 @@ export const getUsersByIds = async (
   teamId: string | number,
   userIds: (string | number)[]
 ): Promise<CurrentUserResponse[]> => {
-  const { data } = await usersApi.post<CurrentUserResponse[]>(
-    usersPath(`/workspaces/${workspaceId}/teams/${teamId}/users/batch/list`),
-    userIds
-  );
-  return data.map((user) => ({
-    ...user,
-    imageUrl: resolveAvatarUrl(String(user.id), user.imageUrl),
-  }));
+  const users = await usersApi.listUsers(workspaceId, teamId, userIds);
+  return users.map(usersApi.mapUserResponse);
 };
 
-/**
- * Обновить текущего пользователя (имя)
- * PUT /api/users/v1/workspaces/{workspaceId}/teams/{teamId}/users
- */
 export const updateCurrentUser = async (
   request: UpdateCurrentUserRequest
 ): Promise<void> => {
-  await usersApi.put(usersPathWithContext("/users"), request);
+  await usersApi.updateUserInContext(request);
 };
 
-/**
- * Загрузить аватар текущего пользователя
- * POST /api/users/v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar
- */
 export const uploadCurrentUserAvatar = async (file: File): Promise<void> => {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  await usersApi.post(usersPathWithContext("/users/avatar"), formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  await usersApi.uploadAvatar(file);
 };
 
-/**
- * Удалить аватар текущего пользователя
- * DELETE /api/users/v1/workspaces/{workspaceId}/teams/{teamId}/users/avatar
- */
 export const deleteCurrentUserAvatar = async (): Promise<void> => {
-  await usersApi.delete(usersPathWithContext("/users/avatar"));
+  await usersApi.deleteAvatar();
 };
 
-/**
- * Привязать Mattermost аккаунт вручную
- * PUT /api/users/v1/workspaces/{workspaceId}/teams/{teamId}/users/mattermost
- */
 export const linkMattermost = async (
   mattermostUserId: string
 ): Promise<void> => {
-  await usersApi.put(usersPathWithContext("/users/mattermost"), {
-    mattermostUserId,
-  });
+  await usersApi.linkMattermost({ mattermostUserId });
 };
 
-/**
- * Отвязать Mattermost аккаунт
- * DELETE /api/users/v1/workspaces/{workspaceId}/teams/{teamId}/users/mattermost
- */
 export const disconnectMattermost = async (): Promise<void> => {
-  await usersApi.delete(usersPathWithContext("/users/mattermost"));
+  await usersApi.unlinkMattermost();
 };
 
-/**
- * Получить список привязанных провайдеров
- * GET /api/users/v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links
- */
-export const fetchExternalLinks = async (): Promise<ExternalLink[]> => {
-  const { data } = await usersApi.get<ExternalLink[]>(
-    usersPathWithContext("/users/external-links")
-  );
-  return data;
-};
+export const fetchExternalLinks = (): Promise<ExternalLink[]> =>
+  usersApi.listExternalLinks();
 
-/**
- * Отвязать провайдера
- * DELETE /api/users/v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links/{provider}
- */
 export const unlinkProvider = async (provider: string): Promise<void> => {
-  await usersApi.delete(
-    usersPathWithContext(`/users/external-links/${provider}`)
-  );
+  await usersApi.unlinkProvider(provider);
 };
 
-/**
- * Мёрж аккаунтов: перенести данные sourceUser → текущий пользователь
- * POST /api/users/v1/workspaces/{workspaceId}/teams/{teamId}/users/merge
- */
 export const mergeAccounts = async (sourceUserId: string): Promise<void> => {
-  await usersApi.post(usersPathWithContext("/users/merge"), { sourceUserId });
+  await usersApi.mergeUsers({ sourceUserId });
 };

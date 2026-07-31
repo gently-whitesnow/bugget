@@ -7,8 +7,16 @@ import {
 } from "effector";
 import { searchReports } from "./api/searchReports";
 import type { SearchRequestQueryParams, SearchResponse } from "./api/contracts";
-import { UserResponse, Team } from "@/shared/api";
+import { UserResponse } from "@/shared/api";
 import { fetchUsers } from "@/entities/user";
+
+/**
+ * Команда в фильтре — выбор в UI, а не объект с провода: страница держит от неё
+ * только идентификатор для запроса и имя для подписи. Типом контракта её
+ * описывать нечем — подсказки отдают команду целиком, а в фильтр попадает
+ * ровно эта пара.
+ */
+export type TeamFilter = { id: string; name: string };
 
 export const searchFx = createEffect<SearchRequestQueryParams, SearchResponse>(
   async (params: SearchRequestQueryParams) => {
@@ -37,7 +45,7 @@ export const updateSortField = createEvent<string>();
 export const updateSortDirection = createEvent<"asc" | "desc">();
 export const updateStatuses = createEvent<number[] | null>();
 export const updateUserFilter = createEvent<string | null>();
-export const updateTeamFilter = createEvent<Team | null>();
+export const updateTeamFilter = createEvent<TeamFilter | null>();
 
 export const $query = createStore<string>("").on(updateQuery, (_, q) => q);
 export const $sortField = createStore<string>("created").on(
@@ -58,7 +66,7 @@ export const $userFilter = createStore<string | null>(null).on(
   (_, userId) => userId
 );
 
-export const $teamFilter = createStore<Team | null>(null).on(
+export const $teamFilter = createStore<TeamFilter | null>(null).on(
   updateTeamFilter,
   (_, team) => team
 );

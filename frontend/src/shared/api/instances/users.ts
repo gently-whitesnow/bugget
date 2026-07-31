@@ -1,5 +1,4 @@
 import { createApiInstance } from "./base";
-import { getAppContext } from "./app";
 
 /**
  * Users API
@@ -9,22 +8,27 @@ import { getAppContext } from "./app";
  */
 export const usersApi = createApiInstance();
 
-// Хелпер для построения путей без контекста
-export const usersPath = (path: string) =>
-  `/api/users/v1${path.startsWith("/") ? path : `/${path}`}`;
-
 /**
- * Хелпер для построения путей с контекстом workspace/team
- * Используется для эндпоинтов вида /workspaces/{wId}/teams/{tId}/...
+ * Префикс модуля в адресе. Пути в `specs/contracts/users/openapi.yaml` начинаются
+ * с `/v1`, а nginx отдаёт users-api по `/api/users` — этот шов живёт здесь и
+ * больше нигде.
  */
-export const usersPathWithContext = (path: string) => {
-  const { workspaceId, teamId } = getAppContext();
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+export const USERS_API_PREFIX = "/api/users";
 
-  if (workspaceId && teamId) {
-    return `/api/users/v1/workspaces/${workspaceId}/teams/${teamId}${cleanPath}`;
+// Тот же приём, что у appApi: адрес операции получает префикс модуля ровно в
+// одном месте, а не склеивается заново на каждом call-site. Уже полный путь
+// (`/api/users/...`) и абсолютный URL пропускаются как есть.
+usersApi.interceptors.request.use((config) => {
+  if (!config.url) return config;
+  if (
+    config.url.startsWith("http") ||
+    config.url.startsWith(`${USERS_API_PREFIX}/`)
+  ) {
+    return config;
   }
 
-  console.warn("Users context not set, request may fail:", path);
-  return `/api/users/v1${cleanPath}`;
-};
+  const path = config.url.startsWith("/") ? config.url : `/${config.url}`;
+  config.url = `${USERS_API_PREFIX}${path}`;
+
+  return config;
+});

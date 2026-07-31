@@ -5,11 +5,7 @@ import {
   sample,
   combine,
 } from "effector";
-import {
-  listTeamMembers,
-  deleteTeamMember as deleteTeamMemberApi,
-  leaveTeam as leaveTeamApi,
-} from "@/shared/api";
+import { usersApi } from "@/shared/api";
 import { getUsersByIds } from "@/entities/user";
 import { $teamsMember } from "@/shared/model";
 import type { TeamMembersResponse } from "@/shared/api";
@@ -30,7 +26,7 @@ export const fetchTeamMembersFx = createEffect<
   TeamContext,
   TeamMembersResponse
 >(async ({ workspaceId, teamId }) => {
-  return await listTeamMembers(workspaceId, teamId);
+  return await usersApi.listTeamMembers(workspaceId, teamId);
 });
 
 export const fetchMemberDetailsFx = createEffect<
@@ -38,25 +34,21 @@ export const fetchMemberDetailsFx = createEffect<
   CurrentUserResponse[]
 >(async ({ workspaceId, teamId, userIds }) => {
   if (userIds.length === 0) return [];
-  const users = await getUsersByIds(workspaceId, teamId, userIds);
-  return users.map((user) => ({
-    id: String(user.id),
-    name: user.name,
-    imageUrl: user.imageUrl || null,
-    workspaceRole: user.workspaceRole,
-  }));
+  // Форма ответа теперь выведена из контракта целиком: перекладывать её поле за
+  // полем незачем — рукописная копия как раз и теряла `mattermostUserId`.
+  return await getUsersByIds(workspaceId, teamId, userIds);
 });
 
 export const deleteTeamMemberFx = createEffect<
   TeamContext & { userId: string | number },
   void
 >(async ({ workspaceId, teamId, userId }) => {
-  await deleteTeamMemberApi(workspaceId, teamId, userId);
+  await usersApi.deleteTeamMember(workspaceId, teamId, userId);
 });
 
 export const leaveTeamFx = createEffect<TeamContext, void>(
   async ({ workspaceId, teamId }) => {
-    await leaveTeamApi(workspaceId, teamId);
+    await usersApi.leaveTeam(workspaceId, teamId);
   }
 );
 

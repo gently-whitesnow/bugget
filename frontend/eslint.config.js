@@ -7,6 +7,7 @@ import tseslint from "typescript-eslint";
 
 import { noUnsafeInnerHtmlOption } from "./eslint-rules/no-unsafe-inner-html.js";
 import { noDirectReportsTransportOptions } from "./eslint-rules/no-direct-reports-transport.js";
+import { noDirectUsersTransportOptions } from "./eslint-rules/no-direct-users-transport.js";
 
 export default tseslint.config(
   // src/shared/api/generated — вывод openapi-typescript из specs/contracts/**.
@@ -58,9 +59,10 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         noUnsafeInnerHtmlOption,
-        // Модуль reports переведён на операции контракта: прямой вызов его пути
-        // мимо src/shared/api/reports снова разводит адрес и контракт.
+        // Модули reports и users переведены на операции контракта: прямой вызов
+        // их путей мимо src/shared/api/<модуль> снова разводит адрес и контракт.
         ...noDirectReportsTransportOptions,
+        ...noDirectUsersTransportOptions,
       ],
       "max-len": [
         "error",
@@ -71,13 +73,17 @@ export default tseslint.config(
     },
   },
   {
-    // Два исключения из запрета на прямой вызов путей reports, оба узкие:
-    //   * транспортная граница модуля — то самое единственное место;
+    // Исключения из запрета на прямой вызов путей модуля, все узкие:
+    //   * транспортная граница самого модуля — то самое единственное место;
     //   * тесты интерсепторов (`shared/api/instances`), где адрес и есть предмет
     //     проверки: ADR-0009 требует, чтобы форма данных не зависела от URL, и
     //     доказывается это сравнением ответов по разным адресам.
     // Остальные ограничения (innerHTML) здесь остаются в силе.
-    files: ["src/shared/api/reports/**/*.ts", "src/shared/api/instances/*.test.ts"],
+    files: [
+      "src/shared/api/reports/**/*.ts",
+      "src/shared/api/users/**/*.ts",
+      "src/shared/api/instances/*.test.ts",
+    ],
     rules: {
       "no-restricted-syntax": ["error", noUnsafeInnerHtmlOption],
     },

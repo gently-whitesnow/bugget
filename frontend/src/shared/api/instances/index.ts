@@ -4,7 +4,7 @@ export {
   getSignalRConnectionId,
 } from "./base";
 export { authorizationApi, authorizationPath } from "./authorization";
-export { usersApi, usersPath, usersPathWithContext } from "./users";
+export { usersApi, USERS_API_PREFIX } from "./users";
 export { parseAppContextFromPath } from "./appContext";
 export {
   appApi,

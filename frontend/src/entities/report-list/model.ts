@@ -1,5 +1,5 @@
 import { createEffect, createStore, sample } from "effector";
-import { fetchUsers, reportsApi } from "@/shared/api";
+import { reportsApi, usersApi } from "@/shared/api";
 import { ReportStatuses } from "@/shared/config";
 import type {
   ListReportsResponse,
@@ -55,7 +55,7 @@ export const loadReportsFx = createEffect<
 export const fetchReportsUsersFx = createEffect<string[], UserResponse[]>(
   async (userIds) => {
     if (userIds.length === 0) return [];
-    return await fetchUsers(userIds);
+    return await usersApi.fetchUsers(userIds);
   }
 );
 

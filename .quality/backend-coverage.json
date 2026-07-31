@@ -39,7 +39,7 @@
         "branch": 0.0
       },
       "Bugget": {
-        "line": 87.1,
+        "line": 87.0,
         "branch": 36.6
       },
       "Bugget.BO": {
@@ -87,11 +87,11 @@
         "branch": 75.0
       },
       "Users.BO": {
-        "line": 89.7,
+        "line": 90.5,
         "branch": 50.0
       },
       "Users.DA": {
-        "line": 94.7,
+        "line": 93.8,
         "branch": 66.7
       },
       "Users.Entities": {

@@ -56,9 +56,9 @@ public static class ModulesExtensions
     /// </summary>
     public static IServiceCollection AddInProcessModuleIntegrations(this IServiceCollection services)
     {
-        services.AddSingleton<Bugget.DA.Interfaces.IUsersClient, UsersClientAdapter>();
+        services.AddSingleton<Bugget.BO.Ports.IUsersClient, UsersClientAdapter>();
         services.AddSingleton<Authorization.Api.Interfaces.IUsersClient, AuthorizationUsersClientAdapter>();
-        services.AddSingleton<Users.DA.Interfaces.IAuthorizationRepository, AuthorizationCacheAdapter>();
+        services.AddSingleton<Users.BO.Ports.IAuthorizationRepository, AuthorizationCacheAdapter>();
 
         return services;
     }

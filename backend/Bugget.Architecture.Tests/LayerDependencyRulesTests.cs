@@ -7,14 +7,16 @@ namespace Bugget.Architecture.Tests;
 /// <summary>
 /// Архитектурные правила для bugget-api (см. ROOT.md → «Карта проекта», «Инварианты»).
 ///
-/// Разрешённое направление зависимостей:
-///   Bugget (API) ──► Bugget.BO ──► Bugget.DA ──► Bugget.Entities
-///                                  TaskQueue ──► (BCL)
+/// Разрешённое направление зависимостей (ADR-0001):
+///   Bugget (API) ──► Bugget.BO ──► Bugget.Entities
+///   Bugget (API) ──► Bugget.DA ──► Bugget.BO.Ports   (только ради DI-композиции)
+///                    TaskQueue ──► (BCL)
 ///   Bugget ──► Bugget.DbUp, Bugget.ExternalClients
 ///   Bugget.ExternalClients ──► Bugget.BO
 ///
-/// Главное правило: «слои не пересекаются назад». Если нужно протолкнуть
-/// контракт вниз — объяви интерфейс в нижнем слое и реализуй в верхнем.
+/// Главное правило: «слои не пересекаются назад». Порты объявляет бизнес-логика
+/// (Bugget.BO/Ports), инфраструктура их реализует — поэтому единственное, что
+/// Bugget.DA видит из Bugget.BO, это namespace портов.
 ///
 /// Технический момент: NetArchTest сравнивает namespace по строковому startsWith,
 /// поэтому `NotHaveDependencyOn("Bugget")` поймает и сам Bugget.DA. Для API-слоя
@@ -39,6 +41,7 @@ public class LayerDependencyRulesTests
     ];
 
     private const string Bo = "Bugget.BO";
+    private const string Ports = "Bugget.BO.Ports";
     private const string Da = "Bugget.DA";
     private const string DbUp = "Bugget.DbUp";
     private const string ExternalClients = "Bugget.ExternalClients";
@@ -86,23 +89,41 @@ public class LayerDependencyRulesTests
             string.Join(", ", result.FailingTypeNames ?? []));
     }
 
-    [Fact(DisplayName = "Bugget.DA не зависит от Bugget.BO / Bugget.ExternalClients / Bugget (API)")]
+    [Fact(DisplayName = "Bugget.DA видит из Bugget.BO только порты")]
     public void Da_should_not_depend_on_upper_layers()
     {
-        var disallowed = new[] { Bo, ExternalClients }
+        // После инверсии (ADR-0001) ребро Bugget.DA → Bugget.BO законно, но ровно в одну
+        // точку: namespace портов. Всё остальное в бизнес-логике — сервисы, доменные
+        // события, мапперы — для инфраструктуры по-прежнему верхний слой.
+        //
+        // Список запрещённых namespace'ов не ведётся руками: он снимается с самой сборки
+        // Bugget.BO, поэтому новый namespace в бизнес-логике попадает под правило сам.
+        // Отбрасываются префиксы Bugget.BO.Ports — сам "Bugget.BO" тоже префикс портов
+        // при startsWith-сравнении NetArchTest, иначе правило запретило бы и их.
+        var boNamespaces = BoAsm.GetTypes()
+            .Select(type => type.Namespace)
+            .Where(ns => ns is not null
+                         && ns.StartsWith(Bo, StringComparison.Ordinal)
+                         && !Ports.StartsWith(ns, StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        var disallowed = boNamespaces
+            .Concat([ExternalClients])
             .Concat(ApiInternalNamespaces)
             .ToArray();
 
         var result = Types
             .InAssembly(DaAsm)
             .Should()
-            .NotHaveDependencyOnAny(disallowed)
+            .NotHaveDependencyOnAny(disallowed!)
             .GetResult();
 
         result.IsSuccessful.Should().BeTrue(
-            "Bugget.DA нарушил направление зависимостей: data access не должен знать про " +
-            "бизнес-логику или HTTP-слой. Если DA нужно реагировать на bo-событие — " +
-            "объяви интерфейс в Bugget.DA, реализуй в Bugget.BO. " +
+            "Bugget.DA нарушил направление зависимостей: инфраструктура реализует порты из " +
+            $"{Ports} и больше ничего из бизнес-логики знать не должна — ни сервисов, ни " +
+            "доменных событий, ни HTTP-слоя. Нужен новый контракт — объяви его портом в " +
+            "Bugget.BO/Ports и реализуй здесь. " +
             "Failing types: {0}",
             string.Join(", ", result.FailingTypeNames ?? []));
     }
@@ -191,32 +212,22 @@ public class LayerDependencyRulesTests
             string.Join(", ", result.FailingTypeNames ?? []));
     }
 
-    [Fact(DisplayName = "Bugget.ExternalClients не лезет в Bugget.DA-концеты (только Bugget.DA.Interfaces разрешён как контракт)")]
-    public void ExternalClients_should_not_depend_on_da_concretes()
+    [Fact(DisplayName = "Bugget.ExternalClients не зависит от Bugget.DA вообще")]
+    public void ExternalClients_should_not_depend_on_data_access()
     {
-        // External integration'ы (Kaiten, users-api, mattermost) разговаривают с системой
-        // только через контракты в Bugget.DA.Interfaces. Прямое обращение к
-        // Bugget.DA.Postgres / Bugget.DA.Files / Bugget.DA.Transactions / Bugget.DA.WebSockets
-        // означает, что external-клиент знает про конкретную реализацию персистенса —
-        // это ломает изоляцию data access слоя. Если нужен контракт — заводи интерфейс
-        // в Bugget.DA.Interfaces и инжекти его.
-        var disallowed = new[]
-        {
-            "Bugget.DA.Postgres",
-            "Bugget.DA.Files",
-            "Bugget.DA.Transactions",
-            "Bugget.DA.WebSockets",
-        };
-
+        // External integration'ы (Kaiten, users-api, mattermost) — такая же инфраструктура,
+        // как и Bugget.DA, и разговаривают с системой через порты Bugget.BO.Ports.
+        // Раньше правило разрешало им Bugget.DA.Interfaces, потому что порты жили там;
+        // после инверсии (ADR-0001) в Bugget.DA не осталось ничего, что им нужно.
         var result = Types
             .InAssembly(ExternalClientsAsm)
             .Should()
-            .NotHaveDependencyOnAny(disallowed)
+            .NotHaveDependencyOn(Da)
             .GetResult();
 
         result.IsSuccessful.Should().BeTrue(
-            "Bugget.ExternalClients достал концет из Bugget.DA. " +
-            "Используй абстракцию из Bugget.DA.Interfaces или подними её в Bugget.BO. " +
+            "Bugget.ExternalClients залез в Bugget.DA. Нужен контракт — объяви порт в " +
+            $"{Ports} и инжекти его; реализация остаётся в инфраструктуре. " +
             "Failing types: {0}",
             string.Join(", ", result.FailingTypeNames ?? []));
     }

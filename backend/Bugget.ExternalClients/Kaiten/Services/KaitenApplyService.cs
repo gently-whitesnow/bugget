@@ -1,9 +1,9 @@
 using Bugget.BO.ExternalSearch.Models;
 using Bugget.BO.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.ReportLinks;
-using Bugget.DA.Interfaces;
 using Bugget.Entities.Authentication;
-using Bugget.Entities.DbModels.Settings;
+using Bugget.Entities.BO.Settings;
 using Bugget.Entities.DTO.Link;
 using Bugget.Entities.Options;
 using Bugget.ExternalClients.Kaiten.Services;

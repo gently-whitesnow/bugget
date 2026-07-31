@@ -1,10 +1,9 @@
 using Authentication;
 using Bugget.Http;
-using Bugget.Http;
 using Microsoft.AspNetCore.Mvc;
 using Users.Api.Generated;
 using Users.BO.Interfaces;
-using Users.DA.Interfaces;
+using Users.BO.Ports;
 using FileParameter = Users.Api.Generated.FileParameter;
 using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 
@@ -87,14 +86,14 @@ public sealed class AvatarController(
         string teamId,
         CancellationToken cancellationToken = default)
     {
-        var user = User.GetIdentity();
-        var userDbModel = await userService.GetUserAsync(user.Id);
-        if (userDbModel?.ImageUrl is null)
+        var identity = User.GetIdentity();
+        var user = await userService.GetUserAsync(identity.Id);
+        if (user?.ImageUrl is null)
         {
             return NotFound();
         }
 
-        return await StreamAvatarAsync(userDbModel.ImageUrl, cancellationToken);
+        return await StreamAvatarAsync(user.ImageUrl, cancellationToken);
     }
 
     /// <summary>
@@ -108,20 +107,20 @@ public sealed class AvatarController(
         long userId,
         CancellationToken cancellationToken = default)
     {
-        var user = User.GetIdentity();
-        if (user.WorkspaceId is null)
+        var identity = User.GetIdentity();
+        if (identity.WorkspaceId is null)
         {
             return NotFound();
         }
 
-        var users = await userService.ListUsersAsync([userId], user.WorkspaceId);
-        var userDbModel = users.FirstOrDefault();
-        if (userDbModel?.ImageUrl is null)
+        var users = await userService.ListUsersAsync([userId], identity.WorkspaceId);
+        var user = users.FirstOrDefault();
+        if (user?.ImageUrl is null)
         {
             return NotFound();
         }
 
-        return await StreamAvatarAsync(userDbModel.ImageUrl, cancellationToken);
+        return await StreamAvatarAsync(user.ImageUrl, cancellationToken);
     }
 
     private async Task<IActionResult> StreamAvatarAsync(string storageKey, CancellationToken ct)

@@ -1,7 +1,7 @@
 using Bugget.Modules.InProcess;
 using Moq;
 using Users.BO.Interfaces;
-using Users.Entities.DbModels.Users;
+using Users.Entities.BO;
 
 namespace Bugget.Tests.Modules.InProcess;
 
@@ -17,7 +17,7 @@ public class UsersClientAdapterTests
         return (new UsersClientAdapter(usersService.Object), usersService);
     }
 
-    private static UserDbModel User(long id, string name, string? imageUrl = null, string? mattermostUserId = null) => new()
+    private static User User(long id, string name, string? imageUrl = null, string? mattermostUserId = null) => new()
     {
         Id = id,
         ExternalId = $"ext-{id}",

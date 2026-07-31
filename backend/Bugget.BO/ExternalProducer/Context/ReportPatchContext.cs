@@ -1,6 +1,6 @@
-using Bugget.Entities.DbModels.Report;
+using Bugget.Entities.BO.ReportBo;
 using Bugget.Entities.DTO.Report;
 
 namespace Bugget.BO.ExternalProducer.Context;
 
-public record ReportPatchContext(string UserId, ReportPatchDto PatchDto, ReportPatchResultDbModel Result);
+public record ReportPatchContext(string UserId, ReportPatchDto PatchDto, ReportPatchResult Result);

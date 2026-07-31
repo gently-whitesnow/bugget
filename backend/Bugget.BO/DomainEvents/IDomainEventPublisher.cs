@@ -1,11 +1,11 @@
-using Bugget.DA.Transactions;
-using Bugget.Entities.DbModels.DomainEvents;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.DomainEvents;
 
 namespace Bugget.BO.DomainEvents;
 
 public interface IDomainEventPublisher
 {
-    Task<long> PublishAsync(DomainEventDbModel evt, ITransactionScope scope, CancellationToken ct = default);
+    Task<long> PublishAsync(DomainEvent evt, ITransactionScope scope, CancellationToken ct = default);
 
     /// <summary>
     /// Публикация события без явной транзакции — INSERT через собственное соединение.
@@ -14,5 +14,5 @@ public interface IDomainEventPublisher
     /// игнорирует, потеря одной строки аудита приемлема). Не использовать для
     /// событий, на которых строится read-model.
     /// </summary>
-    Task<long> PublishAsync(DomainEventDbModel evt, CancellationToken ct = default);
+    Task<long> PublishAsync(DomainEvent evt, CancellationToken ct = default);
 }

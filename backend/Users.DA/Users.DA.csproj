@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Bugget.Entities\Bugget.Entities.csproj" />
+    <ProjectReference Include="..\Users.BO\Users.BO.csproj" />
     <ProjectReference Include="..\Users.Entities\Users.Entities.csproj" />
   </ItemGroup>
 

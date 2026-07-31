@@ -1,12 +1,12 @@
 using Dapper;
-using Users.DA.Interfaces;
-using Users.Entities.DbModels.Members;
+using Users.BO.Ports;
+using Users.Entities.BO;
 
 namespace Users.DA.DbClients;
 
 public class MembersDbClient : PostgresClient, IMembersRepository
 {
-    public async Task<(WorkspaceMemberDbModel[], TeamMemberDbModel[])> ListMembersAsync(long userId)
+    public async Task<(WorkspaceMember[], TeamMember[])> ListMembersAsync(long userId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
         await using var multi = await conn.QueryMultipleAsync(
@@ -16,8 +16,8 @@ public class MembersDbClient : PostgresClient, IMembersRepository
             ",
             new { user_id = userId }
         );
-        var workspaces = (await multi.ReadAsync<WorkspaceMemberDbModel>()).ToArray();
-        var teams = (await multi.ReadAsync<TeamMemberDbModel>()).ToArray();
+        var workspaces = (await multi.ReadAsync<WorkspaceMember>()).ToArray();
+        var teams = (await multi.ReadAsync<TeamMember>()).ToArray();
         return (workspaces, teams);
     }
 }

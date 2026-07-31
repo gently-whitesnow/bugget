@@ -1,6 +1,6 @@
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.DA.Transactions;
-using Bugget.Entities.DbModels.Bug;
+using Bugget.Entities.BO.Bugs;
 using Bugget.Entities.DTO.Bug;
 using Dapper;
 
@@ -8,11 +8,11 @@ namespace Bugget.DA.Postgres;
 
 public sealed class BugsDbClient : PostgresClient, IBugsDbClient
 {
-    public async Task<BugSummaryDbModel> CreateBugAsync(string userId, int reportId, BugDto bugDto)
+    public async Task<BugSummary> CreateBugAsync(string userId, int reportId, BugDto bugDto)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleAsync<BugSummaryDbModel>(
+        return await connection.QuerySingleAsync<BugSummary>(
             "SELECT * FROM public.create_bug_internal(@user_id, @report_id, @receive, @expect, @title);",
             new
             {
@@ -25,14 +25,14 @@ public sealed class BugsDbClient : PostgresClient, IBugsDbClient
                 );
     }
 
-    public Task<BugSummaryDbModel> CreateBugAsync(
+    public Task<BugSummary> CreateBugAsync(
         ITransactionScope scope,
         string userId,
         int reportId,
         BugDto bugDto)
     {
         var (connection, tx) = scope.Unwrap();
-        return connection.QuerySingleAsync<BugSummaryDbModel>(new CommandDefinition(
+        return connection.QuerySingleAsync<BugSummary>(new CommandDefinition(
             "SELECT * FROM public.create_bug_internal(@user_id, @report_id, @receive, @expect, @title);",
             new
             {
@@ -45,11 +45,11 @@ public sealed class BugsDbClient : PostgresClient, IBugsDbClient
             transaction: tx));
     }
 
-    public async Task<BugPatchResultDbModel> PatchBugAsync(int reportId, int bugId, BugPatchDto patchDto)
+    public async Task<BugPatchResult> PatchBugAsync(int reportId, int bugId, BugPatchDto patchDto)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleAsync<BugPatchResultDbModel>(
+        return await connection.QuerySingleAsync<BugPatchResult>(
             "SELECT * FROM public.patch_bug_internal(@bug_id, @report_id, @receive, @expect, @status, @title);",
             new
             {
@@ -63,14 +63,14 @@ public sealed class BugsDbClient : PostgresClient, IBugsDbClient
         );
     }
 
-    public Task<BugPatchResultDbModel> PatchBugAsync(
+    public Task<BugPatchResult> PatchBugAsync(
         ITransactionScope scope,
         int reportId,
         int bugId,
         BugPatchDto patchDto)
     {
         var (connection, tx) = scope.Unwrap();
-        return connection.QuerySingleAsync<BugPatchResultDbModel>(new CommandDefinition(
+        return connection.QuerySingleAsync<BugPatchResult>(new CommandDefinition(
             "SELECT * FROM public.patch_bug_internal(@bug_id, @report_id, @receive, @expect, @status, @title);",
             new
             {
@@ -84,23 +84,23 @@ public sealed class BugsDbClient : PostgresClient, IBugsDbClient
             transaction: tx));
     }
 
-    public async Task<BugSummaryDbModel?> GetBugAsync(int reportId, int bugId)
+    public async Task<BugSummary?> GetBugAsync(int reportId, int bugId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleOrDefaultAsync<BugSummaryDbModel>(
+        return await connection.QuerySingleOrDefaultAsync<BugSummary>(
             "SELECT * FROM public.get_bug_internal(@report_id, @bug_id);",
             new { report_id = reportId, bug_id = bugId }
         );
     }
 
-    public Task<BugSummaryDbModel?> GetBugAsync(
+    public Task<BugSummary?> GetBugAsync(
         ITransactionScope scope,
         int reportId,
         int bugId)
     {
         var (connection, tx) = scope.Unwrap();
-        return connection.QuerySingleOrDefaultAsync<BugSummaryDbModel>(new CommandDefinition(
+        return connection.QuerySingleOrDefaultAsync<BugSummary>(new CommandDefinition(
             "SELECT * FROM public.get_bug_internal(@report_id, @bug_id);",
             new { report_id = reportId, bug_id = bugId },
             transaction: tx));

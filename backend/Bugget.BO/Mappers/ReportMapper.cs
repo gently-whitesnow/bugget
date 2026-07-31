@@ -1,7 +1,7 @@
 using Bugget.BO.Services.Reports;
 using Bugget.Entities.BO;
+using Bugget.Entities.BO.ReportBo;
 using Bugget.Entities.BO.Search;
-using Bugget.Entities.DbModels.Report;
 using Bugget.Entities.DTO.Report;
 using Bugget.Entities.Options;
 using Bugget.Entities.SocketViews;
@@ -42,7 +42,7 @@ public static class ReportMapper
         };
     }
 
-    public static PatchReportSocketView ToSocketView(this ReportPatchDto patchDto, ReportPatchResultDbModel result)
+    public static PatchReportSocketView ToSocketView(this ReportPatchDto patchDto, ReportPatchResult result)
     {
         return new PatchReportSocketView
         {
@@ -54,24 +54,24 @@ public static class ReportMapper
         };
     }
 
-    public static ReportSummaryViewModel ToViewModel(this ReportSummaryDbModel summaryDbModel, ReportAliasOptions aliasOptions)
+    public static ReportSummaryViewModel ToViewModel(this ReportSummary summary, ReportAliasOptions aliasOptions)
     {
         return new ReportSummaryViewModel
         {
-            Id = ReportIdResolveHelper.ToAliasId(summaryDbModel.Id, summaryDbModel.PublicId, summaryDbModel.TeamReportId, aliasOptions),
-            Title = summaryDbModel.Title,
-            Status = summaryDbModel.Status,
-            ResponsibleUserId = summaryDbModel.ResponsibleUserId,
-            PastResponsibleUserId = summaryDbModel.PastResponsibleUserId,
-            CreatorUserId = summaryDbModel.CreatorUserId,
-            CreatorTeamId = summaryDbModel.CreatorTeamId,
-            CreatedAt = summaryDbModel.CreatedAt,
-            UpdatedAt = summaryDbModel.UpdatedAt,
-            CreatorType = summaryDbModel.CreatorType
+            Id = ReportIdResolveHelper.ToAliasId(summary.Id, summary.PublicId, summary.TeamReportId, aliasOptions),
+            Title = summary.Title,
+            Status = summary.Status,
+            ResponsibleUserId = summary.ResponsibleUserId,
+            PastResponsibleUserId = summary.PastResponsibleUserId,
+            CreatorUserId = summary.CreatorUserId,
+            CreatorTeamId = summary.CreatorTeamId,
+            CreatedAt = summary.CreatedAt,
+            UpdatedAt = summary.UpdatedAt,
+            CreatorType = summary.CreatorType
         };
     }
 
-    public static ReportViewModel ToViewModel(this ReportDbModel dbModel, ReportAliasOptions aliasOptions)
+    public static ReportViewModel ToViewModel(this Report dbModel, ReportAliasOptions aliasOptions)
     {
         return new ReportViewModel
         {
@@ -92,12 +92,12 @@ public static class ReportMapper
         };
     }
 
-    public static ReportViewModel[] ToViewModel(this ReportDbModel[] dbModels, ReportAliasOptions aliasOptions)
+    public static ReportViewModel[] ToViewModel(this Report[] dbModels, ReportAliasOptions aliasOptions)
     {
         return dbModels.Select(dbModel => dbModel.ToViewModel(aliasOptions)).ToArray();
     }
 
-    public static ReportPatchResultViewModel ToPatchResultViewModel(this ReportPatchResultDbModel result, ReportAliasOptions aliasOptions)
+    public static ReportPatchResultViewModel ToPatchResultViewModel(this ReportPatchResult result, ReportAliasOptions aliasOptions)
     {
         return new ReportPatchResultViewModel
         {

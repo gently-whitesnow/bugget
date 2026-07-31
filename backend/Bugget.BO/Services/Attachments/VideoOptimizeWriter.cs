@@ -1,8 +1,7 @@
 using System.Diagnostics;
 using Bugget.BO.Interfaces;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO.AttachmentBo;
-using Bugget.Entities.DbModels.Attachment;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -21,7 +20,7 @@ public sealed class VideoOptimizeWriter(
     public async Task<OptimizationResult> OptimizeWriteAsync(
         string? organizationId,
         int reportId,
-        AttachmentDbModel attachmentDbModel,
+        Attachment attachment,
         Stream originalStream,
         CancellationToken ct = default)
     {
@@ -30,7 +29,7 @@ public sealed class VideoOptimizeWriter(
         var tempDirectory = Path.Combine(Path.GetTempPath(), "bugget-video", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDirectory);
 
-        var inputExtension = Path.GetExtension(attachmentDbModel.FileName);
+        var inputExtension = Path.GetExtension(attachment.FileName);
         var inputPath = Path.Combine(tempDirectory, $"{Guid.NewGuid():N}{inputExtension}");
         var outputPath = Path.Combine(tempDirectory, $"{Guid.NewGuid():N}.mp4");
         var previewPath = Path.Combine(tempDirectory, $"{Guid.NewGuid():N}.webp");
@@ -79,7 +78,7 @@ public sealed class VideoOptimizeWriter(
             var storageKey = keyGen.GetOriginalKey(
                 organizationId,
                 reportId,
-                attachmentDbModel.EntityId,
+                attachment.EntityId,
                 ".mp4");
             var previewKey = keyGen.GetPreviewKey(storageKey);
 
@@ -90,7 +89,7 @@ public sealed class VideoOptimizeWriter(
                 fileStorageClient.WriteAsync(previewKey, previewStream, ct));
 
             return new OptimizationResult(
-                FileName: Path.ChangeExtension(attachmentDbModel.FileName, ".mp4"),
+                FileName: Path.ChangeExtension(attachment.FileName, ".mp4"),
                 StorageKey: storageKey,
                 MimeType: "video/mp4",
                 LengthBytes: outputStream.Length,

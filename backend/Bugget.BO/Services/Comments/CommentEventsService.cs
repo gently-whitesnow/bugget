@@ -1,9 +1,9 @@
+using Bugget.BO.Ports;
 using Bugget.BO.Services;
 using Bugget.BO.Services.Attachments;
-using Bugget.DA.WebSockets;
 using Bugget.Entities.Authentication;
+using Bugget.Entities.BO.Comments;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.Comment;
 
 namespace Bugget.BO.Services.Comments;
 
@@ -13,11 +13,11 @@ public class CommentEventsService(
         ParticipantsService participantsService
             )
 {
-    public async Task HandleCommentCreateEventAsync(ReportIdContext reportIdContext, UserIdentity user, CommentSummaryDbModel commentSummaryDbModel)
+    public async Task HandleCommentCreateEventAsync(ReportIdContext reportIdContext, UserIdentity user, CommentSummary commentSummary)
     {
         await Task.WhenAll(
             participantsService.AddParticipantIfNotExistAsync(reportIdContext, user.Id),
-            reportPageHubClient.SendCommentCreateAsync(reportIdContext.GroupKey, commentSummaryDbModel, user.SignalRConnectionId)
+            reportPageHubClient.SendCommentCreateAsync(reportIdContext.GroupKey, commentSummary, user.SignalRConnectionId)
     );
     }
 
@@ -29,10 +29,10 @@ public class CommentEventsService(
         );
     }
 
-    public async Task HandleCommentUpdateEventAsync(ReportIdContext reportIdContext, UserIdentity user, CommentSummaryDbModel commentSummaryDbModel)
+    public async Task HandleCommentUpdateEventAsync(ReportIdContext reportIdContext, UserIdentity user, CommentSummary commentSummary)
     {
         await Task.WhenAll(
-            reportPageHubClient.SendCommentUpdateAsync(reportIdContext.GroupKey, commentSummaryDbModel, user.SignalRConnectionId)
+            reportPageHubClient.SendCommentUpdateAsync(reportIdContext.GroupKey, commentSummary, user.SignalRConnectionId)
         );
     }
 }

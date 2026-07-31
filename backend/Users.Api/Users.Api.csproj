@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Users.BO\Users.BO.csproj" />
+    <ProjectReference Include="..\Users.DA\Users.DA.csproj" />
     <ProjectReference Include="..\Users.DbUp\Users.DbUp.csproj" />
     <ProjectReference Include="..\BugReport.Logging\BugReport.Logging.csproj" />
     <ProjectReference Include="..\MattermostOAuth\MattermostOAuth.csproj" />

@@ -1,20 +1,19 @@
-using Bugget.DA.WebSockets;
+using Bugget.BO.Ports;
 using Bugget.Entities.Authentication;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.ReportLink;
 
 namespace Bugget.BO.Services.ReportLinks;
 
 public sealed class ReportLinkEventsService(IReportPageHubClient reportPageHubClient)
 {
-    public Task HandleReportLinkCreateAsync(ReportIdContext reportIdContext, UserIdentity user, ReportLinkDbModel linkDbModel)
+    public Task HandleReportLinkCreateAsync(ReportIdContext reportIdContext, UserIdentity user, ReportLink link)
     {
-        return reportPageHubClient.SendReportLinkCreateAsync(reportIdContext.GroupKey, linkDbModel, user.SignalRConnectionId);
+        return reportPageHubClient.SendReportLinkCreateAsync(reportIdContext.GroupKey, link, user.SignalRConnectionId);
     }
 
-    public Task HandleReportLinkUpdateAsync(ReportIdContext reportIdContext, UserIdentity user, ReportLinkDbModel linkDbModel)
+    public Task HandleReportLinkUpdateAsync(ReportIdContext reportIdContext, UserIdentity user, ReportLink link)
     {
-        return reportPageHubClient.SendReportLinkUpdateAsync(reportIdContext.GroupKey, linkDbModel, user.SignalRConnectionId);
+        return reportPageHubClient.SendReportLinkUpdateAsync(reportIdContext.GroupKey, link, user.SignalRConnectionId);
     }
 
     public Task HandleReportLinkDeleteAsync(ReportIdContext reportIdContext, UserIdentity user, int linkId)

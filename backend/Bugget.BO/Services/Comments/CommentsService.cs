@@ -1,15 +1,14 @@
 using System.Text.Json;
 using Bugget.BO.DomainEvents;
 using Bugget.BO.Errors;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Bugs;
 using Bugget.BO.Services.Reports;
-using Bugget.DA.Interfaces;
-using Bugget.DA.Transactions;
 using Bugget.Entities.Authentication;
+using Bugget.Entities.BO.Comments;
 using Bugget.Entities.BO.Common;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.Comment;
-using Bugget.Entities.DbModels.DomainEvents;
 using Bugget.Entities.DTO.Comment;
 using Bugget.Entities.Errors;
 using Bugget.Entities.Options;
@@ -28,7 +27,7 @@ public sealed class CommentsService(
     IDomainEventPublisher domainEventPublisher,
     IUnitOfWork unitOfWork)
 {
-    public async Task<(CommentSummaryDbModel? Value, Error? Error)> CreateCommentAsync(UserIdentity user, string aliasId, int bugId, CommentDto commentDto)
+    public async Task<(CommentSummary? Value, Error? Error)> CreateCommentAsync(UserIdentity user, string aliasId, int bugId, CommentDto commentDto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -43,13 +42,13 @@ public sealed class CommentsService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var bugDbModel = await bugsService.GetBugAsync(resolvedReport.Id, bugId);
-        if (bugDbModel == null)
+        var bug = await bugsService.GetBugAsync(resolvedReport.Id, bugId);
+        if (bug == null)
         {
             return (null, BoErrors.BugNotFoundError);
         }
 
-        var commentDbModel = await unitOfWork.ExecuteAsync(async (scope, ct) =>
+        var comment = await unitOfWork.ExecuteAsync(async (scope, ct) =>
         {
             var audience = (int)(commentDto.Audience.HasValue
                 ? (CommentAudience)commentDto.Audience.Value
@@ -70,7 +69,7 @@ public sealed class CommentsService(
                 attachments = Array.Empty<object>(),
             });
 
-            await domainEventPublisher.PublishAsync(new DomainEventDbModel
+            await domainEventPublisher.PublishAsync(new DomainEvent
             {
                 WorkspaceId = BugsService.ResolveWorkspaceId(resolvedReport.CreatorTeamId, user.OrganizationId),
                 AggregateType = BuggetAggregateTypes.Comment,
@@ -87,9 +86,9 @@ public sealed class CommentsService(
         });
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentCreateEventAsync(reportIdContext, user, commentDbModel));
+        await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentCreateEventAsync(reportIdContext, user, comment));
 
-        return (commentDbModel, null);
+        return (comment, null);
     }
 
     public async Task<Error?> DeleteCommentAsync(UserIdentity user, string aliasId, int bugId, int commentId)
@@ -107,8 +106,8 @@ public sealed class CommentsService(
             return BoErrors.ReportNotFoundError;
         }
 
-        var commentDbModel = await commentsDbClient.DeleteCommentInternalAsync(user.Id, resolvedReport.Id, bugId, commentId);
-        if (commentDbModel == null)
+        var comment = await commentsDbClient.DeleteCommentInternalAsync(user.Id, resolvedReport.Id, bugId, commentId);
+        if (comment == null)
         {
             return null;
         }
@@ -119,7 +118,7 @@ public sealed class CommentsService(
         return null;
     }
 
-    public async Task<(CommentSummaryDbModel? Value, Error? Error)> UpdateCommentAsync(UserIdentity user, string aliasId, int bugId, int commmentId, CommentDto commentDto)
+    public async Task<(CommentSummary? Value, Error? Error)> UpdateCommentAsync(UserIdentity user, string aliasId, int bugId, int commmentId, CommentDto commentDto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -134,15 +133,15 @@ public sealed class CommentsService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var commentDbModel = await commentsDbClient.UpdateCommentInternalAsync(user.Id, resolvedReport.Id, bugId, commmentId, commentDto.Text);
-        if (commentDbModel == null)
+        var comment = await commentsDbClient.UpdateCommentInternalAsync(user.Id, resolvedReport.Id, bugId, commmentId, commentDto.Text);
+        if (comment == null)
         {
             return (null, BoErrors.UserCommentNotFound);
         }
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentUpdateEventAsync(reportIdContext, user, commentDbModel));
+        await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentUpdateEventAsync(reportIdContext, user, comment));
 
-        return (commentDbModel, null);
+        return (comment, null);
     }
 }

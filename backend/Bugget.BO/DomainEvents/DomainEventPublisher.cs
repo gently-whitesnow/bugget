@@ -1,12 +1,11 @@
-using Bugget.DA.Interfaces;
-using Bugget.DA.Transactions;
-using Bugget.Entities.DbModels.DomainEvents;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.DomainEvents;
 
 namespace Bugget.BO.DomainEvents;
 
 public sealed class DomainEventPublisher(IDomainEventsDbClient client) : IDomainEventPublisher
 {
-    public Task<long> PublishAsync(DomainEventDbModel evt, ITransactionScope scope, CancellationToken ct = default)
+    public Task<long> PublishAsync(DomainEvent evt, ITransactionScope scope, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(evt);
         ArgumentNullException.ThrowIfNull(scope);
@@ -14,7 +13,7 @@ public sealed class DomainEventPublisher(IDomainEventsDbClient client) : IDomain
         return client.InsertAsync(evt, scope, ct);
     }
 
-    public Task<long> PublishAsync(DomainEventDbModel evt, CancellationToken ct = default)
+    public Task<long> PublishAsync(DomainEvent evt, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(evt);
 

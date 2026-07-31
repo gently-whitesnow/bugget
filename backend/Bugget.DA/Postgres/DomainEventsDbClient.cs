@@ -1,6 +1,6 @@
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.DA.Transactions;
-using Bugget.Entities.DbModels.DomainEvents;
+using Bugget.Entities.BO.DomainEvents;
 using Dapper;
 
 namespace Bugget.DA.Postgres;
@@ -16,7 +16,7 @@ VALUES
      @payload::jsonb, @actor_user_id, @actor_creator_type, @correlation_id)
 RETURNING id;";
 
-    private static object BuildInsertParams(DomainEventDbModel evt) => new
+    private static object BuildInsertParams(DomainEvent evt) => new
     {
         workspace_id = evt.WorkspaceId,
         aggregate_type = evt.AggregateType,
@@ -29,7 +29,7 @@ RETURNING id;";
         correlation_id = evt.CorrelationId
     };
 
-    public async Task<long> InsertAsync(DomainEventDbModel evt, ITransactionScope scope, CancellationToken ct = default)
+    public async Task<long> InsertAsync(DomainEvent evt, ITransactionScope scope, CancellationToken ct = default)
     {
         var (connection, tx) = scope.Unwrap();
         var command = new CommandDefinition(
@@ -41,7 +41,7 @@ RETURNING id;";
         return await connection.ExecuteScalarAsync<long>(command);
     }
 
-    public async Task<long> InsertAsync(DomainEventDbModel evt, CancellationToken ct = default)
+    public async Task<long> InsertAsync(DomainEvent evt, CancellationToken ct = default)
     {
         await using var connection = await DataSource.OpenConnectionAsync(ct);
         var command = new CommandDefinition(
@@ -52,7 +52,7 @@ RETURNING id;";
         return await connection.ExecuteScalarAsync<long>(command);
     }
 
-    public async Task<IReadOnlyList<DomainEventDbModel>> ListAllAsync(
+    public async Task<IReadOnlyList<DomainEvent>> ListAllAsync(
         long sinceId,
         int limit,
         CancellationToken ct = default)
@@ -72,7 +72,7 @@ LIMIT @limit;";
             new { sinceId, limit },
             cancellationToken: ct));
 
-        return rows.Select(r => new DomainEventDbModel
+        return rows.Select(r => new DomainEvent
         {
             Id = r.Id,
             WorkspaceId = r.WorkspaceId,

@@ -1,9 +1,8 @@
 using Bugget.BO.Errors;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Reports;
-using Bugget.DA.Interfaces;
 using Bugget.Entities.Authentication;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.ReportLink;
 using Bugget.Entities.DTO.Link;
 using Bugget.Entities.Errors;
 using Bugget.Entities.Options;
@@ -19,7 +18,7 @@ public sealed class ReportLinksService(
     ReportsService reportsService,
     IOptions<ReportAliasOptions> aliasOptions)
 {
-    public async Task<(ReportLinkDbModel? Value, Error? Error)> CreateReportLinkAsync(UserIdentity user, string aliasId, ReportLinkDto dto)
+    public async Task<(ReportLink? Value, Error? Error)> CreateReportLinkAsync(UserIdentity user, string aliasId, ReportLinkDto dto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -34,19 +33,19 @@ public sealed class ReportLinksService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var linkDbModel = await reportLinksDbClient.CreateReportLinkInternalAsync(resolvedReport.Id, dto);
+        var link = await reportLinksDbClient.CreateReportLinkInternalAsync(resolvedReport.Id, dto);
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await taskQueue.EnqueueAsync(async () => await reportLinkEventsService.HandleReportLinkCreateAsync(reportIdContext, user, linkDbModel));
+        await taskQueue.EnqueueAsync(async () => await reportLinkEventsService.HandleReportLinkCreateAsync(reportIdContext, user, link));
 
-        return (linkDbModel, null);
+        return (link, null);
     }
 
-    public async Task<(ReportLinkDbModel? Value, Error? Error)> CreateReportLinkInternalAsync(UserIdentity user, ReportIdContext reportIdContext, ReportLinkDto dto)
+    public async Task<(ReportLink? Value, Error? Error)> CreateReportLinkInternalAsync(UserIdentity user, ReportIdContext reportIdContext, ReportLinkDto dto)
     {
-        var linkDbModel = await reportLinksDbClient.CreateReportLinkInternalAsync(reportIdContext.ReportId, dto);
-        await taskQueue.EnqueueAsync(async () => await reportLinkEventsService.HandleReportLinkCreateAsync(reportIdContext, user, linkDbModel));
-        return (linkDbModel, null);
+        var link = await reportLinksDbClient.CreateReportLinkInternalAsync(reportIdContext.ReportId, dto);
+        await taskQueue.EnqueueAsync(async () => await reportLinkEventsService.HandleReportLinkCreateAsync(reportIdContext, user, link));
+        return (link, null);
     }
 
     public async Task<Error?> DeleteReportLinkAsync(UserIdentity user, string aliasId, int linkId)
@@ -64,8 +63,8 @@ public sealed class ReportLinksService(
             return BoErrors.ReportNotFoundError;
         }
 
-        var reportLinkDbModel = await reportLinksDbClient.DeleteReportLinkInternalAsync(resolvedReport.Id, linkId);
-        if (reportLinkDbModel == null)
+        var link = await reportLinksDbClient.DeleteReportLinkInternalAsync(resolvedReport.Id, linkId);
+        if (link == null)
         {
             return null;
         }
@@ -75,7 +74,7 @@ public sealed class ReportLinksService(
         return null;
     }
 
-    public async Task<(ReportLinkDbModel? Value, Error? Error)> UpdateReportLinkAsync(UserIdentity user, string aliasId, int linkId, ReportLinkDto dto)
+    public async Task<(ReportLink? Value, Error? Error)> UpdateReportLinkAsync(UserIdentity user, string aliasId, int linkId, ReportLinkDto dto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -90,15 +89,15 @@ public sealed class ReportLinksService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var linkDbModel = await reportLinksDbClient.UpdateReportLinkInternalAsync(resolvedReport.Id, linkId, dto);
-        if (linkDbModel == null)
+        var link = await reportLinksDbClient.UpdateReportLinkInternalAsync(resolvedReport.Id, linkId, dto);
+        if (link == null)
         {
             return (null, BoErrors.ReportLinkNotFound);
         }
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await taskQueue.EnqueueAsync(async () => await reportLinkEventsService.HandleReportLinkUpdateAsync(reportIdContext, user, linkDbModel));
+        await taskQueue.EnqueueAsync(async () => await reportLinkEventsService.HandleReportLinkUpdateAsync(reportIdContext, user, link));
 
-        return (linkDbModel, null);
+        return (link, null);
     }
 }

@@ -1,14 +1,13 @@
 using Bugget.BO.Errors;
 using Bugget.BO.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Bugs;
 using Bugget.BO.Services.Comments;
 using Bugget.BO.Services.Reports;
-using Bugget.DA.Interfaces;
 using Bugget.Entities.Authentication;
 using Bugget.Entities.BO;
 using Bugget.Entities.BO.AttachmentBo;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.Attachment;
 using Bugget.Entities.Errors;
 using Bugget.Entities.Options;
 using Microsoft.Extensions.Logging;
@@ -40,7 +39,7 @@ public sealed class AttachmentService(
         );
     }
 
-    public async Task<((Stream Content, AttachmentDbModel Model)? Value, Error? Error)> GetBugAttachmentContentAsync(
+    public async Task<((Stream Content, Attachment Model)? Value, Error? Error)> GetBugAttachmentContentAsync(
         UserIdentity user,
         string aliasId,
         int bugId,
@@ -52,17 +51,17 @@ public sealed class AttachmentService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var attachmentDbModel = await attachmentDbClient.GetBugAttachmentInternalAsync(resolvedReport.Id, bugId, attachmentId);
-        if (attachmentDbModel?.StorageKey == null)
+        var attachment = await attachmentDbClient.GetBugAttachmentInternalAsync(resolvedReport.Id, bugId, attachmentId);
+        if (attachment?.StorageKey == null)
         {
             return (null, BoErrors.AttachmentNotFound);
         }
 
-        var content = await fileStorageClient.ReadAsync(attachmentDbModel.StorageKey);
-        return ((content, attachmentDbModel), null);
+        var content = await fileStorageClient.ReadAsync(attachment.StorageKey);
+        return ((content, attachment), null);
     }
 
-    public async Task<((Stream Content, AttachmentDbModel Model)? Value, Error? Error)> GetCommentAttachmentContentAsync(
+    public async Task<((Stream Content, Attachment Model)? Value, Error? Error)> GetCommentAttachmentContentAsync(
         UserIdentity user,
         string aliasId,
         int bugId,
@@ -75,17 +74,17 @@ public sealed class AttachmentService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var attachmentDbModel = await attachmentDbClient.GetCommentAttachmentInternalAsync(resolvedReport.Id, bugId, commentId, attachmentId);
-        if (attachmentDbModel?.StorageKey == null)
+        var attachment = await attachmentDbClient.GetCommentAttachmentInternalAsync(resolvedReport.Id, bugId, commentId, attachmentId);
+        if (attachment?.StorageKey == null)
         {
             return (null, BoErrors.AttachmentNotFound);
         }
 
-        var content = await fileStorageClient.ReadAsync(attachmentDbModel.StorageKey);
-        return ((content, attachmentDbModel), null);
+        var content = await fileStorageClient.ReadAsync(attachment.StorageKey);
+        return ((content, attachment), null);
     }
 
-    public async Task<((Stream Content, AttachmentDbModel Model)? Value, Error? Error)> GetBugStepAttachmentContentAsync(
+    public async Task<((Stream Content, Attachment Model)? Value, Error? Error)> GetBugStepAttachmentContentAsync(
         UserIdentity user,
         string aliasId,
         int bugId,
@@ -98,14 +97,14 @@ public sealed class AttachmentService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var attachmentDbModel = await attachmentDbClient.GetBugStepAttachmentInternalAsync(resolvedReport.Id, bugId, stepId, attachmentId);
-        if (attachmentDbModel?.StorageKey == null)
+        var attachment = await attachmentDbClient.GetBugStepAttachmentInternalAsync(resolvedReport.Id, bugId, stepId, attachmentId);
+        if (attachment?.StorageKey == null)
         {
             return (null, BoErrors.AttachmentNotFound);
         }
 
-        var content = await fileStorageClient.ReadAsync(attachmentDbModel.StorageKey);
-        return ((content, attachmentDbModel), null);
+        var content = await fileStorageClient.ReadAsync(attachment.StorageKey);
+        return ((content, attachment), null);
     }
 
     public async Task<(Stream? Value, Error? Error)> GetBugAttachmentPreviewContentAsync(
@@ -120,13 +119,13 @@ public sealed class AttachmentService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var attachmentDbModel = await attachmentDbClient.GetBugAttachmentInternalAsync(resolvedReport.Id, bugId, attachmentId);
-        if (attachmentDbModel?.StorageKey == null)
+        var attachment = await attachmentDbClient.GetBugAttachmentInternalAsync(resolvedReport.Id, bugId, attachmentId);
+        if (attachment?.StorageKey == null)
         {
             return (null, BoErrors.AttachmentNotFound);
         }
 
-        var content = await fileStorageClient.ReadAsync(keyGen.GetPreviewKey(attachmentDbModel.StorageKey));
+        var content = await fileStorageClient.ReadAsync(keyGen.GetPreviewKey(attachment.StorageKey));
         return (content, null);
     }
 
@@ -143,13 +142,13 @@ public sealed class AttachmentService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var attachmentDbModel = await attachmentDbClient.GetCommentAttachmentInternalAsync(resolvedReport.Id, bugId, commentId, attachmentId);
-        if (attachmentDbModel?.StorageKey == null)
+        var attachment = await attachmentDbClient.GetCommentAttachmentInternalAsync(resolvedReport.Id, bugId, commentId, attachmentId);
+        if (attachment?.StorageKey == null)
         {
             return (null, BoErrors.AttachmentNotFound);
         }
 
-        var content = await fileStorageClient.ReadAsync(keyGen.GetPreviewKey(attachmentDbModel.StorageKey));
+        var content = await fileStorageClient.ReadAsync(keyGen.GetPreviewKey(attachment.StorageKey));
         return (content, null);
     }
 
@@ -166,13 +165,13 @@ public sealed class AttachmentService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var attachmentDbModel = await attachmentDbClient.GetBugStepAttachmentInternalAsync(resolvedReport.Id, bugId, stepId, attachmentId);
-        if (attachmentDbModel?.StorageKey == null)
+        var attachment = await attachmentDbClient.GetBugStepAttachmentInternalAsync(resolvedReport.Id, bugId, stepId, attachmentId);
+        if (attachment?.StorageKey == null)
         {
             return (null, BoErrors.AttachmentNotFound);
         }
 
-        var content = await fileStorageClient.ReadAsync(keyGen.GetPreviewKey(attachmentDbModel.StorageKey));
+        var content = await fileStorageClient.ReadAsync(keyGen.GetPreviewKey(attachment.StorageKey));
         return (content, null);
     }
 
@@ -188,8 +187,8 @@ public sealed class AttachmentService(
             return BoErrors.ReportNotFoundError;
         }
 
-        var attachmentDbModel = await attachmentDbClient.DeleteBugAttachmentInternalAsync(resolvedReport.Id, bugId, attachmentId);
-        if (attachmentDbModel == null)
+        var attachment = await attachmentDbClient.DeleteBugAttachmentInternalAsync(resolvedReport.Id, bugId, attachmentId);
+        if (attachment == null)
         {
             return null;
         }
@@ -197,12 +196,12 @@ public sealed class AttachmentService(
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(async () =>
-            await attachmentEventsService.HandleAttachmentDeleteEventAsync(reportIdContext, user, attachmentDbModel));
+            await attachmentEventsService.HandleAttachmentDeleteEventAsync(reportIdContext, user, attachment));
 
         return null;
     }
 
-    public async Task<(AttachmentDbModel? Value, Error? Error)> RenameBugAttachmentAsync(
+    public async Task<(Attachment? Value, Error? Error)> RenameBugAttachmentAsync(
         UserIdentity user,
         string aliasId,
         int bugId,
@@ -215,19 +214,19 @@ public sealed class AttachmentService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var attachmentDbModel = await attachmentDbClient.GetBugAttachmentInternalAsync(resolvedReport.Id, bugId, attachmentId);
-        if (attachmentDbModel == null)
+        var attachment = await attachmentDbClient.GetBugAttachmentInternalAsync(resolvedReport.Id, bugId, attachmentId);
+        if (attachment == null)
         {
             return (null, BoErrors.AttachmentNotFound);
         }
 
         return await RenameAsync(
             new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId),
-            attachmentDbModel,
+            attachment,
             fileName);
     }
 
-    public async Task<(AttachmentDbModel? Value, Error? Error)> RenameBugStepAttachmentAsync(
+    public async Task<(Attachment? Value, Error? Error)> RenameBugStepAttachmentAsync(
         UserIdentity user,
         string aliasId,
         int bugId,
@@ -241,19 +240,19 @@ public sealed class AttachmentService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var attachmentDbModel = await attachmentDbClient.GetBugStepAttachmentInternalAsync(resolvedReport.Id, bugId, stepId, attachmentId);
-        if (attachmentDbModel == null)
+        var attachment = await attachmentDbClient.GetBugStepAttachmentInternalAsync(resolvedReport.Id, bugId, stepId, attachmentId);
+        if (attachment == null)
         {
             return (null, BoErrors.AttachmentNotFound);
         }
 
         return await RenameAsync(
             new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId),
-            attachmentDbModel,
+            attachment,
             fileName);
     }
 
-    public async Task<(AttachmentDbModel? Value, Error? Error)> RenameCommentAttachmentAsync(
+    public async Task<(Attachment? Value, Error? Error)> RenameCommentAttachmentAsync(
         UserIdentity user,
         string aliasId,
         int bugId,
@@ -267,15 +266,15 @@ public sealed class AttachmentService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var attachmentDbModel = await attachmentDbClient.GetCommentAttachmentInternalAsync(resolvedReport.Id, bugId, commentId, attachmentId);
-        if (attachmentDbModel == null)
+        var attachment = await attachmentDbClient.GetCommentAttachmentInternalAsync(resolvedReport.Id, bugId, commentId, attachmentId);
+        if (attachment == null)
         {
             return (null, BoErrors.AttachmentNotFound);
         }
 
         return await RenameAsync(
             new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId),
-            attachmentDbModel,
+            attachment,
             fileName);
     }
 
@@ -292,15 +291,15 @@ public sealed class AttachmentService(
             return BoErrors.ReportNotFoundError;
         }
 
-        var attachmentDbModel = await attachmentDbClient.DeleteBugStepAttachmentInternalAsync(resolvedReport.Id, bugId, stepId, attachmentId);
-        if (attachmentDbModel == null)
+        var attachment = await attachmentDbClient.DeleteBugStepAttachmentInternalAsync(resolvedReport.Id, bugId, stepId, attachmentId);
+        if (attachment == null)
         {
             return null;
         }
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(async () =>
-            await attachmentEventsService.HandleAttachmentDeleteEventAsync(reportIdContext, user, attachmentDbModel));
+            await attachmentEventsService.HandleAttachmentDeleteEventAsync(reportIdContext, user, attachment));
 
         return null;
     }
@@ -318,15 +317,15 @@ public sealed class AttachmentService(
             return BoErrors.ReportNotFoundError;
         }
 
-        var attachmentDbModel = await attachmentDbClient.DeleteCommentAttachmentInternalAsync(resolvedReport.Id, bugId, commentId, attachmentId);
-        if (attachmentDbModel == null)
+        var attachment = await attachmentDbClient.DeleteCommentAttachmentInternalAsync(resolvedReport.Id, bugId, commentId, attachmentId);
+        if (attachment == null)
         {
             return null;
         }
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(async () =>
-            await attachmentEventsService.HandleAttachmentDeleteEventAsync(reportIdContext, user, attachmentDbModel));
+            await attachmentEventsService.HandleAttachmentDeleteEventAsync(reportIdContext, user, attachment));
 
         return null;
     }
@@ -334,22 +333,22 @@ public sealed class AttachmentService(
     public async Task DeleteCommentAttachmentsInternalAsync(
         int commentId)
     {
-        var attachmentsDbModels = await attachmentDbClient.DeleteCommentAttachmentsAsync(commentId);
-        if (attachmentsDbModels.Length == 0)
+        var attachments = await attachmentDbClient.DeleteCommentAttachmentsAsync(commentId);
+        if (attachments.Length == 0)
         {
             return;
         }
 
-        foreach (var attachmentDbModel in attachmentsDbModels)
+        foreach (var attachment in attachments)
         {
-            if (attachmentDbModel.StorageKey is null)
+            if (attachment.StorageKey is null)
             {
                 continue;
             }
-            await fileStorageClient.DeleteAsync(attachmentDbModel.StorageKey);
-            if (attachmentDbModel.HasPreview == true)
+            await fileStorageClient.DeleteAsync(attachment.StorageKey);
+            if (attachment.HasPreview == true)
             {
-                await fileStorageClient.DeleteAsync(keyGen.GetPreviewKey(attachmentDbModel.StorageKey));
+                await fileStorageClient.DeleteAsync(keyGen.GetPreviewKey(attachment.StorageKey));
             }
         }
     }
@@ -357,27 +356,27 @@ public sealed class AttachmentService(
     public async Task DeleteBugStepAttachmentsInternalAsync(
         int stepId)
     {
-        var attachmentsDbModels = await attachmentDbClient.DeleteBugStepAttachmentsAsync(stepId);
-        if (attachmentsDbModels.Length == 0)
+        var attachments = await attachmentDbClient.DeleteBugStepAttachmentsAsync(stepId);
+        if (attachments.Length == 0)
         {
             return;
         }
 
-        foreach (var attachmentDbModel in attachmentsDbModels)
+        foreach (var attachment in attachments)
         {
-            if (attachmentDbModel.StorageKey is null)
+            if (attachment.StorageKey is null)
             {
                 continue;
             }
-            await fileStorageClient.DeleteAsync(attachmentDbModel.StorageKey);
-            if (attachmentDbModel.HasPreview == true)
+            await fileStorageClient.DeleteAsync(attachment.StorageKey);
+            if (attachment.HasPreview == true)
             {
-                await fileStorageClient.DeleteAsync(keyGen.GetPreviewKey(attachmentDbModel.StorageKey));
+                await fileStorageClient.DeleteAsync(keyGen.GetPreviewKey(attachment.StorageKey));
             }
         }
     }
 
-    public async Task<(AttachmentDbModel? Value, Error? Error)> SaveBugAttachmentAsync(
+    public async Task<(Attachment? Value, Error? Error)> SaveBugAttachmentAsync(
         UserIdentity user,
         string aliasId,
         int bugId,
@@ -405,7 +404,7 @@ public sealed class AttachmentService(
             ct: ct);
     }
 
-    public async Task<(AttachmentDbModel? Value, Error? Error)> SaveBugStepAttachmentAsync(
+    public async Task<(Attachment? Value, Error? Error)> SaveBugStepAttachmentAsync(
         UserIdentity user,
         string aliasId,
         int bugId,
@@ -433,7 +432,7 @@ public sealed class AttachmentService(
             ct: ct);
     }
 
-    public async Task<(AttachmentDbModel? Value, Error? Error)> SaveCommentAttachmentAsync(
+    public async Task<(Attachment? Value, Error? Error)> SaveCommentAttachmentAsync(
         UserIdentity user,
         string aliasId,
         int bugId,
@@ -461,7 +460,7 @@ public sealed class AttachmentService(
             ct: ct);
     }
 
-    private async Task<(AttachmentDbModel? Value, Error? Error)> SaveAsync(
+    private async Task<(Attachment? Value, Error? Error)> SaveAsync(
         UserIdentity user,
         ReportIdContext reportIdContext,
         int entityId,
@@ -497,7 +496,7 @@ public sealed class AttachmentService(
         fileMeta.FileName, storageKey);
 
         // 4) Формируем модель для БД
-        var createModel = new CreateAttachmentDbModel
+        var createModel = new AttachmentCreate
         {
             EntityId = entityId,
             AttachType = (int)attachType,
@@ -519,9 +518,9 @@ public sealed class AttachmentService(
         return (dbModel, null);
     }
 
-    private async Task<(AttachmentDbModel? Value, Error? Error)> RenameAsync(
+    private async Task<(Attachment? Value, Error? Error)> RenameAsync(
         ReportIdContext reportIdContext,
-        AttachmentDbModel attachmentDbModel,
+        Attachment attachment,
         string fileName)
     {
         var normalizedFileName = fileName?.Trim() ?? "";
@@ -531,21 +530,21 @@ public sealed class AttachmentService(
             return (null, validationError);
         }
 
-        if (attachmentDbModel.StorageKey == null)
+        if (attachment.StorageKey == null)
         {
             return (null, BoErrors.AttachmentNotFound);
         }
 
-        var updatedAttachment = await attachmentDbClient.UpdateAttachmentAsync(new UpdateAttachmentDbModel
+        var updatedAttachment = await attachmentDbClient.UpdateAttachmentAsync(new AttachmentUpdate
         {
-            Id = attachmentDbModel.Id,
-            StorageKey = attachmentDbModel.StorageKey,
-            StorageKind = attachmentDbModel.StorageKind ?? 0,
-            LengthBytes = attachmentDbModel.LengthBytes ?? 0,
+            Id = attachment.Id,
+            StorageKey = attachment.StorageKey,
+            StorageKind = attachment.StorageKind ?? 0,
+            LengthBytes = attachment.LengthBytes ?? 0,
             FileName = normalizedFileName,
-            MimeType = attachmentDbModel.MimeType,
-            HasPreview = attachmentDbModel.HasPreview == true,
-            IsGzipCompressed = attachmentDbModel.IsGzipCompressed == true,
+            MimeType = attachment.MimeType,
+            HasPreview = attachment.HasPreview == true,
+            IsGzipCompressed = attachment.IsGzipCompressed == true,
         });
 
         await taskQueue.EnqueueAsync(async () =>

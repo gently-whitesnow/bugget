@@ -1,11 +1,10 @@
-using System.Data;
 using System.Globalization;
 using System.Text.Json;
 using Bugget.BO.DomainEvents.Consumer;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.Analytics;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.Analytics;
-using Bugget.Entities.DbModels.DomainEvents;
 using Microsoft.Extensions.Logging;
 
 namespace Bugget.BO.DomainEvents.Handlers;
@@ -30,9 +29,8 @@ public sealed class ReportPhaseProjectionHandler(
     public string EventType => BuggetEventTypes.ReportStatusChanged;
 
     public async Task HandleAsync(
-        DomainEventDbModel evt,
-        IDbConnection connection,
-        IDbTransaction transaction,
+        DomainEvent evt,
+        ITransactionScope scope,
         CancellationToken ct)
     {
         var payload = JsonSerializer.Deserialize<ReportStatusChangedPayload>(evt.Payload, PayloadJsonOptions)
@@ -49,7 +47,7 @@ public sealed class ReportPhaseProjectionHandler(
         if (fromStatus != toStatus)
         {
             var closed = await intervalsClient.CloseActiveIntervalAsync(
-                connection, transaction, reportId, evt.OccurredAt, evt.Id, ct);
+                scope, reportId, evt.OccurredAt, evt.Id, ct);
 
             if (closed > 0)
             {
@@ -63,12 +61,11 @@ public sealed class ReportPhaseProjectionHandler(
         {
             var phase = (short)toStatus;
             var regressionCycleIndex = await intervalsClient.CountClosedIntervalsAsync(
-                connection, transaction, reportId, phase, ct);
+                scope, reportId, phase, ct);
 
             var inserted = await intervalsClient.InsertIntervalAsync(
-                connection,
-                transaction,
-                new ReportPhaseIntervalInsertDbModel
+                scope,
+                new ReportPhaseIntervalInsert
                 {
                     ReportId = reportId,
                     Phase = phase,

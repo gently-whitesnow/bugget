@@ -17,7 +17,7 @@ public class NamingConventionRulesTests
     private static readonly Assembly BoAsm = typeof(global::Bugget.BO.AssemblyMarker).Assembly;
     private static readonly Assembly DaAsm = typeof(global::Bugget.DA.AssemblyMarker).Assembly;
 
-    private const string DaInterfacesNamespace = "Bugget.DA.Interfaces";
+    private const string PortsNamespace = "Bugget.BO.Ports";
 
     [Fact(DisplayName = "*Service в Bugget.BO живёт в namespace Bugget.BO.Services.*")]
     public void Service_classes_must_reside_in_BO_Services_namespace()
@@ -106,24 +106,25 @@ public class NamingConventionRulesTests
             string.Join(", ", failing));
     }
 
-    [Fact(DisplayName = "Все *DbClient в Bugget.DA.Postgres реализуют интерфейс из Bugget.DA.Interfaces")]
+    [Fact(DisplayName = "Все *DbClient в Bugget.DA.Postgres реализуют порт из Bugget.BO.Ports")]
     public void All_DbClients_implement_interface_from_DA_Interfaces()
     {
-        // Каждый *DbClient должен иметь I*DbClient в Bugget.DA.Interfaces, чтобы BO-сервисы
-        // могли его подменить через DI и mock'нуть в unit-тестах. Если интерфейса нет — заведи.
+        // Каждый *DbClient должен реализовывать порт I*DbClient из Bugget.BO.Ports: порт
+        // объявляет бизнес-логика, инфраструктура его реализует (ADR-0001). Без порта
+        // BO-сервис нельзя подменить через DI и протестировать без БД.
         var violations = DaAsm.GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract)
             .Where(t => t.Namespace != null && t.Namespace.StartsWith("Bugget.DA.Postgres"))
             .Where(t => t.Name.EndsWith("DbClient"))
             .Where(t => !t.GetInterfaces().Any(i =>
-                i.Namespace == DaInterfacesNamespace && !i.IsGenericType))
+                i.Namespace == PortsNamespace && !i.IsGenericType))
             .Select(t => t.FullName ?? t.Name)
             .ToArray();
 
         violations.Should().BeEmpty(
-            "Каждый *DbClient в Bugget.DA/Postgres должен реализовывать интерфейс I*DbClient " +
-            $"из {DaInterfacesNamespace}. Без интерфейса BO-сервис нельзя протестировать без БД. " +
-            "Заведи I*DbClient рядом и подключи через ': IFooDbClient'. " +
+            "Каждый *DbClient в Bugget.DA/Postgres должен реализовывать порт I*DbClient " +
+            $"из {PortsNamespace}. Без порта BO-сервис нельзя протестировать без БД. " +
+            "Заведи I*DbClient в Bugget.BO/Ports и подключи через ': IFooDbClient'. " +
             "Failing types: {0}",
             string.Join(", ", violations));
     }

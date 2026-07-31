@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <ProjectReference Include="..\Bugget.Entities\Bugget.Entities.csproj" />
         <ProjectReference Include="..\TaskQueue\TaskQueue.csproj" />
-        <ProjectReference Include="..\Bugget.DA\Bugget.DA.csproj" />
         <ProjectReference Include="..\Bugget.Analytics.Contracts\Bugget.Analytics.Contracts.csproj" />
     </ItemGroup>
 

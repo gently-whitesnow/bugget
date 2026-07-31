@@ -1,7 +1,7 @@
 using System.Linq;
 using System.Reflection;
 using Bugget.BO.DomainEvents;
-using Bugget.DA.Transactions;
+using Bugget.BO.Ports;
 using Bugget.Entities.Constants;
 
 namespace Bugget.Tests.DomainEvents;
@@ -51,7 +51,7 @@ public class DomainEventPublisherArchitectureTests
 
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 publisher.PublishAsync(
-                    new Bugget.Entities.DbModels.DomainEvents.DomainEventDbModel
+                    new Bugget.Entities.BO.DomainEvents.DomainEvent
                     {
                         WorkspaceId = "ws",
                         AggregateType = "bug",

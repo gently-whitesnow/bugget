@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Users.BO.Interfaces;
-using Users.DA.Interfaces;
-
+using Users.BO.Ports;
 namespace Users.BO.Avatars;
 
 public class AvatarDownloadService(

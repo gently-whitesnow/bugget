@@ -2,8 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Users.DA.Interfaces;
-using Users.DA.TeamMembers;
+using Users.BO.Ports;
 using Users.Entities.BO;
 using Users.Entities.Dto.Users;
 using Users.IntegrationTests.Fixtures;
@@ -90,7 +89,7 @@ public class WorkspaceMembersDbClientTests : IClassFixture<AppWithPostgresFixtur
 
         var failResult = await _workspaceMembersRepository.CreateWorkspaceMemberAsync(newMember.Id, ws.Id, WorkspaceRole.Member, 3);
         Assert.False((failResult.Error is null));
-        Assert.Equal(Users.DA.WorkspaceMembers.WorkspaceMembersErrors.WorkspaceLimitExceededError, failResult.Error);
+        Assert.Equal(Users.BO.Ports.WorkspaceMembersErrors.WorkspaceLimitExceededError, failResult.Error);
     }
 
     [Fact(DisplayName = "CreateWorkspaceMemberAsync при повторном вызове не изменяет состояния")]

@@ -1,13 +1,11 @@
 using Bugget.BO.DomainEvents;
 using Bugget.BO.Errors;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Bugs;
-using Bugget.DA.Interfaces;
-using Bugget.DA.Transactions;
 using Bugget.Entities.Authentication;
 using Bugget.Entities.BO.Bugs;
 using Bugget.Entities.BO.ReportBo;
 using Bugget.Entities.BO.Search;
-using Bugget.Entities.DbModels.Report;
 using Bugget.Entities.DTO.Report;
 using Bugget.Entities.Errors;
 using Bugget.Entities.Options;
@@ -25,12 +23,12 @@ public sealed class ReportsService(
     IOptions<ReportAliasOptions> aliasOptions)
 {
 
-    public Task<ReportSummaryDbModel> CreateReportAsync(string userId, string? teamId, string? organizationId, ReportCreateDto createDto)
+    public Task<ReportSummary> CreateReportAsync(string userId, string? teamId, string? organizationId, ReportCreateDto createDto)
     {
         return reportsDbClient.CreateReportAsync(userId, teamId, organizationId, createDto);
     }
 
-    public async Task<(ReportPatchResultDbModel? Value, Error? Error)> PatchReportAsync(string aliasId, UserIdentity user, ReportPatchDto patchDto)
+    public async Task<(ReportPatchResult? Value, Error? Error)> PatchReportAsync(string aliasId, UserIdentity user, ReportPatchDto patchDto)
     {
         var resolvedReport = await ResolveReportAsync(aliasId, user);
         if (resolvedReport == null)
@@ -60,7 +58,7 @@ public sealed class ReportsService(
             teamReportId);
     }
 
-    private async Task<(ReportPatchResultDbModel PatchResult, ReportPatchDto EffectivePatch)> ApplyStatusPatchInTxAsync(
+    private async Task<(ReportPatchResult PatchResult, ReportPatchDto EffectivePatch)> ApplyStatusPatchInTxAsync(
         ITransactionScope scope,
         CancellationToken ct,
         int reportId,
@@ -190,7 +188,7 @@ public sealed class ReportsService(
         };
     }
 
-    public async Task<(ReportDbModel? Value, Error? Error)> GetReportAsync(string aliasId, string? organizationId, string? teamId)
+    public async Task<(Report? Value, Error? Error)> GetReportAsync(string aliasId, string? organizationId, string? teamId)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsDbClient.ResolveReportIdAsync(
@@ -224,12 +222,12 @@ public sealed class ReportsService(
         return reportsDbClient.ResolveReportIdAsync(organizationId, teamId, reportId, publicId, teamReportId);
     }
 
-    public Task<(long Total, ReportDbModel[] Reports)> ListReportsAsync(string? organizationId, string? userId, string? teamId, int[]? reportStatuses, int[]? creatorTypes, int skip, int take)
+    public Task<(long Total, Report[] Reports)> ListReportsAsync(string? organizationId, string? userId, string? teamId, int[]? reportStatuses, int[]? creatorTypes, int skip, int take)
     {
         return reportsDbClient.ListReportsAsync(organizationId, userId, teamId, reportStatuses, creatorTypes, skip, take);
     }
 
-    public Task<(long Total, ReportDbModel[] Reports)> SearchReportsAsync(SearchReports search)
+    public Task<(long Total, Report[] Reports)> SearchReportsAsync(SearchReports search)
     {
         return reportsDbClient.SearchReportsAsync(search);
     }
@@ -253,7 +251,7 @@ public sealed class ReportsService(
         return counts;
     }
 
-    private static ReportDbModel ApplyBoSort(ReportDbModel report)
+    private static Report ApplyBoSort(Report report)
     {
         report.Bugs = report.Bugs?
         .OrderBy(b => b.Status switch

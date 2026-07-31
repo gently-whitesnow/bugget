@@ -5,6 +5,7 @@ using Bugget.BO.DomainEvents;
 using Bugget.BO.DomainEvents.Consumer;
 using Bugget.BO.DomainEvents.Handlers;
 using Bugget.BO.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.BO.Services;
 using Bugget.BO.Services.Analytics;
 using Bugget.BO.Services.Attachments;
@@ -16,10 +17,8 @@ using Bugget.BO.Services.Reports;
 using Bugget.BO.Services.Settings;
 using Bugget.Configurations;
 using Bugget.DA.Files;
-using Bugget.DA.Interfaces;
 using Bugget.DA.Postgres;
 using Bugget.DA.Transactions;
-using Bugget.DA.WebSockets;
 using Bugget.DbUp;
 using Bugget.Entities.Authentication;
 using Bugget.Entities.BO.AttachmentBo;
@@ -70,7 +69,6 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IParticipantsDbClient, ParticipantsDbClient>()
             .AddSingleton<IDomainEventsDbClient, DomainEventsDbClient>()
             .AddSingleton<IDomainEventsCursorClient, DomainEventsCursorClient>()
-            .AddSingleton<IDomainEventsConsumerRuntime, DomainEventsConsumerRuntime>()
             .AddSingleton<IReportPhaseIntervalsDbClient, ReportPhaseIntervalsDbClient>()
             .AddSingleton<IAnalyticsDbClient, AnalyticsDbClient>()
             .AddSingleton<ISettingsDbClient, SettingsDbClient>()

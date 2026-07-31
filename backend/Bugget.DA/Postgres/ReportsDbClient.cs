@@ -1,14 +1,11 @@
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.DA.Transactions;
 using Bugget.Entities.BO;
+using Bugget.Entities.BO.AttachmentBo;
+using Bugget.Entities.BO.Bugs;
+using Bugget.Entities.BO.Comments;
 using Bugget.Entities.BO.ReportBo;
 using Bugget.Entities.BO.Search;
-using Bugget.Entities.DbModels.Attachment;
-using Bugget.Entities.DbModels.Bug;
-using Bugget.Entities.DbModels.BugSteps;
-using Bugget.Entities.DbModels.Comment;
-using Bugget.Entities.DbModels.Report;
-using Bugget.Entities.DbModels.ReportLink;
 using Bugget.Entities.DTO.Report;
 using Dapper;
 
@@ -19,12 +16,12 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
     /// <summary>
     /// Получает отчет по ID.
     /// </summary>
-    public async Task<ReportDbModel?> GetReportInternalAsync(int reportId)
+    public async Task<Report?> GetReportInternalAsync(int reportId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
 
         // Получаем отчет по уже разрешенному ID
-        var report = await conn.QuerySingleOrDefaultAsync<ReportDbModel>(
+        var report = await conn.QuerySingleOrDefaultAsync<Report>(
             "SELECT * FROM public.get_report_internal(@reportId);",
             new { reportId });
 
@@ -44,13 +41,13 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
 ", new { reportIds = new[] { report.Id } });
 
         // 2. Дочерние сущности
-        report.Bugs = (await multi.ReadAsync<BugDbModel>()).ToArray();
+        report.Bugs = (await multi.ReadAsync<Bug>()).ToArray();
         var participants = await multi.ReadAsync<(int ReportId, string UserId)>();
         report.ParticipantsUserIds = participants.Select(p => p.UserId).ToArray();
-        var comments = (await multi.ReadAsync<CommentDbModel>()).ToArray();
-        var attachments = (await multi.ReadAsync<AttachmentDbModel>()).ToArray();
-        var bugSteps = (await multi.ReadAsync<BugStepSummaryDbModel>()).ToArray();
-        var reportLinks = (await multi.ReadAsync<ReportLinkDbModel>()).ToArray();
+        var comments = (await multi.ReadAsync<Comment>()).ToArray();
+        var attachments = (await multi.ReadAsync<Attachment>()).ToArray();
+        var bugSteps = (await multi.ReadAsync<BugStepSummary>()).ToArray();
+        var reportLinks = (await multi.ReadAsync<ReportLink>()).ToArray();
 
         // 3. Группируем по багам
         var commentsByBug = comments.GroupBy(c => c.BugId).ToDictionary(g => g.Key, g => g.ToArray());
@@ -84,13 +81,13 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
         return report;
     }
 
-    public async Task<(long total, ReportDbModel[] reports)> ListReportsAsync(
+    public async Task<(long total, Report[] reports)> ListReportsAsync(
     string? organizationId, string? userId, string? teamId, int[]? statuses, int[]? creatorTypes, int skip, int take)
     {
         var (total, ids) = await ListReportIdsAsync(organizationId, userId, teamId, statuses, creatorTypes, skip, take);
         if (ids.Length == 0)
         {
-            return (total, Array.Empty<ReportDbModel>());
+            return (total, Array.Empty<Report>());
         }
 
         await using var conn = await DataSource.OpenConnectionAsync();
@@ -107,7 +104,7 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
 
         await using var grid = await conn.QueryMultipleAsync(sql, new { ids });
 
-        var reports = (await grid.ReadAsync<ReportDbModel>()).ToArray();
+        var reports = (await grid.ReadAsync<Report>()).ToArray();
 
         // Восстанавливаем порядок сортировки из ids
         var reportDict = reports.ToDictionary(r => r.Id);
@@ -118,12 +115,12 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
             .GroupBy(x => x.ReportId)
             .ToDictionary(g => g.Key, g => g.Select(z => z.UserId).ToArray());
 
-        var bugs = (await grid.ReadAsync<BugDbModel>()).ToArray();
+        var bugs = (await grid.ReadAsync<Bug>()).ToArray();
         var bugsByReport = bugs
             .GroupBy(b => b.ReportId)
             .ToDictionary(g => g.Key, g => g.ToArray());
 
-        var comments = (await grid.ReadAsync<CommentDbModel>()).ToArray();
+        var comments = (await grid.ReadAsync<Comment>()).ToArray();
         var commentsByBug = comments
             .GroupBy(c => c.BugId)
             .ToDictionary(g => g.Key, g => g.ToArray());
@@ -133,10 +130,10 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
         {
             r.ParticipantsUserIds = participantsByReport.GetValueOrDefault(r.Id) ?? Array.Empty<string>();
 
-            var rb = bugsByReport.GetValueOrDefault(r.Id) ?? Array.Empty<BugDbModel>();
+            var rb = bugsByReport.GetValueOrDefault(r.Id) ?? Array.Empty<Bug>();
             foreach (var b in rb)
             {
-                b.Comments = commentsByBug.GetValueOrDefault(b.Id) ?? Array.Empty<CommentDbModel>();
+                b.Comments = commentsByBug.GetValueOrDefault(b.Id) ?? Array.Empty<Comment>();
             }
             r.Bugs = rb;
         }
@@ -147,16 +144,16 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
     /// <summary>
     /// Создает новый отчет и возвращает его краткую структуру.
     /// </summary>
-    public async Task<ReportSummaryDbModel> CreateReportAsync(string userId, string? teamId, string? organizationId, ReportCreateDto dto)
+    public async Task<ReportSummary> CreateReportAsync(string userId, string? teamId, string? organizationId, ReportCreateDto dto)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return await conn.QuerySingleAsync<ReportSummaryDbModel>(
+        return await conn.QuerySingleAsync<ReportSummary>(
             "SELECT * FROM public.create_report_v3(@userId, @title, @teamId, @organizationId);",
             new { userId, title = dto.Title, teamId, organizationId }
         );
     }
 
-    public Task<ReportSummaryDbModel> CreateReportAsync(
+    public Task<ReportSummary> CreateReportAsync(
         ITransactionScope scope,
         string userId,
         string? teamId,
@@ -165,7 +162,7 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
         short creatorType)
     {
         var (connection, tx) = scope.Unwrap();
-        return connection.QuerySingleAsync<ReportSummaryDbModel>(new CommandDefinition(
+        return connection.QuerySingleAsync<ReportSummary>(new CommandDefinition(
             "SELECT * FROM public.create_report_v3(@userId, @title, @teamId, @organizationId, @creatorType);",
             new { userId, title, teamId, organizationId, creatorType },
             transaction: tx));
@@ -252,7 +249,7 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
     /// Список репортов тестера для команды <c>/my</c> (TECHSPEC §4.3.5).
     /// I-11: возвращается только Bug, созданный этим <c>creatorUserId</c>+<c>creatorType</c>.
     /// </summary>
-    public async Task<ReportListItemDbModel[]> ListByCreatorInternalAsync(
+    public async Task<ReportListItem[]> ListByCreatorInternalAsync(
         string organizationId,
         string creatorUserId,
         short creatorType,
@@ -280,7 +277,7 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
             LIMIT @limit;";
 
         await using var connection = await DataSource.OpenConnectionAsync(ct);
-        var rows = await connection.QueryAsync<ReportListItemDbModel>(new CommandDefinition(
+        var rows = await connection.QueryAsync<ReportListItem>(new CommandDefinition(
             sql,
             new { organizationId, creatorUserId, creatorType, limit },
             cancellationToken: ct));
@@ -293,7 +290,7 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
     /// (для эмиссии domain events в той же транзакции, что и UPDATE); иначе клиент
     /// открывает собственное соединение.
     /// </summary>
-    public async Task<ReportPatchResultDbModel> PatchReportAsync(
+    public async Task<ReportPatchResult> PatchReportAsync(
         int reportId,
         ReportPatchDto dto,
         ITransactionScope? scope = null,
@@ -313,26 +310,26 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
         if (scope is null)
         {
             await using var connection = await DataSource.OpenConnectionAsync(ct);
-            return await connection.QuerySingleAsync<ReportPatchResultDbModel>(new CommandDefinition(
+            return await connection.QuerySingleAsync<ReportPatchResult>(new CommandDefinition(
                 sql,
                 parameters,
                 cancellationToken: ct));
         }
 
         var (txConnection, tx) = scope.Unwrap();
-        return await txConnection.QuerySingleAsync<ReportPatchResultDbModel>(new CommandDefinition(
+        return await txConnection.QuerySingleAsync<ReportPatchResult>(new CommandDefinition(
             sql,
             parameters,
             transaction: tx,
             cancellationToken: ct));
     }
 
-    public async Task<(long total, ReportDbModel[] reports)> SearchReportsAsync(SearchReports search)
+    public async Task<(long total, Report[] reports)> SearchReportsAsync(SearchReports search)
     {
         var (total, ids) = await SearchReportIdsAsync(search);
         if (ids.Length == 0)
         {
-            return (total, Array.Empty<ReportDbModel>());
+            return (total, Array.Empty<Report>());
         }
 
         await using var conn = await DataSource.OpenConnectionAsync();
@@ -346,7 +343,7 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
 
         await using var grid = await conn.QueryMultipleAsync(sql, new { ids });
 
-        var reports = (await grid.ReadAsync<ReportDbModel>()).ToArray();
+        var reports = (await grid.ReadAsync<Report>()).ToArray();
 
         // Восстанавливаем порядок сортировки из ids
         var reportDict = reports.ToDictionary(r => r.Id);
@@ -357,12 +354,12 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
             .GroupBy(x => x.ReportId)
             .ToDictionary(g => g.Key, g => g.Select(z => z.UserId).ToArray());
 
-        var bugs = (await grid.ReadAsync<BugDbModel>()).ToArray();
+        var bugs = (await grid.ReadAsync<Bug>()).ToArray();
         var bugsByReport = bugs
             .GroupBy(b => b.ReportId)
             .ToDictionary(g => g.Key, g => g.ToArray());
 
-        var comments = (await grid.ReadAsync<CommentDbModel>()).ToArray();
+        var comments = (await grid.ReadAsync<Comment>()).ToArray();
         var commentsByBug = comments
             .GroupBy(c => c.BugId)
             .ToDictionary(g => g.Key, g => g.ToArray());
@@ -371,10 +368,10 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
         {
             r.ParticipantsUserIds = participantsByReport.GetValueOrDefault(r.Id) ?? Array.Empty<string>();
 
-            var rb = bugsByReport.GetValueOrDefault(r.Id) ?? Array.Empty<BugDbModel>();
+            var rb = bugsByReport.GetValueOrDefault(r.Id) ?? Array.Empty<Bug>();
             foreach (var b in rb)
             {
-                b.Comments = commentsByBug.GetValueOrDefault(b.Id) ?? Array.Empty<CommentDbModel>();
+                b.Comments = commentsByBug.GetValueOrDefault(b.Id) ?? Array.Empty<Comment>();
             }
             r.Bugs = rb;
         }

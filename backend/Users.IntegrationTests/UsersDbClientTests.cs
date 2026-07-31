@@ -1,7 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using Users.DA.Interfaces;
-using Users.DA.TeamMembers;
-using Users.DA.WorkspaceMembers;
+using Users.BO.Ports;
 using Users.Entities.BO;
 using Users.Entities.Dto.Users;
 using Users.IntegrationTests.Fixtures;

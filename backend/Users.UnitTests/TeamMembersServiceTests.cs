@@ -1,10 +1,9 @@
 using Bugget.Entities.Errors;
 using Microsoft.Extensions.Options;
 using Moq;
+using Users.BO.Ports;
 using Users.BO.TeamMembers;
-using Users.DA.Interfaces;
-using Users.DA.TeamMembers;
-using Users.Entities.DbModels.Members;
+using Users.Entities.BO;
 using Users.Entities.Options;
 using Xunit;
 
@@ -44,7 +43,7 @@ public class TeamMembersServiceTests
         var userId = 42L;
         var now = DateTimeOffset.UtcNow;
 
-        var expectedMember = new TeamMemberDbModel
+        var expectedMember = new TeamMember
         {
             TeamId = teamId,
             UserId = userId,
@@ -102,7 +101,7 @@ public class TeamMembersServiceTests
         var userId = 100L;
         var now = DateTimeOffset.UtcNow;
 
-        var member = new TeamMemberDbModel
+        var member = new TeamMember
         {
             TeamId = teamId,
             UserId = userId,
@@ -142,7 +141,7 @@ public class TeamMembersServiceTests
 
         var customSut = new TeamMembersService(_teamMembersRepo.Object, customOptions.Object, _workspaceMembersRepo.Object, _authorizationRepo.Object, _selfHostedOptions.Object);
 
-        var member = new TeamMemberDbModel
+        var member = new TeamMember
         {
             TeamId = teamId,
             UserId = userId,
@@ -173,9 +172,9 @@ public class TeamMembersServiceTests
 
         var expectedMembers = new[]
         {
-            new TeamMemberDbModel { TeamId = teamId, UserId = 1L, CreatedAt = now },
-            new TeamMemberDbModel { TeamId = teamId, UserId = 2L, CreatedAt = now },
-            new TeamMemberDbModel { TeamId = teamId, UserId = 3L, CreatedAt = now }
+            new TeamMember { TeamId = teamId, UserId = 1L, CreatedAt = now },
+            new TeamMember { TeamId = teamId, UserId = 2L, CreatedAt = now },
+            new TeamMember { TeamId = teamId, UserId = 3L, CreatedAt = now }
         };
 
         _teamMembersRepo
@@ -203,7 +202,7 @@ public class TeamMembersServiceTests
 
         _teamMembersRepo
             .Setup(r => r.ListTeamMembersAsync(teamId))
-            .ReturnsAsync(Array.Empty<TeamMemberDbModel>());
+            .ReturnsAsync(Array.Empty<TeamMember>());
 
         // Act
         var result = await _sut.ListTeamMembersAsync(teamId);

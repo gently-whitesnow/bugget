@@ -1,9 +1,8 @@
 using System.Text.Json;
 using Bugget.BO.DomainEvents;
-using Bugget.DA.Interfaces;
-using Bugget.DA.Transactions;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO.Common;
-using Bugget.Entities.DbModels.DomainEvents;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.Entities.DTO.Bug;
 using Bugget.Entities.DTO.Report;
 using Bugget.IntegrationTests.Fixtures;
@@ -63,7 +62,7 @@ public class DomainEventEmissionTests : IClassFixture<AppWithPostgresFixture>
                 creatorUserId = bug.CreatorUserId,
             });
 
-            await _publisher.PublishAsync(new DomainEventDbModel
+            await _publisher.PublishAsync(new DomainEvent
             {
                 WorkspaceId = orgId,
                 AggregateType = BuggetAggregateTypes.Bug,
@@ -120,7 +119,7 @@ public class DomainEventEmissionTests : IClassFixture<AppWithPostgresFixture>
                 actorUserId = userId,
             });
 
-            await _publisher.PublishAsync(new DomainEventDbModel
+            await _publisher.PublishAsync(new DomainEvent
             {
                 WorkspaceId = orgId,
                 AggregateType = BuggetAggregateTypes.Bug,
@@ -174,7 +173,7 @@ public class DomainEventEmissionTests : IClassFixture<AppWithPostgresFixture>
                 attachments = Array.Empty<object>(),
             });
 
-            await _publisher.PublishAsync(new DomainEventDbModel
+            await _publisher.PublishAsync(new DomainEvent
             {
                 WorkspaceId = orgId,
                 AggregateType = BuggetAggregateTypes.Comment,

@@ -1,17 +1,17 @@
 using Bugget.Entities.Errors;
-using Users.Entities.DbModels.Teams;
+using Users.Entities.BO;
 
 namespace Users.BO.Interfaces;
 
 public interface ITeamsService
 {
-    Task<TeamDbModel[]> ListTeamsAsync(int[] workspaceIds);
-    Task<TeamDbModel[]> ListTeamsAsync(int workspaceId, int[] teamIds);
-    Task<TeamDbModel[]> AutocompleteTeamsAsync(int workspaceId, string searchString, int skip, int take);
+    Task<Team[]> ListTeamsAsync(int[] workspaceIds);
+    Task<Team[]> ListTeamsAsync(int workspaceId, int[] teamIds);
+    Task<Team[]> AutocompleteTeamsAsync(int workspaceId, string searchString, int skip, int take);
 
-    Task<(TeamDbModel? Value, Error? Error)> CreateTeamAsync(int workspaceId, string name, long userId, int? userTeamId);
+    Task<(Team? Value, Error? Error)> CreateTeamAsync(int workspaceId, string name, long userId, int? userTeamId);
 
-    Task<TeamDbModel> UpdateTeamAsync(int workspaceId, int teamId, string name);
+    Task<Team> UpdateTeamAsync(int workspaceId, int teamId, string name);
 
     Task DeleteTeamAsync(int workspaceId, int teamId);
 }

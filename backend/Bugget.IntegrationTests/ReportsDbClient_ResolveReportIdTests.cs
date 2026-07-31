@@ -1,5 +1,5 @@
-using Bugget.DA.Interfaces;
-using Bugget.Entities.DbModels.Report;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.ReportBo;
 using Bugget.Entities.DTO.Report;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
@@ -226,7 +226,7 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
     private async Task<Bugget.Entities.BO.ReportBo.ResolvedReportId?> ResolveByAsync(
         ResolveBy resolveBy,
         string? workspaceId,
-        ReportSummaryDbModel report)
+        ReportSummary report)
     {
         return await _reportsDbClient.ResolveReportIdAsync(
             workspaceId,
@@ -236,7 +236,7 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
             teamReportId: null);
     }
 
-    private async Task<ReportSummaryDbModel> CreateTestReportAsync(
+    private async Task<ReportSummary> CreateTestReportAsync(
         string userId,
         string? teamId = null,
         string? organizationId = null,

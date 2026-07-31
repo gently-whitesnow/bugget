@@ -1,17 +1,16 @@
 using Dapper;
-using Users.DA.Interfaces;
-using Users.Entities.DbModels.Events;
-using Users.Entities.DbModels.Users;
+using Users.BO.Ports;
+using Users.Entities.BO;
 using Users.Entities.Dto.Users;
 
 namespace Users.DA.DbClients;
 
 public class UsersDbClient : PostgresClient, IUsersRepository
 {
-    public async Task<UserDbModel> TryInsertUserAsync(CreateUserDto createUserDto)
+    public async Task<User> TryInsertUserAsync(CreateUserDto createUserDto)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return await conn.QuerySingleAsync<UserDbModel>(
+        return await conn.QuerySingleAsync<User>(
             "SELECT * FROM try_insert_user(@external_id, @name, @image_url)",
             new
             {
@@ -22,19 +21,19 @@ public class UsersDbClient : PostgresClient, IUsersRepository
         );
     }
 
-    public async Task<UserDbModel?> GetUserAsync(long userId)
+    public async Task<User?> GetUserAsync(long userId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return await conn.QuerySingleOrDefaultAsync<UserDbModel>(
+        return await conn.QuerySingleOrDefaultAsync<User>(
             "SELECT * FROM get_user(@user_id)",
             new { user_id = userId }
         );
     }
 
-    public async Task<UserDbModel?> GetUserByExternalIdAsync(string externalId)
+    public async Task<User?> GetUserByExternalIdAsync(string externalId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return await conn.QuerySingleOrDefaultAsync<UserDbModel>(
+        return await conn.QuerySingleOrDefaultAsync<User>(
             "SELECT * FROM get_user_by_external_id(@external_id)",
             new { external_id = externalId }
         );
@@ -49,19 +48,19 @@ public class UsersDbClient : PostgresClient, IUsersRepository
         );
     }
 
-    public async Task<UserDbModel[]> AutocompleteUsersAsync(int workspaceId, string searchString, int skip, int take, int? teamId = null)
+    public async Task<User[]> AutocompleteUsersAsync(int workspaceId, string searchString, int skip, int take, int? teamId = null)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return (await conn.QueryAsync<UserDbModel>(
+        return (await conn.QueryAsync<User>(
             "SELECT * FROM autocomplete_users(@workspace_id, @search_string, @skip, @take, @team_id)",
             new { workspace_id = workspaceId, search_string = searchString, skip, take, team_id = teamId }
         )).ToArray();
     }
 
-    public async Task<UserDbModel[]> ListUsersAsync(long[] userIds, int? workspaceId)
+    public async Task<User[]> ListUsersAsync(long[] userIds, int? workspaceId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return (await conn.QueryAsync<UserDbModel>(
+        return (await conn.QueryAsync<User>(
             "SELECT * FROM list_users(@user_ids, @workspace_id)",
             new { user_ids = userIds, workspace_id = workspaceId }
         )).ToArray();
@@ -76,10 +75,10 @@ public class UsersDbClient : PostgresClient, IUsersRepository
         );
     }
 
-    public async Task<UserDbModel> PutUserAsync(long userId, PutUserDto putUserDto)
+    public async Task<User> PutUserAsync(long userId, PutUserDto putUserDto)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return await conn.QuerySingleAsync<UserDbModel>(
+        return await conn.QuerySingleAsync<User>(
             "SELECT * FROM put_user(@id, @name)",
             new { id = userId, name = putUserDto.Name }
         );

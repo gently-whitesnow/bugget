@@ -1,6 +1,6 @@
 using Dapper;
-using Users.DA.Interfaces;
-using Users.Entities.DbModels.Users;
+using Users.BO.Ports;
+using Users.Entities.BO;
 
 namespace Users.DA.DbClients;
 
@@ -15,10 +15,10 @@ public sealed class UserExternalLinksDbClient : PostgresClient, IUserExternalLin
         );
     }
 
-    public async Task<UserExternalLinkDbModel> AddLinkAsync(long userId, string provider, string externalId, string? email)
+    public async Task<UserExternalLink> AddLinkAsync(long userId, string provider, string externalId, string? email)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return await conn.QuerySingleAsync<UserExternalLinkDbModel>(
+        return await conn.QuerySingleAsync<UserExternalLink>(
             "SELECT * FROM add_external_link(@user_id, @provider, @external_id, @email)",
             new { user_id = userId, provider, external_id = externalId, email }
         );
@@ -33,10 +33,10 @@ public sealed class UserExternalLinksDbClient : PostgresClient, IUserExternalLin
         );
     }
 
-    public async Task<UserExternalLinkDbModel[]> GetLinksAsync(long userId)
+    public async Task<UserExternalLink[]> GetLinksAsync(long userId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return (await conn.QueryAsync<UserExternalLinkDbModel>(
+        return (await conn.QueryAsync<UserExternalLink>(
             "SELECT * FROM get_external_links(@user_id)",
             new { user_id = userId }
         )).ToArray();

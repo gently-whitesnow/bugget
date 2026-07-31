@@ -1,4 +1,4 @@
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO;
 using Users.BO.Interfaces;
 
@@ -51,7 +51,7 @@ public sealed class UsersClientAdapter(IUsersService usersService) : IUsersClien
     /// </summary>
     private static User Unknown(string userId) => new() { Id = userId, Name = userId };
 
-    private static User Map(string userId, Users.Entities.DbModels.Users.UserDbModel user) => new()
+    private static User Map(string userId, Users.Entities.BO.User user) => new()
     {
         Id = userId,
         Name = user.Name ?? userId,

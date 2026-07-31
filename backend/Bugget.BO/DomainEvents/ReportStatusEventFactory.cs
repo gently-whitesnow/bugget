@@ -1,11 +1,11 @@
 using System.Text.Json;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.DomainEvents;
 
 namespace Bugget.BO.DomainEvents;
 
 /// <summary>
-/// Формирует <see cref="DomainEventDbModel"/> для события
+/// Формирует <see cref="DomainEvent"/> для события
 /// <c>bugget.report.status_changed</c> и инкапсулирует инвариант дедупликации
 /// «не пишем event, если from == to».
 /// </summary>
@@ -15,7 +15,7 @@ public static class ReportStatusEventFactory
     /// Возвращает готовый event для публикации, либо <c>null</c>, если
     /// <paramref name="fromStatus"/> == <paramref name="toStatus"/>.
     /// </summary>
-    public static DomainEventDbModel? TryCreate(
+    public static DomainEvent? TryCreate(
         string workspaceId,
         int reportId,
         ReportStatus fromStatus,
@@ -36,7 +36,7 @@ public static class ReportStatusEventFactory
             ToStatus = toStatus.ToString(),
         });
 
-        return new DomainEventDbModel
+        return new DomainEvent
         {
             WorkspaceId = workspaceId,
             AggregateType = BuggetAggregateTypes.Report,

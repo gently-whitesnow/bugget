@@ -1,6 +1,6 @@
 using Bugget.BO.ExternalSearch.Models;
 using Bugget.BO.Interfaces;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.ExternalClients.Kaiten.Models;
 using Bugget.ExternalClients.Kaiten.Services;
 

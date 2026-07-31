@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO.Common;
 using Bugget.Entities.DTO.Report;
 using Bugget.IntegrationTests.Fixtures;

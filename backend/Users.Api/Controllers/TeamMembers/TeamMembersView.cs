@@ -1,5 +1,5 @@
 using Users.Api.Controllers.Workspaces;
-using Users.Entities.DbModels.Members;
+using Users.Entities.BO;
 
 namespace Users.Api.Controllers.TeamMembers;
 
@@ -11,7 +11,7 @@ public sealed class TeamMembersView
 
 public static class TeamMembersViewExtensions
 {
-    public static TeamMembersView ToView(this TeamMemberDbModel[] members, int sizeLimit)
+    public static TeamMembersView ToView(this TeamMember[] members, int sizeLimit)
     {
         return new TeamMembersView
         {

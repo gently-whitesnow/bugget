@@ -1,3 +1,4 @@
+using Bugget.BO.Ports;
 using Npgsql;
 
 namespace Bugget.DA.Transactions;
@@ -15,7 +16,12 @@ public sealed class NpgsqlUnitOfWork(NpgsqlDataSource dataSource) : IUnitOfWork
         var scope = new NpgsqlTransactionScope(connection, tx);
 
         var result = await action(scope, ct);
-        await tx.CommitAsync(ct);
+        // Если action откатил транзакцию явно — Connection == null, коммитить нечего.
+        if (tx.Connection is not null)
+        {
+            await tx.CommitAsync(ct);
+        }
+
         return result;
     }
 
@@ -30,6 +36,9 @@ public sealed class NpgsqlUnitOfWork(NpgsqlDataSource dataSource) : IUnitOfWork
         var scope = new NpgsqlTransactionScope(connection, tx);
 
         await action(scope, ct);
-        await tx.CommitAsync(ct);
+        if (tx.Connection is not null)
+        {
+            await tx.CommitAsync(ct);
+        }
     }
 }

@@ -1,20 +1,19 @@
 using Bugget.Entities.Errors;
 using Dapper;
 using Npgsql;
-using Users.DA.Interfaces;
-using Users.DA.WorkspaceMembers;
-using Users.Entities.DbModels.Members;
+using Users.BO.Ports;
+using Users.Entities.BO;
 
 namespace Users.DA.DbClients;
 
 public class WorkspaceMembersDbClient : PostgresClient, IWorkspaceMembersRepository
 {
-    public async Task<(WorkspaceMemberDbModel? Value, Error? Error)> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role, int sizeLimit)
+    public async Task<(WorkspaceMember? Value, Error? Error)> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role, int sizeLimit)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
         try
         {
-            return (await conn.QuerySingleAsync<WorkspaceMemberDbModel>(
+            return (await conn.QuerySingleAsync<WorkspaceMember>(
                 "SELECT * FROM create_workspace_member(@user_id, @workspace_id, @role, @size_limit)",
                 new { user_id = userId, workspace_id = workspaceId, role = role, size_limit = sizeLimit }
             ), null);
@@ -30,30 +29,30 @@ public class WorkspaceMembersDbClient : PostgresClient, IWorkspaceMembersReposit
         }
     }
 
-    public async Task<WorkspaceMemberDbModel> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role)
+    public async Task<WorkspaceMember> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
 
-        return await conn.QuerySingleAsync<WorkspaceMemberDbModel>(
+        return await conn.QuerySingleAsync<WorkspaceMember>(
             "SELECT * FROM create_workspace_member(@user_id, @workspace_id, @role)",
             new { user_id = userId, workspace_id = workspaceId, role = role }
         );
 
     }
 
-    public async Task<WorkspaceMemberDbModel> UpdateWorkspaceMemberAsync(long userId, int workspaceId, string role)
+    public async Task<WorkspaceMember> UpdateWorkspaceMemberAsync(long userId, int workspaceId, string role)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return await conn.QuerySingleAsync<WorkspaceMemberDbModel>(
+        return await conn.QuerySingleAsync<WorkspaceMember>(
             "SELECT * FROM update_workspace_member(@user_id, @workspace_id, @role)",
             new { user_id = userId, workspace_id = workspaceId, role = role }
         );
     }
 
-    public async Task<WorkspaceMemberDbModel[]> ListWorkspaceMembersAsync(int workspaceId)
+    public async Task<WorkspaceMember[]> ListWorkspaceMembersAsync(int workspaceId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return (await conn.QueryAsync<WorkspaceMemberDbModel>(
+        return (await conn.QueryAsync<WorkspaceMember>(
             "SELECT * FROM list_workspace_members(@workspace_id)",
             new { workspace_id = workspaceId }
         )).ToArray();

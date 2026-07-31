@@ -41,6 +41,49 @@ public static class SolutionGraph
     }
 
     /// <summary>
+    /// Ищет пути, по которым <paramref name="businessLogicProjects"/> добираются до пакета
+    /// драйвера БД — на любую глубину ProjectReference, а не только прямой ссылкой.
+    ///
+    /// Правило намеренно читает граф из словаря, а не из <see cref="Projects"/>: так его
+    /// можно прогнать на синтетическом графе и доказать, что оно действительно краснеет
+    /// (см. тест «правило транзитивной зависимости краснеет на подсунутом ребре»).
+    /// </summary>
+    /// <returns>По строке на найденную утечку: <c>Bugget.BO → Bugget.DA → Npgsql</c>.</returns>
+    public static IReadOnlyList<string> FindPersistenceDriverLeaks(
+        IReadOnlyDictionary<string, ProjectNode> projects,
+        IEnumerable<string> businessLogicProjects,
+        IReadOnlyCollection<string> persistencePackages)
+    {
+        var leaks = new List<string>();
+
+        foreach (var start in businessLogicProjects)
+        {
+            var visited = new HashSet<string>(StringComparer.Ordinal);
+            Walk(start, [start]);
+
+            void Walk(string name, List<string> path)
+            {
+                if (!visited.Add(name) || !projects.TryGetValue(name, out var node))
+                {
+                    return;
+                }
+
+                foreach (var package in node.PackageReferences.Where(persistencePackages.Contains))
+                {
+                    leaks.Add($"{string.Join(" → ", path)} → {package}");
+                }
+
+                foreach (var next in node.ProjectReferences)
+                {
+                    Walk(next, [.. path, next]);
+                }
+            }
+        }
+
+        return [.. leaks.OrderBy(v => v, StringComparer.Ordinal)];
+    }
+
+    /// <summary>
     /// Ищет цикл в графе ProjectReference. Возвращает путь цикла (a → b → … → a) или null.
     /// </summary>
     public static IReadOnlyList<string>? FindCycle()

@@ -1,9 +1,8 @@
-using Bugget.DA.WebSockets;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO;
-using Bugget.Entities.DbModels.Bug;
-using Bugget.Entities.DbModels.BugSteps;
-using Bugget.Entities.DbModels.Comment;
-using Bugget.Entities.DbModels.ReportLink;
+using Bugget.Entities.BO.Bugs;
+using Bugget.Entities.BO.Comments;
+using Bugget.Entities.BO.ReportBo;
 using Bugget.Entities.DTO.Bug;
 using Bugget.Entities.SocketViews;
 using Microsoft.AspNetCore.SignalR;
@@ -42,16 +41,16 @@ public class ReportPageHubClient(IHubContext<ReportPageHub> hubContext) : IRepor
             .SendAsync("ReceiveBugPatch", bugId, patchDto);
     }
 
-    public Task SendBugCreateAsync(string groupKey, BugSummaryDbModel summaryDbModel, string? signalRConnectionId)
+    public Task SendBugCreateAsync(string groupKey, BugSummary summary, string? signalRConnectionId)
     {
         if (signalRConnectionId == null)
         {
             return hubContext.Clients.Group($"{groupKey}")
-                .SendAsync("ReceiveBugCreate", summaryDbModel);
+                .SendAsync("ReceiveBugCreate", summary);
         }
 
         return hubContext.Clients.GroupExcept($"{groupKey}", signalRConnectionId)
-            .SendAsync("ReceiveBugCreate", summaryDbModel);
+            .SendAsync("ReceiveBugCreate", summary);
     }
 
     public Task SendAttachmentCreateAsync(string groupKey, AttachmentSocketView attachmentSocketView, string? signalRConnectionId)
@@ -105,16 +104,16 @@ public class ReportPageHubClient(IHubContext<ReportPageHub> hubContext) : IRepor
             .SendAsync(eventName, id, entityId, attachType);
     }
 
-    public Task SendCommentCreateAsync(string groupKey, CommentSummaryDbModel commentSummaryDbModel, string? signalRConnectionId)
+    public Task SendCommentCreateAsync(string groupKey, CommentSummary comment, string? signalRConnectionId)
     {
         if (signalRConnectionId == null)
         {
             return hubContext.Clients.Group($"{groupKey}")
-                .SendAsync("ReceiveCommentCreate", commentSummaryDbModel);
+                .SendAsync("ReceiveCommentCreate", comment);
         }
 
         return hubContext.Clients.GroupExcept($"{groupKey}", signalRConnectionId)
-            .SendAsync("ReceiveCommentCreate", commentSummaryDbModel);
+            .SendAsync("ReceiveCommentCreate", comment);
     }
 
     public Task SendCommentDeleteAsync(string groupKey, int bugId, int commentId, string? signalRConnectionId)
@@ -129,40 +128,40 @@ public class ReportPageHubClient(IHubContext<ReportPageHub> hubContext) : IRepor
             .SendAsync("ReceiveCommentDelete", bugId, commentId);
     }
 
-    public Task SendCommentUpdateAsync(string groupKey, CommentSummaryDbModel commentSummaryDbModel, string? signalRConnectionId)
+    public Task SendCommentUpdateAsync(string groupKey, CommentSummary comment, string? signalRConnectionId)
     {
         if (signalRConnectionId == null)
         {
             return hubContext.Clients.Group($"{groupKey}")
-                .SendAsync("ReceiveCommentUpdate", commentSummaryDbModel);
+                .SendAsync("ReceiveCommentUpdate", comment);
         }
 
         return hubContext.Clients.GroupExcept($"{groupKey}", signalRConnectionId)
-            .SendAsync("ReceiveCommentUpdate", commentSummaryDbModel);
+            .SendAsync("ReceiveCommentUpdate", comment);
     }
 
-    public Task SendReportLinkCreateAsync(string groupKey, ReportLinkDbModel reportLinkDbModel, string? signalRConnectionId)
+    public Task SendReportLinkCreateAsync(string groupKey, ReportLink link, string? signalRConnectionId)
     {
         if (signalRConnectionId == null)
         {
             return hubContext.Clients.Group($"{groupKey}")
-                .SendAsync("ReceiveReportLinkCreate", reportLinkDbModel);
+                .SendAsync("ReceiveReportLinkCreate", link);
         }
 
         return hubContext.Clients.GroupExcept($"{groupKey}", signalRConnectionId)
-            .SendAsync("ReceiveReportLinkCreate", reportLinkDbModel);
+            .SendAsync("ReceiveReportLinkCreate", link);
     }
 
-    public Task SendReportLinkUpdateAsync(string groupKey, ReportLinkDbModel reportLinkDbModel, string? signalRConnectionId)
+    public Task SendReportLinkUpdateAsync(string groupKey, ReportLink link, string? signalRConnectionId)
     {
         if (signalRConnectionId == null)
         {
             return hubContext.Clients.Group($"{groupKey}")
-                .SendAsync("ReceiveReportLinkUpdate", reportLinkDbModel);
+                .SendAsync("ReceiveReportLinkUpdate", link);
         }
 
         return hubContext.Clients.GroupExcept($"{groupKey}", signalRConnectionId)
-            .SendAsync("ReceiveReportLinkUpdate", reportLinkDbModel);
+            .SendAsync("ReceiveReportLinkUpdate", link);
     }
 
     public Task SendReportLinkDeleteAsync(string groupKey, int linkId, string? signalRConnectionId)
@@ -177,40 +176,40 @@ public class ReportPageHubClient(IHubContext<ReportPageHub> hubContext) : IRepor
             .SendAsync("ReceiveReportLinkDelete", linkId);
     }
 
-    public Task SendBugStepCreateAsync(string groupKey, BugStepSummaryDbModel bugStepSummaryDbModel, string? signalRConnectionId)
+    public Task SendBugStepCreateAsync(string groupKey, BugStepSummary step, string? signalRConnectionId)
     {
         if (signalRConnectionId == null)
         {
             return hubContext.Clients.Group($"{groupKey}")
-                .SendAsync("ReceiveBugStepCreate", bugStepSummaryDbModel);
+                .SendAsync("ReceiveBugStepCreate", step);
         }
 
         return hubContext.Clients.GroupExcept($"{groupKey}", signalRConnectionId)
-            .SendAsync("ReceiveBugStepCreate", bugStepSummaryDbModel);
+            .SendAsync("ReceiveBugStepCreate", step);
     }
 
-    public Task SendBugStepPatchAsync(string groupKey, int bugId, BugStepSummaryDbModel bugStepSummaryDbModel, string? signalRConnectionId)
+    public Task SendBugStepPatchAsync(string groupKey, int bugId, BugStepSummary step, string? signalRConnectionId)
     {
         if (signalRConnectionId == null)
         {
             return hubContext.Clients.Group($"{groupKey}")
-                .SendAsync("ReceiveBugStepPatch", bugId, bugStepSummaryDbModel);
+                .SendAsync("ReceiveBugStepPatch", bugId, step);
         }
 
         return hubContext.Clients.GroupExcept($"{groupKey}", signalRConnectionId)
-            .SendAsync("ReceiveBugStepPatch", bugId, bugStepSummaryDbModel);
+            .SendAsync("ReceiveBugStepPatch", bugId, step);
     }
 
-    public Task SendBugStepsOrderUpdateAsync(string groupKey, int bugId, BugStepSummaryDbModel[] bugStepSummaryDbModels, string? signalRConnectionId)
+    public Task SendBugStepsOrderUpdateAsync(string groupKey, int bugId, BugStepSummary[] steps, string? signalRConnectionId)
     {
         if (signalRConnectionId == null)
         {
             return hubContext.Clients.Group($"{groupKey}")
-                .SendAsync("ReceiveBugStepsOrderUpdate", bugId, bugStepSummaryDbModels);
+                .SendAsync("ReceiveBugStepsOrderUpdate", bugId, steps);
         }
 
         return hubContext.Clients.GroupExcept($"{groupKey}", signalRConnectionId)
-            .SendAsync("ReceiveBugStepsOrderUpdate", bugId, bugStepSummaryDbModels);
+            .SendAsync("ReceiveBugStepsOrderUpdate", bugId, steps);
     }
 
     public Task SendBugStepDeleteAsync(string groupKey, int bugId, int stepId, string? signalRConnectionId)

@@ -2,7 +2,7 @@ using Moq;
 using TaskQueue;
 using Users.BO;
 using Users.BO.Interfaces;
-using Users.DA.Interfaces;
+using Users.BO.Ports;
 using Xunit;
 
 namespace Users.UnitTests;

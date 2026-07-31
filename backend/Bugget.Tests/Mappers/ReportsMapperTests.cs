@@ -1,7 +1,7 @@
-using Bugget.Entities.DbModels.Attachment;
-using Bugget.Entities.DbModels.Bug;
-using Bugget.Entities.DbModels.Comment;
-using Bugget.Entities.DbModels.ReportLink;
+using Bugget.Entities.BO.AttachmentBo;
+using Bugget.Entities.BO.Bugs;
+using Bugget.Entities.BO.Comments;
+using Bugget.Entities.BO.ReportBo;
 using Bugget.Entities.Views.Reports;
 using Bugget.Mappers;
 using FluentAssertions;
@@ -69,7 +69,7 @@ public class ReportsMapperTests
         summary.Has_preview.Should().BeFalse();
     }
 
-    private static ReportViewModel Report(params BugDbModel[]? bugs) => new()
+    private static ReportViewModel Report(params Bug[]? bugs) => new()
     {
         Id = "42-1",
         Title = "репорт",
@@ -83,7 +83,7 @@ public class ReportsMapperTests
         CreatorType = 0,
         IsExcludedFromAnalytics = false,
         ParticipantsUserIds = ["user-1"],
-        Links = [new ReportLinkDbModel
+        Links = [new ReportLink
         {
             Id = 1,
             ReportId = 1,
@@ -95,7 +95,7 @@ public class ReportsMapperTests
         Bugs = bugs,
     };
 
-    private static BugDbModel Bug(AttachmentDbModel[]? attachments, CommentDbModel[]? comments) => new()
+    private static Bug Bug(Attachment[]? attachments, Comment[]? comments) => new()
     {
         Id = 1,
         ReportId = 1,
@@ -111,7 +111,7 @@ public class ReportsMapperTests
         Comments = comments,
     };
 
-    private static CommentDbModel Comment() => new()
+    private static Comment Comment() => new()
     {
         Id = 1,
         BugId = 1,
@@ -123,7 +123,7 @@ public class ReportsMapperTests
         UpdatedAt = Moment,
     };
 
-    private static AttachmentDbModel Attachment(bool? hasPreview = true) => new()
+    private static Attachment Attachment(bool? hasPreview = true) => new()
     {
         Id = 10,
         EntityId = 1,

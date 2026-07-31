@@ -1,15 +1,15 @@
 using System.Text.Json;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.DA.Transactions;
+using Bugget.Entities.BO.Comments;
 using Bugget.Entities.BO.Common;
-using Bugget.Entities.DbModels.Comment;
 using Dapper;
 
 namespace Bugget.DA.Postgres;
 
 public sealed class CommentsDbClient : PostgresClient, ICommentsDbClient
 {
-    public async Task<CommentSummaryDbModel> CreateCommentAsync(
+    public async Task<CommentSummary> CreateCommentAsync(
         string userId,
         int bugId,
         string text,
@@ -18,7 +18,7 @@ public sealed class CommentsDbClient : PostgresClient, ICommentsDbClient
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleAsync<CommentSummaryDbModel>(
+        return await connection.QuerySingleAsync<CommentSummary>(
             "SELECT * FROM public.create_comment_internal(@user_id, @bug_id, @text, @creator_type, @audience);",
             new
             {
@@ -31,7 +31,7 @@ public sealed class CommentsDbClient : PostgresClient, ICommentsDbClient
         );
     }
 
-    public Task<CommentSummaryDbModel> CreateCommentAsync(
+    public Task<CommentSummary> CreateCommentAsync(
         ITransactionScope scope,
         string userId,
         int bugId,
@@ -40,7 +40,7 @@ public sealed class CommentsDbClient : PostgresClient, ICommentsDbClient
         int audience = (int)CommentAudience.Internal)
     {
         var (connection, tx) = scope.Unwrap();
-        return connection.QuerySingleAsync<CommentSummaryDbModel>(new CommandDefinition(
+        return connection.QuerySingleAsync<CommentSummary>(new CommandDefinition(
             "SELECT * FROM public.create_comment_internal(@user_id, @bug_id, @text, @creator_type, @audience);",
             new
             {
@@ -58,11 +58,11 @@ public sealed class CommentsDbClient : PostgresClient, ICommentsDbClient
     /// Жёсткий фильтр <c>audience = External</c> в SQL — I-1 инвариант: internal-комментарии
     /// никогда не покидают query path, даже при баге на уровне caller'а.
     /// </summary>
-    public async Task<CommentSummaryDbModel?> GetCommentAsync(int commentId)
+    public async Task<CommentSummary?> GetCommentAsync(int commentId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleOrDefaultAsync<CommentSummaryDbModel>(
+        return await connection.QuerySingleOrDefaultAsync<CommentSummary>(
             @"SELECT c.id, c.bug_id, c.text, c.creator_user_id, c.creator_type,
                      c.audience, c.created_at, c.updated_at
               FROM public.comments c
@@ -71,11 +71,11 @@ public sealed class CommentsDbClient : PostgresClient, ICommentsDbClient
             new { comment_id = commentId });
     }
 
-    public async Task<CommentSummaryDbModel?> DeleteCommentInternalAsync(string userId, int reportId, int bugId, int commentId)
+    public async Task<CommentSummary?> DeleteCommentInternalAsync(string userId, int reportId, int bugId, int commentId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleOrDefaultAsync<CommentSummaryDbModel>(
+        return await connection.QuerySingleOrDefaultAsync<CommentSummary>(
             "SELECT public.delete_comment_internal(@user_id, @report_id, @bug_id, @comment_id);",
             new
             {
@@ -87,11 +87,11 @@ public sealed class CommentsDbClient : PostgresClient, ICommentsDbClient
         );
     }
 
-    public async Task<CommentSummaryDbModel?> UpdateCommentInternalAsync(string userId, int reportId, int bugId, int commentId, string text)
+    public async Task<CommentSummary?> UpdateCommentInternalAsync(string userId, int reportId, int bugId, int commentId, string text)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleOrDefaultAsync<CommentSummaryDbModel>(
+        return await connection.QuerySingleOrDefaultAsync<CommentSummary>(
             "SELECT * FROM public.update_comment_internal(@user_id, @report_id, @bug_id, @comment_id, @text);",
             new
             {

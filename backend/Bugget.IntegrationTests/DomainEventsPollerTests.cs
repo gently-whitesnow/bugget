@@ -1,8 +1,7 @@
 using Bugget.BO.DomainEvents;
 using Bugget.BO.DomainEvents.Consumer;
-using Bugget.DA.Interfaces;
-using Bugget.DA.Transactions;
-using Bugget.Entities.DbModels.DomainEvents;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.IntegrationTests.Fixtures;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +22,7 @@ namespace Bugget.IntegrationTests;
 [Collection("PostgresCollection")]
 public sealed class DomainEventsPollerTests : IClassFixture<AppWithPostgresFixture>
 {
-    private readonly IDomainEventsConsumerRuntime _runtime;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IDomainEventsCursorClient _cursorClient;
     private readonly IDomainEventsDbClient _eventsClient;
     private readonly IUnitOfWork _uow;
@@ -32,7 +31,7 @@ public sealed class DomainEventsPollerTests : IClassFixture<AppWithPostgresFixtu
     public DomainEventsPollerTests(AppWithPostgresFixture fixture)
     {
         using var scope = fixture.Services.CreateScope();
-        _runtime = scope.ServiceProvider.GetRequiredService<IDomainEventsConsumerRuntime>();
+        _unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         _cursorClient = scope.ServiceProvider.GetRequiredService<IDomainEventsCursorClient>();
         _eventsClient = scope.ServiceProvider.GetRequiredService<IDomainEventsDbClient>();
         _uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
@@ -129,7 +128,7 @@ SELECT EXISTS (SELECT 1 FROM information_schema.tables
     {
         return await _uow.ExecuteAsync(async (scope, ct) =>
         {
-            var evt = new DomainEventDbModel
+            var evt = new DomainEvent
             {
                 WorkspaceId = "ws_test",
                 AggregateType = "report",
@@ -152,7 +151,7 @@ SELECT EXISTS (SELECT 1 FROM information_schema.tables
             ErrorBackoff = TimeSpan.FromMilliseconds(10),
         });
         return new DomainEventsPoller(
-            _runtime,
+            _unitOfWork,
             _cursorClient,
             _eventsClient,
             handlers,
@@ -167,9 +166,8 @@ SELECT EXISTS (SELECT 1 FROM information_schema.tables
         public List<long> HandledIds { get; } = [];
 
         public Task HandleAsync(
-            DomainEventDbModel evt,
-            System.Data.IDbConnection connection,
-            System.Data.IDbTransaction transaction,
+            DomainEvent evt,
+            ITransactionScope scope,
             CancellationToken ct)
         {
             HandledIds.Add(evt.Id);
@@ -182,9 +180,8 @@ SELECT EXISTS (SELECT 1 FROM information_schema.tables
         public string EventType { get; } = eventType;
 
         public Task HandleAsync(
-            DomainEventDbModel evt,
-            System.Data.IDbConnection connection,
-            System.Data.IDbTransaction transaction,
+            DomainEvent evt,
+            ITransactionScope scope,
             CancellationToken ct)
         {
             throw new InvalidOperationException("intentional failure");

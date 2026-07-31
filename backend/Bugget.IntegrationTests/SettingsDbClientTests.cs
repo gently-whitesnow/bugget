@@ -1,5 +1,5 @@
 using System.Linq;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

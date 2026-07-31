@@ -1,9 +1,8 @@
 using System.Buffers;
 using System.IO.Compression;
 using Bugget.BO.Interfaces;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO.AttachmentBo;
-using Bugget.Entities.DbModels.Attachment;
 
 namespace Bugget.BO.Services.Attachments;
 
@@ -17,7 +16,7 @@ public sealed class TextOptimizeWriter(
     public async Task<OptimizationResult> OptimizeWriteAsync(
         string? organizationId,
         int reportId,
-        AttachmentDbModel attachmentDbModel,
+        Attachment attachment,
         Stream originalStream,
         CancellationToken ct = default)
     {
@@ -28,11 +27,11 @@ public sealed class TextOptimizeWriter(
         }
 
         // 2) Готовим ключ в хранилище
-        var ext = Path.GetExtension(attachmentDbModel.FileName);
+        var ext = Path.GetExtension(attachment.FileName);
         var storageKey = keyGen.GetOriginalKey(
             organizationId,
             reportId,
-            attachmentDbModel.EntityId,
+            attachment.EntityId,
             ext);
 
         // 3) Сжимаем в память, читая из пула
@@ -63,9 +62,9 @@ public sealed class TextOptimizeWriter(
 
         // 5) Возвращаем информацию о результате
         return new OptimizationResult(
-            FileName: attachmentDbModel.FileName,
+            FileName: attachment.FileName,
             StorageKey: storageKey,
-            MimeType: attachmentDbModel.MimeType,
+            MimeType: attachment.MimeType,
             LengthBytes: compressedMs.Length,
             IsGzipCompressed: true,
             HasPreview: false,

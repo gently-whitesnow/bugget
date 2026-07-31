@@ -1,6 +1,6 @@
 using Users.BO.Interfaces;
-using Users.DA.Interfaces;
-using Users.Entities.DbModels.Users;
+using Users.BO.Ports;
+using Users.Entities.BO;
 
 namespace Users.BO;
 
@@ -12,7 +12,7 @@ public sealed class UserExternalLinksService(
         return externalLinksRepository.FindUserByProviderAsync(provider, externalId);
     }
 
-    public Task<UserExternalLinkDbModel> AddLinkAsync(long userId, string provider, string externalId, string? email)
+    public Task<UserExternalLink> AddLinkAsync(long userId, string provider, string externalId, string? email)
     {
         return externalLinksRepository.AddLinkAsync(userId, provider, externalId, email);
     }
@@ -22,7 +22,7 @@ public sealed class UserExternalLinksService(
         return externalLinksRepository.RemoveLinkAsync(userId, provider);
     }
 
-    public Task<UserExternalLinkDbModel[]> GetLinksAsync(long userId)
+    public Task<UserExternalLink[]> GetLinksAsync(long userId)
     {
         return externalLinksRepository.GetLinksAsync(userId);
     }

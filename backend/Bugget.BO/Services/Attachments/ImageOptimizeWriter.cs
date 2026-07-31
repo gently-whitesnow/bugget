@@ -1,7 +1,6 @@
 using Bugget.BO.Interfaces;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO.AttachmentBo;
-using Bugget.Entities.DbModels.Attachment;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
@@ -26,7 +25,7 @@ public sealed class ImageOptimizeWriter(
     public async Task<OptimizationResult> OptimizeWriteAsync(
         string? organizationId,
         int reportId,
-        AttachmentDbModel attachmentDbModel,
+        Attachment attachment,
         Stream originalStream,
         CancellationToken ct = default)
     {
@@ -57,7 +56,7 @@ public sealed class ImageOptimizeWriter(
 
         // 4) Сохраняем в WebP в память (оригинал)
         var storageKey = keyGen.GetOriginalKey(
-            organizationId, reportId, attachmentDbModel.EntityId, "webp");
+            organizationId, reportId, attachment.EntityId, "webp");
         await using var origMs = new MemoryStream();
         await image.SaveAsWebpAsync(origMs, _encoder, ct);
         origMs.Position = 0;
@@ -87,7 +86,7 @@ public sealed class ImageOptimizeWriter(
 
         // 7) Возвращаем результат
         return new OptimizationResult(
-            FileName: Path.ChangeExtension(attachmentDbModel.FileName, ".webp"),
+            FileName: Path.ChangeExtension(attachment.FileName, ".webp"),
             StorageKey: storageKey,
             MimeType: "image/webp",
             LengthBytes: origMs.Length,

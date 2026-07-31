@@ -35,7 +35,7 @@
 Стороны, которые сверяет `scripts/quality/realtime-contract.py`:
 
 1. контракт `specs/contracts/events.yaml`;
-2. объявление публикации — интерфейс `Bugget.DA/WebSockets/IReportPageHubClient.cs`;
+2. объявление публикации — интерфейс `Bugget.BO/Ports/IReportPageHubClient.cs`;
 3. обработчик — реализация `Bugget/Hubs/ReportPageHubClient.cs`, которая шлёт в группу;
 4. подписки фронта — `enum SocketEvent` и `customParsers`.
 

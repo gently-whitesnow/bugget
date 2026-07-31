@@ -1,7 +1,7 @@
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.AttachmentBo;
+using Bugget.Entities.BO.Bugs;
 using Bugget.Entities.BO.Common;
-using Bugget.Entities.DbModels.Attachment;
-using Bugget.Entities.DbModels.BugSteps;
 using Bugget.Entities.DTO.Bug;
 using Bugget.Entities.DTO.BugStep;
 using Bugget.Entities.DTO.Report;
@@ -643,7 +643,7 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
 
     #region Helper Methods
 
-    private async Task<Bugget.Entities.DbModels.Report.ReportSummaryDbModel> CreateTestReportAsync(
+    private async Task<Bugget.Entities.BO.ReportBo.ReportSummary> CreateTestReportAsync(
         string userId,
         string? organizationId = null)
     {
@@ -654,7 +654,7 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         return await _reportsDbClient.CreateReportAsync(userId, null, organizationId, reportDto);
     }
 
-    private async Task<Bugget.Entities.DbModels.Bug.BugSummaryDbModel> CreateTestBugAsync(
+    private async Task<Bugget.Entities.BO.Bugs.BugSummary> CreateTestBugAsync(
         string userId,
         int reportId,
         string? receive = null,
@@ -669,7 +669,7 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         return await _bugsDbClient.CreateBugAsync(userId, reportId, bugDto);
     }
 
-    private async Task<Bugget.Entities.DbModels.Comment.CommentSummaryDbModel> CreateTestCommentAsync(
+    private async Task<Bugget.Entities.BO.Comments.CommentSummary> CreateTestCommentAsync(
         string userId,
         int bugId,
         string text,
@@ -678,12 +678,12 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         return await _commentsDbClient.CreateCommentAsync(userId, bugId, text, creatorType);
     }
 
-    private async Task<AttachmentDbModel> CreateTestBugAttachmentAsync(
+    private async Task<Attachment> CreateTestBugAttachmentAsync(
         string userId,
         int bugId,
         string fileName)
     {
-        var createModel = new CreateAttachmentDbModel
+        var createModel = new AttachmentCreate
         {
             EntityId = bugId,
             AttachType = AttachType_BugFact,
@@ -697,12 +697,12 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         return await _attachmentDbClient.CreateAttachment(createModel);
     }
 
-    private async Task<AttachmentDbModel> CreateTestCommentAttachmentAsync(
+    private async Task<Attachment> CreateTestCommentAttachmentAsync(
         string userId,
         int commentId,
         string fileName)
     {
-        var createModel = new CreateAttachmentDbModel
+        var createModel = new AttachmentCreate
         {
             EntityId = commentId,
             AttachType = AttachType_Comment,
@@ -716,7 +716,7 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         return await _attachmentDbClient.CreateAttachment(createModel);
     }
 
-    private async Task<BugStepSummaryDbModel> CreateTestBugStepAsync(
+    private async Task<BugStepSummary> CreateTestBugStepAsync(
         string userId,
         int bugId,
         string text)
@@ -724,12 +724,12 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         return await _bugStepsDbClient.CreateBugStepAsync(userId, bugId, new BugStepDto { Text = text });
     }
 
-    private async Task<AttachmentDbModel> CreateTestBugStepAttachmentAsync(
+    private async Task<Attachment> CreateTestBugStepAttachmentAsync(
         string userId,
         int stepId,
         string fileName)
     {
-        var createModel = new CreateAttachmentDbModel
+        var createModel = new AttachmentCreate
         {
             EntityId = stepId,
             AttachType = AttachType_BugStep,

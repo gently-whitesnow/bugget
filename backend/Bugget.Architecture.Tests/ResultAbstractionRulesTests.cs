@@ -56,10 +56,36 @@ public partial class ResultAbstractionRulesTests
         ContainsResultLikeDeclaration(source).Should().BeTrue();
     }
 
+    [Fact(DisplayName = "Гейт краснеет на generic Result-обёртке, собранной через наследование")]
+    public void Inherited_generic_result_like_fixture_is_rejected()
+    {
+        const string source = "public sealed class Outcome<T> : Choice<T, Error> { }";
+
+        ContainsResultLikeDeclaration(source).Should().BeTrue();
+    }
+
     [Fact(DisplayName = "Гейт оставляет нативный tuple допустимым")]
     public void Native_tuple_fixture_is_allowed()
     {
         const string source = "public sealed class Service { public (T? Value, Error? Error) Execute<T>() => default; }";
+
+        ContainsResultLikeDeclaration(source).Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Гейт не склеивает Error одного типа с payload другого типа")]
+    public void Independent_types_in_one_file_are_allowed()
+    {
+        const string source = """
+            public sealed class FailureState
+            {
+                public Error? Error { get; init; }
+            }
+
+            public sealed class PageState
+            {
+                public string Content { get; init; } = string.Empty;
+            }
+            """;
 
         ContainsResultLikeDeclaration(source).Should().BeFalse();
     }

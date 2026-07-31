@@ -164,6 +164,18 @@
       ]
     },
     {
+      "id": "frontend-api-inventory",
+      "scope": "frontend",
+      "enabled": true,
+      "slow": false,
+      "workdir": ".",
+      "description": "Инвентарь HTTP-транспорта фронта: все шесть модулей используют generated paths через createOperationRequest; raw axios-инстансы не выходят из контрактных границ; fetch, redirects, XMLHttpRequest и sendBeacon не создают необъяснённый второй транспортный путь. Самопроверка доказывает красноту обходов через переменную, window.fetch, runtime axios, XMLHttpRequest и sendBeacon.",
+      "commands": [
+        "node scripts/quality/frontend-api-inventory.mjs",
+        "node scripts/quality/frontend-api-inventory.mjs --self-test"
+      ]
+    },
+    {
       "id": "frontend-realtime-contract",
       "scope": "frontend",
       "enabled": true,

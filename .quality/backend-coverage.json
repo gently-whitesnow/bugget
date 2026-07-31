@@ -18,20 +18,20 @@
   "$comment-gapsFocus": "Сборки, по которым backend-coverage.py --gaps строит список приоритетных дыр: бизнес-логика, где непокрытая ветка стоит дороже всего.",
   "baseline": {
     "total": {
-      "line": 73.6,
-      "branch": 43.4
+      "line": 75.4,
+      "branch": 45.3
     },
     "assemblies": {
       "Authentication": {
         "line": 72.9,
-        "branch": 52.5
+        "branch": 55.0
       },
       "Authorization.Abstractions": {
         "line": 65.5,
         "branch": 55.0
       },
       "Authorization.Api": {
-        "line": 75.8,
+        "line": 77.3,
         "branch": 45.3
       },
       "BugReport.Logging": {
@@ -39,11 +39,11 @@
         "branch": 0.0
       },
       "Bugget": {
-        "line": 84.7,
-        "branch": 37.3
+        "line": 87.1,
+        "branch": 36.6
       },
       "Bugget.BO": {
-        "line": 81.9,
+        "line": 82.2,
         "branch": 60.8
       },
       "Bugget.DA": {
@@ -51,7 +51,7 @@
         "branch": 60.0
       },
       "Bugget.Entities": {
-        "line": 64.9,
+        "line": 69.8,
         "branch": 50.0
       },
       "Bugget.ExternalClients": {
@@ -60,7 +60,7 @@
       },
       "Bugget.Http": {
         "line": 100.0,
-        "branch": 86.7
+        "branch": 96.6
       },
       "Caching.Local": {
         "line": 0.0,
@@ -70,16 +70,8 @@
         "line": 30.0,
         "branch": 0.0
       },
-      "Flow": {
-        "line": 62.5,
-        "branch": 50.0
-      },
       "MattermostOAuth": {
         "line": 0.0,
-        "branch": null
-      },
-      "Monade": {
-        "line": 76.5,
         "branch": null
       },
       "OidcAuth": {
@@ -99,7 +91,7 @@
         "branch": 50.0
       },
       "Users.DA": {
-        "line": 89.5,
+        "line": 94.7,
         "branch": 66.7
       },
       "Users.Entities": {

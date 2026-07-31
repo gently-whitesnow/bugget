@@ -80,6 +80,25 @@ public sealed class FfmpegProcessRunnerTests
             Runner().RunProcessAsync("/bin/sh", ["-c", "exit 3"], Timeout, CancellationToken.None));
     }
 
+    [Fact(DisplayName = "Ошибка ffmpeg не раскрывает путь входного файла")]
+    public async Task Failure_does_not_expose_input_path()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var secretPath = Path.Combine(Path.GetTempPath(), $"customer-{Guid.NewGuid():N}.mov");
+        var command = $"printf '%s\\n' '{secretPath}' >&2; exit 3";
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            Runner().RunProcessAsync("/bin/sh", ["-c", command], Timeout, CancellationToken.None));
+
+        error.Message.Should().NotContain(
+            secretPath,
+            "исключение фоновой задачи целиком попадает в общий лог TaskQueue");
+    }
+
     private static async Task WaitUntilGoneAsync(int pid)
     {
         for (var attempt = 0; attempt < 20 && IsAlive(pid); attempt++)

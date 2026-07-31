@@ -63,6 +63,22 @@ public sealed class OptimizatorSettingsValidatorTests
         result.FailureMessage.Should().Contain(nameof(OptimizatorSettings.VideoMaxConcurrency));
     }
 
+    [Fact(DisplayName = "Максимальные значения не обходят бюджет переполнением int")]
+    public void Maximum_values_cannot_bypass_thread_budget()
+    {
+        var result = _validator.Validate(null, new OptimizatorSettings
+        {
+            VideoMaxConcurrency = int.MaxValue,
+            VideoEncoderThreads = int.MaxValue,
+            VideoDecoderThreads = int.MaxValue,
+            VideoFilterThreads = int.MaxValue,
+        });
+
+        result.Failed.Should().BeTrue(
+            "конфиг из внешнего JSON не должен превращать опасный бюджет в малое число при переполнении");
+        result.FailureMessage.Should().Contain(nameof(OptimizatorSettings.VideoMaxConcurrency));
+    }
+
     [Fact(DisplayName = "Неизвестный пресет x264 отвергается")]
     public void Unknown_preset_is_rejected()
     {

@@ -1,13 +1,23 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { setAppContext } from "@/shared/api/instances";
-import { attachmentContentPath, attachmentContentUrl } from "./urls";
+import type { paths } from "@/shared/api/generated/reports";
+import {
+  ATTACHMENT_CONTENT,
+  attachmentContentPath,
+  attachmentContentUrl,
+} from "./urls";
+import type { AttachmentContentRoute } from "./urls";
 
 /**
  * Адрес содержимого вложения уезжает в `src` картинки и в `fetch` за телом, а не
- * в axios. До миграции он собирался строкой в `shared/ui/FilePreview`; теперь
- * шаблон берётся из контракта, и тест фиксирует, что получившийся адрес совпал
- * со старым дословно — включая хвостовой слэш у оригинала.
+ * в axios. До миграции он собирался строкой в `shared/ui/FilePreview`.
+ *
+ * Проверяется две вещи. Первая — compile-time: все шесть шаблонов (оригинал и
+ * превью каждого владельца) существуют в `paths` сгенерированного контракта,
+ * причём превью берётся своим путём, а не дописанным суффиксом. Вторая — рантайм:
+ * получившийся адрес совпал со старым дословно, включая хвостовой слэш у
+ * оригинала.
  */
 
 beforeEach(() => {
@@ -78,6 +88,61 @@ describe("адрес содержимого вложения", () => {
 
     expect(attachmentContentUrl({ reportId: "team-1", bugId: 2, id: 3 })).toBe(
       `${window.location.origin}/api/app/v2/reports/team-1/bugs/2/attachments/3/content/`
+    );
+  });
+});
+
+/*
+ * Проверки уровня типов: их держит `tsc --noEmit` в гейте frontend-typecheck.
+ * Переименовали любой из шести путей в `specs/contracts/reports/openapi.yaml` —
+ * красной становится сборка, а не только этот тест.
+ */
+
+/** Каждый шаблон обязан быть ключом `paths`, а не произвольной строкой. */
+const routesAreContractPaths: readonly (keyof paths)[] = [
+  ATTACHMENT_CONTENT.bug.original,
+  ATTACHMENT_CONTENT.bug.preview,
+  ATTACHMENT_CONTENT.comment.original,
+  ATTACHMENT_CONTENT.comment.preview,
+  ATTACHMENT_CONTENT.step.original,
+  ATTACHMENT_CONTENT.step.preview,
+];
+
+/**
+ * Превью — самостоятельный путь контракта: тип шаблона превью совпадает с ключом
+ * `paths`, а не выводится из пути оригинала конкатенацией. Строка, собранная
+ * склейкой, ключом `paths` не является, и присвоение ниже её бы не приняло.
+ */
+const previewIsOwnContractPath: keyof paths = ATTACHMENT_CONTENT.bug.preview;
+
+/** Публичный тип маршрута тоже сужен до ключей контракта. */
+const routeTypeIsContractBound: keyof paths = ATTACHMENT_CONTENT.comment
+  .preview satisfies AttachmentContentRoute;
+
+describe("шаблоны адресов связаны с контрактом на этапе компиляции", () => {
+  it("все шесть путей объявлены в generated paths", () => {
+    // Равенства держит `tsc --noEmit`; тест фиксирует намерение и состав набора.
+    expect(routesAreContractPaths).toHaveLength(6);
+    expect(new Set(routesAreContractPaths).size).toBe(6);
+    expect(previewIsOwnContractPath).toBe(
+      "/v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content/preview"
+    );
+    expect(routeTypeIsContractBound).toContain("/content/preview");
+  });
+
+  it("построенный адрес — это подставленный шаблон контракта, а не склейка", () => {
+    const preview = attachmentContentPath({
+      reportId: "team-1",
+      bugId: 2,
+      id: 3,
+      preview: true,
+    });
+
+    expect(preview).toBe(
+      ATTACHMENT_CONTENT.bug.preview
+        .replace("{aliasId}", "team-1")
+        .replace("{bugId}", "2")
+        .replace("{id}", "3")
     );
   });
 });

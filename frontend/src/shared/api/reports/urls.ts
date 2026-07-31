@@ -1,3 +1,4 @@
+import type { paths } from "@/shared/api/generated/reports";
 import { buildOperationPath } from "@/shared/api/operation";
 import { buildFullApiUrl } from "@/shared/lib/buildFullUrl";
 
@@ -8,14 +9,44 @@ import { buildFullApiUrl } from "@/shared/lib/buildFullUrl";
  * `href` ссылки и в `fetch` за бинарным телом, а не в axios. Поэтому здесь нужен
  * адрес строкой, и шаблон его берётся из контракта, как у аватара в модуле
  * `users`: иначе адрес картинки расходится с адресом ручки молча.
+ *
+ * Оригинал и превью — шесть отдельных путей контракта, а не один путь с
+ * дописанным суффиксом. Каждый объявлен литералом и проверен как `keyof paths`:
+ * переименование любого из них в `specs/contracts/reports/openapi.yaml` ломает
+ * компиляцию здесь, а не молча ведёт картинку в 404. Строковая конкатенация
+ * `/preview` этого бы не дала — `buildOperationPath` принимает произвольную
+ * строку, и склеенный путь остался бы зелёным для `tsc`.
  */
 
-const BUG_CONTENT =
-  "/v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content";
-const COMMENT_CONTENT =
-  "/v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content";
-const STEP_CONTENT =
-  "/v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content";
+export const ATTACHMENT_CONTENT = {
+  bug: {
+    original: "/v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content",
+    preview:
+      "/v2/reports/{aliasId}/bugs/{bugId}/attachments/{id}/content/preview",
+  },
+  comment: {
+    original:
+      "/v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content",
+    preview:
+      "/v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}/attachments/{id}/content/preview",
+  },
+  step: {
+    original:
+      "/v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content",
+    preview:
+      "/v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}/attachments/{id}/content/preview",
+  },
+} as const satisfies Record<
+  string,
+  Record<"original" | "preview", keyof paths>
+>;
+
+type ContentRoutes = typeof ATTACHMENT_CONTENT;
+
+/** Шесть путей контракта, по которым браузер забирает содержимое вложения. */
+export type AttachmentContentRoute = ContentRoutes[keyof ContentRoutes][
+  | "original"
+  | "preview"];
 
 export type AttachmentContentTarget = {
   /** Alias репорта — тот же сегмент, что и у операций модуля. */
@@ -39,13 +70,13 @@ export const attachmentContentPath = ({
   stepId,
   preview,
 }: AttachmentContentTarget): string => {
-  const template = commentId
-    ? COMMENT_CONTENT
+  const owner = commentId
+    ? ATTACHMENT_CONTENT.comment
     : stepId
-      ? STEP_CONTENT
-      : BUG_CONTENT;
+      ? ATTACHMENT_CONTENT.step
+      : ATTACHMENT_CONTENT.bug;
 
-  const path = buildOperationPath(template, {
+  const path = buildOperationPath(preview ? owner.preview : owner.original, {
     aliasId: reportId,
     bugId,
     id,
@@ -53,11 +84,12 @@ export const attachmentContentPath = ({
     stepId,
   });
 
-  // Провод сохраняется дословно: рукописный адрес всегда заканчивался сегментом
-  // после `content/` — либо `preview`, либо пустой строкой, то есть хвостовым
-  // слэшем. Маршрут ASP.NET отвечает одинаково и без него, но публичные URL в
-  // этой программе работ не меняются.
-  return preview ? `${path}/preview` : `${path}/`;
+  // Единственное, что к пути контракта добавляется, — хвостовой слэш у
+  // оригинала: рукописный адрес заканчивался сегментом после `content/`, и у
+  // оригинала этот сегмент был пустым. Маршрут ASP.NET отвечает одинаково и без
+  // слэша, но публичные URL в этой программе работ не меняются. Сам путь при
+  // этом остаётся тем, что объявлен в контракте.
+  return preview ? path : `${path}/`;
 };
 
 /**

@@ -81,7 +81,8 @@ public sealed class VideoOptimizeWriter(
             // Проверяем, что файл был записан и не пустой
             if (!File.Exists(inputPath) || new FileInfo(inputPath).Length == 0)
             {
-                throw new InvalidOperationException($"Input file was not created or is empty: {inputPath}");
+                // Путь во временном каталоге наружу не отдаём — исключение фоновой задачи уходит в общий лог.
+                throw new InvalidOperationException("Input file for transcoding was not created or is empty.");
             }
 
             await ffmpegRunner.RunAsync(BuildTranscodeArguments(settings, inputPath, outputPath), timeout, ct);

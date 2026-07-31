@@ -26,66 +26,21 @@ public sealed class AttachmentOptimizator(
     public async Task OptimizeAttachmentAsync(
         string? organizationId,
         ReportIdContext reportIdContext,
-        Attachment fromAttachment)
+        Attachment fromAttachment,
+        CancellationToken ct = default)
     {
         if (fromAttachment.StorageKind != (int)StorageKind.Temp || fromAttachment.StorageKey is null)
         {
             return;
         }
 
-        await using var fileStream = await fileStorage.ReadAsync(fromAttachment.StorageKey);
+        await using var fileStream = await fileStorage.ReadAsync(fromAttachment.StorageKey, ct);
 
         // Создаем новую оптимизированную версию файла
-        OptimizationResult optimizationResult;
-        if (AttachmentConstants.ImageMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
-        {
-            optimizationResult = await imageOptimizatorWriter.OptimizeWriteAsync(
-                organizationId,
-                reportIdContext.ReportId,
-                fromAttachment,
-                fileStream
-            );
-        }
-        else if (AttachmentConstants.VideoMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
-        {
-            optimizationResult = await videoOptimizeWriter.OptimizeWriteAsync(
-                organizationId,
-                reportIdContext.ReportId,
-                fromAttachment,
-                fileStream
-            );
-        }
-        else if (AttachmentConstants.CompressibleMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
-        {
-            optimizationResult = await textOptimizator.OptimizeWriteAsync(
-                organizationId,
-                reportIdContext.ReportId,
-                fromAttachment,
-                fileStream
-            );
-        }
-        else
-        {
-            throw new InvalidOperationException("Unsupported mime type");
-        }
+        var optimizationResult = await OptimizeByMimeTypeAsync(
+            organizationId, reportIdContext, fromAttachment, fileStream, ct);
 
-        var originalLength = fileStream.CanSeek ? fileStream.Length : (long?)null;
-        if (originalLength.HasValue && originalLength.Value > 0)
-        {
-            logger.LogInformation("Attachment saved: {@FileName}, compress score {@from}-{@to}-{@preview} percent {@percent}%",
-                fromAttachment.FileName,
-                originalLength.Value,
-                optimizationResult.LengthBytes,
-                optimizationResult.PreviewLengthBytes,
-                (1 - (double)optimizationResult.LengthBytes / originalLength.Value) * 100);
-        }
-        else
-        {
-            logger.LogInformation("Attachment saved: {@FileName}, size {@to}-{@preview}",
-                fromAttachment.FileName,
-                optimizationResult.LengthBytes,
-                optimizationResult.PreviewLengthBytes);
-        }
+        LogOptimizationResult(fromAttachment, fileStream, optimizationResult);
 
         // Обновляем модель в БД
         var toAttachment = await attachmentDbClient.UpdateAttachmentAsync(new AttachmentUpdate
@@ -104,6 +59,55 @@ public sealed class AttachmentOptimizator(
         await reportPageHubClient.SendAttachmentChangedAsync(reportIdContext.GroupKey, toAttachment.ToSocketView());
 
         // Удаляем старый файл
-        await fileStorage.DeleteAsync(fromAttachment.StorageKey);
+        await fileStorage.DeleteAsync(fromAttachment.StorageKey, ct);
+    }
+
+    /// <summary>Выбор писателя по mime-типу: у всех троих один контракт и один токен отмены.</summary>
+    private Task<OptimizationResult> OptimizeByMimeTypeAsync(
+        string? organizationId,
+        ReportIdContext reportIdContext,
+        Attachment fromAttachment,
+        Stream fileStream,
+        CancellationToken ct)
+    {
+        if (AttachmentConstants.ImageMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
+        {
+            return imageOptimizatorWriter.OptimizeWriteAsync(
+                organizationId, reportIdContext.ReportId, fromAttachment, fileStream, ct);
+        }
+
+        if (AttachmentConstants.VideoMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
+        {
+            return videoOptimizeWriter.OptimizeWriteAsync(
+                organizationId, reportIdContext.ReportId, fromAttachment, fileStream, ct);
+        }
+
+        if (AttachmentConstants.CompressibleMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
+        {
+            return textOptimizator.OptimizeWriteAsync(
+                organizationId, reportIdContext.ReportId, fromAttachment, fileStream, ct);
+        }
+
+        throw new InvalidOperationException("Unsupported mime type");
+    }
+
+    private void LogOptimizationResult(Attachment fromAttachment, Stream fileStream, OptimizationResult result)
+    {
+        var originalLength = fileStream.CanSeek ? fileStream.Length : (long?)null;
+        if (originalLength is > 0)
+        {
+            logger.LogInformation("Attachment saved: {@FileName}, compress score {@from}-{@to}-{@preview} percent {@percent}%",
+                fromAttachment.FileName,
+                originalLength.Value,
+                result.LengthBytes,
+                result.PreviewLengthBytes,
+                (1 - (double)result.LengthBytes / originalLength.Value) * 100);
+            return;
+        }
+
+        logger.LogInformation("Attachment saved: {@FileName}, size {@to}-{@preview}",
+            fromAttachment.FileName,
+            result.LengthBytes,
+            result.PreviewLengthBytes);
     }
 }

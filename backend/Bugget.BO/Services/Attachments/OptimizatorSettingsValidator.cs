@@ -61,8 +61,11 @@ public sealed class OptimizatorSettingsValidator : IValidateOptions<OptimizatorS
                 string.Join(", ", KnownVideoPresets) + ".");
         }
 
-        var threadsPerJob = options.VideoDecoderThreads + options.VideoEncoderThreads + options.VideoFilterThreads;
-        var threadBudget = options.VideoMaxConcurrency * threadsPerJob;
+        // Считаем в long: external_settings.json приходит от человека, и произведение
+        // int-ов из него переполняется в маленькое (а то и отрицательное) число, которое
+        // проходит проверку бюджета (MAIN-240).
+        long threadsPerJob = (long)options.VideoDecoderThreads + options.VideoEncoderThreads + options.VideoFilterThreads;
+        var threadBudget = MultiplySaturating(options.VideoMaxConcurrency, threadsPerJob);
         var allowedThreads = Math.Max(
             MinThreadBudget,
             ThreadBudgetOversubscribeFactor * Environment.ProcessorCount);
@@ -77,6 +80,22 @@ public sealed class OptimizatorSettingsValidator : IValidateOptions<OptimizatorS
         return failures.Count == 0
             ? ValidateOptionsResult.Success
             : ValidateOptionsResult.Fail(failures);
+    }
+
+    /// <summary>
+    /// Насыщающее умножение: переполнение обязано выглядеть как «бюджет исчерпан», а не
+    /// как маленькое число, которое проходит проверку.
+    /// </summary>
+    private static long MultiplySaturating(long left, long right)
+    {
+        try
+        {
+            return checked(left * right);
+        }
+        catch (OverflowException)
+        {
+            return long.MaxValue;
+        }
     }
 
     private static void RequirePositive(List<string> failures, int value, string name)

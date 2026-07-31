@@ -17,7 +17,11 @@ public sealed class FfmpegService(IOptions<OptimizatorSettings> options, ILogger
 
     public async Task EnsureAsync(CancellationToken ct)
     {
-        if (_ffmpegReady)
+        // Аварийный тумблер выключает ffmpeg целиком: ни скачивания, ни стартового
+        // `ffmpeg -version`. Установка без памяти под ffmpeg не должна его даже трогать
+        // (MAIN-240). Перекодирования при выключенном тумблере всё равно нет —
+        // VideoOptimizeWriter кладёт оригинал под постоянный ключ.
+        if (_ffmpegReady || !options.Value.VideoOptimizationEnabled)
         {
             return;
         }

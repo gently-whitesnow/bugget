@@ -512,8 +512,10 @@ public sealed class AttachmentService(
         var dbModel = await attachmentDbClient.CreateAttachment(createModel);
 
         // 6) Событие
-        await taskQueue.EnqueueAsync(async () =>
-            await attachmentEventsService.HandleAttachmentCreateEventAsync(reportIdContext, user, dbModel));
+        // Токен очереди — единственный способ остановить фоновую видеооптимизацию при
+        // остановке приложения: без него ffmpeg переживает shutdown (MAIN-240).
+        await taskQueue.EnqueueAsync(async queueToken =>
+            await attachmentEventsService.HandleAttachmentCreateEventAsync(reportIdContext, user, dbModel, queueToken));
 
         return (dbModel, null);
     }

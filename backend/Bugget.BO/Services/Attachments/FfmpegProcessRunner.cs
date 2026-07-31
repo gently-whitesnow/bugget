@@ -79,10 +79,13 @@ public sealed class FfmpegProcessRunner(
 
         if (process.ExitCode != 0)
         {
+            // Сырой stderr наружу не отдаём: в нём лежат абсолютные temp-пути и имя файла
+            // пользователя, а исключение фоновой задачи целиком уходит в общий лог TaskQueue.
+            var reason = FfmpegStderrSanitizer.Summarize(stderr, arguments);
             logger.LogError(
-                "FFmpeg failed with exit code {exitCode}. Args: {args}. Error output: {stderr}",
-                process.ExitCode, DescribeArguments(arguments), stderr);
-            throw new InvalidOperationException($"FFmpeg failed with exit code {process.ExitCode}. {stderr}");
+                "FFmpeg failed with exit code {exitCode}. Args: {args}. Reason: {reason}",
+                process.ExitCode, DescribeArguments(arguments), reason);
+            throw new InvalidOperationException($"FFmpeg failed with exit code {process.ExitCode}. {reason}");
         }
     }
 

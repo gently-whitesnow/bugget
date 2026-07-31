@@ -24,11 +24,15 @@ public class AttachmentEventsService(
     ILogger<AttachmentEventsService> logger
         )
 {
-    public async Task HandleAttachmentCreateEventAsync(ReportIdContext reportIdContext, UserIdentity user, Attachment attachment)
+    public async Task HandleAttachmentCreateEventAsync(
+        ReportIdContext reportIdContext,
+        UserIdentity user,
+        Attachment attachment,
+        CancellationToken ct = default)
     {
         await Task.WhenAll(
             reportPageHubClient.SendAttachmentCreateAsync(reportIdContext.GroupKey, attachment.ToSocketView(), user.SignalRConnectionId),
-            attachmentOptimizator.OptimizeAttachmentAsync(user.OrganizationId, reportIdContext, attachment),
+            attachmentOptimizator.OptimizeAttachmentAsync(user.OrganizationId, reportIdContext, attachment, ct),
             PublishDomainEventAsync(reportIdContext, user, attachment));
     }
 

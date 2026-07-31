@@ -1,5 +1,5 @@
+using Bugget.Entities.Errors;
 using Users.Entities.DbModels.Teams;
-using Users.Entities.Errors;
 
 namespace Users.BO.Interfaces;
 

@@ -1,10 +1,10 @@
+using Bugget.Entities.Errors;
 using Microsoft.Extensions.DependencyInjection;
 using TaskQueue;
 using Users.BO.Interfaces;
 using Users.DA.Interfaces;
 using Users.Entities.DbModels.Users;
 using Users.Entities.Dto.Users;
-using Users.Entities.Errors;
 
 namespace Users.BO;
 

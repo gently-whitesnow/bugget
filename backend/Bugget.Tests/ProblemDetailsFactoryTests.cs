@@ -1,12 +1,16 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Bugget.BO.Services.Settings;
+using Bugget.DA.Interfaces;
 using Bugget.Entities.Errors;
 using Bugget.Extensions;
+using Bugget.ExternalClients.Kaiten;
 using Bugget.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 
 namespace Bugget.Tests;
 
@@ -229,7 +233,7 @@ public sealed class ProblemDetailsFactoryTests
     }
 
     [Fact]
-    public void Bugget_domain_error_catalog_keeps_all_existing_codes_and_http_statuses()
+    public async Task Bugget_domain_error_catalog_keeps_all_existing_wire_values()
     {
         var expectedStatuses = ExpectedStatuses(
             (400, [
@@ -237,8 +241,11 @@ public sealed class ProblemDetailsFactoryTests
                 "attachment_file_not_selected_or_empty", "attachment_file_too_large",
                 "attachment_limit_exceeded", "attachment_target_required", "attachment_type_not_allowed",
                 "attachment_type_not_supported", "bug_must_have_one_field", "bug_steps_order_size_mismatch",
+                "board_ids_max_count_error",
                 "creator_user_id_required", "idempotency_key_required", "organization_id_required",
+                "send_report_link_to_comments_invalid_values_error",
                 "since_id_required", "team_id_required", "team_setting_not_found",
+                "use_report_linking_invalid_values_error",
                 "user_setting_not_found", "workspace_id_required", "workspace_setting_invalid_values",
                 "workspace_setting_not_found"
             ]),
@@ -251,23 +258,34 @@ public sealed class ProblemDetailsFactoryTests
             (409, ["report_closed"]),
             (500, ["internal_server_error"]));
 
-        var errors = ReadErrorCatalog<Bugget.Entities.Errors.Error>(typeof(Bugget.BO.Errors.BoErrors))
+        ITeamSettingsProcessor kaiten = new KaitenTeamSettingsProcessor(Mock.Of<ISettingsDbClient>());
+        var dynamicErrors = new[]
+        {
+            (await kaiten.UpdateSettingAsync("team", KaitenConstants.BoardIdsFieldKey, new string[11])).Error,
+            (await kaiten.UpdateSettingAsync("team", KaitenConstants.UseReportLinkingFieldKey, [])).Error,
+            (await kaiten.UpdateSettingAsync("team", KaitenConstants.SendReportLinkToCommentsFieldKey, ["not-bool"])).Error
+        };
+
+        var errors = ReadErrorCatalog<Error>(typeof(Bugget.BO.Errors.BoErrors))
             .Append(Bugget.BO.Errors.BoErrors.AttachmentTypeNotSupported("image/test"))
+            .Concat(dynamicErrors.Select(Assert.IsAssignableFrom<Error>))
             .ToArray();
 
         AssertErrorCatalog(
             errors,
             expectedStatuses,
-            error => Bugget.Extensions.ErrorExtensions.ToProblemDetails(error, new DefaultHttpContext()));
+            error => error.ToProblemDetails(new DefaultHttpContext()));
     }
 
     [Fact]
-    public void Users_and_authorization_domain_error_catalogs_keep_all_existing_codes_and_http_statuses()
+    public void Users_and_authorization_domain_error_catalogs_keep_all_existing_wire_values()
     {
         var expectedStatuses = ExpectedStatuses(
             (400, [
                 "feature_not_implemented", "paid_feature_not_implemented",
-                "team_max_users_count_error", "user_already_in_team_error"
+                "team_limit_exceeded_error", "team_max_users_count_error",
+                "teams_count_limit_exceeded_error", "user_already_in_team_error",
+                "workspace_limit_exceeded_error"
             ]),
             (401, [
                 "expired_access_token", "expired_refresh_token", "invalid_access_token",
@@ -280,14 +298,17 @@ public sealed class ProblemDetailsFactoryTests
             (404, ["not_found_error", "team_not_found_error", "user_not_found"]),
             (500, ["internal_server_error"]));
 
-        var errors = ReadErrorCatalog<Users.Entities.Errors.Error>(typeof(Users.BO.BoErrors))
-            .Concat(ReadErrorCatalog<Users.Entities.Errors.Error>(typeof(Authorization.Api.BoErrors)))
+        var errors = ReadErrorCatalog<Error>(typeof(Users.BO.BoErrors))
+            .Concat(ReadErrorCatalog<Error>(typeof(Authorization.Api.BoErrors)))
+            .Concat(ReadErrorCatalog<Error>(typeof(Users.DA.TeamMembers.TeamMembersErrors)))
+            .Concat(ReadErrorCatalog<Error>(typeof(Users.DA.Teams.TeamsErrors)))
+            .Concat(ReadErrorCatalog<Error>(typeof(Users.DA.WorkspaceMembers.WorkspaceMembersErrors)))
             .ToArray();
 
         AssertErrorCatalog(
             errors,
             expectedStatuses,
-            error => Users.Api.Extensions.ErrorExtensions.ToProblemDetails(error, new DefaultHttpContext()));
+            error => error.ToProblemDetails(new DefaultHttpContext()));
     }
 
     private static ProblemDetails GetProblem(ProblemDescriptor descriptor, string? detail = null) =>
@@ -315,16 +336,16 @@ public sealed class ProblemDetailsFactoryTests
             .SelectMany(group => group.Codes.Select(code => (Code: code, group.Status)))
             .ToDictionary(item => item.Code, item => item.Status, StringComparer.Ordinal);
 
-    private static void AssertErrorCatalog<TError>(
-        IReadOnlyCollection<TError> errors,
+    private static void AssertErrorCatalog(
+        IReadOnlyCollection<Error> errors,
         IReadOnlyDictionary<string, int> expectedStatuses,
-        Func<TError, ActionResult> convert)
+        Func<Error, ActionResult> convert)
     {
         var actual = errors
             .Select(error =>
             {
                 var result = Assert.IsType<ObjectResult>(convert(error));
-                return (Result: result, Problem: Assert.IsType<ProblemDetails>(result.Value));
+                return (Error: error, Result: result, Problem: Assert.IsType<ProblemDetails>(result.Value));
             })
             .ToArray();
 
@@ -333,11 +354,22 @@ public sealed class ProblemDetailsFactoryTests
             actual.Select(item => item.Problem.Extensions["code"] as string)
                 .OrderBy(code => code, StringComparer.Ordinal));
 
-        foreach (var (result, problem) in actual)
+        foreach (var (error, result, problem) in actual)
         {
             var code = Assert.IsType<string>(problem.Extensions["code"]);
+            var expectedTitle = expectedStatuses[code] >= 500
+                ? "Внутренняя ошибка сервера"
+                : error.Title;
+            Assert.Equal(error.Code, code);
+            Assert.Equal(expectedTitle, problem.Title);
             Assert.Equal(expectedStatuses[code], result.StatusCode);
             Assert.Equal(expectedStatuses[code], problem.Status);
+            Assert.Equal($"urn:bugget:error:{error.Code}", problem.Type);
+
+            using var body = JsonDocument.Parse(JsonSerializer.Serialize(problem));
+            Assert.Equal(error.Code, body.RootElement.GetProperty("code").GetString());
+            Assert.Equal(expectedTitle, body.RootElement.GetProperty("title").GetString());
+            Assert.Equal(expectedStatuses[code], body.RootElement.GetProperty("status").GetInt32());
         }
     }
 }

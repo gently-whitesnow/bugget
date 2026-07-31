@@ -1,9 +1,9 @@
+using Bugget.Entities.Errors;
 using Dapper;
 using Npgsql;
 using Users.DA.Interfaces;
 using Users.DA.WorkspaceMembers;
 using Users.Entities.DbModels.Members;
-using Users.Entities.Errors;
 
 namespace Users.DA.DbClients;
 

@@ -2,8 +2,8 @@ using Authorization.Abstractions;
 using Authorization.Api;
 using Authorization.Api.Interfaces;
 using Authorization.Api.Models;
+using Bugget.Entities.Errors;
 using Users.Entities.Dto.Users;
-using Users.Entities.Errors;
 using UserExternalLinksService = Users.BO.Interfaces.IUserExternalLinksService;
 using UsersService = Users.BO.Interfaces.IUsersService;
 

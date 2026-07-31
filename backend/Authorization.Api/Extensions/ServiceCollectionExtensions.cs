@@ -17,7 +17,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using OidcAuth;
 using StackExchange.Redis;
-using Users.Entities.Errors;
 
 namespace Authorization.Api.Extensions;
 

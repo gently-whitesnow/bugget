@@ -9,7 +9,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Bugget.Entities\Bugget.Entities.csproj" />
     <ProjectReference Include="..\Users.Entities\Users.Entities.csproj" />
   </ItemGroup>
 
-</Project> 
+</Project>

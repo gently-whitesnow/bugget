@@ -1,6 +1,6 @@
+using Bugget.Entities.Errors;
 using Users.Entities.DbModels.Users;
 using Users.Entities.Dto.Users;
-using Users.Entities.Errors;
 
 namespace Users.BO.Interfaces;
 

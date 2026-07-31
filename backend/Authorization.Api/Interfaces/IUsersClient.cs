@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Authorization.Abstractions;
 using Authorization.Api.Models;
-using Users.Entities.Errors;
+using Bugget.Entities.Errors;
 
 namespace Authorization.Api.Interfaces;
 

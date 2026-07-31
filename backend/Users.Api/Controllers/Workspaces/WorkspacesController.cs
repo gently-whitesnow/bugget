@@ -1,8 +1,8 @@
 using Authentication;
+using Bugget.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Users.Api.Contracts.Generated;
 using Users.Api.Controllers.Workspaces;
-using Users.Api.Extensions;
 using Users.Api.Generated;
 using Users.Api.Mappers;
 using Users.BO.Interfaces;

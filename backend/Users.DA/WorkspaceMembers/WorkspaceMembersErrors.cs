@@ -1,4 +1,4 @@
-using Users.Entities.Errors;
+using Bugget.Entities.Errors;
 
 namespace Users.DA.WorkspaceMembers;
 

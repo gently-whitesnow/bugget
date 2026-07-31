@@ -7,4 +7,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Bugget.Entities\Bugget.Entities.csproj" />
+  </ItemGroup>
 </Project>

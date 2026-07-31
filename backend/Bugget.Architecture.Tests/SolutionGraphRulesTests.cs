@@ -23,7 +23,7 @@ public class SolutionGraphRulesTests
             Packages: ["Mime", "SixLabors.ImageSharp", "Xabe.FFmpeg", "Xabe.FFmpeg.Downloader"]),
 
         ["Users.BO"] = (
-            Projects: ["TaskQueue"],
+            Projects: ["Bugget.Entities", "TaskQueue"],
             Packages: []),
     };
 

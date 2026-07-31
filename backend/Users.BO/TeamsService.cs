@@ -1,9 +1,9 @@
+using Bugget.Entities.Errors;
 using Microsoft.Extensions.Options;
 using Users.BO.Interfaces;
 using Users.DA.Interfaces;
 using Users.DA.TeamMembers;
 using Users.Entities.DbModels.Teams;
-using Users.Entities.Errors;
 using Users.Entities.Options;
 
 namespace Users.BO;

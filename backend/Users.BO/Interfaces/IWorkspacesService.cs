@@ -1,7 +1,7 @@
+using Bugget.Entities.Errors;
 using Users.Entities.BO;
 using Users.Entities.DbModels.Members;
 using Users.Entities.DbModels.Workspaces;
-using Users.Entities.Errors;
 
 namespace Users.BO.Interfaces;
 

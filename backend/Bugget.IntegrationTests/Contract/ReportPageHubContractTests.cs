@@ -25,14 +25,17 @@ public sealed class ReportPageHubContractTests(AppContractFixture fixture) : ICl
 
         var response = await scenario.Client.PostAsync("/v1/report-page-hub/negotiate?negotiateVersion=1", null);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v1.report-page-hub.negotiate.post", response);
+        // Ответ negotiate собирает сам SignalR; клиенту нужен connectionId и хотя бы
+        // один доступный транспорт — без них соединение не открыть.
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("connectionId").GetString()));
+        Assert.NotEmpty(body.GetProperty("availableTransports").EnumerateArray().ToArray());
     }
 
     /// <summary>
     /// Хаб не закрыт [Authorize]: negotiate отвечает 200 и без identity-заголовков.
     /// В бою до него доходят только запросы, прошедшие auth_request в nginx, —
-    /// снимок фиксирует эту зависимость, чтобы её нельзя было потерять молча.
+    /// тест фиксирует эту зависимость, чтобы её нельзя было потерять молча.
     /// </summary>
     [Fact(DisplayName = "POST /v1/report-page-hub/negotiate без identity: 200, защита только на nginx")]
     public async Task NegotiateWithoutIdentity()

@@ -72,14 +72,16 @@ Bugget — инструмент для баг-репортов: тестиров
 гейт `backend-realtime-contract` / `frontend-realtime-contract`. Он же краснеет на снятой
 подписке фронта и на разошедшихся аргументах.
 
-**Публичный HTTP-контракт зафиксирован снимками.** Статус, media type и форма тела
-каждого пути, который зовёт фронт или nginx, лежат текстом в
-`backend/Bugget.IntegrationTests/Contract/Snapshots/`. Переименовали поле или сменили
-статус — снимок падает; если изменение осознанное, пересоберите снимки
-(`UPDATE_CONTRACT_SNAPSHOTS=1 dotnet test backend/Bugget.IntegrationTests`) и покажите
-дифф в PR. Новый эндпоинт обязан появиться в
+**Полное описание провода — только OpenAPI.** Форма ответа целиком описана в
+`specs/contracts/**/openapi.yaml` и больше нигде: golden-снимков полного ответа в
+репозитории нет и заводить их нельзя. Переименованное поле или сменившийся тип ловит
+компиляция (контроллеры наследуют сгенерированные базы) и гейт `backend-contracts`.
+Contract-тесты в `backend/Bugget.IntegrationTests/Contract/` проверяют поведение явными
+assertions — статус, media type, `code` отказа и инвариант, ради которого написан
+сценарий. Причина — ADR-0010. Новый эндпоинт обязан появиться в
 [docs/public-contract-inventory.md](docs/public-contract-inventory.md) — иначе падает
-инвентарь.
+инвентарь; документ собирается из кода
+(`UPDATE_CONTRACT_INVENTORY=1 dotnet test backend/Bugget.IntegrationTests`).
 
 **Новый код пишется по DDD.** Rich-модель и агрегаты для нового; легаси мигрируем только
 при касании. Причина — ADR-0003.

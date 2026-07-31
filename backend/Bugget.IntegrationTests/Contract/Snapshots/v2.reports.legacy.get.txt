@@ -1,6 +1,0 @@
-status: 200
-content-type: application/json
-body:
-$: object
-$.team_id: string
-$.team_report_id: number

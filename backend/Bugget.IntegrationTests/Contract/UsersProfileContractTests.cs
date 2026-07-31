@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
@@ -20,8 +21,8 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
 
         var response = await scenario.Client.GetAsync(scenario.TeamPath("/users"));
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.users.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        AssertIsSelf(body, scenario);
     }
 
     [Fact(DisplayName = "GET .../users: нечисловые workspaceId/teamId в пути — ответ тот же, не 400")]
@@ -35,8 +36,8 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
 
         var response = await scenario.Client.GetAsync("/v1/workspaces/not-a-number/teams/also-not/users");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.users.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        AssertIsSelf(body, scenario);
     }
 
     [Fact(DisplayName = "PUT .../users: 200 и форма User")]
@@ -48,8 +49,8 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
             scenario.TeamPath("/users"),
             new { name = "Новое имя" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.users.put", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal("Новое имя", body.GetProperty("name").GetString());
     }
 
     [Fact(DisplayName = "POST .../users/batch/list: 200, массив пользователей")]
@@ -61,8 +62,9 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
             scenario.TeamPath("/users/batch/list"),
             new[] { scenario.UserId.ToString(CultureInfo.InvariantCulture) });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.users-batch-list.post", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        var user = Assert.Single(body.EnumerateArray().ToArray());
+        AssertIsSelf(user, scenario);
     }
 
     [Fact(DisplayName = "GET .../users/autocomplete: 200 и форма AutocompleteUsers")]
@@ -74,8 +76,14 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
         var response = await scenario.Client.GetAsync(
             scenario.TeamPath("/users/autocomplete?searchString=&skip=0&take=10"));
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.users-autocomplete.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        // Команда по умолчанию общая на прогон, поэтому в выдаче есть и соседние
+        // пользователи: проверяется, что автодополнение видит вступившего.
+        var users = body.GetProperty("users").EnumerateArray().ToArray();
+        Assert.True(body.GetProperty("total").GetInt32() >= users.Length);
+        Assert.Contains(
+            users,
+            user => user.GetProperty("id").GetString() == scenario.UserId.ToString(CultureInfo.InvariantCulture));
     }
 
     [Fact(DisplayName = "Аватар: POST, GET content, GET {userId}/content, DELETE")]
@@ -86,7 +94,7 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
         var uploaded = await scenario.Client.PostAsync(
             scenario.TeamPath("/users/avatar"),
             ContractScenario.FileContent("avatar.png"));
-        await ContractSnapshot.MatchAsync("users.v1.users-avatar.post", uploaded);
+        await ContractResponse.EmptyAsync(uploaded, HttpStatusCode.OK);
 
         var content = await scenario.Client.GetAsync(scenario.TeamPath("/users/avatar/content"));
         Assert.Equal(HttpStatusCode.OK, content.StatusCode);
@@ -94,8 +102,10 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
         var byId = await scenario.Client.GetAsync(scenario.TeamPath($"/users/{scenario.UserId}/avatar/content"));
         Assert.Equal(HttpStatusCode.OK, byId.StatusCode);
 
+        // Загрузка отвечает 200, снятие — 204: асимметрия на проводе, и фронт
+        // разбирает оба ответа как «тела нет».
         var deleted = await scenario.Client.DeleteAsync(scenario.TeamPath("/users/avatar"));
-        await ContractSnapshot.MatchAsync("users.v1.users-avatar.delete", deleted);
+        await ContractResponse.EmptyAsync(deleted, HttpStatusCode.NoContent);
     }
 
     [Fact(DisplayName = "GET .../users/external-links: 200, массив привязок")]
@@ -105,8 +115,8 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
 
         var response = await scenario.Client.GetAsync(scenario.TeamPath("/users/external-links"));
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.users-external-links.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(JsonValueKind.Array, body.ValueKind);
     }
 
     [Fact(DisplayName = "DELETE .../users/external-links/{provider}: последнюю привязку снять нельзя")]
@@ -117,7 +127,7 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
         var response = await scenario.Client.DeleteAsync(
             scenario.TeamPath("/users/external-links/oidc"));
 
-        await ContractSnapshot.MatchAsync("users.v1.users-external-links.delete", response);
+        await ContractResponse.ProblemAsync(response, "last_login_method", HttpStatusCode.BadRequest);
     }
 
     [Fact(DisplayName = "PUT и DELETE .../users/mattermost: привязка Mattermost")]
@@ -128,10 +138,12 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
         var linked = await scenario.Client.PutAsJsonAsync(
             scenario.TeamPath("/users/mattermost"),
             new { mattermost_user_id = "mm-" + scenario.UserId });
-        await ContractSnapshot.MatchAsync("users.v1.users-mattermost.put", linked);
+
+        // Привязка отвечает 204, снятие — 200: асимметрия на проводе, тела нет у обоих.
+        await ContractResponse.EmptyAsync(linked, HttpStatusCode.NoContent);
 
         var unlinked = await scenario.Client.DeleteAsync(scenario.TeamPath("/users/mattermost"));
-        await ContractSnapshot.MatchAsync("users.v1.users-mattermost.delete", unlinked);
+        await ContractResponse.EmptyAsync(unlinked, HttpStatusCode.OK);
     }
 
     [Fact(DisplayName = "POST .../users/merge: слияние с другим пользователем")]
@@ -144,7 +156,7 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
             scenario.TeamPath("/users/merge"),
             new { source_user_id = sourceUserId.ToString(CultureInfo.InvariantCulture) });
 
-        await ContractSnapshot.MatchAsync("users.v1.users-merge.post", response);
+        await ContractResponse.EmptyAsync(response, HttpStatusCode.OK);
     }
 
     [Fact(DisplayName = "DELETE .../users: 200")]
@@ -154,6 +166,15 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
 
         var response = await scenario.Client.DeleteAsync(scenario.TeamPath("/users"));
 
-        await ContractSnapshot.MatchAsync("users.v1.users.delete", response);
+        await ContractResponse.EmptyAsync(response, HttpStatusCode.OK);
+    }
+
+    /// <summary>
+    /// Ручки профиля отдают пользователя из identity, а не из сегментов пути.
+    /// </summary>
+    private static void AssertIsSelf(JsonElement user, UsersScenario scenario)
+    {
+        Assert.Equal(scenario.UserId.ToString(CultureInfo.InvariantCulture), user.GetProperty("id").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(user.GetProperty("name").GetString()));
     }
 }

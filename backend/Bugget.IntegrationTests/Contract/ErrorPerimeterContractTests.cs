@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
-using System.Text.Json;
 using Dapper;
 using Npgsql;
 using Xunit;
@@ -25,8 +24,7 @@ public sealed class ErrorPerimeterContractTests(AppContractFixture fixture) : IC
 
         var response = await client.GetAsync("/v2/reports");
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        await AssertProblemAsync(response, "unauthorized", 401);
+        await ContractResponse.ProblemAsync(response, "unauthorized", HttpStatusCode.Unauthorized);
     }
 
     /// <summary>
@@ -42,8 +40,7 @@ public sealed class ErrorPerimeterContractTests(AppContractFixture fixture) : IC
 
         var response = await scenario.Client.GetAsync($"/v1/workspaces/{foreignWorkspaceId}/teams/autocomplete");
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        await AssertProblemAsync(response, "forbidden", 403);
+        await ContractResponse.ProblemAsync(response, "forbidden", HttpStatusCode.Forbidden);
     }
 
     [Fact(DisplayName = "Несуществующий маршрут: 404 с problem+json и кодом not_found")]
@@ -53,8 +50,7 @@ public sealed class ErrorPerimeterContractTests(AppContractFixture fixture) : IC
 
         var response = await scenario.Client.GetAsync("/v2/reports/counts/nothing-here");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        await AssertProblemAsync(response, "not_found", 404);
+        await ContractResponse.ProblemAsync(response, "not_found", HttpStatusCode.NotFound);
     }
 
     [Fact(DisplayName = "Неподходящий метод: 405 с problem+json и кодом method_not_allowed")]
@@ -64,8 +60,10 @@ public sealed class ErrorPerimeterContractTests(AppContractFixture fixture) : IC
 
         var response = await scenario.Client.DeleteAsync("/v2/reports");
 
-        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
-        await AssertProblemAsync(response, "method_not_allowed", 405);
+        await ContractResponse.ProblemAsync(
+            response,
+            "method_not_allowed",
+            HttpStatusCode.MethodNotAllowed);
     }
 
     [Fact(DisplayName = "MVC: битый JSON — 400 ValidationProblemDetails с code")]
@@ -76,8 +74,10 @@ public sealed class ErrorPerimeterContractTests(AppContractFixture fixture) : IC
 
         var response = await scenario.Client.PostAsync("/v2/reports", content);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var problem = await AssertProblemAsync(response, "model_state_validation_error", 400);
+        var problem = await ContractResponse.ProblemAsync(
+            response,
+            "model_state_validation_error",
+            HttpStatusCode.BadRequest);
         Assert.True(problem.TryGetProperty("errors", out var errors));
         Assert.True(errors.EnumerateObject().Any());
     }
@@ -90,8 +90,10 @@ public sealed class ErrorPerimeterContractTests(AppContractFixture fixture) : IC
 
         var response = await scenario.Client.PostAsync("/v2/reports", content);
 
-        Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
-        await AssertProblemAsync(response, "unsupported_media_type", 415);
+        await ContractResponse.ProblemAsync(
+            response,
+            "unsupported_media_type",
+            HttpStatusCode.UnsupportedMediaType);
     }
 
     [Fact(DisplayName = "Users: конфликт слияния — 409 problem+json с прикладным code")]
@@ -119,22 +121,6 @@ public sealed class ErrorPerimeterContractTests(AppContractFixture fixture) : IC
             target.TeamPath("/users/merge"),
             new { source_user_id = sourceUserId.ToString(CultureInfo.InvariantCulture) });
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        await AssertProblemAsync(response, "source_owns_workspaces", 409);
-    }
-
-    private static async Task<JsonElement> AssertProblemAsync(HttpResponseMessage response, string code, int status)
-    {
-        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
-
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var root = document.RootElement;
-
-        Assert.Equal(code, root.GetProperty("code").GetString());
-        Assert.Equal($"urn:bugget:error:{code}", root.GetProperty("type").GetString());
-        Assert.Equal(status, root.GetProperty("status").GetInt32());
-        Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("title").GetString()));
-        Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("traceId").GetString()));
-        return root.Clone();
+        await ContractResponse.ProblemAsync(response, "source_owns_workspaces", HttpStatusCode.Conflict);
     }
 }

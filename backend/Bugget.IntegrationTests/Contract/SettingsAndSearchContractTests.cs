@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
@@ -21,8 +22,13 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
 
         var response = await scenario.Client.GetAsync("/v1/settings-sections");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v1.settings-sections.get", response);
+        // Три группы — рабочее пространство, команда, пользователь: фронт рисует по
+        // ним три раздела и не проверяет ключи на существование. Пользовательских
+        // процессоров в OSS-сборке нет, поэтому группа пустая, но присутствует.
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.NotEmpty(body.GetProperty("workspace_sections").EnumerateArray().ToArray());
+        Assert.NotEmpty(body.GetProperty("team_sections").EnumerateArray().ToArray());
+        Assert.Empty(body.GetProperty("user_sections").EnumerateArray().ToArray());
     }
 
     [Fact(DisplayName = "PUT /v1/workspace-settings-sections/{sectionId}/settings/{settingId}: 200")]
@@ -34,8 +40,11 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
             $"/v1/workspace-settings-sections/{KaitenSection}/settings/domain",
             new[] { "example.kaiten.ru" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v1.workspace-settings.put", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal("domain", body.GetProperty("id").GetString());
+        Assert.Equal(
+            new[] { "example.kaiten.ru" },
+            body.GetProperty("values").EnumerateArray().Select(value => value.GetString()).ToArray());
     }
 
     [Fact(DisplayName = "PUT настройки workspace с неизвестной секцией: ошибка, а не 200")]
@@ -47,7 +56,10 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
             "/v1/workspace-settings-sections/unknown/settings/domain",
             new[] { "value" });
 
-        await ContractSnapshot.MatchAsync("v1.workspace-settings.put.unknown-section", response);
+        await ContractResponse.ProblemAsync(
+            response,
+            "workspace_settings_section_not_found",
+            HttpStatusCode.NotFound);
     }
 
     [Fact(DisplayName = "PUT /v1/team-settings-sections/{sectionId}/settings/{settingId}: 200")]
@@ -59,13 +71,19 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
             $"/v1/team-settings-sections/{KaitenSection}/settings/use_report_linking",
             new[] { "true" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v1.team-settings.put", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal("use_report_linking", body.GetProperty("id").GetString());
+
+        // Булеву настройку сервер отдаёт своим представлением ("True"), а не тем,
+        // что прислал клиент, — фронт разбирает ответ без учёта регистра.
+        Assert.Equal(
+            new[] { "True" },
+            body.GetProperty("values").EnumerateArray().Select(value => value.GetString()).ToArray());
     }
 
     /// <summary>
     /// Пользовательских процессоров настроек в OSS-сборке не зарегистрировано, поэтому
-    /// путь существует, но всегда отвечает ошибкой. Снимок фиксирует именно это.
+    /// путь существует, но всегда отвечает 404 из общего каталога.
     /// </summary>
     [Fact(DisplayName = "PUT /v1/user-settings-sections/{sectionId}/settings/{settingId}: секции нет")]
     public async Task UpdateUserSetting()
@@ -76,7 +94,10 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
             $"/v1/user-settings-sections/{KaitenSection}/settings/anything",
             new[] { "true" });
 
-        await ContractSnapshot.MatchAsync("v1.user-settings.put", response);
+        await ContractResponse.ProblemAsync(
+            response,
+            "user_settings_section_not_found",
+            HttpStatusCode.NotFound);
     }
 
     [Fact(DisplayName = "GET /v1/reports/search: 200, total + reports")]
@@ -87,16 +108,17 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
 
         var response = await scenario.Client.GetAsync("/v1/reports/search?query=репорт&skip=0&take=10");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v1.reports.search.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(1, body.GetProperty("total").GetInt32());
+        var report = Assert.Single(body.GetProperty("reports").EnumerateArray().ToArray());
+        Assert.Equal("ищем именно этот репорт", report.GetProperty("title").GetString());
     }
 
     /// <summary>
-    /// Поиск — второй адрес той же формы списка (<c>ReportList</c>), и снимок
-    /// <c>v1.reports.search.get</c> снят с репорта без багов, поэтому форму
-    /// <c>bugs[]</c> он не предъявляет вовсе. Сужение LIST проверяется здесь на
-    /// полном сиде и поэлементно: ссылки, вложения бага и шаги лежат в базе, но в
-    /// ответе поиска их быть не должно, а комментарии — должны.
+    /// Поиск — второй адрес той же формы списка (<c>ReportList</c>), и сужение
+    /// элемента списка обязано действовать и здесь. Проверяется на полном сиде и
+    /// поэлементно: ссылки, вложения бага и шаги лежат в базе, но в ответе поиска
+    /// их быть не должно, а комментарии — должны.
     /// </summary>
     [Fact(DisplayName = "GET /v1/reports/search: в элементе результата нет links, вложений бага и шагов")]
     public async Task SearchReportsOmitsKeysItDoesNotLoad()
@@ -137,11 +159,14 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
 
         var response = await scenario.Client.GetAsync("/v1/external/search?query=abc&skip=0&take=10");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v1.external.search.get", response);
+        // Внешние источники в тестовом контуре не настроены: путь живой и отдаёт
+        // пустую выдачу, а не ошибку, — фронт рисует по ней «ничего не найдено».
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(0, body.GetProperty("total").GetInt32());
+        Assert.Empty(body.GetProperty("items").EnumerateArray().ToArray());
     }
 
-    [Fact(DisplayName = "POST /v1/external/search/apply: несуществующий источник — ошибка")]
+    [Fact(DisplayName = "POST /v1/external/search/apply: без настроенного источника — 200 и пустое тело")]
     public async Task ApplyExternalSearch()
     {
         var scenario = ContractScenario.Create(fixture);
@@ -151,7 +176,7 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
             "/v1/external/search/apply",
             new { id = "1", source = "kaiten", report_id = reportId });
 
-        await ContractSnapshot.MatchAsync("v1.external.search-apply.post", response);
+        await ContractResponse.EmptyAsync(response, HttpStatusCode.OK);
     }
 
     [Fact(DisplayName = "GET /v1/external/kaiten/boards: 200, массив досок")]
@@ -161,8 +186,8 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
 
         var response = await scenario.Client.GetAsync("/v1/external/kaiten/boards?skip=0&take=10");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v1.external.kaiten-boards.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(JsonValueKind.Array, body.ValueKind);
     }
 
     [Fact(DisplayName = "POST /v1/external/kaiten/boards/batch-get: 200, массив досок")]
@@ -174,7 +199,7 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
             "/v1/external/kaiten/boards/batch-get",
             new { ids = new[] { 1L } });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v1.external.kaiten-boards-batch-get.post", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(JsonValueKind.Array, body.ValueKind);
     }
 }

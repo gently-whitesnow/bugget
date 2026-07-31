@@ -1,8 +1,0 @@
-status: 200
-content-type: application/json
-body:
-$: object
-$.counts: array
-$.counts[]: object
-$.counts[].count: number
-$.counts[].key: string

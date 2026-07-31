@@ -1,46 +1,37 @@
-import type { components } from "@/shared/api/generated/settings";
-import type { Camelized } from "@/shared/lib/types";
+import type { externalApi, settingsApi } from "@/shared/api";
 
 /**
- * Формы модуля `settings` — выведены из контракта
- * (`specs/contracts/settings/openapi.yaml` → `shared/api/generated/settings.d.ts`).
+ * Формы модуля `settings` — выведены из операций его границы
+ * (`shared/api/settings`), то есть из `specs/contracts/settings/openapi.yaml`
+ * вместе с путём и методом. Рукописного DTO здесь нет: второе независимое
+ * представление тех же данных расходилось бы с контрактом молча.
  *
- * `Camelized` учитывает case-conversion интерсептор
- * (`shared/api/instances/base.ts`): провод — snake_case (`is_array`, `is_bool`,
- * `workspace_sections`), код читает camelCase (ADR-0009). Рукописного DTO здесь
- * больше нет: второе независимое представление тех же данных расходилось бы с
- * контрактом молча.
+ * Регистр здесь уже camelCase: тело перекладывает интерсептор
+ * (`shared/api/instances/base.ts`), и это учтено в типах операций (ADR-0009).
  *
  * Уровни настроек (workspace / team / user) описаны в контракте одной схемой
  * `Setting` и одной `SettingsSection` — трёх алиасов на один и тот же тип здесь
  * нет намеренно, они не несли информации. Уровень выбирается ручкой, а не типом.
  */
 
-/** Настройка с текущим значением. `description` на проводе nullable. */
-export type SettingView = Camelized<components["schemas"]["Setting"]>;
+/** Ответ `GET /v1/settings-sections`: секции всех трёх уровней. */
+export type SettingsSectionsResponse = settingsApi.SettingsSectionsResult;
 
 /** Раздел настроек одного уровня. */
-export type SettingsSectionView = Camelized<
-  components["schemas"]["SettingsSection"]
->;
+export type SettingsSectionView =
+  SettingsSectionsResponse["workspaceSections"][number];
 
-/** Ответ `GET /v1/settings-sections`: секции всех трёх уровней. */
-export type SettingsSectionsResponse = Camelized<
-  components["schemas"]["SettingsSections"]
->;
+/** Настройка с текущим значением. `description` на проводе nullable. */
+export type SettingView = SettingsSectionView["settings"][number];
 
 /**
  * Тело PUT-ручек обновления настройки: всегда массив строк — скаляр это массив
- * из одного элемента, булева настройка — строка `true`/`false`. Имён полей внутри
- * нет, поэтому `Camelized` здесь не нужен.
+ * из одного элемента, булева настройка — строка `true`/`false`.
  */
-export type SettingValues = components["schemas"]["SettingValues"];
+export type SettingValues = settingsApi.SettingValuesBody;
 
 /**
- * Kaiten — внешняя интеграция, её контракт лежит в модуле `external` и переводится
- * отдельным слайсом. До тех пор DTO остаётся рукописным.
+ * Доска Kaiten: внешняя интеграция, её контракт лежит в модуле `external`, и
+ * форма берётся из его операции.
  */
-export type KaitenBoardResponse = {
-  id: number;
-  title: string;
-};
+export type KaitenBoardResponse = externalApi.KaitenBoard;

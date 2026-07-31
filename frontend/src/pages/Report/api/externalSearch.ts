@@ -1,28 +1,23 @@
-import { appApi } from "@/shared/api";
+import { externalApi } from "@/shared/api";
 import type {
   ExternalSearchApplyRequest,
   ExternalSearchResponse,
 } from "./contracts";
 
+/**
+ * Поиск по внешним источникам глазами страницы репорта. Транспорт живёт в
+ * операциях модуля (`shared/api/external`) — здесь остаётся только пагинация по
+ * умолчанию, с которой ходит эта страница: она часть её поведения, а не контракта.
+ */
 export const searchExternal = async (
   query: string,
   skip = 0,
   take = 7
-): Promise<ExternalSearchResponse> => {
-  const searchParams = new URLSearchParams();
-  searchParams.append("query", query);
-  searchParams.append("skip", String(skip));
-  searchParams.append("take", String(take));
-
-  const { data } = await appApi.get<ExternalSearchResponse>(
-    `/v1/external/search?${searchParams.toString()}`
-  );
-
-  return data;
-};
+): Promise<ExternalSearchResponse> =>
+  externalApi.searchExternal({ query, skip, take });
 
 export const applyExternalSearchResult = async (
   payload: ExternalSearchApplyRequest
 ): Promise<void> => {
-  await appApi.post(`/v1/external/search/apply`, payload);
+  await externalApi.applyExternalSearchResult(payload);
 };

@@ -8,3 +8,4 @@ export * from "./bugs";
 export * from "./steps";
 export * from "./comments";
 export * from "./attachments";
+export * from "./urls";

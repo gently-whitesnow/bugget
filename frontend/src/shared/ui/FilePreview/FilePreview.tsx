@@ -3,14 +3,17 @@ import { createPortal } from "react-dom";
 import { Check, Copy, FileText, Film, Loader2, Trash2, X } from "lucide-react";
 
 import { AttachmentChip, AttachFileButton } from "@/shared/ui";
+import { reportsApi } from "@/shared/api";
 import {
-  buildFullApiUrl,
   copyToClipboard,
   createCurlAttachmentFile,
   getClipboardFiles,
 } from "@/shared/lib";
 import { AttachmentTypes } from "@/shared/config";
 import { PendingAttachment } from "@/shared/ui";
+
+// Адрес содержимого вложения — операция-адрес модуля `reports`, а не строка рядом.
+const { attachmentContentUrl } = reportsApi;
 
 type Attachment = {
   id: number;
@@ -385,14 +388,11 @@ function FilePreview({
     }
   };
 
+  // Адрес собирается из шаблона контракта (`shared/api/reports`), а не строкой
+  // рядом: браузерный `src` обязан вести туда же, куда ходит axios.
   const getImageUrl = useCallback(
-    (attachment: Attachment, isPreview?: boolean): string => {
-      const path = `v2/reports/${reportId}/bugs/${bugId}/${
-        commentId ? `comments/${commentId}/` : stepId ? `steps/${stepId}/` : ""
-      }attachments/${attachment.id}/content/${isPreview ? "preview" : ""}`;
-      const url = buildFullApiUrl(path);
-      return url;
-    },
+    ({ id }: Attachment, preview?: boolean) =>
+      attachmentContentUrl({ reportId, bugId, id, commentId, stepId, preview }),
     [bugId, commentId, reportId, stepId]
   );
 

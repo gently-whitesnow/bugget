@@ -5,38 +5,26 @@ import {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { appApi, parseApiError, setAppContext } from "@/shared/api";
-import type {
-  components,
-  operations,
-  paths,
-} from "@/shared/api/generated/settings";
+import type { components, operations } from "@/shared/api/generated/settings";
 import type { Camelized } from "@/shared/lib/types";
 import {
   fetchSettingsSections,
-  settingsRoutes,
   updateTeamSetting,
   updateUserSetting,
   updateWorkspaceSetting,
 } from "./settings";
-import type { SettingsMethod } from "./settings";
-import type {
-  SettingValues,
-  SettingView,
-  SettingsSectionsResponse,
-} from "./contracts";
+import type { SettingResult, SettingValuesBody } from "./settings";
 
 /**
- * Граница модуля `settings`: URL, тело запроса и разбор ответа проверяются на том же
- * инстансе `appApi`, которым ходит приложение, — с интерсепторами и без сети.
+ * Провод модуля `settings` после переезда на общую границу
+ * `shared/api/operation.ts`.
  *
- * Фикстура объявлена типом схемы из контракта, поэтому провод здесь не выдуман:
- * лишний или потерянный ключ — ошибка компиляции в гейте `frontend-typecheck`.
+ * Механика вызова сменилась, публичный контракт — нет: тест смотрит на то, что
+ * реально уходит в сеть (URL, метод, тело) и что доезжает до UI. Фикстуры
+ * объявлены типами схем контракта, поэтому провод здесь не выдуман: лишний или
+ * потерянный ключ — ошибка компиляции в гейте `frontend-typecheck`.
  */
 
-/**
- * Ответ `GET /v1/settings-sections` ровно в том виде, в каком он приходит по
- * проводу — snake_case, форма `SettingsSections`.
- */
 const wireSections: components["schemas"]["SettingsSections"] = {
   workspace_sections: [
     {
@@ -143,16 +131,17 @@ beforeEach(() => {
 
 afterEach(() => {
   appApi.defaults.adapter = originalAdapter;
+  setAppContext(null, null);
 });
 
 describe("чтение секций настроек", () => {
-  it("зовёт публичный URL и отдаёт ответ в camelCase", async () => {
+  it("зовёт прежний публичный URL и отдаёт ответ в camelCase", async () => {
     respondWith(wireSections);
 
     const sections = await fetchSettingsSections();
 
     expect(lastRequest().method).toBe("get");
-    expect(lastRequest().url).toBe(contextPrefix + settingsRoutes.sections);
+    expect(lastRequest().url).toBe(`${contextPrefix}/v1/settings-sections`);
 
     const [section] = sections.workspaceSections;
     expect(section.id).toBe("kaiten");
@@ -179,6 +168,14 @@ describe("чтение секций настроек", () => {
       "is_array"
     );
   });
+
+  it("ручка без query уходит без хвостового «?»", async () => {
+    respondWith(wireSections);
+
+    await fetchSettingsSections();
+
+    expect(lastRequest().url).not.toContain("?");
+  });
 });
 
 describe("обновление настройки", () => {
@@ -186,39 +183,31 @@ describe("обновление настройки", () => {
     {
       name: "workspace",
       call: updateWorkspaceSetting,
-      route: settingsRoutes.workspaceSetting,
+      path: "/v1/workspace-settings-sections/kaiten/settings/kaiten_url",
     },
     {
       name: "team",
       call: updateTeamSetting,
-      route: settingsRoutes.teamSetting,
+      path: "/v1/team-settings-sections/kaiten/settings/kaiten_url",
     },
     {
       name: "user",
       call: updateUserSetting,
-      route: settingsRoutes.userSetting,
+      path: "/v1/user-settings-sections/kaiten/settings/kaiten_url",
     },
   ] as const;
 
   it.each(cases)(
-    "$name: PUT по маршруту контракта с массивом значений в теле",
-    async ({ call, route }) => {
+    "$name: PUT по прежнему адресу с массивом значений в теле",
+    async ({ call, path }) => {
       respondWith(wireSetting);
 
       const updated = await call("kaiten", "kaiten_url", [
         "https://kaiten.example/new",
       ]);
 
-      // Ожидаемый URL собран из того же route template, что и в production-коде:
-      // проверяется подстановка сегментов, а не переписанный руками путь.
-      const path =
-        contextPrefix +
-        route
-          .replace("{sectionId}", "kaiten")
-          .replace("{settingId}", "kaiten_url");
-
       expect(lastRequest().method).toBe("put");
-      expect(lastRequest().url).toBe(path);
+      expect(lastRequest().url).toBe(contextPrefix + path);
       // Тело — голый массив: интерсептор запроса ничего в нём не переименовывает.
       expect(JSON.parse(lastRequest().data as string)).toEqual([
         "https://kaiten.example/new",
@@ -238,7 +227,7 @@ describe("обновление настройки", () => {
         [],
         ["false"],
         ["", "0", "null", "  ", "значение"],
-      ] satisfies SettingValues[];
+      ] satisfies SettingValuesBody[];
 
       for (const body of bodies) {
         await call("kaiten", "setting", body);
@@ -250,6 +239,16 @@ describe("обновление настройки", () => {
       );
     }
   );
+
+  it("сегменты пути подставляются дословно, без экранирования", async () => {
+    respondWith(wireSetting);
+
+    await updateUserSetting("kaiten", "kaiten_url space", ["x"]);
+
+    expect(lastRequest().url).toBe(
+      `${contextPrefix}/v1/user-settings-sections/kaiten/settings/kaiten_url space`
+    );
+  });
 
   it("ошибку контракта отдаёт вызывающему — на ней модель показывает уведомление", async () => {
     respondWithProblem(404, {
@@ -315,51 +314,10 @@ type Json200<O extends keyof operations> = Camelized<
 >;
 
 /*
- * Связь «маршрут + метод → операция контракта». Это доказательство того, что URL и
- * метод в `settings.ts` не второе ручное представление контракта: тот самый литерал,
- * которым ходит production-код, вместе с методом резолвится в `paths` ровно в ту
- * операцию, из которой выведены тело и ответ ручки. Переименовали путь или сменили
- * метод в yaml — красным становится и вызов, и эта проверка.
- */
-const sectionsRouteResolvesToOperation: Equal<
-  paths[typeof settingsRoutes.sections]["get"],
-  operations["Settings_GetSettingsSections"]
-> = true;
-const workspaceRouteResolvesToOperation: Equal<
-  paths[typeof settingsRoutes.workspaceSetting]["put"],
-  operations["Settings_UpdateWorkspaceSetting"]
-> = true;
-const teamRouteResolvesToOperation: Equal<
-  paths[typeof settingsRoutes.teamSetting]["put"],
-  operations["Settings_UpdateTeamSetting"]
-> = true;
-const userRouteResolvesToOperation: Equal<
-  paths[typeof settingsRoutes.userSetting]["put"],
-  operations["Settings_UpdateUserSetting"]
-> = true;
-
-// Метод тоже contract-bound: у маршрута секций в контракте объявлен только GET,
-// у ручек обновления — только PUT. Остальные в `paths` стоят `never`.
-const sectionsAllowsOnlyGet: Equal<
-  SettingsMethod<typeof settingsRoutes.sections>,
-  "get"
-> = true;
-const workspaceAllowsOnlyPut: Equal<
-  SettingsMethod<typeof settingsRoutes.workspaceSetting>,
-  "put"
-> = true;
-const teamAllowsOnlyPut: Equal<
-  SettingsMethod<typeof settingsRoutes.teamSetting>,
-  "put"
-> = true;
-const userAllowsOnlyPut: Equal<
-  SettingsMethod<typeof settingsRoutes.userSetting>,
-  "put"
-> = true;
-
-/*
- * Сигнатуры экспортируемых ручек выведены из тех же операций: аргумент тела и
- * возвращаемая форма не объявлены рядом отдельно.
+ * Сигнатуры ручек выведены из операций контракта — второго представления тела,
+ * сегментов и ответа рядом нет. Раньше это доказывалось через module-local
+ * дескриптор (`settingsRoutes`, `SettingsMethod`); теперь связь «путь + метод →
+ * операция» держит общая граница, и проверять остаётся сами ручки.
  */
 const sectionsReturnsOperationResponse: Equal<
   Awaited<ReturnType<typeof fetchSettingsSections>>,
@@ -373,106 +331,41 @@ const workspaceReturnsOperationResponse: Equal<
   Awaited<ReturnType<typeof updateWorkspaceSetting>>,
   Json200<"Settings_UpdateWorkspaceSetting">
 > = true;
-const teamTakesOperationBody: Equal<
-  Parameters<typeof updateTeamSetting>[2],
-  operations["Settings_UpdateTeamSetting"]["requestBody"]["content"]["application/json"]
-> = true;
-const userTakesOperationBody: Equal<
-  Parameters<typeof updateUserSetting>[2],
-  operations["Settings_UpdateUserSetting"]["requestBody"]["content"]["application/json"]
-> = true;
-
-// Сегменты пути — тоже из операции, а не из рукописного `string`.
-const workspaceTakesOperationPathParams: Equal<
-  [
-    Parameters<typeof updateWorkspaceSetting>[0],
-    Parameters<typeof updateWorkspaceSetting>[1],
-  ],
-  [
-    operations["Settings_UpdateWorkspaceSetting"]["parameters"]["path"]["sectionId"],
-    operations["Settings_UpdateWorkspaceSetting"]["parameters"]["path"]["settingId"],
-  ]
-> = true;
-
-// Формы, которые читает UI, — ровно ответы операций контракта, без второго DTO.
-const sectionsMatchOperation: Equal<
-  SettingsSectionsResponse,
-  Json200<"Settings_GetSettingsSections">
-> = true;
-const workspaceUpdateMatchesOperation: Equal<
-  SettingView,
-  Json200<"Settings_UpdateWorkspaceSetting">
-> = true;
-const teamUpdateMatchesOperation: Equal<
-  SettingView,
+const teamReturnsOperationResponse: Equal<
+  Awaited<ReturnType<typeof updateTeamSetting>>,
   Json200<"Settings_UpdateTeamSetting">
 > = true;
-const userUpdateMatchesOperation: Equal<
-  SettingView,
+const userReturnsOperationResponse: Equal<
+  Awaited<ReturnType<typeof updateUserSetting>>,
   Json200<"Settings_UpdateUserSetting">
 > = true;
-
-// Тело всех трёх PUT — один и тот же `SettingValues` контракта.
-const workspaceBodyMatchesOperation: Equal<
-  SettingValues,
+const bodyMatchesOperation: Equal<
+  SettingValuesBody,
   operations["Settings_UpdateWorkspaceSetting"]["requestBody"]["content"]["application/json"]
-> = true;
-const teamBodyMatchesOperation: Equal<
-  SettingValues,
-  operations["Settings_UpdateTeamSetting"]["requestBody"]["content"]["application/json"]
-> = true;
-const userBodyMatchesOperation: Equal<
-  SettingValues,
-  operations["Settings_UpdateUserSetting"]["requestBody"]["content"]["application/json"]
 > = true;
 
 // @ts-expect-error wire-имени в коде фронта нет: до UI доезжает camelCase
-const readWireKey = (setting: SettingView) => setting.is_array;
+const readWireKey = (setting: SettingResult) => setting.is_array;
 
-const readDescriptionAsString = (setting: SettingView): string =>
+const readDescriptionAsString = (setting: SettingResult): string =>
   // @ts-expect-error `description` nullable — присвоить его `string` нельзя
   setting.description;
 
 describe("типизированная граница контракта", () => {
-  it("маршрут и метод каждой ручки резолвятся в операцию контракта", () => {
+  it("сигнатуры ручек выведены из операций контракта", () => {
     // Равенства держит `tsc --noEmit` (гейт frontend-typecheck); тест фиксирует намерение.
-    expect([
-      sectionsRouteResolvesToOperation,
-      workspaceRouteResolvesToOperation,
-      teamRouteResolvesToOperation,
-      userRouteResolvesToOperation,
-      sectionsAllowsOnlyGet,
-      workspaceAllowsOnlyPut,
-      teamAllowsOnlyPut,
-      userAllowsOnlyPut,
-    ]).toEqual(Array(8).fill(true));
-  });
-
-  it("сигнатуры ручек выведены из тех же операций", () => {
     expect([
       sectionsReturnsOperationResponse,
       workspaceTakesOperationBody,
       workspaceReturnsOperationResponse,
-      teamTakesOperationBody,
-      userTakesOperationBody,
-      workspaceTakesOperationPathParams,
+      teamReturnsOperationResponse,
+      userReturnsOperationResponse,
+      bodyMatchesOperation,
     ]).toEqual(Array(6).fill(true));
   });
 
-  it("формы выведены из операций settings", () => {
-    expect([
-      sectionsMatchOperation,
-      workspaceUpdateMatchesOperation,
-      teamUpdateMatchesOperation,
-      userUpdateMatchesOperation,
-      workspaceBodyMatchesOperation,
-      teamBodyMatchesOperation,
-      userBodyMatchesOperation,
-    ]).toEqual([true, true, true, true, true, true, true]);
-
-    // Обращения ниже существуют только ради @ts-expect-error выше: до UI доезжает
-    // уже сконвертированная форма, wire-имён в ней нет.
-    const setting: SettingView = {
+  it("до UI доезжает camelCase-форма ответа", () => {
+    const setting: SettingResult = {
       id: wireSetting.id,
       title: wireSetting.title,
       description: wireSetting.description,
@@ -480,6 +373,7 @@ describe("типизированная граница контракта", () =>
       isBool: wireSetting.is_bool,
       values: wireSetting.values,
     };
+
     expect(readWireKey(setting)).toBeUndefined();
     expect(readDescriptionAsString(setting)).toBeNull();
   });

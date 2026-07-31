@@ -1,7 +1,5 @@
 // API инстансы
 export {
-  authorizationApi,
-  authorizationPath,
   appApi,
   parseAppContextFromPath,
   setAppContext,
@@ -42,7 +40,19 @@ export * as selfHostedApi from "./selfHosted";
 // публичного индекса убран, чтобы адрес модуля собирался только здесь.
 export * as usersApi from "./users";
 
-// Analytics API helpers
+// Операции модуля authorization — единственная транспортная граница этого модуля.
+// Имя `authorizationApi` принадлежит им, а не axios-инстансу: инстанс из
+// публичного индекса убран вместе с хелпером `authorizationPath`, чтобы адрес
+// модуля собирался только из контракта.
+export * as authorizationApi from "./authorization";
+
+// Операции модуля external — единственная транспортная граница этого модуля
+export * as externalApi from "./external";
+
+// Операции модуля settings — единственная транспортная граница этого модуля
+export * as settingsApi from "./settings";
+
+// Операции модуля analytics — единственная транспортная граница этого модуля
 export * as analyticsApi from "./analytics";
 export type {
   AnalyticsSummary,

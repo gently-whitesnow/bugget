@@ -148,23 +148,58 @@ public class SolutionGraphRulesTests
     public void Transitive_persistence_rule_is_provably_red()
     {
         // Гейт без доказательства красноты — это гейт, про который никто не знает,
-        // работает ли он (ADR-0002). Прогоняем то же правило на синтетическом графе,
-        // где ребро BO → DA восстановлено, и убеждаемся, что путь до драйвера найден.
-        var withRestoredEdge = new Dictionary<string, ProjectNode>(StringComparer.Ordinal)
+        // работает ли он (ADR-0002). Создаём настоящие SDK-style .csproj с тем же
+        // синтаксисом Include, который используется в решении, затем прогоняем полный
+        // production path: XML -> ProjectNode -> транзитивный обход.
+        var fixtureRoot = Path.Combine(Path.GetTempPath(), $"bugget-graph-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(fixtureRoot);
+
+        try
         {
-            ["Bugget.BO"] = new("Bugget.BO", "Microsoft.NET.Sdk", ["Bugget.DA"], [], false),
-            ["Bugget.DA"] = new("Bugget.DA", "Microsoft.NET.Sdk", ["Bugget.Entities"], ["Dapper", "Npgsql"], false),
-            ["Bugget.Entities"] = new("Bugget.Entities", "Microsoft.NET.Sdk", [], [], false),
-        };
+            WriteProject("Bugget.BO", """
+                <ItemGroup>
+                  <ProjectReference Include="..\Bugget.DA\Bugget.DA.csproj" />
+                </ItemGroup>
+                """);
+            WriteProject("Bugget.DA", """
+                <ItemGroup>
+                  <ProjectReference Include="..\Bugget.Entities\Bugget.Entities.csproj" />
+                  <PackageReference Include="Dapper" />
+                  <PackageReference Include="Npgsql" />
+                </ItemGroup>
+                """);
+            WriteProject("Bugget.Entities", string.Empty);
 
-        var leaks = SolutionGraph.FindPersistenceDriverLeaks(
-            withRestoredEdge,
-            ["Bugget.BO"],
-            PersistencePackages);
+            var parsedGraph = SolutionGraph.LoadProjects(fixtureRoot);
+            var leaks = SolutionGraph.FindPersistenceDriverLeaks(
+                parsedGraph,
+                ["Bugget.BO"],
+                PersistencePackages);
 
-        leaks.Should().Equal(
-            "Bugget.BO → Bugget.DA → Dapper",
-            "Bugget.BO → Bugget.DA → Npgsql");
+            leaks.Should().Equal(
+                "Bugget.BO → Bugget.DA → Dapper",
+                "Bugget.BO → Bugget.DA → Npgsql");
+        }
+        finally
+        {
+            Directory.Delete(fixtureRoot, recursive: true);
+        }
+
+        void WriteProject(string name, string items)
+        {
+            var directory = Path.Combine(fixtureRoot, name);
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(
+                Path.Combine(directory, $"{name}.csproj"),
+                $$"""
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net9.0</TargetFramework>
+                  </PropertyGroup>
+                  {{items}}
+                </Project>
+                """);
+        }
     }
 
     [Fact(DisplayName = "Известные отступления не протухли")]

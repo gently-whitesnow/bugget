@@ -1,4 +1,4 @@
-using Monade.Errors;
+using Bugget.Entities.Errors;
 
 namespace Bugget.BO.Errors;
 

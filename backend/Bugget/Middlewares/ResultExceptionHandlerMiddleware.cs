@@ -1,8 +1,7 @@
 using System.Net;
 using Bugget.BO.Errors;
+using Bugget.Entities.Errors;
 using Bugget.Http;
-using Monade;
-using Monade.Errors;
 using Npgsql;
 
 namespace Bugget.Middlewares;

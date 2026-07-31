@@ -2,7 +2,7 @@ using Bugget.BO.Errors;
 using Bugget.DA.Interfaces;
 using Bugget.Entities.Authentication;
 using Bugget.Entities.BO;
-using Monade;
+using Bugget.Entities.Errors;
 
 namespace Bugget.BO.Services;
 

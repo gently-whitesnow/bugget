@@ -73,13 +73,13 @@ public sealed class BugStepAttachmentsController(AttachmentService attachmentSer
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        var attachResult = await attachmentService.GetBugStepAttachmentContentAsync(user, aliasId, bugId, stepId, id);
-        if (attachResult.HasError)
+        var (attachment, error) = await attachmentService.GetBugStepAttachmentContentAsync(user, aliasId, bugId, stepId, id);
+        if (error is not null)
         {
-            return attachResult.AsActionResult(HttpContext);
+            return error.ToProblemDetails(HttpContext);
         }
 
-        var (content, attachmentDbModel) = attachResult.Value;
+        var (content, attachmentDbModel) = attachment!.Value;
         if (attachmentDbModel.IsGzipCompressed == true)
         {
             Response.Headers["Content-Encoding"] = "gzip";
@@ -96,12 +96,12 @@ public sealed class BugStepAttachmentsController(AttachmentService attachmentSer
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        var attachResult = await attachmentService.GetBugStepAttachmentPreviewContentAsync(user, aliasId, bugId, stepId, id);
-        if (attachResult.HasError)
+        var (content, error) = await attachmentService.GetBugStepAttachmentPreviewContentAsync(user, aliasId, bugId, stepId, id);
+        if (error is not null)
         {
-            return attachResult.AsActionResult(HttpContext);
+            return error.ToProblemDetails(HttpContext);
         }
 
-        return new FileStreamResult(attachResult.Value!, AttachmentConstants.PreviewMimeType);
+        return new FileStreamResult(content!, AttachmentConstants.PreviewMimeType);
     }
 }

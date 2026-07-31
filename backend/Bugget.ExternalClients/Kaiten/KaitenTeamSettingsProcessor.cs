@@ -2,9 +2,8 @@ using Bugget.BO.Errors;
 using Bugget.BO.Services.Settings;
 using Bugget.DA.Interfaces;
 using Bugget.Entities.DbModels.Settings;
+using Bugget.Entities.Errors;
 using Bugget.Entities.Views.Settings;
-using Monade;
-using Monade.Errors;
 
 namespace Bugget.ExternalClients.Kaiten;
 
@@ -64,14 +63,14 @@ public sealed class KaitenTeamSettingsProcessor(ISettingsDbClient settingsDbClie
         };
     }
 
-    async Task<MonadeStruct<TeamSettingView>> ITeamSettingsProcessor.UpdateSettingAsync(
+    async Task<(TeamSettingView? Value, Error? Error)> ITeamSettingsProcessor.UpdateSettingAsync(
         string teamId,
         string settingId,
         string[] values)
     {
         if (!SettingsMap.TryGetValue(settingId, out var definition))
         {
-            return new MonadeStruct<TeamSettingView>(BoErrors.TeamSettingNotFound);
+            return (null, BoErrors.TeamSettingNotFound);
         }
 
         return await definition.UpdateAsync(teamId, values, KaitenConstants.FeatureKey, settingsDbClient);
@@ -85,7 +84,7 @@ public sealed class KaitenTeamSettingsProcessor(ISettingsDbClient settingsDbClie
     {
         public abstract TeamSettingView BuildView(TeamSettingDbModel[] kaitenSettings);
 
-        public abstract Task<MonadeStruct<TeamSettingView>> UpdateAsync(
+        public abstract Task<(TeamSettingView? Value, Error? Error)> UpdateAsync(
             string teamId,
             string[] values,
             string sectionId,
@@ -119,7 +118,7 @@ public sealed class KaitenTeamSettingsProcessor(ISettingsDbClient settingsDbClie
             };
         }
 
-        public override async Task<MonadeStruct<TeamSettingView>> UpdateAsync(
+        public override async Task<(TeamSettingView? Value, Error? Error)> UpdateAsync(
             string teamId,
             string[] values,
             string sectionId,
@@ -127,20 +126,19 @@ public sealed class KaitenTeamSettingsProcessor(ISettingsDbClient settingsDbClie
         {
             if (values.Length > 10)
             {
-                return new MonadeStruct<TeamSettingView>(
-                    new BadRequestError("board_ids_max_count_error", "Максимальное количество досок - 10"));
+                return (null, new BadRequestError("board_ids_max_count_error", "Максимальное количество досок - 10"));
             }
 
             var settings = await settingsDbClient.UpsertTeamSettingsAsync(teamId, sectionId, Id, values);
 
-            return new MonadeStruct<TeamSettingView>(new TeamSettingView
+            return (new TeamSettingView
             {
                 Id = Id,
                 Title = Title,
                 Description = Description,
                 IsArray = true,
                 Values = settings.Select(s => s.FieldValue).ToArray()
-            });
+            }, null);
         }
     }
 
@@ -169,7 +167,7 @@ public sealed class KaitenTeamSettingsProcessor(ISettingsDbClient settingsDbClie
             };
         }
 
-        public override async Task<MonadeStruct<TeamSettingView>> UpdateAsync(
+        public override async Task<(TeamSettingView? Value, Error? Error)> UpdateAsync(
             string teamId,
             string[] values,
             string sectionId,
@@ -177,8 +175,7 @@ public sealed class KaitenTeamSettingsProcessor(ISettingsDbClient settingsDbClie
         {
             if (values.Length != 1 || !bool.TryParse(values[0], out var parsed))
             {
-                return new MonadeStruct<TeamSettingView>(
-                    new BadRequestError(ErrorCode, ErrorMessage));
+                return (null, new BadRequestError(ErrorCode, ErrorMessage));
             }
 
             var setting = await settingsDbClient.UpsertTeamSettingAsync(
@@ -187,14 +184,14 @@ public sealed class KaitenTeamSettingsProcessor(ISettingsDbClient settingsDbClie
                 Id,
                 parsed.ToString());
 
-            return new MonadeStruct<TeamSettingView>(new TeamSettingView
+            return (new TeamSettingView
             {
                 Id = Id,
                 Title = Title,
                 Description = Description,
                 IsBool = true,
                 Values = new[] { setting.FieldValue }
-            });
+            }, null);
         }
     }
 }

@@ -1,5 +1,5 @@
 using Bugget.BO.Errors;
-using Monade;
+using Bugget.Entities.Errors;
 
 namespace Bugget.BO.Services.Settings;
 
@@ -8,37 +8,37 @@ public sealed class SettingsProcessorProvider(
     IEnumerable<ITeamSettingsProcessor> teamSettingsProcessors,
     IEnumerable<IUserSettingsProcessor> userSettingsProcessors)
 {
-    public MonadeStruct<ITeamSettingsProcessor> GetTeamSettingsProcessor(string sectionId)
+    public (ITeamSettingsProcessor? Value, Error? Error) GetTeamSettingsProcessor(string sectionId)
     {
         var processor = teamSettingsProcessors.FirstOrDefault(p => p.SectionId == sectionId);
         if (processor == null)
         {
-            return BoErrors.TeamSettingsProcessorNotFound;
+            return (null, BoErrors.TeamSettingsProcessorNotFound);
         }
 
-        return new MonadeStruct<ITeamSettingsProcessor>(processor);
+        return (processor, null);
     }
 
-    public MonadeStruct<IWorkspaceSettingsProcessor> GetWorkspaceSettingsProcessor(string sectionId)
+    public (IWorkspaceSettingsProcessor? Value, Error? Error) GetWorkspaceSettingsProcessor(string sectionId)
     {
         var processor = workspaceSettingsProcessors.FirstOrDefault(p => p.SectionId == sectionId);
         if (processor == null)
         {
-            return BoErrors.WorkspaceSettingsProcessorNotFound;
+            return (null, BoErrors.WorkspaceSettingsProcessorNotFound);
         }
 
-        return new MonadeStruct<IWorkspaceSettingsProcessor>(processor);
+        return (processor, null);
     }
 
-    public MonadeStruct<IUserSettingsProcessor> GetUserSettingsProcessor(string sectionId)
+    public (IUserSettingsProcessor? Value, Error? Error) GetUserSettingsProcessor(string sectionId)
     {
         var processor = userSettingsProcessors.FirstOrDefault(p => p.SectionId == sectionId);
         if (processor == null)
         {
-            return BoErrors.UserSettingsProcessorNotFound;
+            return (null, BoErrors.UserSettingsProcessorNotFound);
         }
 
-        return new MonadeStruct<IUserSettingsProcessor>(processor);
+        return (processor, null);
     }
 
     public (IEnumerable<IWorkspaceSettingsProcessor>, IEnumerable<ITeamSettingsProcessor>, IEnumerable<IUserSettingsProcessor>) GetSettingsProcessors()

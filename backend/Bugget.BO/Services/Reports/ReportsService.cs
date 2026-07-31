@@ -9,9 +9,9 @@ using Bugget.Entities.BO.ReportBo;
 using Bugget.Entities.BO.Search;
 using Bugget.Entities.DbModels.Report;
 using Bugget.Entities.DTO.Report;
+using Bugget.Entities.Errors;
 using Bugget.Entities.Options;
 using Microsoft.Extensions.Options;
-using Monade;
 using TaskQueue;
 
 namespace Bugget.BO.Services.Reports;
@@ -30,12 +30,12 @@ public sealed class ReportsService(
         return reportsDbClient.CreateReportAsync(userId, teamId, organizationId, createDto);
     }
 
-    public async Task<MonadeStruct<ReportPatchResultDbModel>> PatchReportAsync(string aliasId, UserIdentity user, ReportPatchDto patchDto)
+    public async Task<(ReportPatchResultDbModel? Value, Error? Error)> PatchReportAsync(string aliasId, UserIdentity user, ReportPatchDto patchDto)
     {
         var resolvedReport = await ResolveReportAsync(aliasId, user);
         if (resolvedReport == null)
         {
-            return BoErrors.ReportNotFoundError;
+            return (null, BoErrors.ReportNotFoundError);
         }
 
         var workspaceId = BugsService.ResolveWorkspaceId(resolvedReport.CreatorTeamId, user.OrganizationId);
@@ -46,7 +46,7 @@ public sealed class ReportsService(
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(() => reportEventsService.HandlePatchReportEventAsync(reportIdContext, user, effectivePatch, patchResult));
 
-        return patchResult;
+        return (patchResult, null);
     }
 
     private Task<ResolvedReportId?> ResolveReportAsync(string aliasId, UserIdentity user)
@@ -190,7 +190,7 @@ public sealed class ReportsService(
         };
     }
 
-    public async Task<MonadeStruct<ReportDbModel>> GetReportAsync(string aliasId, string? organizationId, string? teamId)
+    public async Task<(ReportDbModel? Value, Error? Error)> GetReportAsync(string aliasId, string? organizationId, string? teamId)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsDbClient.ResolveReportIdAsync(
@@ -202,16 +202,16 @@ public sealed class ReportsService(
         );
         if (resolvedReport == null)
         {
-            return BoErrors.ReportNotFoundError;
+            return (null, BoErrors.ReportNotFoundError);
         }
 
         var report = await reportsDbClient.GetReportInternalAsync(resolvedReport.Id);
         if (report == null)
         {
-            return BoErrors.ReportNotFoundError;
+            return (null, BoErrors.ReportNotFoundError);
         }
 
-        return ApplyBoSort(report);
+        return (ApplyBoSort(report), null);
     }
 
     public Task<ResolvedReportId?> ResolveReportIdAsync(

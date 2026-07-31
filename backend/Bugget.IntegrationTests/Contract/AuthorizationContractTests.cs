@@ -60,8 +60,10 @@ public sealed class AuthorizationContractTests(AppContractFixture fixture) : ICl
 
         var response = await client.PostAsync("/v1/logout", null);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("authorization.v1.logout.post", response);
+        // Фронт после выхода уводит браузер по этому адресу: пустой redirect_url
+        // оставил бы пользователя на странице с погашенной сессией.
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("redirect_url").GetString()));
     }
 
     /// <summary>

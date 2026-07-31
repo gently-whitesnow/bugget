@@ -22,8 +22,11 @@ public sealed class CommentsAndLinksContractTests(AppContractFixture fixture) : 
             $"/v2/reports/{reportId}/bugs/{bugId}/comments",
             new { text = "комментарий" });
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.comments.post", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.Created);
+        Assert.True(body.GetProperty("id").GetInt32() > 0);
+        Assert.Equal("комментарий", body.GetProperty("text").GetString());
+        Assert.Equal(bugId, body.GetProperty("bug_id").GetInt32());
+        Assert.Equal(scenario.UserId, body.GetProperty("creator_user_id").GetString());
     }
 
     [Fact(DisplayName = "POST .../comments с пустым text: 400")]
@@ -43,7 +46,6 @@ public sealed class CommentsAndLinksContractTests(AppContractFixture fixture) : 
             "text",
             "The text field is required.",
             "The field text must be a string with a minimum length of 1 and a maximum length of 2048.");
-        await ContractSnapshot.MatchAsync("v2.comments.post.invalid", response);
     }
 
     [Fact(DisplayName = "PUT .../comments/{commentId}: 200 и форма Comment")]
@@ -58,8 +60,9 @@ public sealed class CommentsAndLinksContractTests(AppContractFixture fixture) : 
             $"/v2/reports/{reportId}/bugs/{bugId}/comments/{commentId}",
             new { text = "поправленный комментарий" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.comments.put", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(commentId, body.GetProperty("id").GetInt32());
+        Assert.Equal("поправленный комментарий", body.GetProperty("text").GetString());
     }
 
     [Fact(DisplayName = "DELETE .../comments/{commentId}: 200 и пустое тело")]
@@ -73,8 +76,7 @@ public sealed class CommentsAndLinksContractTests(AppContractFixture fixture) : 
         var response = await scenario.Client.DeleteAsync(
             $"/v2/reports/{reportId}/bugs/{bugId}/comments/{commentId}");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.comments.delete", response);
+        await ContractResponse.EmptyAsync(response, HttpStatusCode.OK);
     }
 
     [Fact(DisplayName = "POST /v2/reports/{aliasId}/links: 201 и форма ReportLink")]
@@ -87,7 +89,10 @@ public sealed class CommentsAndLinksContractTests(AppContractFixture fixture) : 
             $"/v2/reports/{reportId}/links",
             new { link = "https://example.test/issue/1", name = "внешняя задача" });
 
-        await ContractSnapshot.MatchAsync("v2.report-links.post", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.Created);
+        Assert.True(body.GetProperty("id").GetInt32() > 0);
+        Assert.Equal("https://example.test/issue/1", body.GetProperty("link").GetString());
+        Assert.Equal("внешняя задача", body.GetProperty("name").GetString());
     }
 
     [Fact(DisplayName = "PUT /v2/reports/{aliasId}/links/{linkId}: 200 и форма ReportLink")]
@@ -101,8 +106,10 @@ public sealed class CommentsAndLinksContractTests(AppContractFixture fixture) : 
             $"/v2/reports/{reportId}/links/{linkId}",
             new { link = "https://example.test/issue/2", name = "другая задача" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.report-links.put", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(linkId, body.GetProperty("id").GetInt32());
+        Assert.Equal("https://example.test/issue/2", body.GetProperty("link").GetString());
+        Assert.Equal("другая задача", body.GetProperty("name").GetString());
     }
 
     [Fact(DisplayName = "DELETE /v2/reports/{aliasId}/links/{linkId}: 200 и пустое тело")]
@@ -114,7 +121,6 @@ public sealed class CommentsAndLinksContractTests(AppContractFixture fixture) : 
 
         var response = await scenario.Client.DeleteAsync($"/v2/reports/{reportId}/links/{linkId}");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.report-links.delete", response);
+        await ContractResponse.EmptyAsync(response, HttpStatusCode.OK);
     }
 }

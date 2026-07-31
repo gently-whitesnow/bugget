@@ -1,3 +1,5 @@
+using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Xunit;
 
@@ -11,6 +13,8 @@ namespace Bugget.IntegrationTests.Contract;
 [Collection("PostgresCollection")]
 public sealed class PublicContractInventoryTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
+    private const string DocumentPath = "docs/public-contract-inventory.md";
+
     [Fact(DisplayName = "Инвентарь покрывает все маршруты приложения и не содержит лишних")]
     public void InventoryMatchesRoutes()
     {
@@ -34,9 +38,41 @@ public sealed class PublicContractInventoryTests(AppContractFixture fixture) : I
             $"{Environment.NewLine}  {string.Join(Environment.NewLine + "  ", stale)}");
     }
 
+    /// <summary>
+    /// Документ собирается из инвентаря и потому руками не правится. Пересобрать:
+    /// <c>UPDATE_CONTRACT_INVENTORY=1 dotnet test backend/Bugget.IntegrationTests</c>.
+    /// </summary>
     [Fact(DisplayName = "Таблица покрытия в docs совпадает с инвентарём")]
-    public void InventoryDocumentIsUpToDate() =>
-        ContractSnapshot.MatchDocument("docs/public-contract-inventory.md", Render());
+    public void InventoryDocumentIsUpToDate()
+    {
+        // Contract → Bugget.IntegrationTests → backend → корень репозитория.
+        var path = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(SourceFilePath())!,
+            "..", "..", "..",
+            DocumentPath));
+
+        var expected = Render().Replace("\r\n", "\n", StringComparison.Ordinal).TrimEnd() + "\n";
+
+        if (IsUpdateMode() || !File.Exists(path))
+        {
+            File.WriteAllText(path, expected);
+            Assert.True(
+                IsUpdateMode(),
+                $"документ {DocumentPath} отсутствовал и был собран — проверьте и закоммитьте");
+            return;
+        }
+
+        var actual = File.ReadAllText(path).Replace("\r\n", "\n", StringComparison.Ordinal).TrimEnd() + "\n";
+        Assert.True(
+            expected == actual,
+            $"{DocumentPath} разошёлся с инвентарём — пересоберите: " +
+            "UPDATE_CONTRACT_INVENTORY=1 dotnet test backend/Bugget.IntegrationTests");
+    }
+
+    private static bool IsUpdateMode() =>
+        Environment.GetEnvironmentVariable("UPDATE_CONTRACT_INVENTORY") is "1" or "true";
+
+    private static string SourceFilePath([CallerFilePath] string path = "") => path;
 
     private static string Render()
     {
@@ -46,7 +82,7 @@ public sealed class PublicContractInventoryTests(AppContractFixture fixture) : I
         document.AppendLine("<!-- Файл собирается тестом PublicContractInventoryTests из таблицы маршрутов");
         document.AppendLine("     приложения и из backend/Bugget.IntegrationTests/Contract/PublicContractInventory.cs.");
         document.AppendLine("     Руками не правится: пересобрать —");
-        document.AppendLine("     UPDATE_CONTRACT_SNAPSHOTS=1 dotnet test backend/Bugget.IntegrationTests -->");
+        document.AppendLine("     UPDATE_CONTRACT_INVENTORY=1 dotnet test backend/Bugget.IntegrationTests -->");
         document.AppendLine();
         document.AppendLine("Пути даны так, как их видит бекенд. Фронт ходит по ним через nginx с префиксами");
         document.AppendLine("`/api/app/workspaces/{id}/teams/{id}`, `/api/users` и `/api/authorization`, которые");

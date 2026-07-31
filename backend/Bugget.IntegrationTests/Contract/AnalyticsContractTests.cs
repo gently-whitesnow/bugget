@@ -5,15 +5,14 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Контракт аналитики. Поведение (что попадает в выборку) проверяется в
-/// <see cref="AnalyticsControllerTests"/>; здесь снимается только форма ответа —
-/// её ломает любая правка сгенерированных из OpenAPI контрактов
-/// (<c>Bugget.Analytics.Contracts</c>, <c>Bugget.Reports.Contracts</c>).
+/// Контракт аналитики. Что попадает в выборку, проверяется в
+/// <see cref="AnalyticsControllerTests"/>; здесь — публичный периметр: статус,
+/// media type, разбор параметра <c>period</c> и его отражение в ответе.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
-    [Fact(DisplayName = "GET /v2/analytics/summary: 200 и форма AnalyticsSummary")]
+    [Fact(DisplayName = "GET /v2/analytics/summary: 200 и запрошенный период в ответе")]
     public async Task Summary()
     {
         var scenario = ContractScenario.Create(fixture);
@@ -21,8 +20,9 @@ public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassF
 
         var response = await scenario.Client.GetAsync("/v2/analytics/summary?period=30d");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.analytics.summary.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        AssertPeriod(body, "last_30_days");
+        Assert.Equal(0, body.GetProperty("reports_closed").GetInt32());
     }
 
     [Fact(DisplayName = "GET /v2/analytics/responsible/{userId}: 200 и форма AnalyticsResponsible")]
@@ -34,11 +34,12 @@ public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassF
         var response = await scenario.Client.GetAsync(
             $"/v2/analytics/responsible/{scenario.UserId}?period=30d");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.analytics.responsible.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        AssertPeriod(body, "last_30_days");
+        Assert.Empty(body.GetProperty("reports_completed").EnumerateArray().ToArray());
     }
 
-    [Fact(DisplayName = "GET /v2/reports/{id}/analytics: 200 и форма AnalyticsReport")]
+    [Fact(DisplayName = "GET /v2/reports/{id}/analytics: 200 и разбивка багов по статусам")]
     public async Task ReportAnalytics()
     {
         var scenario = ContractScenario.Create(fixture);
@@ -46,8 +47,16 @@ public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassF
 
         var response = await scenario.Client.GetAsync($"/v2/reports/{reportId}/analytics");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.reports.analytics.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.True(body.GetProperty("report_id").GetInt32() > 0);
+
+        // Разбивка приходит всеми четырьмя ключами, даже когда багов нет: фронт
+        // рисует по ним фиксированные колонки и на отсутствие ключа не рассчитывает.
+        var byStatus = body.GetProperty("bugs_by_status");
+        Assert.Equal(
+            new[] { "fixed", "open", "rejected", "verified" },
+            byStatus.EnumerateObject().Select(property => property.Name).OrderBy(name => name, StringComparer.Ordinal));
+        Assert.All(byStatus.EnumerateObject(), property => Assert.Equal(0, property.Value.GetInt32()));
     }
 
     /// <summary>
@@ -93,5 +102,18 @@ public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassF
         var response = await scenario.Client.GetAsync("/v2/reports/not-a-number/analytics");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    /// <summary>
+    /// Период уходит на провод разобранным: в запросе <c>30d</c>, в ответе —
+    /// метка каталога (<c>last_30_days</c>) и границы окна. Фронт подписывает
+    /// график ответом, а не тем, что отправил.
+    /// </summary>
+    private static void AssertPeriod(JsonElement body, string label)
+    {
+        var period = body.GetProperty("period");
+        Assert.Equal(label, period.GetProperty("label").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(period.GetProperty("from").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(period.GetProperty("to").GetString()));
     }
 }

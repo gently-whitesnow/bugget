@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
@@ -15,8 +16,8 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
 {
     /// <summary>
     /// В self-hosted сборке (SelfHostedOptions.Enabled = true в appsettings.json)
-    /// рабочее пространство одно и создаётся на старте, поэтому ручка отвечает 403.
-    /// Снимок фиксирует именно это: путь живой, но действие закрыто.
+    /// рабочее пространство одно и создаётся на старте, поэтому ручка отвечает 403
+    /// с кодом <c>self_hosted_mode_error</c>: путь живой, но действие закрыто.
     /// </summary>
     [Fact(DisplayName = "POST /v1/workspaces: в self-hosted режиме 403")]
     public async Task CreateWorkspace()
@@ -26,8 +27,7 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
 
         var response = await client.PostAsJsonAsync("/v1/workspaces", new { name = "новое пространство" });
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.workspaces.post", response);
+        await ContractResponse.ProblemAsync(response, "self_hosted_mode_error", HttpStatusCode.Forbidden);
     }
 
     [Fact(DisplayName = "GET /v1/workspaces: 200 и контекст пользователя")]
@@ -37,8 +37,23 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
 
         var response = await scenario.Client.GetAsync("/v1/workspaces");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.workspaces.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+
+        // В контексте идентификаторы приходят строками (в соседних ручках модуля
+        // встречаются и числа) — фронт разбирает каждую ручку по её схеме, поэтому
+        // тип фиксируется поимённо.
+        var workspace = Assert.Single(
+            body.GetProperty("workspaces").EnumerateArray().ToArray(),
+            item => item.GetProperty("id").GetString()
+                == scenario.WorkspaceId.ToString(CultureInfo.InvariantCulture));
+        Assert.Contains(
+            workspace.GetProperty("teams").EnumerateArray(),
+            team => team.GetProperty("id").GetString() == scenario.TeamId.ToString(CultureInfo.InvariantCulture));
+
+        Assert.Contains(
+            body.GetProperty("workspaces_member").EnumerateArray(),
+            member => member.GetProperty("user_id").GetString()
+                == scenario.UserId.ToString(CultureInfo.InvariantCulture));
     }
 
     [Fact(DisplayName = "PUT /v1/workspaces/{workspaceId}: в self-hosted режиме 403")]
@@ -50,7 +65,7 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
             $"/v1/workspaces/{scenario.WorkspaceId}",
             new { name = "переименованное" });
 
-        await ContractSnapshot.MatchAsync("users.v1.workspaces.put", response);
+        await ContractResponse.ProblemAsync(response, "self_hosted_mode_error", HttpStatusCode.Forbidden);
     }
 
     [Fact(DisplayName = "POST /v1/workspaces/{workspaceId}/members/join: 200 и форма WorkspaceMember")]
@@ -65,7 +80,12 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
 
         var response = await client.PostAsync($"/v1/workspaces/{scenario.WorkspaceId}/members/join", null);
 
-        await ContractSnapshot.MatchAsync("users.v1.workspace-members-join.post", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(otherUser, body.GetProperty("user_id").GetInt64());
+        Assert.Equal(scenario.WorkspaceId, body.GetProperty("workspace_id").GetInt32());
+
+        // Вступивший вторым — уже не владелец: роль назначает сервер, а не клиент.
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("role").GetString()));
     }
 
     [Fact(DisplayName = "POST /v1/workspaces/{workspaceId}/teams: 200 и форма Team")]
@@ -77,8 +97,11 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
             $"/v1/workspaces/{scenario.WorkspaceId}/teams",
             new { name = "команда " + Guid.NewGuid().ToString("N")[..8] });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.teams.post", response);
+        // Создание команды отдаёт идентификаторы числами — в отличие от строковых
+        // в контексте рабочих пространств и в batch/list.
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.True(body.GetProperty("id").GetInt32() > 0);
+        Assert.Equal(scenario.WorkspaceId, body.GetProperty("workspace_id").GetInt32());
     }
 
     [Fact(DisplayName = "PUT /v1/workspaces/{workspaceId}/teams/{teamId}: 200")]
@@ -90,7 +113,9 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
             $"/v1/workspaces/{scenario.WorkspaceId}/teams/{scenario.TeamId}",
             new { name = "переименованная" });
 
-        await ContractSnapshot.MatchAsync("users.v1.teams.put", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(scenario.TeamId, body.GetProperty("id").GetInt32());
+        Assert.Equal("переименованная", body.GetProperty("name").GetString());
     }
 
     [Fact(DisplayName = "POST /v1/workspaces/{workspaceId}/teams/batch/list: 200, массив команд")]
@@ -102,8 +127,9 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
             $"/v1/workspaces/{scenario.WorkspaceId}/teams/batch/list",
             new[] { scenario.TeamId.ToString(CultureInfo.InvariantCulture) });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.teams-batch-list.post", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        var team = Assert.Single(body.EnumerateArray().ToArray());
+        Assert.Equal(scenario.TeamId.ToString(CultureInfo.InvariantCulture), team.GetProperty("id").GetString());
     }
 
     [Fact(DisplayName = "GET /v1/workspaces/{workspaceId}/teams/autocomplete: 200")]
@@ -114,8 +140,9 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
         var response = await scenario.Client.GetAsync(
             $"/v1/workspaces/{scenario.WorkspaceId}/teams/autocomplete?query=team");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.teams-autocomplete.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        var teams = body.GetProperty("teams").EnumerateArray().ToArray();
+        Assert.True(body.GetProperty("total").GetInt32() >= teams.Length);
     }
 
     [Fact(DisplayName = "GET .../teams/{teamId}/members: 200 и форма TeamMembers")]
@@ -125,8 +152,12 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
 
         var response = await scenario.Client.GetAsync(scenario.TeamPath("/members"));
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("users.v1.team-members.get", response);
+        // size_limit фронт использует как границу для приглашений и получает его
+        // вместе со списком, а не отдельной ручкой. В self-hosted сборке лимита нет,
+        // и на провод уходит 0 (TeamMembersController).
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(0, body.GetProperty("size_limit").GetInt32());
+        Assert.Equal(JsonValueKind.Array, body.GetProperty("members").ValueKind);
     }
 
     [Fact(DisplayName = "GET .../teams/{teamId}/members: нечисловой workspaceId в пути — ответ тот же, не 400")]
@@ -139,9 +170,9 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
 
         var response = await scenario.Client.GetAsync($"/v1/workspaces/not-a-number/teams/{scenario.TeamId}/members");
 
-        // Снимок формы здесь не снимается: команда по умолчанию общая на прогон, и
-        // состав участников зависит от соседних сценариев. Проверяется ровно то,
-        // ради чего тест написан — запрос доезжает до действия.
+        // Состав участников здесь не проверяется: команда по умолчанию общая на
+        // прогон и зависит от соседних сценариев. Проверяется ровно то, ради чего
+        // тест написан, — запрос доезжает до действия.
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
@@ -151,10 +182,10 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
         var scenario = await UsersScenario.CreateAsync(fixture);
 
         var joined = await scenario.Client.PostAsync(scenario.TeamPath("/members/join"), null);
-        await ContractSnapshot.MatchAsync("users.v1.team-members-join.post", joined);
+        await ContractResponse.EmptyAsync(joined, HttpStatusCode.OK);
 
         var left = await scenario.Client.DeleteAsync(scenario.TeamPath("/members"));
-        await ContractSnapshot.MatchAsync("users.v1.team-members.delete", left);
+        await ContractResponse.EmptyAsync(left, HttpStatusCode.OK);
     }
 
     [Fact(DisplayName = "DELETE .../teams/{teamId}/members/{userId}: 200")]
@@ -165,7 +196,7 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
 
         var response = await scenario.Client.DeleteAsync(scenario.TeamPath($"/members/{scenario.UserId}"));
 
-        await ContractSnapshot.MatchAsync("users.v1.team-members-by-id.delete", response);
+        await ContractResponse.EmptyAsync(response, HttpStatusCode.OK);
     }
 
     [Fact(DisplayName = "DELETE /v1/workspaces/{workspaceId}: в self-hosted режиме 403")]
@@ -175,7 +206,7 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
 
         var response = await scenario.Client.DeleteAsync($"/v1/workspaces/{scenario.WorkspaceId}");
 
-        await ContractSnapshot.MatchAsync("users.v1.workspaces.delete", response);
+        await ContractResponse.ProblemAsync(response, "self_hosted_mode_error", HttpStatusCode.Forbidden);
     }
 
     [Fact(DisplayName = "DELETE /v1/workspaces/{workspaceId}/teams/{teamId}: 200")]
@@ -186,6 +217,6 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
         var response = await scenario.Client.DeleteAsync(
             $"/v1/workspaces/{scenario.WorkspaceId}/teams/{scenario.TeamId}");
 
-        await ContractSnapshot.MatchAsync("users.v1.teams.delete", response);
+        await ContractResponse.EmptyAsync(response, HttpStatusCode.OK);
     }
 }

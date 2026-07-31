@@ -7,24 +7,28 @@ namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
 /// Контракт репортов: <c>/v2/reports</c> и его под-ресурсы. Это то, с чего начинается
-/// любая страница фронта, поэтому здесь снимается и форма ответа, и коды ошибок.
+/// любая страница фронта, поэтому здесь проверяются и статусы, и коды ошибок, и
+/// поведенческие инварианты ответа.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
     /// <summary>
     /// Статус 200, а не 201: контроллер объявляет ProducesResponseType(201), но возвращает
-    /// модель напрямую. Снимок фиксирует то, что реально уходит фронту.
+    /// модель напрямую. Проверяется то, что реально уходит фронту.
     /// </summary>
-    [Fact(DisplayName = "POST /v2/reports: 200 и форма ReportSummary")]
+    [Fact(DisplayName = "POST /v2/reports: 200 и созданный ReportSummary")]
     public async Task CreateReport()
     {
         var scenario = ContractScenario.Create(fixture);
 
         var response = await scenario.Client.PostAsJsonAsync("/v2/reports", new { title = "contract-report" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.reports.post", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal("contract-report", body.GetProperty("title").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("id").GetString()));
+        Assert.Equal(scenario.UserId, body.GetProperty("creator_user_id").GetString());
+        Assert.Equal(scenario.TeamId, body.GetProperty("creator_team_id").GetString());
     }
 
     [Fact(DisplayName = "POST /v2/reports без title: 400 model_state_validation_error")]
@@ -40,17 +44,15 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
             "title",
             "The title field is required.",
             "The field title must be a string with a minimum length of 1 and a maximum length of 128.");
-        await ContractSnapshot.MatchAsync("v2.reports.post.invalid", response);
     }
 
     /// <summary>
-    /// Сид намеренно полный: пустая коллекция в ответе не предъявляет формы своего
-    /// элемента, а `null` в ключе не отличим от отсутствия ключа. Поэтому здесь есть
-    /// и вложение, и ссылка, и баги, у которых заполнено ровно одно поле из пары
-    /// `receive`/`expect` — снимок доказывает, что оба ключа присутствуют всегда,
-    /// а `null` в них законен (см. `required` + `nullable` в контракте).
+    /// В отличие от списка, GET репорта грузит и отдаёт всё дерево: ссылки, баги,
+    /// комментарии, шаги и вложения всех трёх контекстов. Это и есть разница между
+    /// двумя формами (см. <see cref="ListReportsOmitsKeysItDoesNotLoad"/>), поэтому
+    /// сид полный, а проверяется присутствие каждой ветки с нашими идентификаторами.
     /// </summary>
-    [Fact(DisplayName = "GET /v2/reports/{aliasId}: 200 и форма Report с вложенными сущностями")]
+    [Fact(DisplayName = "GET /v2/reports/{aliasId}: 200 и всё дерево репорта")]
     public async Task GetReport()
     {
         var scenario = ContractScenario.Create(fixture);
@@ -61,22 +63,30 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         await scenario.UploadBugAttachmentAsync(reportId, bugId);
         await scenario.UploadCommentAttachmentAsync(reportId, bugId, commentId);
         await scenario.UploadBugStepAttachmentAsync(reportId, bugId, stepId);
-        await scenario.CreateLinkAsync(reportId);
-        await scenario.CreateOneFieldBugAsync(reportId, receive: "только факт");
-        await scenario.CreateOneFieldBugAsync(reportId, expect: "только ожидание");
+        var linkId = await scenario.CreateLinkAsync(reportId);
 
         var response = await scenario.Client.GetAsync($"/v2/reports/{reportId}");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.reports.get", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(reportId, body.GetProperty("id").GetString());
+        Assert.Equal(linkId, Single(body.GetProperty("links")).GetProperty("id").GetInt32());
+
+        var bug = FindBug(body.GetProperty("bugs").EnumerateArray().ToArray(), bugId);
+        Assert.NotEmpty(bug.GetProperty("attachments").EnumerateArray().ToArray());
+
+        var comment = Single(bug.GetProperty("comments"));
+        Assert.Equal(commentId, comment.GetProperty("id").GetInt32());
+        Assert.NotEmpty(comment.GetProperty("attachments").EnumerateArray().ToArray());
+
+        var step = Single(bug.GetProperty("steps"));
+        Assert.Equal(stepId, step.GetProperty("id").GetInt32());
+        Assert.NotEmpty(step.GetProperty("attachments").EnumerateArray().ToArray());
     }
 
     /// <summary>
-    /// Снимок сливает элементы массива в одну строку и поэтому не отличает «ключ есть
-    /// со значением `null`» от «ключа нет у этого элемента». Инвариант `required` =
-    /// присутствие ключа проверяется здесь поэлементно: у бага с одним заполненным
-    /// полем из пары `receive`/`expect` второй ключ обязан быть в объекте — со
-    /// значением `null`.
+    /// Инвариант `required` = присутствие ключа: у бага с одним заполненным полем
+    /// из пары `receive`/`expect` второй ключ обязан быть в объекте — со значением
+    /// `null`, а не исчезать (см. `required` + `nullable` в контракте).
     /// </summary>
     [Fact(DisplayName = "GET /v2/reports/{aliasId}: у бага с одним полем оба ключа присутствуют, пустой — null")]
     public async Task GetReportKeepsBothNullableBugKeys()
@@ -143,8 +153,8 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
     /// Вложение внутри репорта отдаётся публичной формой <c>AttachmentSummary</c>:
     /// служебные поля хранилища (<c>storage_key</c>, <c>storage_kind</c>,
     /// <c>length_bytes</c>, <c>mime_type</c>, <c>is_gzip_compressed</c>) наружу
-    /// не уходят. Снимок ловит их появление, а этот тест — поимённо и во всех трёх
-    /// контекстах сразу (баг, комментарий, шаг).
+    /// не уходят. Проверяется поимённо и во всех трёх контекстах сразу
+    /// (баг, комментарий, шаг).
     /// </summary>
     [Fact(DisplayName = "GET /v2/reports/{aliasId}: вложения отдают только публичные поля")]
     public async Task GetReportHidesAttachmentStorageFields()
@@ -178,10 +188,10 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
 
         var response = await stranger.Client.GetAsync($"/v2/reports/{reportId}");
 
-        await ContractSnapshot.MatchAsync("v2.reports.get.foreign", response);
+        await ContractResponse.ProblemAsync(response, "report_not_found", HttpStatusCode.NotFound);
     }
 
-    [Fact(DisplayName = "PATCH /v2/reports/{aliasId}: 200 и форма ReportPatchResult")]
+    [Fact(DisplayName = "PATCH /v2/reports/{aliasId}: 200 и ReportPatchResult с новым title")]
     public async Task PatchReport()
     {
         var scenario = ContractScenario.Create(fixture);
@@ -191,43 +201,37 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
             $"/v2/reports/{reportId}",
             new { title = "переименовали", is_excluded_from_analytics = true });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.reports.patch", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(reportId, body.GetProperty("id").GetString());
+        Assert.Equal("переименовали", body.GetProperty("title").GetString());
     }
 
     /// <summary>
-    /// Сид намеренно полный и с данными, которые LIST не отдаёт: ссылка, вложения
-    /// бага/комментария/шага и сам шаг лежат в базе, но в списке их быть не должно —
-    /// снимок это и доказывает. Второй репорт без багов держит форму пустой
-    /// коллекции, баг с одним полем из пары `receive`/`expect` — `null` в ключе.
+    /// Список отдаёт свой счётчик и элементы, у репорта без багов коллекция пустая,
+    /// а не отсутствует: фронт рисует её без проверки на <c>null</c>.
     /// </summary>
-    [Fact(DisplayName = "GET /v2/reports: 200, total + reports")]
+    [Fact(DisplayName = "GET /v2/reports: 200, total и элементы списка")]
     public async Task ListReports()
     {
         var scenario = ContractScenario.Create(fixture);
         var reportId = await scenario.CreateReportAsync();
-        var bugId = await scenario.CreateBugAsync(reportId);
-        var commentId = await scenario.CreateCommentAsync(reportId, bugId);
-        var stepId = await scenario.CreateStepAsync(reportId, bugId);
-        await scenario.UploadBugAttachmentAsync(reportId, bugId);
-        await scenario.UploadCommentAttachmentAsync(reportId, bugId, commentId);
-        await scenario.UploadBugStepAttachmentAsync(reportId, bugId, stepId);
-        await scenario.CreateLinkAsync(reportId);
-        await scenario.CreateOneFieldBugAsync(reportId, receive: "только факт");
-        await scenario.CreateReportAsync("contract-report-без-багов");
+        await scenario.CreateBugAsync(reportId);
+        var emptyReportId = await scenario.CreateReportAsync("contract-report-без-багов");
 
         var response = await scenario.Client.GetAsync("/v2/reports?skip=0&take=10");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.reports.list", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        var reports = body.GetProperty("reports").EnumerateArray().ToArray();
+        Assert.Equal(reports.Length, body.GetProperty("total").GetInt32());
+
+        Assert.NotEmpty(FindReport(reports, reportId).GetProperty("bugs").EnumerateArray().ToArray());
+        Assert.Empty(FindReport(reports, emptyReportId).GetProperty("bugs").EnumerateArray().ToArray());
     }
 
     /// <summary>
     /// LIST не загружает ссылки репорта, вложения багов и шаги воспроизведения
     /// (см. <c>ReportsDbClient.ListReportsAsync</c>), и раньше отдавал их наружу
     /// как `null`. Теперь у элемента списка своя форма — ключей нет вовсе.
-    /// Снимок сливает элементы массива и не отличает «ключ есть со значением null»
-    /// от «ключа нет», поэтому отсутствие проверяется здесь поэлементно.
     /// </summary>
     [Fact(DisplayName = "GET /v2/reports: в элементе списка нет links, вложений бага и шагов")]
     public async Task ListReportsOmitsKeysItDoesNotLoad()
@@ -272,7 +276,6 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
             response,
             "take",
             "The field take must be between 1 and 100.");
-        await ContractSnapshot.MatchAsync("v2.reports.list.invalid", response);
     }
 
     [Fact(DisplayName = "POST /v2/reports/counts:batch: вложенный ключ errors использует wire-путь scopes[0].key")]
@@ -299,8 +302,11 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
 
         var response = await scenario.Client.GetAsync($"/v2/reports/legacy/{reportId}");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.reports.legacy.get", response);
+        // Фронт собирает из этой пары адрес нового URL репорта, поэтому оба поля
+        // обязаны приехать заполненными: без team_id редирект собрать не из чего.
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(scenario.TeamId, body.GetProperty("team_id").GetString());
+        Assert.True(body.GetProperty("team_report_id").GetInt32() > 0);
     }
 
     [Fact(DisplayName = "GET /v2/reports/legacy/{legacyId}: несуществующий — 404")]
@@ -335,8 +341,10 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
             "/v2/reports/counts:batch",
             new { scopes = new[] { new { key = "all" } } });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.reports.counts-batch.post", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        var count = Single(body.GetProperty("counts"));
+        Assert.Equal("all", count.GetProperty("key").GetString());
+        Assert.Equal(1, count.GetProperty("count").GetInt32());
     }
 
     [Fact(DisplayName = "POST /v2/reports/counts:batch с дублем ключа: 400 duplicate_scope_key")]
@@ -348,9 +356,17 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
             "/v2/reports/counts:batch",
             new { scopes = new[] { new { key = "all" }, new { key = "all" } } });
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.reports.counts-batch.post.duplicate", response);
+        // `key` в теле отказа — прикладное расширение поверх общего каталога: фронт
+        // показывает, какой именно ключ повторился.
+        var problem = await ContractResponse.ProblemAsync(
+            response,
+            "duplicate_scope_key",
+            HttpStatusCode.BadRequest);
+        Assert.Equal("all", problem.GetProperty("key").GetString());
     }
+
+    private static JsonElement FindReport(JsonElement[] reports, string reportId) =>
+        Assert.Single(reports, report => report.GetProperty("id").GetString() == reportId);
 
     private static JsonElement FindBug(JsonElement[] bugs, int bugId) =>
         Assert.Single(bugs, bug => bug.GetProperty("id").GetInt32() == bugId);

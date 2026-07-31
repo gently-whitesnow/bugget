@@ -3,7 +3,7 @@
 <!-- Файл собирается тестом PublicContractInventoryTests из таблицы маршрутов
      приложения и из backend/Bugget.IntegrationTests/Contract/PublicContractInventory.cs.
      Руками не правится: пересобрать —
-     UPDATE_CONTRACT_SNAPSHOTS=1 dotnet test backend/Bugget.IntegrationTests -->
+     UPDATE_CONTRACT_INVENTORY=1 dotnet test backend/Bugget.IntegrationTests -->
 
 Пути даны так, как их видит бекенд. Фронт ходит по ним через nginx с префиксами
 `/api/app/workspaces/{id}/teams/{id}`, `/api/users` и `/api/authorization`, которые

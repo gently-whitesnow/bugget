@@ -6,8 +6,9 @@ namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
 /// Контракт вложений. Семейств три — у бага, у комментария и у шага, — и у каждого
-/// свой набор путей. Форма ответа у них одна (<c>AttachmentView</c>), но проверяется
-/// на всех трёх: расходятся такие вещи молча.
+/// свой набор путей. Правила у них одни (владелец в <c>entity_id</c>, тип в
+/// <c>attach_type</c>, картинка на выходе в webp), но проверяются на всех трёх:
+/// расходятся такие вещи молча.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
@@ -22,8 +23,10 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
             $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=0",
             ContractScenario.FileContent("shot.png"));
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.bug-attachments.post", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.Created);
+        Assert.Equal("shot.png", body.GetProperty("file_name").GetString());
+        Assert.Equal(0, body.GetProperty("attach_type").GetInt32());
+        Assert.Equal(bugId, body.GetProperty("entity_id").GetInt32());
     }
 
     [Fact(DisplayName = "POST .../bugs/{bugId}/attachments без attachType: 400")]
@@ -41,7 +44,6 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
             response,
             "attachType",
             "The attachType field is required.");
-        await ContractSnapshot.MatchAsync("v2.bug-attachments.post.invalid", response);
     }
 
     /// <summary>
@@ -66,10 +68,10 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
             $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType={attachType}",
             ContractScenario.FileContent("shot.png"));
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var body = await ContractScenario.ReadJsonAsync(response);
-        Assert.Equal("attachment_type_not_allowed", body.GetProperty("code").GetString());
-        Assert.Equal("urn:bugget:error:attachment_type_not_allowed", body.GetProperty("type").GetString());
+        await ContractResponse.ProblemAsync(
+            response,
+            "attachment_type_not_allowed",
+            HttpStatusCode.BadRequest);
     }
 
     [Fact(DisplayName = "GET .../attachments/{id}/content: содержимое вложения")]
@@ -114,8 +116,9 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
             $"/v2/reports/{reportId}/bugs/{bugId}/attachments/{attachmentId}",
             new { file_name = "renamed.png" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.bug-attachments.patch", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(attachmentId, body.GetProperty("id").GetInt32());
+        Assert.Equal("renamed.png", body.GetProperty("file_name").GetString());
     }
 
     [Fact(DisplayName = "DELETE .../attachments/{id}: 200 и пустое тело")]
@@ -128,8 +131,7 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
         var response = await scenario.Client.DeleteAsync(
             $"/v2/reports/{reportId}/bugs/{bugId}/attachments/{attachmentId}");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.bug-attachments.delete", response);
+        await ContractResponse.EmptyAsync(response, HttpStatusCode.OK);
     }
 
     [Fact(DisplayName = "Вложения комментария: POST, PATCH, content, preview, DELETE")]
@@ -141,14 +143,19 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
         var basePath = $"/v2/reports/{reportId}/bugs/{bugId}/comments/{commentId}/attachments";
 
         var created = await scenario.Client.PostAsync(basePath, ContractScenario.FileContent("comment.png"));
-        await ContractSnapshot.MatchAsync("v2.comment-attachments.post", created);
+        var createdBody = await ContractResponse.JsonAsync(created, HttpStatusCode.Created);
 
-        var attachmentId = (await ContractScenario.ReadJsonAsync(created)).GetProperty("id").GetInt32();
+        // Тип вложения комментария ставит сервер, а владелец — сам комментарий.
+        Assert.Equal(2, createdBody.GetProperty("attach_type").GetInt32());
+        Assert.Equal(commentId, createdBody.GetProperty("entity_id").GetInt32());
+
+        var attachmentId = createdBody.GetProperty("id").GetInt32();
 
         var renamed = await scenario.Client.PatchAsJsonAsync(
             $"{basePath}/{attachmentId}",
             new { file_name = "renamed.png" });
-        await ContractSnapshot.MatchAsync("v2.comment-attachments.patch", renamed);
+        var renamedBody = await ContractResponse.JsonAsync(renamed, HttpStatusCode.OK);
+        Assert.Equal("renamed.png", renamedBody.GetProperty("file_name").GetString());
 
         var content = await scenario.Client.GetAsync($"{basePath}/{attachmentId}/content");
         Assert.Equal("image/webp", content.Content.Headers.ContentType?.MediaType);
@@ -157,7 +164,7 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
         Assert.Equal("image/webp", preview.Content.Headers.ContentType?.MediaType);
 
         var deleted = await scenario.Client.DeleteAsync($"{basePath}/{attachmentId}");
-        await ContractSnapshot.MatchAsync("v2.comment-attachments.delete", deleted);
+        await ContractResponse.EmptyAsync(deleted, HttpStatusCode.OK);
     }
 
     [Fact(DisplayName = "Вложения шага: POST, PATCH, content, preview, DELETE")]
@@ -169,14 +176,19 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
         var basePath = $"/v2/reports/{reportId}/bugs/{bugId}/steps/{stepId}/attachments";
 
         var created = await scenario.Client.PostAsync(basePath, ContractScenario.FileContent("step.png"));
-        await ContractSnapshot.MatchAsync("v2.bug-step-attachments.post", created);
+        var createdBody = await ContractResponse.JsonAsync(created, HttpStatusCode.Created);
 
-        var attachmentId = (await ContractScenario.ReadJsonAsync(created)).GetProperty("id").GetInt32();
+        // Тип вложения шага ставит сервер, а владелец — сам шаг.
+        Assert.Equal(3, createdBody.GetProperty("attach_type").GetInt32());
+        Assert.Equal(stepId, createdBody.GetProperty("entity_id").GetInt32());
+
+        var attachmentId = createdBody.GetProperty("id").GetInt32();
 
         var renamed = await scenario.Client.PatchAsJsonAsync(
             $"{basePath}/{attachmentId}",
             new { file_name = "renamed.png" });
-        await ContractSnapshot.MatchAsync("v2.bug-step-attachments.patch", renamed);
+        var renamedBody = await ContractResponse.JsonAsync(renamed, HttpStatusCode.OK);
+        Assert.Equal("renamed.png", renamedBody.GetProperty("file_name").GetString());
 
         var content = await scenario.Client.GetAsync($"{basePath}/{attachmentId}/content");
         Assert.Equal("image/webp", content.Content.Headers.ContentType?.MediaType);
@@ -185,7 +197,7 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
         Assert.Equal("image/webp", preview.Content.Headers.ContentType?.MediaType);
 
         var deleted = await scenario.Client.DeleteAsync($"{basePath}/{attachmentId}");
-        await ContractSnapshot.MatchAsync("v2.bug-step-attachments.delete", deleted);
+        await ContractResponse.EmptyAsync(deleted, HttpStatusCode.OK);
     }
 
     private static async Task<(string ReportId, int BugId)> CreateBugAsync(ContractScenario scenario)

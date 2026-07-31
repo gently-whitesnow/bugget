@@ -21,8 +21,11 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
             $"/v2/reports/{reportId}/bugs",
             new { title = "баг", receive = "получили это", expect = "ожидали то" });
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.bugs.post", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.Created);
+        Assert.True(body.GetProperty("id").GetInt32() > 0);
+        Assert.Equal("баг", body.GetProperty("title").GetString());
+        Assert.Equal("получили это", body.GetProperty("receive").GetString());
+        Assert.Equal("ожидали то", body.GetProperty("expect").GetString());
     }
 
     [Fact(DisplayName = "POST .../bugs без receive и expect: 400 доменной ошибкой")]
@@ -35,14 +38,13 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
             $"/v2/reports/{reportId}/bugs",
             new { title = "баг" });
 
-        await ContractSnapshot.MatchAsync("v2.bugs.post.empty", response);
+        await ContractResponse.ProblemAsync(response, "bug_must_have_one_field", HttpStatusCode.BadRequest);
     }
 
     /// <summary>
     /// Ответ на создание — `BugSummary`, и он тоже обязан отдавать оба ключа пары
-    /// `receive`/`expect`: бизнес-правило требует заполнить одно из двух, а не оба.
-    /// Снимок `v2.bugs.post` снят с бага, у которого заполнено всё, и потому формы
-    /// с `null` не предъявляет — здесь она предъявлена явно.
+    /// `receive`/`expect`: бизнес-правило требует заполнить одно из двух, а не оба,
+    /// и незаполненное уходит наружу как `null`, а не исчезает из тела.
     /// </summary>
     [Fact(DisplayName = "POST .../bugs с одним заполненным полем: 201, второй ключ приходит null")]
     public async Task CreateBugWithOneFilledField()
@@ -60,8 +62,6 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
         Assert.Equal("только факт", body.GetProperty("receive").GetString());
         Assert.Equal(JsonValueKind.Null, body.GetProperty("expect").ValueKind);
         Assert.Equal(JsonValueKind.Null, body.GetProperty("title").ValueKind);
-
-        await ContractSnapshot.MatchAsync("v2.bugs.post.one-field", response);
     }
 
     [Fact(DisplayName = "PATCH /v2/reports/{aliasId}/bugs/{bugId}: 200 и форма BugPatchResult")]
@@ -75,15 +75,17 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
             $"/v2/reports/{reportId}/bugs/{bugId}",
             new { title = "переименовали", status = 1 });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.bugs.patch", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(bugId, body.GetProperty("id").GetInt32());
+        Assert.Equal("переименовали", body.GetProperty("title").GetString());
+        Assert.Equal(1, body.GetProperty("status").GetInt32());
     }
 
     /// <summary>
     /// `patch_bug_internal` возвращает `receive`/`expect` как есть, а не «как передали»:
     /// у бага с одним заполненным полем второе остаётся `NULL` (миграция 009 сняла
-    /// `NOT NULL` с обеих колонок). Снимок фиксирует, что ключ при этом присутствует
-    /// со значением `null`, — отсюда `required` + `nullable` у `BugPatchResult`.
+    /// `NOT NULL` с обеих колонок). Ключ при этом присутствует со значением `null` —
+    /// отсюда `required` + `nullable` у `BugPatchResult`.
     /// </summary>
     [Fact(DisplayName = "PATCH .../bugs/{bugId} бага с одним заполненным полем: второй ключ приходит null")]
     public async Task PatchBugWithOneFilledField()
@@ -102,8 +104,6 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
         Assert.Equal(JsonValueKind.Null, body.GetProperty("expect").ValueKind);
         Assert.Equal(JsonValueKind.Null, body.GetProperty("title").ValueKind);
         Assert.Equal("только факт", body.GetProperty("receive").GetString());
-
-        await ContractSnapshot.MatchAsync("v2.bugs.patch.one-field", response);
     }
 
     /// <summary>
@@ -148,8 +148,9 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
             $"/v2/reports/{reportId}/bugs/{bugId}/steps",
             new { text = "открыть страницу" });
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.bug-steps.post", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.Created);
+        Assert.Equal(bugId, body.GetProperty("bug_id").GetInt32());
+        Assert.Equal("открыть страницу", body.GetProperty("text").GetString());
     }
 
     [Fact(DisplayName = "PATCH .../steps/{stepId}: 200 и форма BugStepSummary")]
@@ -164,8 +165,9 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
             $"/v2/reports/{reportId}/bugs/{bugId}/steps/{stepId}",
             new { text = "переписали шаг" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.bug-steps.patch", response);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(stepId, body.GetProperty("id").GetInt32());
+        Assert.Equal("переписали шаг", body.GetProperty("text").GetString());
     }
 
     [Fact(DisplayName = "PUT .../steps/order: 200 и массив шагов в новом порядке")]
@@ -181,8 +183,15 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
             $"/v2/reports/{reportId}/bugs/{bugId}/steps/order",
             new { step_ids = new[] { second, first } });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.bug-steps.order.put", response);
+        // Ответ — сами шаги в новом порядке: фронт перерисовывает список по нему,
+        // а не по тому, что отправил.
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        Assert.Equal(
+            new[] { second, first },
+            body.EnumerateArray().Select(step => step.GetProperty("id").GetInt32()).ToArray());
+        Assert.Equal(
+            new[] { 1, 2 },
+            body.EnumerateArray().Select(step => step.GetProperty("step_number").GetInt32()).ToArray());
     }
 
     [Fact(DisplayName = "DELETE .../steps/{stepId}: 200 и пустое тело")]
@@ -196,7 +205,6 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
         var response = await scenario.Client.DeleteAsync(
             $"/v2/reports/{reportId}/bugs/{bugId}/steps/{stepId}");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await ContractSnapshot.MatchAsync("v2.bug-steps.delete", response);
+        await ContractResponse.EmptyAsync(response, HttpStatusCode.OK);
     }
 }

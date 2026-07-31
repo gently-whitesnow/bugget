@@ -9,7 +9,7 @@ namespace Bugget.Architecture.Tests;
 ///
 /// Разрешённое направление зависимостей:
 ///   Bugget (API) ──► Bugget.BO ──► Bugget.DA ──► Bugget.Entities
-///                                  Monade, TaskQueue ──► (BCL)
+///                                  TaskQueue ──► (BCL)
 ///   Bugget ──► Bugget.DbUp, Bugget.ExternalClients
 ///   Bugget.ExternalClients ──► Bugget.BO
 ///
@@ -49,7 +49,6 @@ public class LayerDependencyRulesTests
     private static readonly Assembly DbUpAsm = typeof(global::Bugget.DbUp.AssemblyMarker).Assembly;
     private static readonly Assembly ExternalClientsAsm = typeof(global::Bugget.ExternalClients.AssemblyMarker).Assembly;
     private static readonly Assembly EntitiesAsm = typeof(global::Bugget.Entities.AssemblyMarker).Assembly;
-    private static readonly Assembly MonadeAsm = typeof(global::Monade.AssemblyMarker).Assembly;
     private static readonly Assembly TaskQueueAsm = typeof(global::TaskQueue.AssemblyMarker).Assembly;
 
     private static readonly string[] EntitiesAllowedRoots =
@@ -58,13 +57,6 @@ public class LayerDependencyRulesTests
         "Microsoft.AspNetCore",      // некоторые DTO ссылаются на IFormFile и пр.
         "Microsoft.Extensions",
         "Bugget.Entities",
-    ];
-
-    private static readonly string[] MonadeAllowedRoots =
-    [
-        "System",
-        "JetBrains.Annotations",
-        "Monade",
     ];
 
     private static readonly string[] TaskQueueAllowedRoots =
@@ -133,25 +125,6 @@ public class LayerDependencyRulesTests
             "про HTTP/SignalR/контроллеры. Если BO нужен контракт API — объяви " +
             "интерфейс в Bugget.BO, реализуй в Bugget. " +
             "Failing types: {0}",
-            string.Join(", ", result.FailingTypeNames ?? []));
-    }
-
-    [Fact(DisplayName = "Monade — System / JetBrains.Annotations / Monade only")]
-    public void Monade_should_only_depend_on_allowlist()
-    {
-        var result = Types
-            .InAssembly(MonadeAsm)
-            .That()
-            .ResideInNamespaceStartingWith("Monade")
-            .Should()
-            .OnlyHaveDependenciesOn(MonadeAllowedRoots)
-            .GetResult();
-
-        result.IsSuccessful.Should().BeTrue(
-            "Monade — переиспользуемый Result<T> и должен зависеть только от {0}. " +
-            "Если зависимость нужна — расширь MonadeAllowedRoots с rationale. " +
-            "Failing types: {1}",
-            string.Join(", ", MonadeAllowedRoots),
             string.Join(", ", result.FailingTypeNames ?? []));
     }
 

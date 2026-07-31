@@ -94,12 +94,6 @@
     {
       "kind": "warnaserror",
       "location": "backend/Directory.Build.props",
-      "rule": "Flow",
-      "count": 1
-    },
-    {
-      "kind": "warnaserror",
-      "location": "backend/Directory.Build.props",
       "rule": "MattermostOAuth",
       "count": 1
     },

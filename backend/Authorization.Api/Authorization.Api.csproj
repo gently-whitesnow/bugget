@@ -19,8 +19,8 @@
     <ProjectReference Include="..\FakeAuth\FakeAuth.csproj" />
     <ProjectReference Include="..\Authorization.Abstractions\Authorization.Abstractions.csproj" />
     <ProjectReference Include="..\Authentication\Authentication.csproj" />
-    <ProjectReference Include="..\Flow\Flow.csproj" />
     <ProjectReference Include="..\Bugget.Http\Bugget.Http.csproj" />
+    <ProjectReference Include="..\Bugget.Entities\Bugget.Entities.csproj" />
     <ProjectReference Include="..\Caching.Local\Caching.Local.csproj" />
     <ProjectReference Include="..\BugReport.Logging\BugReport.Logging.csproj" />
   </ItemGroup>

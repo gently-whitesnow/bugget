@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Authorization.Abstractions;
 using Authorization.Api.Models;
-using Flow;
+using Bugget.Entities.Errors;
 
 namespace Authorization.Api.Interfaces;
 
@@ -13,9 +13,9 @@ public interface IUsersClient
 {
     Task<User> InsertOrUpdateUserAsync(IExternalUser externalUser);
 
-    Task<ResultStruct<UserContext>> GetUserContextAsync(long id);
+    Task<(UserContext? Value, Error? Error)> GetUserContextAsync(long id);
 
-    Task<ResultStruct<UserContext>> GetUserContextByExternalIdAsync(string externalId);
+    Task<(UserContext? Value, Error? Error)> GetUserContextByExternalIdAsync(string externalId);
 
     Task<long?> FindUserByProviderAndExternalIdAsync(string provider, string externalId);
 

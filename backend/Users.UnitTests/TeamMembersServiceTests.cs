@@ -1,4 +1,4 @@
-using Flow;
+using Bugget.Entities.Errors;
 using Microsoft.Extensions.Options;
 using Moq;
 using Users.BO.TeamMembers;
@@ -53,7 +53,7 @@ public class TeamMembersServiceTests
 
         _teamMembersRepo
             .Setup(r => r.CreateTeamMemberAsync(userId, teamId, _defaultSizeLimit))
-            .ReturnsAsync(new ResultStruct<TeamMemberDbModel>(expectedMember));
+            .ReturnsAsync((expectedMember, null));
 
         _authorizationRepo
             .Setup(r => r.InvalidateUserCacheAsync(userId))
@@ -63,7 +63,7 @@ public class TeamMembersServiceTests
         var result = await _sut.CreateTeamMemberAsync(teamId, userId);
 
         // Assert
-        Assert.True(result.IsSuccess);
+        Assert.Null(result.Error);
         Assert.NotNull(result.Value);
         Assert.Equal(teamId, result.Value.TeamId);
         Assert.Equal(userId, result.Value.UserId);
@@ -81,13 +81,13 @@ public class TeamMembersServiceTests
 
         _teamMembersRepo
             .Setup(r => r.CreateTeamMemberAsync(userId, teamId, _defaultSizeLimit))
-            .ReturnsAsync(new ResultStruct<TeamMemberDbModel>(TeamMembersErrors.TeamLimitExceededError));
+            .ReturnsAsync((null, TeamMembersErrors.TeamLimitExceededError));
 
         // Act
         var result = await _sut.CreateTeamMemberAsync(teamId, userId);
 
         // Assert
-        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.Error);
         Assert.Equal(TeamMembersErrors.TeamLimitExceededError, result.Error);
 
         _teamMembersRepo.Verify(r => r.CreateTeamMemberAsync(userId, teamId, _defaultSizeLimit), Times.Once);
@@ -111,7 +111,7 @@ public class TeamMembersServiceTests
 
         _teamMembersRepo
             .Setup(r => r.CreateTeamMemberAsync(userId, teamId, _defaultSizeLimit))
-            .ReturnsAsync(new ResultStruct<TeamMemberDbModel>(member));
+            .ReturnsAsync((member, null));
 
         _authorizationRepo
             .Setup(r => r.InvalidateUserCacheAsync(userId))
@@ -151,7 +151,7 @@ public class TeamMembersServiceTests
 
         _teamMembersRepo
             .Setup(r => r.CreateTeamMemberAsync(userId, teamId, customLimit))
-            .ReturnsAsync(new ResultStruct<TeamMemberDbModel>(member));
+            .ReturnsAsync((member, null));
 
         _authorizationRepo
             .Setup(r => r.InvalidateUserCacheAsync(userId))

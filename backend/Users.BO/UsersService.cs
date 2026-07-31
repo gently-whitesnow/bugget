@@ -1,4 +1,4 @@
-using Flow;
+using Bugget.Entities.Errors;
 using Microsoft.Extensions.DependencyInjection;
 using TaskQueue;
 using Users.BO.Interfaces;
@@ -39,12 +39,12 @@ public sealed class UsersService(
         return user;
     }
 
-    public async Task<ResultStruct<UserContext?>> GetUserContextAsync(long userId)
+    public async Task<(UserContext? Value, Error? Error)> GetUserContextAsync(long userId)
     {
         var user = await usersDbClient.GetUserAsync(userId);
         if (user is null)
         {
-            return BoErrors.NotFoundError;
+            return (null, BoErrors.NotFoundError);
         }
 
         var (workspacesMember, _) = await membersDbClient.ListMembersAsync(user.Id);
@@ -57,15 +57,15 @@ public sealed class UsersService(
             teams.Where(t => t.WorkspaceId == w.WorkspaceId).Select(t => t.Id).ToArray()
         )).ToArray();
 
-        return new UserContext(user, workspacesContext);
+        return (new UserContext(user, workspacesContext), null);
     }
 
-    public async Task<ResultStruct<UserContext?>> GetUserContextByExternalIdAsync(string externalId)
+    public async Task<(UserContext? Value, Error? Error)> GetUserContextByExternalIdAsync(string externalId)
     {
         var user = await usersDbClient.GetUserByExternalIdAsync(externalId);
         if (user is null)
         {
-            return BoErrors.NotFoundError;
+            return (null, BoErrors.NotFoundError);
         }
 
         var (workspacesMember, _) = await membersDbClient.ListMembersAsync(user.Id);
@@ -78,7 +78,7 @@ public sealed class UsersService(
             teams.Where(t => t.WorkspaceId == w.WorkspaceId).Select(t => t.Id).ToArray()
         )).ToArray();
 
-        return new UserContext(user, workspacesContext);
+        return (new UserContext(user, workspacesContext), null);
     }
 
     public Task<UserDbModel?> GetUserAsync(long userId)

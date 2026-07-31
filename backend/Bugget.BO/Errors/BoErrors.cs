@@ -11,7 +11,7 @@ public static class BoErrors
     public static readonly NotFoundError BugStepsNotFoundError = new NotFoundError("bug_steps_not_found", "Шаги бага не найдены");
     public static readonly NotFoundError CommentNotFoundError = new NotFoundError("comment_not_found", "Комментарий не найден");
     public static readonly BadRequestError BugStepsOrderSizeMismatchError = new BadRequestError("bug_steps_order_size_mismatch", "Количество шагов в запросе не совпадает с количеством шагов в базе данных");
-    public static readonly InternalServerError InternalServerError = new InternalServerError("internal_server_error", "Внутреняя ошибка сервера");
+    public static readonly InternalServerError InternalServerError = new InternalServerError("internal_server_error", "Внутренняя ошибка сервера");
     public static readonly BadRequestError BugMustHaveOneField = new BadRequestError("bug_must_have_one_field", "Баг должен содержать хотя бы одно поле");
 
     public static readonly BadRequestError AttachmentFileNotSelectedOrEmpty = new BadRequestError("attachment_file_not_selected_or_empty", "Файл не выбран или пуст.");

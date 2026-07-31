@@ -1,4 +1,4 @@
-using Flow;
+using Bugget.Entities.Errors;
 using Microsoft.Extensions.Options;
 using Users.DA.Interfaces;
 using Users.Entities.BO;
@@ -12,11 +12,11 @@ public sealed class WorkspaceMembersService(
     IOptions<SelfHostedOptions> selfHostedOptions,
     IAuthorizationRepository authorizationRepository) : IWorkspaceMembersService
 {
-    public async Task<ResultStruct<WorkspaceMemberDbModel>> CreateWorkspaceMemberAsync(long userId, int workspaceId)
+    public async Task<(WorkspaceMemberDbModel? Value, Error? Error)> CreateWorkspaceMemberAsync(long userId, int workspaceId)
     {
         if (!selfHostedOptions.Value.Enabled)
         {
-            return BoErrors.SelfHostedModeRequiredError;
+            return (null, BoErrors.SelfHostedModeRequiredError);
         }
 
         var workspaceMember = await workspaceMembersRepository.CreateWorkspaceMemberAsync(userId, workspaceId, WorkspaceRole.Member);
@@ -24,12 +24,12 @@ public sealed class WorkspaceMembersService(
         if (workspaceMembers.Length > 1)
         {
             await authorizationRepository.InvalidateUserCacheAsync(userId);
-            return workspaceMember;
+            return (workspaceMember, null);
         }
 
         var upgradedWorkspaceMember = await workspaceMembersRepository.UpdateWorkspaceMemberAsync(userId, workspaceId, WorkspaceRole.Admin);
         await authorizationRepository.InvalidateUserCacheAsync(userId);
 
-        return upgradedWorkspaceMember;
+        return (upgradedWorkspaceMember, null);
     }
 }

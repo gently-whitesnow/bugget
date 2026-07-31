@@ -55,7 +55,7 @@ public class BusinessLogicIsolationRulesTests
             "System.ComponentModel",
             "System.Security.Cryptography", // HMAC для токенов приглашений в команду
             "Microsoft.Extensions.Configuration.Binder",
-            "Flow", "TaskQueue", "Users.DA", "Users.Entities",
+            "Bugget.Entities", "Flow", "TaskQueue", "Users.DA", "Users.Entities",
         ],
     };
 

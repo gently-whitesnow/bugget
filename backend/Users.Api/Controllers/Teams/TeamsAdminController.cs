@@ -1,5 +1,5 @@
 using Authentication;
-using Flow.Extensions;
+using Bugget.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Users.Api.Contracts.Generated;
 using Users.Api.Generated;

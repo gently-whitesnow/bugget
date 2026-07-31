@@ -12,10 +12,10 @@ public static class ApplicationBuilderExtensions
     {
         app.UseSwaggerConfiguration();
         app.UseSerilogRequestLogging();
+        // Необработанное исключение -> 500 в общем формате problem+json. Один обработчик
+        // на весь процесс: у модулей users и authorization был свой, дублировавший этот.
         app.UseMiddleware<ResultExceptionHandlerMiddleware>();
-        // Обработчики ошибок модулей users и authorization: необработанное исключение -> 500
-        // в формате Flow, KeyNotFoundException -> 404.
-        app.UseMiddleware<Flow.ResultExceptionHandlerMiddleware>();
+        // KeyNotFoundException модулей users и authorization -> 404.
         app.UseMiddleware<Authorization.NotFoundExceptionMiddleware>();
         // Пустые ответы фреймворка (404 маршрутизации, 405, 401 challenge, 403 Forbid)
         // получают тело problem+json из общего каталога. Обязан стоять до UseRouting

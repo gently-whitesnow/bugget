@@ -1,4 +1,4 @@
-using Flow;
+using Bugget.Entities.Errors;
 using Microsoft.Extensions.Options;
 using Users.BO.Interfaces;
 using Users.DA.Interfaces;
@@ -30,7 +30,7 @@ public sealed class TeamsService(
         return teamsRepository.AutocompleteTeamsAsync(workspaceId, searchString, skip, take);
     }
 
-    public async Task<ResultStruct<TeamDbModel>> CreateTeamAsync(int workspaceId, string name, long userId, int? userTeamId)
+    public async Task<(TeamDbModel? Value, Error? Error)> CreateTeamAsync(int workspaceId, string name, long userId, int? userTeamId)
     {
         TeamDbModel team;
 
@@ -41,9 +41,9 @@ public sealed class TeamsService(
         else
         {
             var teamResult = await teamsRepository.CreateTeamAsync(workspaceId, name, teamsOptions.Value.DefaultTeamsCountLimit);
-            if (teamResult.HasError)
+            if (teamResult.Error is not null)
             {
-                return teamResult.Error!;
+                return (null, teamResult.Error);
             }
             team = teamResult.Value!;
         }
@@ -55,7 +55,7 @@ public sealed class TeamsService(
             await authorizationRepository.InvalidateUserCacheAsync(userId);
         }
 
-        return team;
+        return (team, null);
     }
 
     public Task<TeamDbModel> UpdateTeamAsync(int workspaceId, int teamId, string name)

@@ -1,112 +1,97 @@
-using System;
 using System.Collections;
-using System.Threading.Tasks;
+using Bugget.Entities.Errors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Flow.Extensions;
+namespace Bugget.Extensions;
 
+/// <summary>
+/// Единая граница «результат бизнес-логики → HTTP-ответ». Бизнес-логика возвращает
+/// нативный кортеж <c>(значение, ошибка)</c> либо просто <c>Error?</c> (ADR-0004).
+/// </summary>
 public static class ResultExtensions
 {
     public static async Task<IActionResult> AsActionResultAsync(
-    this Task<ResultStruct> operationTask,
-    HttpContext context,
-    int successStatusCode = 200)
+        this Task<Error?> operationTask,
+        HttpContext context,
+        int successStatusCode = 200)
     {
-        var operation = await operationTask;
-
-        return operation.AsActionResult(context, successStatusCode);
+        var error = await operationTask;
+        return error.AsActionResult(context, successStatusCode);
     }
 
     public static async Task<IActionResult> AsActionResultAsync<TValue>(
-        this Task<ResultStruct<TValue>> operationTask,
+        this Task<(TValue? Value, Error? Error)> operationTask,
         HttpContext context,
         int successStatusCode = 200)
     {
         var operation = await operationTask;
-
         return operation.AsActionResult(context, successStatusCode);
     }
 
     public static async Task<IActionResult> AsActionResultAsync<TValue, TView>(
-        this Task<ResultStruct<TValue>> operationTask,
+        this Task<(TValue? Value, Error? Error)> operationTask,
         HttpContext context,
         Func<TValue, TView> toView,
         int successStatusCode = 200)
     {
         var operation = await operationTask;
-
         return operation.AsActionResult(context, toView, successStatusCode);
     }
 
-    /// <summary>
-    /// То же, что AsActionResultAsync с маппером, но результат типизирован
-    /// контрактным DTO: сгенерированные из OpenAPI базы объявляют
-    /// ActionResult&lt;T&gt;, и расхождение с контрактом ловит компилятор.
-    /// </summary>
     public static async Task<ActionResult<TContract>> AsContractResultAsync<TValue, TContract>(
-        this Task<ResultStruct<TValue>> operationTask,
+        this Task<(TValue? Value, Error? Error)> operationTask,
         HttpContext context,
         Func<TValue, TContract> toContract,
         int successStatusCode = 200)
     {
         var operation = await operationTask;
-
         return operation.AsActionResult(context, toContract, successStatusCode);
     }
 
     public static ActionResult AsActionResult(
-        this ResultStruct operation,
+        this Error? error,
         HttpContext context,
         int successStatusCode = 200)
     {
-        if (operation.IsSuccess)
+        if (error is null)
         {
             return new StatusCodeResult(successStatusCode);
         }
 
-        return operation.Error!.ToProblemDetails(context);
+        return error.ToProblemDetails(context);
     }
 
     public static ActionResult AsActionResult<TValue>(
-        this ResultStruct<TValue> operation,
+        this (TValue? Value, Error? Error) operation,
         HttpContext context,
         int successStatusCode = 200)
     {
-        if (operation.IsSuccess)
+        if (operation.Error is null)
         {
-            return new JsonResult(operation.Value)
-            {
-                StatusCode = successStatusCode
-            };
+            return new JsonResult(operation.Value) { StatusCode = successStatusCode };
         }
 
-        return operation.Error!.ToProblemDetails(context);
+        return operation.Error.ToProblemDetails(context);
     }
 
     public static ActionResult AsActionResult<TValue, TView>(
-        this ResultStruct<TValue> operation,
+        this (TValue? Value, Error? Error) operation,
         HttpContext context,
         Func<TValue, TView> toView,
         int successStatusCode = 200)
     {
-        if (operation.HasError)
+        if (operation.Error is not null)
         {
-            return operation.Error!.ToProblemDetails(context);
+            return operation.Error.ToProblemDetails(context);
         }
 
         if (operation.Value == null)
         {
-            return new JsonResult(ConvertNullToContract(typeof(TValue)))
-            {
-                StatusCode = successStatusCode
-            };
+            return new JsonResult(ConvertNullToContract(typeof(TValue))) { StatusCode = successStatusCode };
         }
 
-        return new JsonResult(toView(operation.Value))
-        {
-            StatusCode = successStatusCode
-        };
+        return new JsonResult(toView(operation.Value)) { StatusCode = successStatusCode };
     }
 
     private static readonly object EmptyObject = new { };
@@ -115,11 +100,6 @@ public static class ResultExtensions
     {
         var typeIsArray = typeof(ICollection).IsAssignableFrom(type);
         var typeIsDictionary = typeof(IDictionary).IsAssignableFrom(type);
-        if (typeIsArray && !typeIsDictionary)
-        {
-            return Array.Empty<object>();
-        }
-
-        return EmptyObject;
+        return typeIsArray && !typeIsDictionary ? Array.Empty<object>() : EmptyObject;
     }
 }

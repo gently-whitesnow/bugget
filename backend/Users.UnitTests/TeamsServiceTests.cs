@@ -98,7 +98,7 @@ public class TeamsServiceTests
         var result = await _sut.CreateTeamAsync(workspaceId, name, userId, userTeamId);
 
         // Assert
-        Assert.True(result.IsSuccess);
+        Assert.Null(result.Error);
         Assert.Equal(expectedTeam.Id, result.Value!.Id);
         Assert.Equal(expectedTeam.Name, result.Value!.Name);
         Assert.Equal(expectedTeam.WorkspaceId, result.Value!.WorkspaceId);
@@ -132,12 +132,12 @@ public class TeamsServiceTests
 
         _teamMembersRepo
             .Setup(r => r.CreateTeamMemberAsync(userId, expectedTeam.Id, 10))
-            .ReturnsAsync(new TeamMemberDbModel
+            .ReturnsAsync((new TeamMemberDbModel
             {
                 CreatedAt = now,
                 UserId = userId,
                 TeamId = expectedTeam.Id
-            });
+            }, null));
 
         _authorizationRepo
             .Setup(r => r.InvalidateUserCacheAsync(userId))
@@ -147,7 +147,7 @@ public class TeamsServiceTests
         var result = await _sut.CreateTeamAsync(workspaceId, name, userId, userTeamId);
 
         // Assert
-        Assert.True(result.IsSuccess);
+        Assert.Null(result.Error);
         Assert.Equal(expectedTeam.Id, result.Value!.Id);
         Assert.Equal(expectedTeam.Name, result.Value!.Name);
         Assert.Equal(expectedTeam.WorkspaceId, result.Value!.WorkspaceId);
@@ -182,12 +182,12 @@ public class TeamsServiceTests
 
         _teamMembersRepo
             .Setup(r => r.CreateTeamMemberAsync(userId, createdTeam.Id, 10))
-            .ReturnsAsync(new TeamMemberDbModel
+            .ReturnsAsync((new TeamMemberDbModel
             {
                 CreatedAt = now,
                 UserId = userId,
                 TeamId = createdTeam.Id
-            })
+            }, null))
             .Verifiable();
 
         _authorizationRepo

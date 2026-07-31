@@ -128,7 +128,8 @@ public class WorkspacesServiceTests
         var result = await _sut.CreateWorkspaceAsync(userId, workspaceName);
 
         // Assert
-        Assert.Equal(expectedWorkspace, result);
+        Assert.Null(result.Error);
+        Assert.Equal(expectedWorkspace, result.Value);
 
         _workspacesRepo.Verify(r => r.CreateWorkspaceAsync(userId, workspaceName), Times.Once);
         _authorizationRepo.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
@@ -165,7 +166,7 @@ public class WorkspacesServiceTests
         var result = await _sut.UpdateWorkspaceAsync(userId, workspaceId, newName);
 
         // Assert
-        Assert.True(result.IsSuccess);
+        Assert.Null(result.Error);
         Assert.Equal(newName, result.Value!.Name);
 
         _workspacesRepo.Verify(r => r.UpdateWorkspaceAsync(workspaceId, newName), Times.Once);
@@ -192,7 +193,7 @@ public class WorkspacesServiceTests
         var result = await sut.UpdateWorkspaceAsync(42L, 1, "New Name");
 
         // Assert
-        Assert.True(result.HasError);
+        Assert.NotNull(result.Error);
 
         _workspacesRepo.VerifyNoOtherCalls();
         _authorizationRepo.VerifyNoOtherCalls();

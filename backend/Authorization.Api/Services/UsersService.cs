@@ -16,7 +16,7 @@ public sealed class UsersService(IUsersClient usersClient, IUserCache userCache,
             return cachedUser;
         }
         var result = await usersClient.GetUserContextAsync(id);
-        if (result.HasError)
+        if (result.Error is not null)
         {
             logger.LogError("Failed to get user from service: {Error}", result.Error);
             return null;
@@ -36,7 +36,7 @@ public sealed class UsersService(IUsersClient usersClient, IUserCache userCache,
         }
 
         var result = await usersClient.GetUserContextByExternalIdAsync(externalId);
-        if (result.HasError)
+        if (result.Error is not null)
         {
             logger.LogError("Failed to get user by externalId from service: {Error}", result.Error);
             return null;

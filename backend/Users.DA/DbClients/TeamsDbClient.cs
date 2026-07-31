@@ -1,5 +1,5 @@
+using Bugget.Entities.Errors;
 using Dapper;
-using Flow;
 using Npgsql;
 using Users.DA.Interfaces;
 using Users.DA.Teams;
@@ -45,21 +45,21 @@ public class TeamsDbClient : PostgresClient, ITeamsRepository
         );
     }
 
-    public async Task<ResultStruct<TeamDbModel>> CreateTeamAsync(int workspaceId, string name, int teamsCountLimit)
+    public async Task<(TeamDbModel? Value, Error? Error)> CreateTeamAsync(int workspaceId, string name, int teamsCountLimit)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
         try
         {
-            return await conn.QuerySingleAsync<TeamDbModel>(
+            return (await conn.QuerySingleAsync<TeamDbModel>(
                 "SELECT * FROM create_team(@workspace_id, @name, @size_limit)",
                 new { workspace_id = workspaceId, name, size_limit = teamsCountLimit }
-            );
+            ), null);
         }
         catch (PostgresException ex)
         {
             if (ex.MessageText == "teams_count_limit_exceeded")
             {
-                return TeamsErrors.TeamsCountLimitExceededError;
+                return (null, TeamsErrors.TeamsCountLimitExceededError);
             }
 
             throw;

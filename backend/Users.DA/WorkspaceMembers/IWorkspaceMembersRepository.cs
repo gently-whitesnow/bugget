@@ -1,11 +1,11 @@
-using Flow;
+using Bugget.Entities.Errors;
 using Users.Entities.DbModels.Members;
 
 namespace Users.DA.Interfaces;
 
 public interface IWorkspaceMembersRepository
 {
-    Task<ResultStruct<WorkspaceMemberDbModel>> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role, int sizeLimit);
+    Task<(WorkspaceMemberDbModel? Value, Error? Error)> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role, int sizeLimit);
     Task<WorkspaceMemberDbModel> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role);
     Task<WorkspaceMemberDbModel> UpdateWorkspaceMemberAsync(long userId, int workspaceId, string role);
     Task<WorkspaceMemberDbModel[]> ListWorkspaceMembersAsync(int workspaceId);

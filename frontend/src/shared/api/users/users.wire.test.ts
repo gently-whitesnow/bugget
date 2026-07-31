@@ -129,6 +129,15 @@ describe("короткая форма адреса: контекст прихо�
     expect(sent().method).toBe("post");
   });
 
+  it("удаление участника сохраняет строковый long-идентификатор без потери точности", async () => {
+    const userId = "9007199254740993";
+
+    await deleteTeamMember(1, 2, userId);
+
+    expect(sent().url).toBe(`${contextPrefix}/members/${userId}`);
+    expect(sent().method).toBe("delete");
+  });
+
   it("команды: создание, переименование, удаление и подсказки", async () => {
     await createTeam(1, "Команда");
     expect(sent().url).toBe(`${prefix}/workspaces/1/teams`);

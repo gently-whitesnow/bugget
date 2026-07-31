@@ -1,19 +1,39 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios";
-import { appApi, setAppContext } from "@/shared/api";
+import { appApi, reportsApi, setAppContext } from "@/shared/api";
 import { analyticsApi } from "@/shared/api";
 import {
+  createReport,
   fetchReport,
   fetchReportsList,
   patchReport,
   resolveLegacyReport,
 } from "./reports";
 import { createBug, updateBug } from "./bugs";
-import { updateBugStepsOrder } from "./bugSteps";
-import { createComment } from "./comments";
-import { createReportLink, deleteReportLink } from "./reportLinks";
-import { renameBugAttachment, uploadAttachment } from "./attachments";
+import {
+  createBugStep,
+  deleteBugStep,
+  patchBugStep,
+  updateBugStepsOrder,
+} from "./bugSteps";
+import { createComment, deleteComment, updateComment } from "./comments";
+import {
+  createReportLink,
+  deleteReportLink,
+  updateReportLink,
+} from "./reportLinks";
+import {
+  createBugStepAttachment,
+  createCommentAttachment,
+  deleteBugAttachment,
+  deleteBugStepAttachment,
+  deleteCommentAttachment,
+  renameBugAttachment,
+  renameBugStepAttachment,
+  renameCommentAttachment,
+  uploadAttachment,
+} from "./attachments";
 
 /**
  * Провод модуля `reports` после перевода на сгенерированный контракт.
@@ -86,6 +106,15 @@ describe("пути репортов", () => {
     expect(sent().url).toBe(`${contextPrefix}/v2/reports/legacy/42`);
   });
 
+  it.fails(
+    "legacy-идентификатор сохраняет исходный сегмент URL дословно",
+    async () => {
+      await resolveLegacyReport("00042");
+
+      expect(sent().url).toBe(`${contextPrefix}/v2/reports/legacy/00042`);
+    }
+  );
+
   it("аналитика репорта остаётся sub-resource репорта", async () => {
     await analyticsApi.getReportAnalytics(7);
 
@@ -100,9 +129,34 @@ describe("пути репортов", () => {
     expect(sent().method).toBe("delete");
     expect(sent().data).toBeUndefined();
   });
+
+  it("поиск сохраняет все query-параметры, массивы и пустые значения", async () => {
+    await reportsApi.searchReports({
+      query: "",
+      reportStatuses: [0, 4],
+      userId: "u-1",
+      teamId: "t-1",
+      sort: "created_at",
+      skip: 0,
+      take: 0,
+      creatorTypes: [0, 1],
+    });
+
+    expect(sent().url).toBe(
+      `${contextPrefix}/v1/reports/search?query=&reportStatuses=0&reportStatuses=4&userId=u-1&teamId=t-1&sort=created_at&skip=0&take=0&creatorTypes=0&creatorTypes=1`
+    );
+  });
 });
 
 describe("тела запросов уходят в snake_case контракта", () => {
+  it("создание репорта: POST и title", async () => {
+    await createReport({ title: "Новый репорт" });
+
+    expect(sent().method).toBe("post");
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports`);
+    expect(sentJsonBody()).toEqual({ title: "Новый репорт" });
+  });
+
   it("PATCH репорта: responsible_user_id и is_excluded_from_analytics", async () => {
     await patchReport("team-42", {
       responsibleUserId: "u-9",
@@ -157,6 +211,76 @@ describe("тела запросов уходят в snake_case контракт�
     expect(sentJsonBody()).toEqual({ link: "https://ati.su", name: "ATI" });
   });
 
+  it("обновление ссылки: PUT на конкретную ссылку", async () => {
+    await updateReportLink("team-42", 11, {
+      link: "https://example.test/new",
+      name: "Новая",
+    });
+
+    expect(sent().method).toBe("put");
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/team-42/links/11`);
+    expect(sentJsonBody()).toEqual({
+      link: "https://example.test/new",
+      name: "Новая",
+    });
+  });
+
+  it("создание и PATCH шага используют точные методы и путь", async () => {
+    await createBugStep("team-42", 7, { text: "открыть страницу" });
+    expect(sent().method).toBe("post");
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/team-42/bugs/7/steps`);
+    expect(sentJsonBody()).toEqual({ text: "открыть страницу" });
+
+    await patchBugStep("team-42", 7, 3, { text: "обновлённый шаг" });
+    expect(sent().method).toBe("patch");
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports/team-42/bugs/7/steps/3`
+    );
+    expect(sentJsonBody()).toEqual({ text: "обновлённый шаг" });
+  });
+
+  it("обновление комментария: PUT, nullable audience сохраняется", async () => {
+    await updateComment("team-42", 7, 5, {
+      text: "уточнение",
+      audience: null,
+    });
+
+    expect(sent().method).toBe("put");
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports/team-42/bugs/7/comments/5`
+    );
+    expect(sentJsonBody()).toEqual({ text: "уточнение", audience: null });
+  });
+
+  it("батч-счётчики сохраняют вложенные snake_case-поля и пустой scopes", async () => {
+    await reportsApi.countReportsBatch({
+      scopes: [
+        {
+          key: "My_Scope",
+          statuses: [],
+          teamId: null,
+          creatorTypes: [0, 1],
+        },
+      ],
+    });
+
+    expect(sent().method).toBe("post");
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/counts:batch`);
+    expect(sentJsonBody()).toEqual({
+      scopes: [
+        {
+          key: "My_Scope",
+          statuses: [],
+          team_id: null,
+          creator_types: [0, 1],
+        },
+      ],
+    });
+
+    await reportsApi.countReportsBatch({ scopes: [] });
+    expect(sentJsonBody()).toEqual({ scopes: [] });
+  });
+
   it("переименование вложения: fileName в коде — file_name на проводе", async () => {
     await renameBugAttachment({
       reportId: "team-42",
@@ -170,39 +294,135 @@ describe("тела запросов уходят в snake_case контракт�
     );
     expect(sentJsonBody()).toEqual({ file_name: "скрин.png" });
   });
+
+  it("переименование comment/step-вложений сохраняет точные вложенные пути", async () => {
+    await renameCommentAttachment({
+      reportId: "team-42",
+      bugId: 7,
+      commentId: 5,
+      attachmentId: 11,
+      fileName: "comment.png",
+    });
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports/team-42/bugs/7/comments/5/attachments/11`
+    );
+    expect(sentJsonBody()).toEqual({ file_name: "comment.png" });
+
+    await renameBugStepAttachment({
+      reportId: "team-42",
+      bugId: 7,
+      stepId: 3,
+      attachmentId: 12,
+      fileName: "step.png",
+    });
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports/team-42/bugs/7/steps/3/attachments/12`
+    );
+    expect(sentJsonBody()).toEqual({ file_name: "step.png" });
+  });
 });
 
 describe("загрузка вложения — multipart, а не JSON", () => {
-  it("attachType уходит query-параметром, файл — полем file", async () => {
+  it.each([0, 1, 2, 3])(
+    "attachType=%i уходит query-параметром, файл — полем file",
+    async (attachType) => {
+      const file = new File(["данные"], "скрин.png", { type: "image/png" });
+
+      await uploadAttachment({
+        reportId: "team-42",
+        bugId: 7,
+        attachType,
+        file,
+      });
+
+      expect(sent().url).toBe(
+        `${contextPrefix}/v2/reports/team-42/bugs/7/attachments?attachType=${attachType}`
+      );
+
+      const body = sent().data as FormData;
+      expect(body).toBeInstanceOf(FormData);
+      // Имя поля берётся из схемы AttachmentUpload и конверсию регистра не проходит.
+      expect(body.get("file")).toBe(file);
+      expect([...body.keys()]).toEqual(["file"]);
+    }
+  );
+
+  it("comment/step upload используют multipart и точные пути", async () => {
     const file = new File(["данные"], "скрин.png", { type: "image/png" });
 
-    await uploadAttachment({
-      reportId: "team-42",
-      bugId: 7,
-      attachType: 2,
-      file,
-    });
-
+    await createCommentAttachment("team-42", 7, 5, file);
     expect(sent().url).toBe(
-      `${contextPrefix}/v2/reports/team-42/bugs/7/attachments?attachType=2`
+      `${contextPrefix}/v2/reports/team-42/bugs/7/comments/5/attachments`
     );
+    expect(sent().method).toBe("post");
+    expect((sent().data as FormData).get("file")).toBe(file);
 
-    const body = sent().data as FormData;
-    expect(body).toBeInstanceOf(FormData);
-    // Имя поля берётся из схемы AttachmentUpload и конверсию регистра не проходит.
-    expect(body.get("file")).toBe(file);
-    expect([...body.keys()]).toEqual(["file"]);
+    await createBugStepAttachment("team-42", 7, 3, file);
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports/team-42/bugs/7/steps/3/attachments`
+    );
+    expect(sent().method).toBe("post");
+    expect((sent().data as FormData).get("file")).toBe(file);
+  });
+});
+
+describe("DELETE CRUD-операций не отправляет тело и query", () => {
+  it.each([
+    [
+      "шаг",
+      () => deleteBugStep("team-42", 7, 3),
+      "/v2/reports/team-42/bugs/7/steps/3",
+    ],
+    [
+      "комментарий",
+      () => deleteComment("team-42", 7, 5),
+      "/v2/reports/team-42/bugs/7/comments/5",
+    ],
+    [
+      "bug-вложение",
+      () => deleteBugAttachment("team-42", 7, 11),
+      "/v2/reports/team-42/bugs/7/attachments/11",
+    ],
+    [
+      "comment-вложение",
+      () => deleteCommentAttachment("team-42", 7, 5, 11),
+      "/v2/reports/team-42/bugs/7/comments/5/attachments/11",
+    ],
+    [
+      "step-вложение",
+      () => deleteBugStepAttachment("team-42", 7, 3, 11),
+      "/v2/reports/team-42/bugs/7/steps/3/attachments/11",
+    ],
+  ])("%s", async (_name, invoke, path) => {
+    await invoke();
+
+    expect(sent().method).toBe("delete");
+    expect(sent().url).toBe(`${contextPrefix}${path}`);
+    expect(sent().data).toBeUndefined();
   });
 });
 
 describe("ответы приходят в camelCase кода", () => {
-  it("тело ответа карточки конвертируется целиком, включая вложенное", async () => {
+  it("тело ответа конвертируется целиком, null/пустые массивы и attach_type 0..3 сохраняются", async () => {
     appApi.defaults.adapter = (async (config) => ({
       data: {
         id: "team-42",
         creator_team_id: "t-1",
         is_excluded_from_analytics: false,
-        bugs: [{ id: 7, report_id: 42, creator_user_id: "u-3" }],
+        links: [],
+        bugs: [
+          {
+            id: 7,
+            report_id: 42,
+            creator_user_id: "u-3",
+            steps: null,
+            comments: [],
+            attachments: [0, 1, 2, 3].map((attach_type) => ({
+              attach_type,
+              file_name: `${attach_type}.png`,
+            })),
+          },
+        ],
       },
       status: 200,
       statusText: "OK",
@@ -216,5 +436,11 @@ describe("ответы приходят в camelCase кода", () => {
     expect(report.isExcludedFromAnalytics).toBe(false);
     expect(report.bugs?.[0].reportId).toBe(42);
     expect(report.bugs?.[0].creatorUserId).toBe("u-3");
+    expect(report.links).toEqual([]);
+    expect(report.bugs?.[0].steps).toBeNull();
+    expect(report.bugs?.[0].comments).toEqual([]);
+    expect(
+      report.bugs?.[0].attachments?.map((item) => item.attachType)
+    ).toEqual([0, 1, 2, 3]);
   });
 });

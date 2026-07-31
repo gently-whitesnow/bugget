@@ -1,10 +1,10 @@
 using System.Net;
 using Bugget.Http;
-using Flow.Errors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Users.Entities.Errors;
 
-namespace Flow.Extensions;
+namespace Users.Api.Extensions;
 
 public static class ErrorExtensions
 {

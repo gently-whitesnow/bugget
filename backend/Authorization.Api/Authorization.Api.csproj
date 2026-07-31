@@ -19,8 +19,10 @@
     <ProjectReference Include="..\FakeAuth\FakeAuth.csproj" />
     <ProjectReference Include="..\Authorization.Abstractions\Authorization.Abstractions.csproj" />
     <ProjectReference Include="..\Authentication\Authentication.csproj" />
-    <ProjectReference Include="..\Flow\Flow.csproj" />
     <ProjectReference Include="..\Bugget.Http\Bugget.Http.csproj" />
+    <!-- Словарь ошибок модуля users: IUsersClient — порт authorization в users,
+         и ошибка через него приходит именно оттуда (ADR-0004). -->
+    <ProjectReference Include="..\Users.Entities\Users.Entities.csproj" />
     <ProjectReference Include="..\Caching.Local\Caching.Local.csproj" />
     <ProjectReference Include="..\BugReport.Logging\BugReport.Logging.csproj" />
   </ItemGroup>

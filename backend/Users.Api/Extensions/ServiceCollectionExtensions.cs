@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Authentication;
-using Flow;
 using MattermostOAuth;
 using TaskQueue;
 using Users.Api.Adapters;
@@ -16,6 +15,7 @@ using Users.DA.Files;
 using Users.DA.Interfaces;
 using Users.DA.TeamMembers;
 using Users.DbUp;
+using Users.Entities.Errors;
 using Users.Entities.Options;
 
 namespace Users.Api.Extensions;

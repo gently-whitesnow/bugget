@@ -1,10 +1,10 @@
-using Flow;
 using Microsoft.Extensions.Options;
 using Users.BO.Interfaces;
 using Users.DA.Interfaces;
 using Users.Entities.BO;
 using Users.Entities.DbModels.Members;
 using Users.Entities.DbModels.Workspaces;
+using Users.Entities.Errors;
 using Users.Entities.Options;
 
 namespace Users.BO;
@@ -16,17 +16,17 @@ public sealed class WorkspacesService(
     IAuthorizationRepository authorizationRepository,
     IOptions<SelfHostedOptions> hostingOptions) : IWorkspacesService
 {
-    public async Task<ResultStruct<WorkspaceDbModel>> CreateWorkspaceAsync(long userId, string name)
+    public async Task<(WorkspaceDbModel? Value, Error? Error)> CreateWorkspaceAsync(long userId, string name)
     {
         if (hostingOptions.Value.Enabled)
         {
-            return BoErrors.SelfHostedModeError;
+            return (null, BoErrors.SelfHostedModeError);
         }
 
         var workspace = await workspacesDbClient.CreateWorkspaceAsync(userId, name);
 
         await authorizationRepository.InvalidateUserCacheAsync(userId);
-        return workspace;
+        return (workspace, null);
     }
 
     public Task<WorkspaceDbModel> InternalCreateWorkspaceAsync(string name)
@@ -84,19 +84,19 @@ public sealed class WorkspacesService(
         return (workspaces.ToArray(), workspacesMember, teamsMember);
     }
 
-    public async Task<ResultStruct<WorkspaceDbModel>> UpdateWorkspaceAsync(long userId, int workspaceId, string name)
+    public async Task<(WorkspaceDbModel? Value, Error? Error)> UpdateWorkspaceAsync(long userId, int workspaceId, string name)
     {
         if (hostingOptions.Value.Enabled)
         {
-            return BoErrors.SelfHostedModeError;
+            return (null, BoErrors.SelfHostedModeError);
         }
 
         var workspace = await workspacesDbClient.UpdateWorkspaceAsync(workspaceId, name);
         await authorizationRepository.InvalidateUserCacheAsync(userId);
-        return workspace;
+        return (workspace, null);
     }
 
-    public async Task<ResultStruct> DeleteWorkspaceAsync(long userId, int workspaceId)
+    public async Task<Error?> DeleteWorkspaceAsync(long userId, int workspaceId)
     {
         if (hostingOptions.Value.Enabled)
         {
@@ -105,6 +105,6 @@ public sealed class WorkspacesService(
 
         await workspacesDbClient.DeleteWorkspaceAsync(workspaceId);
         await authorizationRepository.InvalidateUserCacheAsync(userId);
-        return ResultStruct.Success;
+        return null;
     }
 }

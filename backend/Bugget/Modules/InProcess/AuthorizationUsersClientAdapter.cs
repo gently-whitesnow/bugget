@@ -2,8 +2,8 @@ using Authorization.Abstractions;
 using Authorization.Api;
 using Authorization.Api.Interfaces;
 using Authorization.Api.Models;
-using Flow;
 using Users.Entities.Dto.Users;
+using Users.Entities.Errors;
 using UserExternalLinksService = Users.BO.Interfaces.IUserExternalLinksService;
 using UsersService = Users.BO.Interfaces.IUsersService;
 
@@ -29,13 +29,13 @@ public sealed class AuthorizationUsersClientAdapter(
         return MapUser(created);
     }
 
-    public async Task<ResultStruct<UserContext>> GetUserContextAsync(long id)
+    public async Task<(UserContext? Value, Error? Error)> GetUserContextAsync(long id)
     {
         var result = await usersService.GetUserContextAsync(id);
         return MapContext(result);
     }
 
-    public async Task<ResultStruct<UserContext>> GetUserContextByExternalIdAsync(string externalId)
+    public async Task<(UserContext? Value, Error? Error)> GetUserContextByExternalIdAsync(string externalId)
     {
         var result = await usersService.GetUserContextByExternalIdAsync(externalId);
         return MapContext(result);
@@ -59,22 +59,22 @@ public sealed class AuthorizationUsersClientAdapter(
         return (true, null, null);
     }
 
-    private static ResultStruct<UserContext> MapContext(ResultStruct<Users.BO.UserContext?> result)
+    private static (UserContext? Value, Error? Error) MapContext((Users.BO.UserContext? Value, Error? Error) result)
     {
-        if (result.HasError)
+        if (result.Error is not null)
         {
-            return result.Error!;
+            return (null, result.Error);
         }
 
         var context = result.Value;
         if (context is null)
         {
-            return BoErrors.UserNotFound;
+            return (null, BoErrors.UserNotFound);
         }
 
-        return new UserContext(
+        return (new UserContext(
             MapUser(context.User),
-            [.. context.Workspaces.Select(w => new WorkspaceMember(w.WorkspaceId, w.Role, w.TeamIds))]);
+            [.. context.Workspaces.Select(w => new WorkspaceMember(w.WorkspaceId, w.Role, w.TeamIds))]), null);
     }
 
     private static User MapUser(Users.Entities.DbModels.Users.UserDbModel user) => new()

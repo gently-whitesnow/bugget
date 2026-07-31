@@ -1,8 +1,8 @@
-using Flow;
 using Microsoft.Extensions.Options;
 using Users.DA.Interfaces;
 using Users.DA.TeamMembers;
 using Users.Entities.DbModels.Members;
+using Users.Entities.Errors;
 using Users.Entities.Options;
 
 namespace Users.BO.TeamMembers;
@@ -14,19 +14,19 @@ public sealed class TeamMembersService(
     IAuthorizationRepository authorizationRepository,
     IOptions<SelfHostedOptions> selfHostedOptions) : ITeamMembersService
 {
-    public async Task<ResultStruct<TeamMemberDbModel>> CreateTeamMemberAsync(int teamId, long userId)
+    public async Task<(TeamMemberDbModel? Value, Error? Error)> CreateTeamMemberAsync(int teamId, long userId)
     {
         if (selfHostedOptions.Value.Enabled)
         {
             var teamMember = await teamMembersRepository.CreateTeamMemberAsync(userId, teamId);
             await authorizationRepository.InvalidateUserCacheAsync(userId);
-            return teamMember;
+            return (teamMember, null);
         }
 
         var teamMemberResult = await teamMembersRepository.CreateTeamMemberAsync(userId, teamId, teamsOptions.Value.DefaultSizeLimit);
-        if (teamMemberResult.HasError)
+        if (teamMemberResult.Error is not null)
         {
-            return teamMemberResult.Error!;
+            return (null, teamMemberResult.Error);
         }
         await authorizationRepository.InvalidateUserCacheAsync(userId);
         return teamMemberResult;

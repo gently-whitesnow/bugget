@@ -49,7 +49,7 @@ public class WorkspaceMembersDbClientTests : IClassFixture<AppWithPostgresFixtur
         var ws = await _workspacesRepository.CreateWorkspaceAsync(owner.Id, "WS");
 
         var result = await _workspaceMembersRepository.CreateWorkspaceMemberAsync(user1.Id, ws.Id, WorkspaceRole.Member, 10);
-        Assert.True(result.IsSuccess);
+        Assert.True((result.Error is null));
         var m1 = result.Value!;
         Assert.Equal(ws.Id, m1.WorkspaceId);
         Assert.Equal(user1.Id, m1.UserId);
@@ -77,7 +77,7 @@ public class WorkspaceMembersDbClientTests : IClassFixture<AppWithPostgresFixtur
                 ImageUrl = null
             });
             var result = await _workspaceMembersRepository.CreateWorkspaceMemberAsync(member.Id, ws.Id, WorkspaceRole.Member, 10);
-            Assert.True(result.IsSuccess);
+            Assert.True((result.Error is null));
         }
 
         // Пытаемся добавить еще одного с лимитом 3 (owner + 3 члена = 4)
@@ -89,7 +89,7 @@ public class WorkspaceMembersDbClientTests : IClassFixture<AppWithPostgresFixtur
         });
 
         var failResult = await _workspaceMembersRepository.CreateWorkspaceMemberAsync(newMember.Id, ws.Id, WorkspaceRole.Member, 3);
-        Assert.False(failResult.IsSuccess);
+        Assert.False((failResult.Error is null));
         Assert.Equal(Users.DA.WorkspaceMembers.WorkspaceMembersErrors.WorkspaceLimitExceededError, failResult.Error);
     }
 
@@ -112,14 +112,14 @@ public class WorkspaceMembersDbClientTests : IClassFixture<AppWithPostgresFixtur
         var ws = await _workspacesRepository.CreateWorkspaceAsync(owner.Id, "WS");
 
         var result = await _workspaceMembersRepository.CreateWorkspaceMemberAsync(user1.Id, ws.Id, WorkspaceRole.Admin, 10);
-        Assert.True(result.IsSuccess);
+        Assert.True((result.Error is null));
         var m1 = result.Value!;
         Assert.Equal(ws.Id, m1.WorkspaceId);
         Assert.Equal(user1.Id, m1.UserId);
         Assert.Equal(WorkspaceRole.Admin, m1.Role);
 
         var result2 = await _workspaceMembersRepository.CreateWorkspaceMemberAsync(user1.Id, ws.Id, WorkspaceRole.Member, 10);
-        Assert.True(result2.IsSuccess);
+        Assert.True((result2.Error is null));
         var m2 = result2.Value!;
         Assert.Equal(ws.Id, m2.WorkspaceId);
         Assert.Equal(user1.Id, m2.UserId);
@@ -153,8 +153,8 @@ public class WorkspaceMembersDbClientTests : IClassFixture<AppWithPostgresFixtur
         var m1Result = await _workspaceMembersRepository.CreateWorkspaceMemberAsync(user1.Id, ws.Id, WorkspaceRole.Member, 10);
         var m2Result = await _workspaceMembersRepository.CreateWorkspaceMemberAsync(user2.Id, ws.Id, WorkspaceRole.Admin, 10);
 
-        Assert.True(m1Result.IsSuccess);
-        Assert.True(m2Result.IsSuccess);
+        Assert.True((m1Result.Error is null));
+        Assert.True((m2Result.Error is null));
 
         var members = await _workspaceMembersRepository.ListWorkspaceMembersAsync(ws.Id);
         Assert.Equal(3, members.Length);
@@ -190,7 +190,7 @@ public class WorkspaceMembersDbClientTests : IClassFixture<AppWithPostgresFixtur
         });
 
         var result = await _teamMembersRepository.CreateTeamMemberAsync(user.Id, team.Id, 10);
-        Assert.True(result.IsSuccess);
+        Assert.True((result.Error is null));
         Assert.Equal(team.Id, result.Value!.TeamId);
 
         var members = await _teamMembersRepository.ListTeamMembersAsync(team.Id);
@@ -218,7 +218,7 @@ public class WorkspaceMembersDbClientTests : IClassFixture<AppWithPostgresFixtur
         });
 
         var createResult = await _workspaceMembersRepository.CreateWorkspaceMemberAsync(member.Id, ws.Id, WorkspaceRole.Member, 10);
-        Assert.True(createResult.IsSuccess);
+        Assert.True((createResult.Error is null));
 
         var beforeDelete = await _workspaceMembersRepository.ListWorkspaceMembersAsync(ws.Id);
         Assert.Equal(2, beforeDelete.Length); // owner + member

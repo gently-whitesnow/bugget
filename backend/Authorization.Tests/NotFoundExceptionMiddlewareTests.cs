@@ -8,6 +8,10 @@ namespace Authorization.Tests;
 /// <summary>
 /// Граница модуля authorization отдаёт ту же форму, что и весь остальной HTTP-контур,
 /// и не публикует текст исключения: до MAIN-69 здесь уходило <c>{ error: ex.Message }</c>.
+///
+/// Внешний обработчик «любое исключение -> 500» живёт в хосте, и его половину проверяет
+/// <c>Bugget.Tests.UnhandledExceptionPipelineTests</c>: сюда он не дотягивается, потому что
+/// хост ссылается на этот модуль, а не наоборот.
 /// </summary>
 public sealed class NotFoundExceptionMiddlewareTests
 {
@@ -15,7 +19,7 @@ public sealed class NotFoundExceptionMiddlewareTests
     public async Task KeyNotFound_becomes_problem_details_without_the_exception_message()
     {
         const string secret = "connection string to the internal database";
-        var context = await InvokeAuthorizationPipelineAsync(new KeyNotFoundException(secret));
+        var context = await InvokeAsync(new KeyNotFoundException(secret));
 
         Assert.Equal(StatusCodes.Status404NotFound, context.Response.StatusCode);
         Assert.StartsWith("application/problem+json", context.Response.ContentType);
@@ -29,41 +33,25 @@ public sealed class NotFoundExceptionMiddlewareTests
     }
 
     [Fact]
-    public async Task Unexpected_authorization_failure_becomes_sanitized_problem_details()
+    public async Task Unexpected_failure_is_left_to_the_host_handler()
     {
-        const string secret = "redis endpoint 10.0.0.8 password=hunter2";
-        var context = await InvokeAuthorizationPipelineAsync(new InvalidOperationException(secret));
+        var boom = new InvalidOperationException("redis endpoint 10.0.0.8 password=hunter2");
 
-        Assert.Equal(StatusCodes.Status500InternalServerError, context.Response.StatusCode);
-        Assert.StartsWith("application/problem+json", context.Response.ContentType);
+        // Middleware ловит только KeyNotFoundException: всё остальное обязано уйти наверх,
+        // иначе в хосте окажется второй обработчик 500 со своей формой ответа.
+        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => InvokeAsync(boom));
 
-        var body = await ReadBodyAsync(context);
-        Assert.DoesNotContain(secret, body, StringComparison.Ordinal);
-
-        using var document = JsonDocument.Parse(body);
-        var root = document.RootElement;
-        Assert.Equal("internal_server_error", root.GetProperty("code").GetString());
-        Assert.Equal("urn:bugget:error:internal_server_error", root.GetProperty("type").GetString());
-        Assert.False(root.TryGetProperty("detail", out _));
-        Assert.False(root.TryGetProperty("error", out _));
+        Assert.Same(boom, thrown);
     }
 
-    /// <summary>
-    /// Повторяет порядок production pipeline: общий Flow-handler снаружи,
-    /// authorization NotFound-handler внутри него.
-    /// </summary>
-    private static async Task<DefaultHttpContext> InvokeAuthorizationPipelineAsync(Exception exception)
+    private static async Task<DefaultHttpContext> InvokeAsync(Exception exception)
     {
         var authorization = new NotFoundExceptionMiddleware(
             NullLogger<NotFoundExceptionMiddleware>.Instance);
-        var serverErrors = new Flow.ResultExceptionHandlerMiddleware(
-            NullLogger<Flow.ResultExceptionHandlerMiddleware>.Instance);
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 
-        await serverErrors.InvokeAsync(
-            context,
-            inner => authorization.InvokeAsync(inner, _ => throw exception));
+        await authorization.InvokeAsync(context, _ => throw exception);
 
         return context;
     }

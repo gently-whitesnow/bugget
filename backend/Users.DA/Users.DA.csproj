@@ -6,7 +6,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Flow\Flow.csproj" />
   </ItemGroup>
 
   <ItemGroup>

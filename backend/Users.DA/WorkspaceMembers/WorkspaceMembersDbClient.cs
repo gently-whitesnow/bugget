@@ -1,29 +1,29 @@
 using Dapper;
-using Flow;
 using Npgsql;
 using Users.DA.Interfaces;
 using Users.DA.WorkspaceMembers;
 using Users.Entities.DbModels.Members;
+using Users.Entities.Errors;
 
 namespace Users.DA.DbClients;
 
 public class WorkspaceMembersDbClient : PostgresClient, IWorkspaceMembersRepository
 {
-    public async Task<ResultStruct<WorkspaceMemberDbModel>> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role, int sizeLimit)
+    public async Task<(WorkspaceMemberDbModel? Value, Error? Error)> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role, int sizeLimit)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
         try
         {
-            return await conn.QuerySingleAsync<WorkspaceMemberDbModel>(
+            return (await conn.QuerySingleAsync<WorkspaceMemberDbModel>(
                 "SELECT * FROM create_workspace_member(@user_id, @workspace_id, @role, @size_limit)",
                 new { user_id = userId, workspace_id = workspaceId, role = role, size_limit = sizeLimit }
-            );
+            ), null);
         }
         catch (PostgresException ex)
         {
             if (ex.MessageText == "workspace_limit_exceeded")
             {
-                return WorkspaceMembersErrors.WorkspaceLimitExceededError;
+                return (null, WorkspaceMembersErrors.WorkspaceLimitExceededError);
             }
 
             throw;

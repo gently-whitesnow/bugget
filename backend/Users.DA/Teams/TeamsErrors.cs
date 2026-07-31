@@ -1,4 +1,4 @@
-using Flow.Errors;
+using Users.Entities.Errors;
 
 namespace Users.DA.Teams;
 

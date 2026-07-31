@@ -164,8 +164,6 @@ public static class ServiceCollectionExtensions
         services.AddAuthHeaders();
         services.AddSwaggerConfiguration(configuration);
         services.AddSingleton<ResultExceptionHandlerMiddleware>();
-        // Обработчик Result-ошибок модулей users и authorization — они используют Flow.
-        services.AddSingleton<Flow.ResultExceptionHandlerMiddleware>();
 
         services.AddMvcPipeline();
 

@@ -47,7 +47,7 @@ public class TeamMembersDbClientTests : IClassFixture<AppWithPostgresFixture>
         });
 
         var result = await _teamMembersRepository.CreateTeamMemberAsync(member.Id, team.Id, 10);
-        Assert.True(result.IsSuccess);
+        Assert.True((result.Error is null));
         var created = result.Value!;
         Assert.Equal(team.Id, created.TeamId);
         Assert.Equal(member.Id, created.UserId);
@@ -80,7 +80,7 @@ public class TeamMembersDbClientTests : IClassFixture<AppWithPostgresFixture>
                 ImageUrl = null
             });
             var result = await _teamMembersRepository.CreateTeamMemberAsync(member.Id, team.Id, 10);
-            Assert.True(result.IsSuccess);
+            Assert.True((result.Error is null));
         }
 
         // Пытаемся добавить еще одного с лимитом 2 (а уже есть 3)
@@ -92,7 +92,7 @@ public class TeamMembersDbClientTests : IClassFixture<AppWithPostgresFixture>
         });
 
         var failResult = await _teamMembersRepository.CreateTeamMemberAsync(newMember.Id, team.Id, 2);
-        Assert.False(failResult.IsSuccess);
+        Assert.False((failResult.Error is null));
         Assert.Equal(Users.DA.TeamMembers.TeamMembersErrors.TeamLimitExceededError, failResult.Error);
     }
 
@@ -141,7 +141,7 @@ public class TeamMembersDbClientTests : IClassFixture<AppWithPostgresFixture>
         });
 
         var createResult = await _teamMembersRepository.CreateTeamMemberAsync(member.Id, team.Id, 10);
-        Assert.True(createResult.IsSuccess);
+        Assert.True((createResult.Error is null));
 
         var beforeDelete = await _teamMembersRepository.ListTeamMembersAsync(team.Id);
         Assert.Single(beforeDelete);

@@ -1,9 +1,9 @@
-using Flow;
 using Users.Entities.DbModels.Members;
+using Users.Entities.Errors;
 
 namespace Users.BO.WorkspaceMembers;
 
 public interface IWorkspaceMembersService
 {
-    Task<ResultStruct<WorkspaceMemberDbModel>> CreateWorkspaceMemberAsync(long userId, int workspaceId);
+    Task<(WorkspaceMemberDbModel? Value, Error? Error)> CreateWorkspaceMemberAsync(long userId, int workspaceId);
 }

@@ -280,14 +280,14 @@ public sealed class ProblemDetailsFactoryTests
             (404, ["not_found_error", "team_not_found_error", "user_not_found"]),
             (500, ["internal_server_error"]));
 
-        var errors = ReadErrorCatalog<Flow.Error>(typeof(Users.BO.BoErrors))
-            .Concat(ReadErrorCatalog<Flow.Error>(typeof(Authorization.Api.BoErrors)))
+        var errors = ReadErrorCatalog<Users.Entities.Errors.Error>(typeof(Users.BO.BoErrors))
+            .Concat(ReadErrorCatalog<Users.Entities.Errors.Error>(typeof(Authorization.Api.BoErrors)))
             .ToArray();
 
         AssertErrorCatalog(
             errors,
             expectedStatuses,
-            error => Flow.Extensions.ErrorExtensions.ToProblemDetails(error, new DefaultHttpContext()));
+            error => Users.Api.Extensions.ErrorExtensions.ToProblemDetails(error, new DefaultHttpContext()));
     }
 
     private static ProblemDetails GetProblem(ProblemDescriptor descriptor, string? detail = null) =>

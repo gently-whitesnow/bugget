@@ -9,7 +9,6 @@ using Authorization.Api.Interfaces;
 using Authorization.Api.Services;
 using Authorization.Interfaces;
 using Authorization.Options;
-using Flow;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +17,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using OidcAuth;
 using StackExchange.Redis;
+using Users.Entities.Errors;
 
 namespace Authorization.Api.Extensions;
 

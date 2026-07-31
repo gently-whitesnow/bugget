@@ -1,5 +1,5 @@
-using Flow;
 using Users.Entities.DbModels.Teams;
+using Users.Entities.Errors;
 
 namespace Users.BO.Interfaces;
 
@@ -9,7 +9,7 @@ public interface ITeamsService
     Task<TeamDbModel[]> ListTeamsAsync(int workspaceId, int[] teamIds);
     Task<TeamDbModel[]> AutocompleteTeamsAsync(int workspaceId, string searchString, int skip, int take);
 
-    Task<ResultStruct<TeamDbModel>> CreateTeamAsync(int workspaceId, string name, long userId, int? userTeamId);
+    Task<(TeamDbModel? Value, Error? Error)> CreateTeamAsync(int workspaceId, string name, long userId, int? userTeamId);
 
     Task<TeamDbModel> UpdateTeamAsync(int workspaceId, int teamId, string name);
 

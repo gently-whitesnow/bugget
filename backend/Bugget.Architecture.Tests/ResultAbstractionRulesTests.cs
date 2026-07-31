@@ -69,6 +69,14 @@ public class ResultAbstractionRulesTests
         ResultLikeDeclarations(source).Should().Equal("Outcome");
     }
 
+    [Fact(DisplayName = "Гейт краснеет на Result-обёртке с qualified generic-базой")]
+    public void Qualified_inherited_generic_result_like_fixture_is_rejected()
+    {
+        const string source = "public sealed class Outcome<T> : Contracts.Choice<T, Error> { }";
+
+        ResultLikeDeclarations(source).Should().Equal("Outcome");
+    }
+
     [Fact(DisplayName = "Гейт краснеет на обёртке, у которой payload свой, а ошибка из базы")]
     public void Inherited_error_with_own_payload_is_rejected()
     {

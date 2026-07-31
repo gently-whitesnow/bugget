@@ -56,16 +56,21 @@ public class ResultAbstractionRulesTests
     [InlineData("public sealed record Outcome<T>(T? Data, Error? Error);")]
     [InlineData("public sealed record Outcome<T> { public T? Data { get; init; } public Error? Error { get; init; } }")]
     [InlineData("public sealed class Outcome<T> { public T? Payload; public Error? Failure; }")]
+    [InlineData("public sealed record Outcome<T>(T? Data, Bugget.Entities.Errors.Error? Error);")]
     public void Result_like_fixture_is_rejected(string source)
     {
         ResultLikeDeclarations(source).Should().NotBeEmpty();
     }
 
-    [Fact(DisplayName = "Гейт краснеет на generic Result-обёртке, собранной через наследование")]
-    public void Inherited_generic_result_like_fixture_is_rejected()
+    [Theory(DisplayName = "Гейт краснеет на generic Result-обёртке, собранной через наследование, при любой квалификации имени")]
+    [InlineData("public sealed class Outcome<T> : Choice<T, Error> { }")]
+    [InlineData("public sealed class Outcome<T> : Contracts.Choice<T, Error> { }")]
+    [InlineData("public sealed class Outcome<T> : Bugget.Contracts.Choice<T, Error> { }")]
+    [InlineData("public sealed class Outcome<T> : global::Bugget.Contracts.Choice<T, Error> { }")]
+    [InlineData("public sealed class Outcome<T> : Choice<T, Bugget.Entities.Errors.Error> { }")]
+    [InlineData("public sealed class Outcome<T> : Choice<T, global::Bugget.Entities.Errors.Error> { }")]
+    public void Inherited_generic_result_like_fixture_is_rejected(string source)
     {
-        const string source = "public sealed class Outcome<T> : Choice<T, Error> { }";
-
         ResultLikeDeclarations(source).Should().Equal("Outcome");
     }
 
@@ -96,7 +101,7 @@ public class ResultAbstractionRulesTests
         const string source = """
             public sealed class FailureState
             {
-                public Error? Error { get; init; }
+                public global::Bugget.Entities.Errors.Error? Error { get; init; }
             }
 
             public sealed class PageState
@@ -270,21 +275,30 @@ public class ResultAbstractionRulesTests
     /// </summary>
     private static IReadOnlyList<TypeSyntax> BaseTypeArguments(TypeDeclarationSyntax type) =>
         [.. (type.BaseList?.Types ?? default)
-            .Select(baseType => baseType.Type)
+            .Select(baseType => Unqualified(baseType.Type))
             .OfType<GenericNameSyntax>()
             .SelectMany(generic => generic.TypeArgumentList.Arguments)];
 
-    private static bool IsErrorType(TypeSyntax type)
+    private static bool IsErrorType(TypeSyntax type) =>
+        Unqualified(type)?.Identifier.ValueText == "Error";
+
+    /// <summary>
+    /// Имя типа без квалификации и без <c>?</c>: у <c>Contracts.Choice&lt;T, Error&gt;</c> и у
+    /// <c>global::Bugget.Contracts.Choice&lt;T, Error&gt;</c> это одинаковый
+    /// <c>Choice&lt;T, Error&gt;</c>. Квалификация на смысл не влияет, а разбор без её снятия
+    /// теряет и generic-аргументы базы, и само имя.
+    /// </summary>
+    private static SimpleNameSyntax? Unqualified(TypeSyntax type)
     {
         var bare = type is NullableTypeSyntax nullable ? nullable.ElementType : type;
-        var name = bare switch
+
+        return bare switch
         {
-            QualifiedNameSyntax qualified => qualified.Right.Identifier.ValueText,
-            SimpleNameSyntax simple => simple.Identifier.ValueText,
+            QualifiedNameSyntax qualified => Unqualified(qualified.Right),
+            AliasQualifiedNameSyntax alias => Unqualified(alias.Name),
+            SimpleNameSyntax simple => simple,
             _ => null
         };
-
-        return name == "Error";
     }
 
     private static bool IsSuccessFlag((string Name, TypeSyntax Type) member) =>

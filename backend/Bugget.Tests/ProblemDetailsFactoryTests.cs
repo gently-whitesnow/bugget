@@ -1,12 +1,12 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Bugget.Entities.Errors;
 using Bugget.Extensions;
 using Bugget.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.DependencyInjection;
-using Monade.Errors;
 
 namespace Bugget.Tests;
 
@@ -251,7 +251,7 @@ public sealed class ProblemDetailsFactoryTests
             (409, ["report_closed"]),
             (500, ["internal_server_error"]));
 
-        var errors = ReadErrorCatalog<Monade.Error>(typeof(Bugget.BO.Errors.BoErrors))
+        var errors = ReadErrorCatalog<Bugget.Entities.Errors.Error>(typeof(Bugget.BO.Errors.BoErrors))
             .Append(Bugget.BO.Errors.BoErrors.AttachmentTypeNotSupported("image/test"))
             .ToArray();
 

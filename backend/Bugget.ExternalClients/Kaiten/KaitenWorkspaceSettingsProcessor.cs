@@ -2,8 +2,8 @@ using Bugget.BO.Errors;
 using Bugget.BO.Services.Settings;
 using Bugget.DA.Interfaces;
 using Bugget.Entities.DbModels.Settings;
+using Bugget.Entities.Errors;
 using Bugget.Entities.Views.Settings;
-using Monade;
 
 namespace Bugget.ExternalClients.Kaiten;
 
@@ -46,20 +46,20 @@ public sealed class KaitenWorkspaceSettingsProcessor(
         };
     }
 
-    async Task<MonadeStruct<WorkspaceSettingView>> IWorkspaceSettingsProcessor.UpdateSettingAsync(
+    async Task<(WorkspaceSettingView? Value, Error? Error)> IWorkspaceSettingsProcessor.UpdateSettingAsync(
         string workspaceId,
         string settingId,
         string[] values)
     {
         if (!SettingsMap.TryGetValue(settingId, out var definition))
         {
-            return new MonadeStruct<WorkspaceSettingView>(BoErrors.WorkspaceSettingNotFound);
+            return (null, BoErrors.WorkspaceSettingNotFound);
         }
 
         var result = await definition.UpdateAsync(workspaceId, values, KaitenConstants.FeatureKey, settingsDbClient);
 
         // Всегда инвалидируем кэш при изменении workspace настроек Kaiten
-        if (result.IsSuccess)
+        if (result.Error is null)
         {
             boardsLoaderService.InvalidateCache(workspaceId);
         }
@@ -75,7 +75,7 @@ public sealed class KaitenWorkspaceSettingsProcessor(
     {
         public abstract WorkspaceSettingView BuildView(WorkspaceSettingDbModel[] kaitenSettings);
 
-        public abstract Task<MonadeStruct<WorkspaceSettingView>> UpdateAsync(
+        public abstract Task<(WorkspaceSettingView? Value, Error? Error)> UpdateAsync(
             string workspaceId,
             string[] values,
             string sectionId,
@@ -113,7 +113,7 @@ public sealed class KaitenWorkspaceSettingsProcessor(
             };
         }
 
-        public override async Task<MonadeStruct<WorkspaceSettingView>> UpdateAsync(
+        public override async Task<(WorkspaceSettingView? Value, Error? Error)> UpdateAsync(
             string workspaceId,
             string[] values,
             string sectionId,
@@ -121,7 +121,7 @@ public sealed class KaitenWorkspaceSettingsProcessor(
         {
             if (values.Length != 1)
             {
-                return new MonadeStruct<WorkspaceSettingView>(BoErrors.WorkspaceSettingInvalidValues);
+                return (null, BoErrors.WorkspaceSettingInvalidValues);
             }
 
             var setting = await settingsDbClient.UpsertWorkspaceSettingAsync(
@@ -136,14 +136,14 @@ public sealed class KaitenWorkspaceSettingsProcessor(
                 value = "********";
             }
 
-            return new MonadeStruct<WorkspaceSettingView>(new WorkspaceSettingView
+            return (new WorkspaceSettingView
             {
                 Id = Id,
                 Title = Title,
                 Description = Description,
                 IsArray = false,
                 Values = new[] { value }
-            });
+            }, null);
         }
     }
 }

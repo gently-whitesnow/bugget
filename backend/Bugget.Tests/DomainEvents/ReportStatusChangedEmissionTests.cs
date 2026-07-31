@@ -131,7 +131,7 @@ public class ReportStatusChangedEmissionTests
         var user = CreateUser("u1", "org-1");
         var result = await svc.PatchReportAsync("42", user, new ReportPatchDto { Status = (int)ReportStatus.Fix });
 
-        Assert.True(result.IsSuccess);
+        Assert.True(result.Error is null);
         Assert.Single(events);
         var evt = events[0];
         Assert.Equal(BuggetEventTypes.ReportStatusChanged, evt.EventType);
@@ -185,7 +185,7 @@ public class ReportStatusChangedEmissionTests
         var user = CreateUser("u1", "org-1");
         var result = await svc.PatchReportAsync("7", user, new ReportPatchDto { ResponsibleUserId = "u-new" });
 
-        Assert.True(result.IsSuccess);
+        Assert.True(result.Error is null);
         // DTO, ушедший в БД, содержит auto-выставленный Status=Fix
         // (первый ответственный начинает фиксить, Test — вторая фаза).
         Assert.Equal((int)ReportStatus.Fix, observed.Single().Status);

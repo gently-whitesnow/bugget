@@ -1,24 +1,28 @@
 using System.Collections;
-using Microsoft.AspNetCore.Http;
+using Bugget.Entities.Errors;
 using Microsoft.AspNetCore.Mvc;
-using Monade;
 
 namespace Bugget.Extensions;
 
+/// <summary>
+/// Граница «результат бизнес-логики → HTTP-ответ». Бизнес-логика возвращает нативный
+/// кортеж <c>(значение, ошибка)</c> либо просто <c>Error?</c> (ADR-0004); превращение
+/// в <see cref="ActionResult"/> живёт здесь, в API-слое.
+/// </summary>
 public static class ResultExtensions
 {
     public static async Task<IActionResult> AsActionResultAsync(
-    this Task<MonadeStruct> operationTask,
-    HttpContext context,
-    int successStatusCode = 200)
+        this Task<Error?> operationTask,
+        HttpContext context,
+        int successStatusCode = 200)
     {
-        var operation = await operationTask;
+        var error = await operationTask;
 
-        return operation.AsActionResult(context, successStatusCode);
+        return error.AsActionResult(context, successStatusCode);
     }
 
     public static async Task<IActionResult> AsActionResultAsync<TValue>(
-        this Task<MonadeStruct<TValue>> operationTask,
+        this Task<(TValue? Value, Error? Error)> operationTask,
         HttpContext context,
         int successStatusCode = 200)
     {
@@ -28,7 +32,7 @@ public static class ResultExtensions
     }
 
     public static async Task<IActionResult> AsActionResultAsync<TValue, TView>(
-        this Task<MonadeStruct<TValue>> operationTask,
+        this Task<(TValue? Value, Error? Error)> operationTask,
         HttpContext context,
         Func<TValue, TView> toView,
         int successStatusCode = 200)
@@ -45,7 +49,7 @@ public static class ResultExtensions
     /// договорённости — расхождение с контрактом ловит компилятор.
     /// </summary>
     public static async Task<ActionResult<TContract>> AsContractResultAsync<TValue, TContract>(
-        this Task<MonadeStruct<TValue>> operationTask,
+        this Task<(TValue? Value, Error? Error)> operationTask,
         HttpContext context,
         Func<TValue, TContract> toContract,
         int successStatusCode = 200)
@@ -56,24 +60,24 @@ public static class ResultExtensions
     }
 
     public static ActionResult AsActionResult(
-        this MonadeStruct operation,
+        this Error? error,
         HttpContext context,
         int successStatusCode = 200)
     {
-        if (operation.IsSuccess)
+        if (error is null)
         {
             return new StatusCodeResult(successStatusCode);
         }
 
-        return operation.Error!.ToProblemDetails(context);
+        return error.ToProblemDetails(context);
     }
 
     public static ActionResult AsActionResult<TValue>(
-        this MonadeStruct<TValue> operation,
+        this (TValue? Value, Error? Error) operation,
         HttpContext context,
         int successStatusCode = 200)
     {
-        if (operation.IsSuccess)
+        if (operation.Error is null)
         {
             return new JsonResult(operation.Value)
             {
@@ -81,18 +85,18 @@ public static class ResultExtensions
             };
         }
 
-        return operation.Error!.ToProblemDetails(context);
+        return operation.Error.ToProblemDetails(context);
     }
 
     public static ActionResult AsActionResult<TValue, TView>(
-        this MonadeStruct<TValue> operation,
+        this (TValue? Value, Error? Error) operation,
         HttpContext context,
         Func<TValue, TView> toView,
         int successStatusCode = 200)
     {
-        if (operation.HasError)
+        if (operation.Error is not null)
         {
-            return operation.Error!.ToProblemDetails(context);
+            return operation.Error.ToProblemDetails(context);
         }
 
         if (operation.Value == null)

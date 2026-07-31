@@ -4,10 +4,10 @@ using Bugget.BO.Interfaces;
 using Bugget.BO.Services.Reports;
 using Bugget.Entities.Authentication;
 using Bugget.Entities.BO.ReportBo;
+using Bugget.Entities.Errors;
 using Bugget.Entities.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Monade;
 using TaskQueue;
 
 namespace Bugget.BO.Services.External;
@@ -39,7 +39,7 @@ public sealed class ExternalSearchService(
         };
     }
 
-    public async Task<MonadeStruct> ApplySearchResultAsync(
+    public async Task<Error?> ApplySearchResultAsync(
         UserIdentity user,
          string workspaceId,
           string teamId,
@@ -49,7 +49,7 @@ public sealed class ExternalSearchService(
     {
         if (!externalApplyRepositories.Any())
         {
-            return MonadeStruct.Success;
+            return null;
         }
 
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
@@ -78,7 +78,7 @@ public sealed class ExternalSearchService(
                 await repository.ApplySearchResultAsync(user, workspaceId, teamId, searchApply);
             }
         });
-        return MonadeStruct.Success;
+        return null;
     }
 
     private async Task<ExternalSearchResult?> SafeSearchAsync(IExternalSearchRepository externalSearchRepository, string workspaceId, string teamId, string? query, uint skip, uint take)

@@ -270,7 +270,7 @@ public sealed class ReportPhaseProjectionHandlerTests : IClassFixture<AppWithPos
             report.Id.ToString(),
             user,
             new ReportPatchDto { Status = (int)ReportStatus.Test });
-        Assert.True(result.IsSuccess, $"PATCH не прошёл: {result.Error}");
+        Assert.True(result.Error is null, $"PATCH не прошёл: {result.Error}");
 
         // Sanity: статус действительно перешёл в Test.
         Assert.NotNull(result.Value);

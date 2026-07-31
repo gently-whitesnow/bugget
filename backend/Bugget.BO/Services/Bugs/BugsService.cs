@@ -9,9 +9,9 @@ using Bugget.Entities.BO.ReportBo;
 using Bugget.Entities.DbModels.Bug;
 using Bugget.Entities.DbModels.DomainEvents;
 using Bugget.Entities.DTO.Bug;
+using Bugget.Entities.Errors;
 using Bugget.Entities.Options;
 using Microsoft.Extensions.Options;
-using Monade;
 using TaskQueue;
 
 namespace Bugget.BO.Services.Bugs;
@@ -25,11 +25,11 @@ public sealed class BugsService(
     IDomainEventPublisher domainEventPublisher,
     IUnitOfWork unitOfWork)
 {
-    public async Task<MonadeStruct<BugSummaryDbModel>> CreateBugAsync(UserIdentity user, string aliasId, BugDto bug)
+    public async Task<(BugSummaryDbModel? Value, Error? Error)> CreateBugAsync(UserIdentity user, string aliasId, BugDto bug)
     {
         if (string.IsNullOrEmpty(bug.Expect) && string.IsNullOrEmpty(bug.Receive))
         {
-            return BoErrors.BugMustHaveOneField;
+            return (null, BoErrors.BugMustHaveOneField);
         }
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -41,7 +41,7 @@ public sealed class BugsService(
         );
         if (resolvedReport == null)
         {
-            return BoErrors.ReportNotFoundError;
+            return (null, BoErrors.ReportNotFoundError);
         }
 
         var bugSummaryDbModel = await unitOfWork.ExecuteAsync(async (scope, ct) =>
@@ -75,10 +75,10 @@ public sealed class BugsService(
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(() => bugsEventsService.HandleCreateBugEventAsync(reportIdContext, user, bugSummaryDbModel));
-        return bugSummaryDbModel;
+        return (bugSummaryDbModel, null);
     }
 
-    public async Task<MonadeStruct<BugPatchResultDbModel>> PatchBugAsync(UserIdentity user, string aliasId, int bugId, BugPatchDto patchDto)
+    public async Task<(BugPatchResultDbModel? Value, Error? Error)> PatchBugAsync(UserIdentity user, string aliasId, int bugId, BugPatchDto patchDto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -90,7 +90,7 @@ public sealed class BugsService(
         );
         if (resolvedReport == null)
         {
-            return BoErrors.ReportNotFoundError;
+            return (null, BoErrors.ReportNotFoundError);
         }
 
         var bugPatchResultDbModel = await unitOfWork.ExecuteAsync(async (scope, ct) =>
@@ -133,7 +133,7 @@ public sealed class BugsService(
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(() => bugsEventsService.HandlePatchBugEventAsync(reportIdContext, bugId, user, patchDto));
-        return bugPatchResultDbModel;
+        return (bugPatchResultDbModel, null);
     }
 
     public async Task<BugSummaryDbModel?> GetBugAsync(int reportId, int bugId)

@@ -11,9 +11,9 @@ using Bugget.Entities.BO.ReportBo;
 using Bugget.Entities.DbModels.Comment;
 using Bugget.Entities.DbModels.DomainEvents;
 using Bugget.Entities.DTO.Comment;
+using Bugget.Entities.Errors;
 using Bugget.Entities.Options;
 using Microsoft.Extensions.Options;
-using Monade;
 using TaskQueue;
 
 namespace Bugget.BO.Services.Comments;
@@ -28,7 +28,7 @@ public sealed class CommentsService(
     IDomainEventPublisher domainEventPublisher,
     IUnitOfWork unitOfWork)
 {
-    public async Task<MonadeStruct<CommentSummaryDbModel>> CreateCommentAsync(UserIdentity user, string aliasId, int bugId, CommentDto commentDto)
+    public async Task<(CommentSummaryDbModel? Value, Error? Error)> CreateCommentAsync(UserIdentity user, string aliasId, int bugId, CommentDto commentDto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -40,13 +40,13 @@ public sealed class CommentsService(
         );
         if (resolvedReport == null)
         {
-            return BoErrors.ReportNotFoundError;
+            return (null, BoErrors.ReportNotFoundError);
         }
 
         var bugDbModel = await bugsService.GetBugAsync(resolvedReport.Id, bugId);
         if (bugDbModel == null)
         {
-            return BoErrors.BugNotFoundError;
+            return (null, BoErrors.BugNotFoundError);
         }
 
         var commentDbModel = await unitOfWork.ExecuteAsync(async (scope, ct) =>
@@ -89,10 +89,10 @@ public sealed class CommentsService(
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentCreateEventAsync(reportIdContext, user, commentDbModel));
 
-        return commentDbModel;
+        return (commentDbModel, null);
     }
 
-    public async Task<MonadeStruct> DeleteCommentAsync(UserIdentity user, string aliasId, int bugId, int commentId)
+    public async Task<Error?> DeleteCommentAsync(UserIdentity user, string aliasId, int bugId, int commentId)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -110,16 +110,16 @@ public sealed class CommentsService(
         var commentDbModel = await commentsDbClient.DeleteCommentInternalAsync(user.Id, resolvedReport.Id, bugId, commentId);
         if (commentDbModel == null)
         {
-            return MonadeStruct.Success;
+            return null;
         }
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentDeleteEventAsync(reportIdContext, user, bugId, commentId));
 
-        return MonadeStruct.Success;
+        return null;
     }
 
-    public async Task<MonadeStruct<CommentSummaryDbModel>> UpdateCommentAsync(UserIdentity user, string aliasId, int bugId, int commmentId, CommentDto commentDto)
+    public async Task<(CommentSummaryDbModel? Value, Error? Error)> UpdateCommentAsync(UserIdentity user, string aliasId, int bugId, int commmentId, CommentDto commentDto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -131,18 +131,18 @@ public sealed class CommentsService(
         );
         if (resolvedReport == null)
         {
-            return BoErrors.ReportNotFoundError;
+            return (null, BoErrors.ReportNotFoundError);
         }
 
         var commentDbModel = await commentsDbClient.UpdateCommentInternalAsync(user.Id, resolvedReport.Id, bugId, commmentId, commentDto.Text);
         if (commentDbModel == null)
         {
-            return BoErrors.UserCommentNotFound;
+            return (null, BoErrors.UserCommentNotFound);
         }
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentUpdateEventAsync(reportIdContext, user, commentDbModel));
 
-        return commentDbModel;
+        return (commentDbModel, null);
     }
 }

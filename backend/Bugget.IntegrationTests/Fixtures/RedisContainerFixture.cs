@@ -22,7 +22,7 @@ public class RedisContainerFixture : IAsyncLifetime
         await Container.StartAsync();
 
         // Строка подключения читается из переменной окружения — так же, как в боевом
-        // контуре (Authorization.Api.Extensions.ServiceCollectionExtensions.AddDataAccess).
+        // контуре (Bugget.Api.Authorization.Extensions.ServiceCollectionExtensions.AddDataAccess).
         Environment.SetEnvironmentVariable("REDIS_CONNECTION_STRING", Container.GetConnectionString());
     }
 

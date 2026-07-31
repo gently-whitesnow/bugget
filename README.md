@@ -46,7 +46,7 @@ npm run dev             # vite на :5173, проксирует /api на nginx
 ```sh
 cd backend
 dotnet build Bugget.sln
-dotnet test Bugget.Tests/Bugget.Tests.csproj          # unit
+dotnet test Bugget.UnitTests/Bugget.UnitTests.csproj  # unit
 dotnet test Bugget.Architecture.Tests/Bugget.Architecture.Tests.csproj   # границы слоёв
 dotnet test Bugget.IntegrationTests/Bugget.IntegrationTests.csproj   # нужен docker (Testcontainers)
 ```
@@ -113,11 +113,19 @@ Realtime-события SignalR описаны в `specs/contracts/events.yaml`.
 
 ## Структура backend
 
-Один процесс и один образ, внутри — три модуля с сохранёнными границами:
+Один процесс, один образ и один квартет проектов (ADR-0001):
 
-- `Bugget*` — репорты, баги, комментарии, вложения, аналитика (`app_db`);
-- `Users.*` — пользователи, команды, рабочие пространства (`users_db`);
-- `Authorization.*` — выпуск и ротация JWT, проверка авторизации для nginx (Redis).
+- `Bugget.Domain` — доменные модели, лист графа: зависит только от BCL;
+- `Bugget.Contracts` — провод наружу: сгенерированное из `specs/contracts/**/openapi.yaml`,
+  DTO запросов и view-модели ответов;
+- `Bugget.Application` — сервисы, доменные события и порты (`I*DbClient` и прочие);
+- `Bugget.Infrastructure` — Postgres, файловое хранилище, внешние интеграции, миграции,
+  Redis, фоновая очередь: реализует порты прикладного слоя;
+- `Bugget.Api` — контроллеры, SignalR-хаб, middleware и DI-композиция.
+
+Внутри `Bugget.Api`, `Bugget.Application` и `Bugget.Infrastructure` сохранены подпапки
+`Users/` и `Authorization/`: это бывшие отдельные сервисы, у которых своя БД
+(`users_db`) и свой набор внешних маршрутов. Отдельными проектами они больше не являются.
 
 Внешние маршруты разведены по префиксам, которые снимает nginx:
 
@@ -128,7 +136,7 @@ Realtime-события SignalR описаны в `specs/contracts/events.yaml`.
 | `/api/authorization/...` | authorization |
 | `/_internal/auth` (субзапрос nginx) | authorization |
 
-Модули не ходят друг к другу по HTTP: адаптеры в `backend/Bugget/Modules/InProcess` подменяют
+Модули не ходят друг к другу по HTTP: адаптеры в `backend/Bugget.Api/Modules/InProcess` подменяют
 бывшие межсервисные вызовы прямыми.
 
 ## Конфигурация

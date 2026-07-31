@@ -1,10 +1,10 @@
-using Bugget.BO.Ports;
-using Bugget.Entities.BO.AttachmentBo;
-using Bugget.Entities.BO.Bugs;
-using Bugget.Entities.BO.Common;
-using Bugget.Entities.DTO.Bug;
-using Bugget.Entities.DTO.BugStep;
-using Bugget.Entities.DTO.Report;
+using Bugget.Application.Ports;
+using Bugget.Contracts.Dto.Bug;
+using Bugget.Contracts.Dto.BugStep;
+using Bugget.Contracts.Dto.Report;
+using Bugget.Domain.Attachments;
+using Bugget.Domain.Bugs;
+using Bugget.Domain.Common;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -643,7 +643,7 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
 
     #region Helper Methods
 
-    private async Task<Bugget.Entities.BO.ReportBo.ReportSummary> CreateTestReportAsync(
+    private async Task<Bugget.Domain.Reports.ReportSummary> CreateTestReportAsync(
         string userId,
         string? organizationId = null)
     {
@@ -654,7 +654,7 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         return await _reportsDbClient.CreateReportAsync(userId, null, organizationId, reportDto);
     }
 
-    private async Task<Bugget.Entities.BO.Bugs.BugSummary> CreateTestBugAsync(
+    private async Task<Bugget.Domain.Bugs.BugSummary> CreateTestBugAsync(
         string userId,
         int reportId,
         string? receive = null,
@@ -669,7 +669,7 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         return await _bugsDbClient.CreateBugAsync(userId, reportId, bugDto);
     }
 
-    private async Task<Bugget.Entities.BO.Comments.CommentSummary> CreateTestCommentAsync(
+    private async Task<Bugget.Domain.Comments.CommentSummary> CreateTestCommentAsync(
         string userId,
         int bugId,
         string text,

@@ -7,96 +7,35 @@
   ],
   "$comment-skipTestProjects": "Тестовые проекты, которые не участвуют в замере. Архитектурные тесты читают ссылки собранных сборок, а coverlet на время прогона дописывает в каждую инструментированную сборку свой Coverlet.Core.Instrumentation.Tracker — белые списки зависимостей (Monade, TaskQueue, *.Entities) от этого краснеют. Продуктового кода эти тесты почти не выполняют, поэтому на цифру покрытия их отсутствие не влияет. Полноценно они гоняются гейтом backend-test-architecture.",
   "notMeasured": [
-    "*.DbUp",
     "*.Contracts"
   ],
-  "$comment-notMeasured": "Сборки, отсутствие покрытия у которых не считается дырой и не попадает в список «нет данных»: раннеры миграций DbUp и сгенерированные из OpenAPI контракты (ADR-0005).",
+  "$comment-notMeasured": "Сборки, отсутствие покрытия у которых не считается дырой и не попадает в список «нет данных»: сгенерированные из OpenAPI контракты (ADR-0005). Раннеры миграций DbUp живут внутри Bugget.Infrastructure и исключены из замера по файлам — backend/coverlet.runsettings.",
   "gapsFocus": [
-    "Bugget.BO",
-    "Users.BO"
+    "Bugget.Application",
+    "Bugget.Domain"
   ],
-  "$comment-gapsFocus": "Сборки, по которым backend-coverage.py --gaps строит список приоритетных дыр: бизнес-логика, где непокрытая ветка стоит дороже всего.",
+  "$comment-gapsFocus": "Сборки, по которым backend-coverage.py --gaps строит список приоритетных дыр: домен и прикладной слой, где непокрытая ветка стоит дороже всего.",
   "baseline": {
     "total": {
-      "line": 75.4,
-      "branch": 45.3
+      "line": 75.8,
+      "branch": 45.7
     },
     "assemblies": {
-      "Authentication": {
-        "line": 72.9,
-        "branch": 55.0
+      "Bugget.Api": {
+        "line": 84.2,
+        "branch": 52.5
       },
-      "Authorization.Abstractions": {
-        "line": 65.5,
-        "branch": 55.0
-      },
-      "Authorization.Api": {
-        "line": 77.3,
-        "branch": 45.3
-      },
-      "BugReport.Logging": {
-        "line": 0.0,
-        "branch": 0.0
-      },
-      "Bugget": {
-        "line": 87.0,
-        "branch": 36.6
-      },
-      "Bugget.BO": {
-        "line": 82.2,
+      "Bugget.Application": {
+        "line": 80.8,
         "branch": 60.8
       },
-      "Bugget.DA": {
-        "line": 72.1,
-        "branch": 60.0
-      },
-      "Bugget.Entities": {
-        "line": 69.8,
+      "Bugget.Domain": {
+        "line": 68.2,
         "branch": 50.0
       },
-      "Bugget.ExternalClients": {
-        "line": 72.2,
-        "branch": 47.2
-      },
-      "Bugget.Http": {
-        "line": 100.0,
-        "branch": 96.6
-      },
-      "Caching.Local": {
-        "line": 0.0,
-        "branch": 0.0
-      },
-      "FakeAuth": {
-        "line": 30.0,
-        "branch": 0.0
-      },
-      "MattermostOAuth": {
-        "line": 0.0,
-        "branch": null
-      },
-      "OidcAuth": {
-        "line": 78.8,
-        "branch": 78.6
-      },
-      "TaskQueue": {
-        "line": 0.0,
-        "branch": null
-      },
-      "Users.Api": {
-        "line": 90.4,
-        "branch": 75.0
-      },
-      "Users.BO": {
-        "line": 90.5,
-        "branch": 50.0
-      },
-      "Users.DA": {
-        "line": 93.8,
-        "branch": 66.7
-      },
-      "Users.Entities": {
-        "line": 0.0,
-        "branch": null
+      "Bugget.Infrastructure": {
+        "line": 47.2,
+        "branch": 16.2
       }
     }
   }

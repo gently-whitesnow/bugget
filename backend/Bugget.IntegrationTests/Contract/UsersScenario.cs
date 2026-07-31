@@ -1,9 +1,9 @@
 using System.Globalization;
+using Bugget.Application.Users.Interfaces;
+using Bugget.Contracts.Users.Dto.Users;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
-using Users.BO.Interfaces;
-using Users.Entities.Dto.Users;
 using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;

@@ -1,6 +1,6 @@
-using Bugget.BO.Ports;
-using Bugget.Entities.DTO.Link;
-using Bugget.Entities.DTO.Report;
+using Bugget.Application.Ports;
+using Bugget.Contracts.Dto.Link;
+using Bugget.Contracts.Dto.Report;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -312,7 +312,7 @@ public class ReportLinksDbClientTests : IClassFixture<AppWithPostgresFixture>
 
     #region Helper Methods
 
-    private async Task<Bugget.Entities.BO.ReportBo.ReportSummary> CreateTestReportAsync(
+    private async Task<Bugget.Domain.Reports.ReportSummary> CreateTestReportAsync(
         string userId,
         string? organizationId = null)
     {
@@ -323,7 +323,7 @@ public class ReportLinksDbClientTests : IClassFixture<AppWithPostgresFixture>
         return await _reportsDbClient.CreateReportAsync(userId, null, organizationId, reportDto);
     }
 
-    private async Task<Bugget.Entities.BO.ReportBo.ReportLink> CreateTestLinkAsync(
+    private async Task<Bugget.Domain.Reports.ReportLink> CreateTestLinkAsync(
         int reportId,
         string link,
         string name)

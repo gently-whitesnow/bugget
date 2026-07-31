@@ -13,20 +13,4 @@
 
   </PropertyGroup>
 
-  <!--
-    Модули, приехавшие из bugreport (users-api, authorization-api, общие библиотеки),
-    писались без warnings-as-errors. Пока их предупреждения не разобраны, строгий режим
-    для них выключен — иначе объединённое решение не собирается. Снимать послабление
-    по мере чистки, проект за проектом.
-  -->
-  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Users.'))
-                         Or $(MSBuildProjectName.StartsWith('Authorization.'))
-                         Or '$(MSBuildProjectName)' == 'Authentication'
-                         Or '$(MSBuildProjectName)' == 'Caching.Local'
-                         Or '$(MSBuildProjectName)' == 'BugReport.Logging'
-                         Or '$(MSBuildProjectName)' == 'FakeAuth'
-                         Or '$(MSBuildProjectName)' == 'OidcAuth'
-                         Or '$(MSBuildProjectName)' == 'MattermostOAuth'">
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-  </PropertyGroup>
 </Project>

@@ -10,22 +10,21 @@ namespace Bugget.Architecture.Tests
     /// </summary>
     public sealed class PortContractRulesTests
     {
-        private static readonly Assembly[] BusinessLogicAssemblies =
+        private static readonly Assembly[] ApplicationAssemblies =
         [
-            typeof(global::Bugget.BO.AssemblyMarker).Assembly,
-            typeof(global::Users.BO.AssemblyMarker).Assembly,
+            Quartet.ApplicationAsm,
         ];
 
-        [Fact(DisplayName = "Публичные интерфейсы BO не раскрывают persistence-типы в сигнатурах")]
+        [Fact(DisplayName = "Публичные интерфейсы прикладного слоя не раскрывают persistence-типы в сигнатурах")]
         public void Ports_do_not_expose_persistence_types()
         {
-            var ports = BusinessLogicAssemblies
+            var ports = ApplicationAssemblies
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type => type.IsInterface && type.IsPublic);
             var leaks = FindPersistenceLeaks(ports);
 
             leaks.Should().BeEmpty(
-                "порт — контракт бизнес-слоя и не должен принимать или возвращать типы из *.DA, " +
+                "порт — контракт прикладного слоя и не должен принимать или возвращать типы из Bugget.Infrastructure, " +
                 "Npgsql/Dapper/System.Data.Common либо legacy namespace DbModels. Алиас типа " +
                 "не является обходом: reflection видит фактический CLR-тип. Утечки: {0}",
                 string.Join("; ", leaks));
@@ -80,7 +79,7 @@ namespace Bugget.Architecture.Tests
             var assembly = type.Assembly.GetName().Name ?? string.Empty;
             var ns = type.Namespace ?? string.Empty;
 
-            return assembly.EndsWith(".DA", StringComparison.Ordinal)
+            return assembly.Equals("Bugget.Infrastructure", StringComparison.Ordinal)
                    || assembly is "Npgsql" or "Dapper" or "System.Data.Common"
                    || ns.Contains(".DbModels", StringComparison.Ordinal);
         }

@@ -1,8 +1,8 @@
-using Bugget.BO.Ports;
-using Bugget.Entities.BO.AttachmentBo;
-using Bugget.Entities.BO.Search;
-using Bugget.Entities.DTO.Bug;
-using Bugget.Entities.DTO.Report;
+using Bugget.Application.Ports;
+using Bugget.Contracts.Dto.Bug;
+using Bugget.Contracts.Dto.Report;
+using Bugget.Domain.Attachments;
+using Bugget.Domain.Search;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -586,7 +586,7 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
 
         var userReport = await CreateTestReportAsync(userId, "User-authored report", organizationId: org);
         var betaReport = await CreateTestReportAsync(userId, "Beta-tester report", organizationId: org);
-        await SetReportCreatorTypeAsync(betaReport.Id, (short)Bugget.Entities.BO.Common.CreatorType.TgBetaTester);
+        await SetReportCreatorTypeAsync(betaReport.Id, (short)Bugget.Domain.Common.CreatorType.TgBetaTester);
 
         var searchRequest = new SearchReports
         {
@@ -598,7 +598,7 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Sort = CreateSortOption("created", true),
             Skip = 0,
             Take = 10,
-            CreatorTypes = new short[] { (short)Bugget.Entities.BO.Common.CreatorType.TgBetaTester }
+            CreatorTypes = new short[] { (short)Bugget.Domain.Common.CreatorType.TgBetaTester }
         };
 
         // Act
@@ -620,7 +620,7 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
 
         var userReport = await CreateTestReportAsync(userId, "User report", organizationId: org);
         var betaReport = await CreateTestReportAsync(userId, "Beta report", organizationId: org);
-        await SetReportCreatorTypeAsync(betaReport.Id, (short)Bugget.Entities.BO.Common.CreatorType.TgBetaTester);
+        await SetReportCreatorTypeAsync(betaReport.Id, (short)Bugget.Domain.Common.CreatorType.TgBetaTester);
 
         var searchRequest = new SearchReports
         {
@@ -660,7 +660,7 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
         await cmd.ExecuteNonQueryAsync();
     }
 
-    private async Task<Bugget.Entities.BO.ReportBo.ReportSummary> CreateTestReportAsync(
+    private async Task<Bugget.Domain.Reports.ReportSummary> CreateTestReportAsync(
         string userId,
         string title,
         string? teamId = null,
@@ -673,7 +673,7 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
         return await _reportsDbClient.CreateReportAsync(userId, teamId, organizationId, reportDto);
     }
 
-    private async Task<Bugget.Entities.BO.Bugs.BugSummary> CreateTestBugAsync(
+    private async Task<Bugget.Domain.Bugs.BugSummary> CreateTestBugAsync(
         string userId,
         int reportId,
         string receive)
@@ -686,7 +686,7 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
         return await _bugsDbClient.CreateBugAsync(userId, reportId, bugDto);
     }
 
-    private async Task<Bugget.Entities.BO.Comments.CommentSummary> CreateTestCommentAsync(
+    private async Task<Bugget.Domain.Comments.CommentSummary> CreateTestCommentAsync(
         string userId,
         int bugId,
         string text)

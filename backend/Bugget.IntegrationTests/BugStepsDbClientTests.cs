@@ -1,7 +1,7 @@
-using Bugget.BO.Ports;
-using Bugget.Entities.DTO.Bug;
-using Bugget.Entities.DTO.BugStep;
-using Bugget.Entities.DTO.Report;
+using Bugget.Application.Ports;
+using Bugget.Contracts.Dto.Bug;
+using Bugget.Contracts.Dto.BugStep;
+using Bugget.Contracts.Dto.Report;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -440,7 +440,7 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
         Assert.Equal(3, result[2].StepNumber);
     }
 
-    private async Task<Bugget.Entities.BO.ReportBo.ReportSummary> CreateTestReportAsync(
+    private async Task<Bugget.Domain.Reports.ReportSummary> CreateTestReportAsync(
         string userId,
         string? organizationId = null)
     {
@@ -451,7 +451,7 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
         return await _reportsDbClient.CreateReportAsync(userId, null, organizationId, reportDto);
     }
 
-    private async Task<Bugget.Entities.BO.Bugs.BugSummary> CreateTestBugAsync(
+    private async Task<Bugget.Domain.Bugs.BugSummary> CreateTestBugAsync(
         string userId,
         int reportId)
     {
@@ -463,7 +463,7 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
         return await _bugsDbClient.CreateBugAsync(userId, reportId, bugDto);
     }
 
-    private async Task<Bugget.Entities.BO.Bugs.BugStepSummary> CreateTestBugStepAsync(
+    private async Task<Bugget.Domain.Bugs.BugStepSummary> CreateTestBugStepAsync(
         string userId,
         int bugId,
         string text)

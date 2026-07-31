@@ -7,8 +7,9 @@
   Что намеренно не измеряется:
     *.Tests / *.UnitTests / *.IntegrationTests — сами тесты, покрытие тестов тестами
       ничего не значит;
-    *.DbUp — раннеры миграций: код там сводится к перечислению SQL-скриптов, а сами
-      скрипты покрываются интеграционными тестами через накат на реальный Postgres;
+    (раннеры миграций DbUp после слияния проектов живут внутри Bugget.Infrastructure
+      и из замера больше не исключаются: их выполняют интеграционные тесты, накатывая
+      схему на реальный Postgres);
     сгенерированное из OpenAPI (*.g.cs, Generated/) — источник правды контракт,
       руками этот код не пишется (ADR-0005), тестировать его нечего.
 -->
@@ -18,7 +19,7 @@
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
           <Format>cobertura</Format>
-          <Exclude>[*.Tests]*,[*.UnitTests]*,[*.IntegrationTests]*,[*.DbUp]*</Exclude>
+          <Exclude>[*.Tests]*,[*.UnitTests]*,[*.IntegrationTests]*</Exclude>
           <ExcludeByFile>**/Generated/**/*.cs,**/*.g.cs</ExcludeByFile>
           <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
           <SkipAutoProps>true</SkipAutoProps>

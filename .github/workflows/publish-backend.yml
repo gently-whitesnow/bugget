@@ -86,7 +86,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          file: ./backend/Bugget/Dockerfile
+          file: ./backend/Bugget.Api/Dockerfile
           platforms: ${{ env.TARGET_PLATFORMS }}
           push: true
           tags: ${{ env.IMAGE_TAGS }}

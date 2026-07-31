@@ -3,110 +3,38 @@
   "entries": [
     {
       "kind": "nowarn",
-      "location": "backend/Authorization.Api/Authorization.Api.csproj",
+      "location": "backend/Bugget.Api/Bugget.Api.csproj",
       "rule": "CS1591",
       "count": 1
     },
     {
       "kind": "nowarn",
-      "location": "backend/Bugget.Analytics.Contracts/Bugget.Analytics.Contracts.csproj",
+      "location": "backend/Bugget.Contracts/Bugget.Contracts.csproj",
       "rule": "CS1591",
       "count": 1
     },
     {
       "kind": "nowarn",
-      "location": "backend/Bugget.Entities/Bugget.Entities.csproj",
+      "location": "backend/Bugget.Domain/Bugget.Domain.csproj",
       "rule": "CS1591",
       "count": 1
     },
     {
-      "kind": "nowarn",
-      "location": "backend/Bugget.Reports.Contracts/Bugget.Reports.Contracts.csproj",
-      "rule": "CS1591",
+      "kind": "pragma",
+      "location": "backend/Bugget.Api/Authorization/Fake/FakeController.cs",
+      "rule": "CS0618",
       "count": 1
     },
     {
-      "kind": "nowarn",
-      "location": "backend/Bugget/Bugget.csproj",
-      "rule": "CS1591",
+      "kind": "pragma",
+      "location": "backend/Bugget.Api/Authorization/Oidc/OidcController.cs",
+      "rule": "CS0618",
       "count": 1
     },
     {
-      "kind": "nowarn",
-      "location": "backend/Caching.Local/Caching.Local.csproj",
-      "rule": "CS1591",
-      "count": 1
-    },
-    {
-      "kind": "nowarn",
-      "location": "backend/FakeAuth/FakeAuth.csproj",
-      "rule": "CS1591",
-      "count": 1
-    },
-    {
-      "kind": "nowarn",
-      "location": "backend/OidcAuth/OidcAuth.csproj",
-      "rule": "CS1591",
-      "count": 1
-    },
-    {
-      "kind": "nowarn",
-      "location": "backend/Users.Api/Users.Api.csproj",
-      "rule": "CS1591",
-      "count": 1
-    },
-    {
-      "kind": "nowarn",
-      "location": "backend/Users.Entities/Users.Entities.csproj",
-      "rule": "CS1591",
-      "count": 1
-    },
-    {
-      "kind": "warnaserror",
-      "location": "backend/Directory.Build.props",
-      "rule": "Authentication",
-      "count": 1
-    },
-    {
-      "kind": "warnaserror",
-      "location": "backend/Directory.Build.props",
-      "rule": "Authorization.*",
-      "count": 1
-    },
-    {
-      "kind": "warnaserror",
-      "location": "backend/Directory.Build.props",
-      "rule": "BugReport.Logging",
-      "count": 1
-    },
-    {
-      "kind": "warnaserror",
-      "location": "backend/Directory.Build.props",
-      "rule": "Caching.Local",
-      "count": 1
-    },
-    {
-      "kind": "warnaserror",
-      "location": "backend/Directory.Build.props",
-      "rule": "FakeAuth",
-      "count": 1
-    },
-    {
-      "kind": "warnaserror",
-      "location": "backend/Directory.Build.props",
-      "rule": "MattermostOAuth",
-      "count": 1
-    },
-    {
-      "kind": "warnaserror",
-      "location": "backend/Directory.Build.props",
-      "rule": "OidcAuth",
-      "count": 1
-    },
-    {
-      "kind": "warnaserror",
-      "location": "backend/Directory.Build.props",
-      "rule": "Users.*",
+      "kind": "pragma",
+      "location": "backend/Bugget.UnitTests/Authorization/OidcAuth/ExternalTokenControllerTests.cs",
+      "rule": "CS0618",
       "count": 1
     }
   ]

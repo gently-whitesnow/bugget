@@ -1,5 +1,5 @@
+using Bugget.Application.Ports;
 using Microsoft.Extensions.DependencyInjection;
-using TaskQueue;
 
 namespace Bugget.IntegrationTests.Fixtures;
 

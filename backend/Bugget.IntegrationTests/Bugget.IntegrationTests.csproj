@@ -15,18 +15,21 @@
     <PackageReference Include="Testcontainers" />
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Testcontainers.Redis" />
+    <PackageReference Include="Testcontainers.Keycloak" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Bugget\Bugget.csproj" />
-    <ProjectReference Include="..\Bugget.DbUp\Bugget.DbUp.csproj" />
-    <ProjectReference Include="..\Bugget.DA\Bugget.DA.csproj" />
-    <!-- Схема модуля users нужна в том же контейнере: объединённый хост резолвит его
-         DbClient'ы по ходу обработки запросов reports. См. PostgresContainerFixture. -->
-    <ProjectReference Include="..\Users.DbUp\Users.DbUp.csproj" />
+    <ProjectReference Include="..\Bugget.Api\Bugget.Api.csproj" />
+    <ProjectReference Include="..\Bugget.Application\Bugget.Application.csproj" />
+    <ProjectReference Include="..\Bugget.Contracts\Bugget.Contracts.csproj" />
+    <ProjectReference Include="..\Bugget.Domain\Bugget.Domain.csproj" />
+    <ProjectReference Include="..\Bugget.Infrastructure\Bugget.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
   </ItemGroup>
 
 </Project>
-

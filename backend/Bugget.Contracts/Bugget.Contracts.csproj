@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!-- CS1591 (нет XML-комментария у public-члена) выключен: XML-документация
+             включена ради сгенерированных из OpenAPI типов и контроллеров, которым
+             комментарии пишет генератор, а не человек (ADR-0005). Послабление приехало
+             из проектов, слитых в квартет в MAIN-20, и в снимке .quality/backend-suppress-baseline.json
+             сокращается: было десять записей, стало три. -->
+        <NoWarn>$(NoWarn);1591</NoWarn>
+    </PropertyGroup>
+
+    <!--
+      Провод наружу: сгенерированное из specs/contracts/**/openapi.yaml (ADR-0005),
+      DTO запросов и view-модели ответов. Внешних пакетов нет; единственная ссылка —
+      на домен: часть view-моделей отдаёт доменные типы как есть, и заводить их копию
+      значило бы менять форму ответа.
+    -->
+    <ItemGroup>
+        <ProjectReference Include="..\Bugget.Domain\Bugget.Domain.csproj" />
+    </ItemGroup>
+
+</Project>

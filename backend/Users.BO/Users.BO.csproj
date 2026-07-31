@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <ItemGroup>
-        <ProjectReference Include="..\Bugget.Entities\Bugget.Entities.csproj" />
-        <ProjectReference Include="..\TaskQueue\TaskQueue.csproj" />
-        <ProjectReference Include="..\Users.Entities\Users.Entities.csproj" />
-    </ItemGroup>
-
-</Project>

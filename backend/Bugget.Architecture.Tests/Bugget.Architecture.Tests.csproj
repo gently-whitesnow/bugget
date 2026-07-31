@@ -18,6 +18,7 @@
         </PackageReference>
         <PackageReference Include="FluentAssertions" />
         <PackageReference Include="NetArchTest.Rules" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     </ItemGroup>
 
     <ItemGroup>

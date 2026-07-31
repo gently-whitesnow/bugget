@@ -50,6 +50,8 @@ const contextPrefix = `${prefix}/workspaces/1/teams/2`;
 
 let captured: InternalAxiosRequestConfig | null = null;
 let payload: unknown = null;
+let responseStatus = 200;
+let responseContentType = "application/json";
 let originalAdapter: AxiosAdapter | undefined;
 
 const sent = () => {
@@ -64,14 +66,16 @@ beforeEach(() => {
   setAppContext(1, 2);
   captured = null;
   payload = null;
+  responseStatus = 200;
+  responseContentType = "application/json";
   originalAdapter = usersApi.defaults.adapter as AxiosAdapter | undefined;
   usersApi.defaults.adapter = (async (config) => {
     captured = config;
     return {
       data: payload,
-      status: 200,
-      statusText: "OK",
-      headers: { "content-type": "application/json" },
+      status: responseStatus,
+      statusText: responseStatus === 204 ? "No Content" : "OK",
+      headers: { "content-type": responseContentType },
       config,
     };
   }) as AxiosAdapter;
@@ -163,6 +167,63 @@ describe("короткая форма адреса: контекст прихо�
 
     await joinWorkspace(1);
     expect(sent().url).toBe(`${prefix}/workspaces/1/members/join`);
+  });
+
+  it("пустой 204-ответ не превращается в объект", async () => {
+    responseStatus = 204;
+    responseContentType = "";
+    payload = undefined;
+
+    await expect(deleteTeam(1, 2)).resolves.toBeUndefined();
+    expect(sent().url).toBe(`${prefix}/workspaces/1/teams/2`);
+    expect(sent().method).toBe("delete");
+  });
+
+  it("пустые и null-коллекции bootstrap-ответа сохраняются", async () => {
+    payload = {
+      workspaces: [],
+      teams_member: null,
+      workspaces_member: null,
+    };
+
+    await expect(listWorkspacesContext()).resolves.toEqual({
+      workspaces: [],
+      teamsMember: null,
+      workspacesMember: null,
+    });
+  });
+
+  it("ошибка self-hosted join пробрасывается с исходным problem+json", async () => {
+    const problem = {
+      type: "about:blank",
+      title: "Недостаточно прав",
+      status: 403,
+      errors: { workspace_id: ["Недоступно"] },
+    };
+    const error = Object.assign(
+      new Error("Request failed with status code 403"),
+      {
+        config: {},
+        response: {
+          data: problem,
+          status: 403,
+          statusText: "Forbidden",
+          headers: { "content-type": "application/problem+json" },
+          config: {},
+        },
+      }
+    );
+    usersApi.defaults.adapter = (async (config) => {
+      captured = config;
+      error.config = config;
+      error.response.config = config;
+      throw error;
+    }) as AxiosAdapter;
+
+    await expect(joinTeam(1, 2)).rejects.toBe(error);
+    expect(sent().url).toBe(`${contextPrefix}/members/join`);
+    expect(error.response.data).toEqual(problem);
+    expect(error.response.data.errors).toHaveProperty("workspace_id");
   });
 });
 

@@ -9,9 +9,8 @@ namespace Bugget.Architecture.Tests;
 ///
 /// До этого их было два: <c>Monade</c> и <c>Flow</c>, две одинаковые Result-монады, и выбор
 /// между ними определялся тем, из какого модуля вырос код. Правило не даёт завести третью:
-/// краснеет на типе, у которого есть и признак успеха (<c>IsSuccess</c> / <c>HasError</c> и
-/// родня), и поле <c>Error</c> — это и есть форма Result-обёртки. Кортеж под правило не
-/// попадает: это не объявленный тип.
+/// краснеет на объявленном типе, который совмещает ошибку с payload/value или признаком
+/// успеха. Кортеж под правило не попадает: это не объявленный тип.
 ///
 /// Правило читает исходники, а не сборки: так оно видит и те проекты, на которые
 /// архитектурные тесты не ссылаются, и новый проект, добавленный завтра.
@@ -27,7 +26,7 @@ public partial class ResultAbstractionRulesTests
 
         foreach (var (project, file, text) in ProductSources())
         {
-            if (!SuccessFlagPattern().IsMatch(text) || !ErrorMemberPattern().IsMatch(text))
+            if (!ContainsResultLikeDeclaration(text))
             {
                 continue;
             }
@@ -36,13 +35,31 @@ public partial class ResultAbstractionRulesTests
         }
 
         violations.Should().BeEmpty(
-            "признак успеха рядом с полем Error — это Result-монада, а способ вернуть ошибку " +
+            "payload/value или признак успеха рядом с полем Error — это Result-монада, " +
+            "а способ вернуть ошибку " +
             "в решении один: кортеж (T? Value, Error? Error), для операции без значения — Error? " +
             "(ADR-0004). Так уже было дважды: Monade для Bugget.* и Flow для Users.*, и выбор " +
             "между ними определялся историей кода, а не смыслом. Нарушения: {0}. " +
             "Если нужен не результат операции, а доменное состояние — назови его по домену и " +
             "не давай ему поля Error.",
             string.Join("; ", violations));
+    }
+
+    [Theory(DisplayName = "Гейт краснеет на прежних монадах и Result(Value, Error)")]
+    [InlineData("public record struct MonadeStruct<T> { public T? Value { get; init; } public Error? Error { get; init; } }")]
+    [InlineData("public record struct ResultStruct { public Error? Error { get; init; } public bool IsSuccess => Error is null; }")]
+    [InlineData("public sealed record Result<T>(T? Value, Error? Error);")]
+    public void Result_like_fixture_is_rejected(string source)
+    {
+        ContainsResultLikeDeclaration(source).Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "Гейт оставляет нативный tuple допустимым")]
+    public void Native_tuple_fixture_is_allowed()
+    {
+        const string source = "public sealed class Service { public (T? Value, Error? Error) Execute<T>() => default; }";
+
+        ContainsResultLikeDeclaration(source).Should().BeFalse();
     }
 
     [Fact(DisplayName = "Проектов Monade и Flow в решении нет")]
@@ -86,9 +103,20 @@ public partial class ResultAbstractionRulesTests
         }
     }
 
-    [GeneratedRegex(@"\bbool\s+(IsSuccess|IsFailure|IsError|HasError)\b")]
+    private static bool ContainsResultLikeDeclaration(string source) =>
+        PrimaryConstructorWrapperPattern().IsMatch(source) ||
+        (ErrorMemberPattern().IsMatch(source) &&
+         (ValueMemberPattern().IsMatch(source) || SuccessFlagPattern().IsMatch(source)));
+
+    [GeneratedRegex(@"\b(?:public|internal|protected|private)\s+bool\s+(IsSuccess|IsFailure|IsError|HasError)\b")]
     private static partial Regex SuccessFlagPattern();
 
-    [GeneratedRegex(@"\bError\??\s+Error\s*(\{|=>|;)")]
+    [GeneratedRegex(@"\b(?:public|internal|protected|private)\s+Error\??\s+Error\s*(\{|=>|;)")]
     private static partial Regex ErrorMemberPattern();
+
+    [GeneratedRegex(@"\b(?:public|internal|protected|private)\s+[\w<>,.?\[\]]+\s+(Value|Payload)\s*(\{|=>|;)")]
+    private static partial Regex ValueMemberPattern();
+
+    [GeneratedRegex(@"\brecord(?:\s+(?:class|struct))?\s+\w+(?:\s*<[^>{};]+>)?\s*\((?=[^;{}]*\b(?:Value|Payload)\b)(?=[^;{}]*\bError\??\s+Error\b)[^;{}]*\)\s*(?:;|\{)")]
+    private static partial Regex PrimaryConstructorWrapperPattern();
 }

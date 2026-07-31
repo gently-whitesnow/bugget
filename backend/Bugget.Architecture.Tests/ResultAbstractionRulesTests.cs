@@ -20,6 +20,12 @@ namespace Bugget.Architecture.Tests;
 /// проверки — объявленный тип со своими членами, поэтому два независимых типа в одном
 /// файле не склеиваются, а обёртка, собранная наследованием (<c>Outcome&lt;T&gt; :
 /// Choice&lt;T, Error&gt;</c>), видна так же, как обёртка с полями.
+///
+/// Единица разбора — проект целиком, а не файл: <c>global using Failure =
+/// Bugget.Entities.Errors.Error;</c> объявляется в одном файле, а переименовывает ошибку во
+/// всех остальных. Псевдоним разворачивается до имени типа, поэтому обход через
+/// переименование не работает — но разворачивается именно цель: псевдоним с тем же именем,
+/// указывающий на посторонний тип, правило не трогает.
 /// </summary>
 public class ResultAbstractionRulesTests
 {
@@ -27,15 +33,24 @@ public class ResultAbstractionRulesTests
 
     private static readonly string[] SuccessFlagNames = ["IsSuccess", "IsFailure", "IsError", "HasError"];
 
+    /// <summary>Каноническая ошибка решения — <c>Bugget.Entities.Errors.Error</c>.</summary>
+    private const string ErrorTypeName = "Error";
+
+    /// <summary>Предохранитель от псевдонима, который ссылается сам на себя.</summary>
+    private const int MaxAliasDepth = 8;
+
+    private static readonly IReadOnlyDictionary<string, TypeSyntax> EmptyAliases =
+        new Dictionary<string, TypeSyntax>(StringComparer.Ordinal);
+
     [Fact(DisplayName = "Новых Result-подобных обёрток нет: успех и ошибка не заворачиваются в тип")]
     public void No_result_like_wrapper_types()
     {
         var violations = new List<string>();
 
-        foreach (var (project, file, text) in ProductSources())
+        foreach (var (project, files) in ProductSources())
         {
-            violations.AddRange(ResultLikeDeclarations(text)
-                .Select(type => $"{file}: {type} (проект {project})"));
+            violations.AddRange(ResultLikeDeclarations(files)
+                .Select(declaration => $"{declaration.File}: {declaration.Type} (проект {project})"));
         }
 
         violations.Should().BeEmpty(
@@ -72,6 +87,44 @@ public class ResultAbstractionRulesTests
     public void Inherited_generic_result_like_fixture_is_rejected(string source)
     {
         ResultLikeDeclarations(source).Should().Equal("Outcome");
+    }
+
+    [Theory(DisplayName = "Гейт краснеет, когда каноническая ошибка переименована using-псевдонимом")]
+    [InlineData("using Failure = Bugget.Entities.Errors.Error; public sealed record Outcome<T>(T? Data, Failure? Error);")]
+    [InlineData("using Failure = Bugget.Entities.Errors.Error; public sealed class Outcome<T> : Choice<T, Failure> { }")]
+    [InlineData("using Failure = global::Bugget.Entities.Errors.Error; public sealed record Outcome<T>(T? Data, Failure? Problem);")]
+    [InlineData("namespace App { using Failure = Bugget.Entities.Errors.Error; public sealed record Outcome<T>(T? Data, Failure? Error); }")]
+    [InlineData("namespace App; using Failure = Bugget.Entities.Errors.Error; public sealed class Outcome<T> : Choice<T, Failure> { }")]
+    public void Aliased_error_type_fixture_is_rejected(string source)
+    {
+        ResultLikeDeclarations(source).Should().Equal("Outcome");
+    }
+
+    [Theory(DisplayName = "Гейт видит global using-псевдоним из другого файла проекта")]
+    [InlineData("public sealed record Outcome<T>(T? Data, Failure? Error);")]
+    [InlineData("public sealed class Outcome<T> : Choice<T, Failure> { }")]
+    public void Globally_aliased_error_type_fixture_is_rejected(string declaration)
+    {
+        const string usings = "global using Failure = Bugget.Entities.Errors.Error;";
+
+        ResultLikeDeclarations(usings, declaration).Should().Equal("Outcome");
+    }
+
+    [Theory(DisplayName = "Гейт не срабатывает на псевдониме с тем же именем, но чужой целью")]
+    [InlineData("using Failure = Bugget.Entities.Reports.Failure; public sealed record Outcome<T>(T? Data, Failure? Error);")]
+    [InlineData("using Failure = Bugget.Entities.Reports.Failure; public sealed class Outcome<T> : Choice<T, Failure> { }")]
+    public void Alias_to_a_foreign_type_is_allowed(string source)
+    {
+        ResultLikeDeclarations(source).Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Гейт не срабатывает на global using-псевдониме с чужой целью")]
+    public void Global_alias_to_a_foreign_type_is_allowed()
+    {
+        const string usings = "global using Failure = Bugget.Entities.Reports.Failure;";
+        const string declaration = "public sealed record Outcome<T>(T? Data, Failure? Error);";
+
+        ResultLikeDeclarations(usings, declaration).Should().BeEmpty();
     }
 
     [Fact(DisplayName = "Гейт краснеет на обёртке, у которой payload свой, а ошибка из базы")]
@@ -165,7 +218,7 @@ public class ResultAbstractionRulesTests
     }
 
     /// <summary>Исходники продуктовых проектов: без тестов, bin/obj и сгенерированного кода.</summary>
-    private static IEnumerable<(string Project, string File, string Text)> ProductSources()
+    private static IEnumerable<(string Project, IReadOnlyList<SourceFile> Files)> ProductSources()
     {
         var backend = SolutionGraph.BackendRoot;
 
@@ -181,39 +234,97 @@ public class ResultAbstractionRulesTests
                 .EnumerateFiles(projectDir, "*.cs", SearchOption.AllDirectories)
                 .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
                 .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-                .Where(path => !path.EndsWith(".g.cs", StringComparison.Ordinal));
+                .Where(path => !path.EndsWith(".g.cs", StringComparison.Ordinal))
+                .Select(path => new SourceFile(Path.GetRelativePath(backend, path), File.ReadAllText(path)))
+                .ToArray();
 
-            foreach (var file in files)
-            {
-                yield return (project.Name, Path.GetRelativePath(backend, file), File.ReadAllText(file));
-            }
+            yield return (project.Name, files);
         }
     }
 
-    /// <summary>
-    /// Имена объявленных в исходнике типов, которые совмещают ошибку с payload или с
-    /// признаком успеха. Проверяется каждый тип отдельно: члены вложенного типа
-    /// принадлежат вложенному типу, а не внешнему.
-    /// </summary>
-    private static IReadOnlyList<string> ResultLikeDeclarations(string source) =>
-        [.. CSharpSyntaxTree
-            .ParseText(source)
-            .GetRoot()
-            .DescendantNodes()
-            .OfType<TypeDeclarationSyntax>()
-            .Where(IsResultLike)
-            .Select(type => type.Identifier.ValueText)];
+    /// <summary>Файл проекта: путь для диагностики и текст для разбора.</summary>
+    private sealed record SourceFile(string Path, string Text);
 
-    private static bool IsResultLike(TypeDeclarationSyntax type)
+    /// <summary>Объявленный тип, признанный Result-подобным: файл и имя типа.</summary>
+    private sealed record ResultLikeDeclaration(string File, string Type);
+
+    /// <summary>Fixture-обёртка: каждая строка — отдельный файл одного проекта.</summary>
+    private static IReadOnlyList<string> ResultLikeDeclarations(params string[] sources) =>
+        [.. ResultLikeDeclarations([.. sources.Select((text, index) => new SourceFile($"Fixture{index}.cs", text))])
+            .Select(declaration => declaration.Type)];
+
+    /// <summary>
+    /// Объявленные в проекте типы, которые совмещают ошибку с payload или с признаком успеха.
+    /// Проверяется каждый тип отдельно: члены вложенного типа принадлежат вложенному типу, а
+    /// не внешнему. Разбирается проект целиком, потому что <c>global using</c>-псевдоним из
+    /// одного файла переименовывает тип во всех остальных.
+    /// </summary>
+    private static IReadOnlyList<ResultLikeDeclaration> ResultLikeDeclarations(IReadOnlyList<SourceFile> files)
+    {
+        var roots = files
+            .Select(file => (file.Path, Root: CSharpSyntaxTree.ParseText(file.Text).GetRoot()))
+            .ToArray();
+
+        var globalAliases = new Dictionary<string, TypeSyntax>(StringComparer.Ordinal);
+        var globalDirectives = roots
+            .Select(tree => tree.Root)
+            .OfType<CompilationUnitSyntax>()
+            .SelectMany(unit => unit.Usings)
+            .Where(directive => directive.GlobalKeyword.IsKind(SyntaxKind.GlobalKeyword) && directive.Alias is not null);
+
+        foreach (var directive in globalDirectives)
+        {
+            globalAliases[directive.Alias!.Name.Identifier.ValueText] = directive.NamespaceOrType;
+        }
+
+        return
+        [
+            .. roots.SelectMany(tree => tree.Root
+                .DescendantNodes()
+                .OfType<TypeDeclarationSyntax>()
+                .Where(type => IsResultLike(type, AliasesInScope(type, globalAliases)))
+                .Select(type => new ResultLikeDeclaration(tree.Path, type.Identifier.ValueText)))
+        ];
+    }
+
+    /// <summary>
+    /// Псевдонимы, видимые объявленному типу: <c>global using</c> всего проекта, поверх них —
+    /// <c>using</c> файла и объемлющих namespace, от внешнего к внутреннему.
+    /// </summary>
+    private static IReadOnlyDictionary<string, TypeSyntax> AliasesInScope(
+        SyntaxNode type,
+        IReadOnlyDictionary<string, TypeSyntax> globalAliases)
+    {
+        var aliases = new Dictionary<string, TypeSyntax>(globalAliases, StringComparer.Ordinal);
+
+        foreach (var scope in type.Ancestors().Reverse())
+        {
+            var usings = scope switch
+            {
+                CompilationUnitSyntax unit => unit.Usings,
+                BaseNamespaceDeclarationSyntax ns => ns.Usings,
+                _ => default
+            };
+
+            foreach (var directive in usings.Where(directive => directive.Alias is not null))
+            {
+                aliases[directive.Alias!.Name.Identifier.ValueText] = directive.NamespaceOrType;
+            }
+        }
+
+        return aliases;
+    }
+
+    private static bool IsResultLike(TypeDeclarationSyntax type, IReadOnlyDictionary<string, TypeSyntax> aliases)
     {
         // Ошибка бывает объявлена полем, свойством или позиционным параметром, а бывает
         // унаследована: `Outcome<T> : Choice<T, Error>` — та же обёртка, просто её половина
         // живёт в базовом типе.
-        var baseTypeArguments = BaseTypeArguments(type);
-        var carriesInheritedError = baseTypeArguments.Any(IsErrorType);
+        var baseTypeArguments = BaseTypeArguments(type, aliases);
+        var carriesInheritedError = baseTypeArguments.Any(argument => IsErrorType(argument, aliases));
 
         var dataMembers = DataMembers(type).ToArray();
-        var errorMembers = dataMembers.Where(member => IsErrorType(member.Type)).ToArray();
+        var errorMembers = dataMembers.Where(member => IsErrorType(member.Type, aliases)).ToArray();
 
         if (errorMembers.Length == 0 && !carriesInheritedError)
         {
@@ -224,7 +335,7 @@ public class ResultAbstractionRulesTests
         // рядом с ошибкой лежит значение или признак успеха.
         var carriesPayload =
             dataMembers.Length > errorMembers.Length ||
-            baseTypeArguments.Any(argument => !IsErrorType(argument));
+            baseTypeArguments.Any(argument => !IsErrorType(argument, aliases));
 
         return carriesPayload || dataMembers.Any(IsSuccessFlag);
     }
@@ -273,29 +384,43 @@ public class ResultAbstractionRulesTests
     /// Само имя базового типа не смотрим — иначе под правило попала бы иерархия самих ошибок
     /// (<c>BadRequestError : Error</c>).
     /// </summary>
-    private static IReadOnlyList<TypeSyntax> BaseTypeArguments(TypeDeclarationSyntax type) =>
+    private static IReadOnlyList<TypeSyntax> BaseTypeArguments(
+        TypeDeclarationSyntax type,
+        IReadOnlyDictionary<string, TypeSyntax> aliases) =>
         [.. (type.BaseList?.Types ?? default)
-            .Select(baseType => Unqualified(baseType.Type))
+            .Select(baseType => Resolve(baseType.Type, aliases))
             .OfType<GenericNameSyntax>()
             .SelectMany(generic => generic.TypeArgumentList.Arguments)];
 
-    private static bool IsErrorType(TypeSyntax type) =>
-        Unqualified(type)?.Identifier.ValueText == "Error";
+    private static bool IsErrorType(TypeSyntax type, IReadOnlyDictionary<string, TypeSyntax> aliases) =>
+        Resolve(type, aliases)?.Identifier.ValueText == ErrorTypeName;
 
     /// <summary>
-    /// Имя типа без квалификации и без <c>?</c>: у <c>Contracts.Choice&lt;T, Error&gt;</c> и у
-    /// <c>global::Bugget.Contracts.Choice&lt;T, Error&gt;</c> это одинаковый
-    /// <c>Choice&lt;T, Error&gt;</c>. Квалификация на смысл не влияет, а разбор без её снятия
-    /// теряет и generic-аргументы базы, и само имя.
+    /// Имя типа без квалификации, без <c>?</c> и с развёрнутым псевдонимом: у
+    /// <c>Contracts.Choice&lt;T, Error&gt;</c>, у <c>global::Bugget.Contracts.Choice&lt;T,
+    /// Error&gt;</c> и у <c>Failure</c> при <c>using Failure = …Errors.Error;</c> получается
+    /// то, чем тип является на самом деле.
+    ///
+    /// Псевдоним разворачивается только у неквалифицированного имени: <c>Ns.Failure</c> — это
+    /// настоящий тип <c>Failure</c> в <c>Ns</c>, а не переименование, и путать их нельзя.
+    /// Разворачивается именно цель псевдонима, поэтому <c>using Failure = …Reports.Failure;</c>
+    /// правило не трогает.
     /// </summary>
-    private static SimpleNameSyntax? Unqualified(TypeSyntax type)
+    private static SimpleNameSyntax? Resolve(TypeSyntax type, IReadOnlyDictionary<string, TypeSyntax> aliases, int depth = 0)
     {
         var bare = type is NullableTypeSyntax nullable ? nullable.ElementType : type;
 
+        if (bare is IdentifierNameSyntax identifier &&
+            depth < MaxAliasDepth &&
+            aliases.TryGetValue(identifier.Identifier.ValueText, out var target))
+        {
+            return Resolve(target, aliases, depth + 1);
+        }
+
         return bare switch
         {
-            QualifiedNameSyntax qualified => Unqualified(qualified.Right),
-            AliasQualifiedNameSyntax alias => Unqualified(alias.Name),
+            QualifiedNameSyntax qualified => Resolve(qualified.Right, EmptyAliases, depth),
+            AliasQualifiedNameSyntax alias => Resolve(alias.Name, EmptyAliases, depth),
             SimpleNameSyntax simple => simple,
             _ => null
         };

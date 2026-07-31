@@ -62,6 +62,14 @@ public class ResultAbstractionRulesTests
         ResultLikeDeclarations(source).Should().NotBeEmpty();
     }
 
+    [Theory(DisplayName = "Гейт краснеет, когда тип Error переименован using-алиасом")]
+    [InlineData("using Failure = Bugget.Entities.Errors.Error; public sealed record Outcome<T>(T? Data, Failure? Error);")]
+    [InlineData("using Failure = Bugget.Entities.Errors.Error; public sealed class Outcome<T> : Choice<T, Failure> { }")]
+    public void Aliased_error_type_fixture_is_rejected(string source)
+    {
+        ResultLikeDeclarations(source).Should().Equal("Outcome");
+    }
+
     [Theory(DisplayName = "Гейт краснеет на generic Result-обёртке, собранной через наследование, при любой квалификации имени")]
     [InlineData("public sealed class Outcome<T> : Choice<T, Error> { }")]
     [InlineData("public sealed class Outcome<T> : Contracts.Choice<T, Error> { }")]

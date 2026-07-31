@@ -229,6 +229,28 @@ describe("обновление настройки", () => {
     }
   );
 
+  it.each(cases)(
+    "$name: не теряет пустой массив, bool и вырожденные строки",
+    async ({ call }) => {
+      respondWith(wireSetting);
+
+      const bodies = [
+        [],
+        ["false"],
+        ["", "0", "null", "  ", "значение"],
+      ] satisfies SettingValues[];
+
+      for (const body of bodies) {
+        await call("kaiten", "setting", body);
+      }
+
+      expect(sent).toHaveLength(bodies.length);
+      expect(sent.map(({ data }) => JSON.parse(data as string))).toEqual(
+        bodies
+      );
+    }
+  );
+
   it("ошибку контракта отдаёт вызывающему — на ней модель показывает уведомление", async () => {
     respondWithProblem(404, {
       type: "urn:bugget:error:setting_not_found",
@@ -245,6 +267,36 @@ describe("обновление настройки", () => {
 
     expect(failure).toBeInstanceOf(AxiosError);
     expect(parseApiError(failure).code).toBe("setting_not_found");
+  });
+
+  it("после ошибки повторно отправляет тот же запрос и возвращает успех", async () => {
+    respondWithProblem(500, {
+      type: "urn:bugget:error:internal",
+      title: "Внутренняя ошибка",
+      status: 500,
+      code: "internal",
+      traceId: "trace-retry",
+    });
+
+    await expect(
+      updateWorkspaceSetting("kaiten", "kaiten_url", ["new"])
+    ).rejects.toBeInstanceOf(AxiosError);
+
+    respondWith(wireSetting);
+    const updated = await updateWorkspaceSetting("kaiten", "kaiten_url", [
+      "new",
+    ]);
+
+    expect(sent).toHaveLength(2);
+    expect(sent[0].method).toBe("put");
+    expect(sent[1].method).toBe("put");
+    expect(sent[1].url).toBe(sent[0].url);
+    expect(JSON.parse(sent[1].data as string)).toEqual(["new"]);
+    expect(updated).toMatchObject({
+      description: null,
+      isArray: false,
+      isBool: false,
+    });
   });
 });
 

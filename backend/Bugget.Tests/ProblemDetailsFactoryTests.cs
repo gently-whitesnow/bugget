@@ -49,8 +49,8 @@ public sealed class ProblemDetailsFactoryTests
             .Concat(ReadCatalog(typeof(Users.Api.ProblemDescriptors).Assembly, "Users.Api.ProblemDescriptors"))
             .Concat(ReadCatalog(typeof(CommonProblemDescriptors).Assembly, "Bugget.Http.CommonProblemDescriptors"))
             .Append(new ProblemDescriptor(
-                Bugget.BO.Errors.BoErrors.NotFoundError.Error,
-                Bugget.BO.Errors.BoErrors.NotFoundError.Reason,
+                Bugget.BO.Errors.BoErrors.NotFoundError.Code,
+                Bugget.BO.Errors.BoErrors.NotFoundError.Title,
                 StatusCodes.Status404NotFound))
             .ToArray();
 
@@ -235,28 +235,7 @@ public sealed class ProblemDetailsFactoryTests
     [Fact]
     public async Task Bugget_domain_error_catalog_keeps_all_existing_wire_values()
     {
-        var expectedStatuses = ExpectedStatuses(
-            (400, [
-                "attachment_file_extension_not_found", "attachment_file_name_invalid_chars",
-                "attachment_file_not_selected_or_empty", "attachment_file_too_large",
-                "attachment_limit_exceeded", "attachment_target_required", "attachment_type_not_allowed",
-                "attachment_type_not_supported", "bug_must_have_one_field", "bug_steps_order_size_mismatch",
-                "board_ids_max_count_error",
-                "creator_user_id_required", "idempotency_key_required", "organization_id_required",
-                "send_report_link_to_comments_invalid_values_error",
-                "since_id_required", "team_id_required", "team_setting_not_found",
-                "use_report_linking_invalid_values_error",
-                "user_setting_not_found", "workspace_id_required", "workspace_setting_invalid_values",
-                "workspace_setting_not_found"
-            ]),
-            (404, [
-                "attachment_not_found", "bug_not_found", "bug_step_not_found", "bug_steps_not_found",
-                "comment_not_found", "not_found", "report_link_not_found", "report_not_found",
-                "team_settings_section_not_found", "user_comment_not_found", "user_settings_section_not_found",
-                "workspace_settings_section_not_found"
-            ]),
-            (409, ["report_closed"]),
-            (500, ["internal_server_error"]));
+        var expectedErrors = ProblemDetailsExpectedErrors.Bugget;
 
         ITeamSettingsProcessor kaiten = new KaitenTeamSettingsProcessor(Mock.Of<ISettingsDbClient>());
         var dynamicErrors = new[]
@@ -273,30 +252,14 @@ public sealed class ProblemDetailsFactoryTests
 
         AssertErrorCatalog(
             errors,
-            expectedStatuses,
+            expectedErrors,
             error => error.ToProblemDetails(new DefaultHttpContext()));
     }
 
     [Fact]
     public void Users_and_authorization_domain_error_catalogs_keep_all_existing_wire_values()
     {
-        var expectedStatuses = ExpectedStatuses(
-            (400, [
-                "feature_not_implemented", "paid_feature_not_implemented",
-                "team_limit_exceeded_error", "team_max_users_count_error",
-                "teams_count_limit_exceeded_error", "user_already_in_team_error",
-                "workspace_limit_exceeded_error"
-            ]),
-            (401, [
-                "expired_access_token", "expired_refresh_token", "invalid_access_token",
-                "invalid_refresh_token", "invalid_token", "user_not_active"
-            ]),
-            (403, [
-                "forbidden_error", "self_hosted_mode_error", "self_hosted_mode_required_error",
-                "user_not_in_team_error"
-            ]),
-            (404, ["not_found_error", "team_not_found_error", "user_not_found"]),
-            (500, ["internal_server_error"]));
+        var expectedErrors = ProblemDetailsExpectedErrors.UsersAndAuthorization;
 
         var errors = ReadErrorCatalog<Error>(typeof(Users.BO.BoErrors))
             .Concat(ReadErrorCatalog<Error>(typeof(Authorization.Api.BoErrors)))
@@ -307,7 +270,7 @@ public sealed class ProblemDetailsFactoryTests
 
         AssertErrorCatalog(
             errors,
-            expectedStatuses,
+            expectedErrors,
             error => error.ToProblemDetails(new DefaultHttpContext()));
     }
 
@@ -330,15 +293,9 @@ public sealed class ProblemDetailsFactoryTests
             .Where(field => typeof(TError).IsAssignableFrom(field.FieldType))
             .Select(field => Assert.IsAssignableFrom<TError>(field.GetValue(null)));
 
-    private static Dictionary<string, int> ExpectedStatuses(
-        params (int Status, string[] Codes)[] groups) =>
-        groups
-            .SelectMany(group => group.Codes.Select(code => (Code: code, group.Status)))
-            .ToDictionary(item => item.Code, item => item.Status, StringComparer.Ordinal);
-
     private static void AssertErrorCatalog(
         IReadOnlyCollection<Error> errors,
-        IReadOnlyDictionary<string, int> expectedStatuses,
+        IReadOnlyDictionary<string, ExpectedError> expectedErrors,
         Func<Error, ActionResult> convert)
     {
         var actual = errors
@@ -350,26 +307,25 @@ public sealed class ProblemDetailsFactoryTests
             .ToArray();
 
         Assert.Equal(
-            expectedStatuses.Keys.OrderBy(code => code, StringComparer.Ordinal),
+            expectedErrors.Keys.OrderBy(code => code, StringComparer.Ordinal),
             actual.Select(item => item.Problem.Extensions["code"] as string)
                 .OrderBy(code => code, StringComparer.Ordinal));
 
         foreach (var (error, result, problem) in actual)
         {
             var code = Assert.IsType<string>(problem.Extensions["code"]);
-            var expectedTitle = expectedStatuses[code] >= 500
-                ? "Внутренняя ошибка сервера"
-                : error.Title;
+            var expected = expectedErrors[code];
             Assert.Equal(error.Code, code);
-            Assert.Equal(expectedTitle, problem.Title);
-            Assert.Equal(expectedStatuses[code], result.StatusCode);
-            Assert.Equal(expectedStatuses[code], problem.Status);
+            Assert.Equal(expected.Title, error.Title);
+            Assert.Equal(expected.Title, problem.Title);
+            Assert.Equal(expected.Status, result.StatusCode);
+            Assert.Equal(expected.Status, problem.Status);
             Assert.Equal($"urn:bugget:error:{error.Code}", problem.Type);
 
             using var body = JsonDocument.Parse(JsonSerializer.Serialize(problem));
             Assert.Equal(error.Code, body.RootElement.GetProperty("code").GetString());
-            Assert.Equal(expectedTitle, body.RootElement.GetProperty("title").GetString());
-            Assert.Equal(expectedStatuses[code], body.RootElement.GetProperty("status").GetInt32());
+            Assert.Equal(expected.Title, body.RootElement.GetProperty("title").GetString());
+            Assert.Equal(expected.Status, body.RootElement.GetProperty("status").GetInt32());
         }
     }
 }

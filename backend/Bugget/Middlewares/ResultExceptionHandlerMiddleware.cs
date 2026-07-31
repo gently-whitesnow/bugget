@@ -18,7 +18,7 @@ public class ResultExceptionHandlerMiddleware(ILogger<ResultExceptionHandlerMidd
         }
         catch (PostgresException ex) when (ex.SqlState == "P0404")
         {
-            await ProblemDetailsFactory.WriteAsync(context, new ProblemDescriptor(BoErrors.NotFoundError.Error, BoErrors.NotFoundError.Reason, StatusCodes.Status404NotFound));
+            await ProblemDetailsFactory.WriteAsync(context, new ProblemDescriptor(BoErrors.NotFoundError.Code, BoErrors.NotFoundError.Title, StatusCodes.Status404NotFound));
         }
         catch (Exception e)
         {

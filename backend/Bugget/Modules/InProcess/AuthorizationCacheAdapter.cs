@@ -1,6 +1,5 @@
 using Authorization.Api.Interfaces;
-using Users.DA.Interfaces;
-
+using Users.BO.Ports;
 namespace Bugget.Modules.InProcess;
 
 /// <summary>

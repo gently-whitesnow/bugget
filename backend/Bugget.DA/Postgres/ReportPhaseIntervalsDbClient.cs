@@ -1,6 +1,6 @@
-using System.Data;
-using Bugget.DA.Interfaces;
-using Bugget.Entities.DbModels.Analytics;
+using Bugget.BO.Ports;
+using Bugget.DA.Transactions;
+using Bugget.Entities.BO.Analytics;
 using Dapper;
 
 namespace Bugget.DA.Postgres;
@@ -8,8 +8,7 @@ namespace Bugget.DA.Postgres;
 public sealed class ReportPhaseIntervalsDbClient : PostgresClient, IReportPhaseIntervalsDbClient
 {
     public async Task<int> CountClosedIntervalsAsync(
-        IDbConnection connection,
-        IDbTransaction transaction,
+        ITransactionScope scope,
         int reportId,
         short phase,
         CancellationToken ct)
@@ -21,6 +20,7 @@ WHERE report_id = @reportId
   AND phase = @phase
   AND exited_at IS NOT NULL;";
 
+        var (connection, transaction) = scope.Unwrap();
         return await connection.ExecuteScalarAsync<int>(new CommandDefinition(
             sql,
             new { reportId, phase },
@@ -29,8 +29,7 @@ WHERE report_id = @reportId
     }
 
     public async Task<int> CloseActiveIntervalAsync(
-        IDbConnection connection,
-        IDbTransaction transaction,
+        ITransactionScope scope,
         int reportId,
         DateTimeOffset exitedAt,
         long currentEventId,
@@ -49,6 +48,7 @@ WHERE report_id = @reportId
   AND entered_at < @exitedAt
   AND source_event_id <> @currentEventId;";
 
+        var (connection, transaction) = scope.Unwrap();
         return await connection.ExecuteAsync(new CommandDefinition(
             sql,
             new { reportId, exitedAt, currentEventId },
@@ -57,9 +57,8 @@ WHERE report_id = @reportId
     }
 
     public async Task<int> InsertIntervalAsync(
-        IDbConnection connection,
-        IDbTransaction transaction,
-        ReportPhaseIntervalInsertDbModel row,
+        ITransactionScope scope,
+        ReportPhaseIntervalInsert row,
         CancellationToken ct)
     {
         const string sql = @"
@@ -69,6 +68,7 @@ VALUES
     (@ReportId, @Phase, @EnteredAt, @RegressionCycleIndex, @SourceEventId)
 ON CONFLICT (source_event_id) DO NOTHING;";
 
+        var (connection, transaction) = scope.Unwrap();
         return await connection.ExecuteAsync(new CommandDefinition(
             sql,
             row,

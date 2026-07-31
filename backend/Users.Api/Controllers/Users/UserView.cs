@@ -1,4 +1,4 @@
-using Users.Entities.DbModels.Users;
+using Users.Entities.BO;
 
 namespace Users.Api.Controllers.Users;
 
@@ -6,7 +6,7 @@ public sealed record UserView(string Id, string Name, string? ImageUrl, string W
 
 public static class UserViewExtensions
 {
-    public static UserView ToUserView(this UserDbModel user, string workspaceRole)
+    public static UserView ToUserView(this User user, string workspaceRole)
     {
         return new UserView(user.Id.ToString(), user.Name, user.ImageUrl, workspaceRole, user.MattermostUserId);
     }

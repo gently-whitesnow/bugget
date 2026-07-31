@@ -1,4 +1,4 @@
-using Bugget.Entities.DbModels.Attachment;
+using Bugget.Entities.BO.AttachmentBo;
 using Bugget.Entities.SocketViews;
 using Bugget.Entities.Views.Attachment;
 
@@ -6,7 +6,7 @@ namespace Bugget.BO.Mappers;
 
 public static class AttachmentMapper
 {
-    public static AttachmentSocketView ToSocketView(this AttachmentDbModel attachmentDbModel)
+    public static AttachmentSocketView ToSocketView(this Attachment attachmentDbModel)
     {
         return new AttachmentSocketView
         {
@@ -20,7 +20,7 @@ public static class AttachmentMapper
         };
     }
 
-    public static AttachmentView ToView(this AttachmentDbModel attachmentDbModel)
+    public static AttachmentView ToView(this Attachment attachmentDbModel)
     {
         return new AttachmentView
         {

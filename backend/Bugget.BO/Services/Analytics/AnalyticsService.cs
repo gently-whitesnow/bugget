@@ -1,4 +1,4 @@
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO.Analytics;
 
 namespace Bugget.BO.Services.Analytics;

@@ -1,8 +1,8 @@
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Attachments;
-using Bugget.DA.WebSockets;
 using Bugget.Entities.Authentication;
+using Bugget.Entities.BO.Bugs;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.BugSteps;
 
 namespace Bugget.BO.Services.Bugs;
 
@@ -11,7 +11,7 @@ public sealed class BugStepEventsService(
     AttachmentService attachmentService,
     ParticipantsService participantsService)
 {
-    public async Task HandleCreateBugStepEventAsync(ReportIdContext reportIdContext, UserIdentity user, BugStepSummaryDbModel bugStepSummaryDbModel)
+    public async Task HandleCreateBugStepEventAsync(ReportIdContext reportIdContext, UserIdentity user, BugStepSummary bugStepSummaryDbModel)
     {
         await Task.WhenAll(
             reportPageHubClient.SendBugStepCreateAsync(reportIdContext.GroupKey, bugStepSummaryDbModel, user.SignalRConnectionId),
@@ -19,7 +19,7 @@ public sealed class BugStepEventsService(
         );
     }
 
-    public async Task HandlePatchBugStepEventAsync(ReportIdContext reportIdContext, int bugId, UserIdentity user, BugStepSummaryDbModel bugStepSummaryDbModel)
+    public async Task HandlePatchBugStepEventAsync(ReportIdContext reportIdContext, int bugId, UserIdentity user, BugStepSummary bugStepSummaryDbModel)
     {
         await Task.WhenAll(
             reportPageHubClient.SendBugStepPatchAsync(reportIdContext.GroupKey, bugId, bugStepSummaryDbModel, user.SignalRConnectionId),
@@ -27,7 +27,7 @@ public sealed class BugStepEventsService(
         );
     }
 
-    public async Task HandleUpdateBugStepsOrderEventAsync(ReportIdContext reportIdContext, int bugId, UserIdentity user, BugStepSummaryDbModel[] bugStepSummaryDbModels)
+    public async Task HandleUpdateBugStepsOrderEventAsync(ReportIdContext reportIdContext, int bugId, UserIdentity user, BugStepSummary[] bugStepSummaryDbModels)
     {
         await Task.WhenAll(
             reportPageHubClient.SendBugStepsOrderUpdateAsync(reportIdContext.GroupKey, bugId, bugStepSummaryDbModels, user.SignalRConnectionId)

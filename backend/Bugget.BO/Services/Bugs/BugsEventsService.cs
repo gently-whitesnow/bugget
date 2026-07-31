@@ -1,8 +1,8 @@
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Comments;
-using Bugget.DA.WebSockets;
 using Bugget.Entities.Authentication;
+using Bugget.Entities.BO.Bugs;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.Bug;
 using Bugget.Entities.DTO.Bug;
 
 namespace Bugget.BO.Services.Bugs;
@@ -12,7 +12,7 @@ public class BugEventsService(
         ParticipantsService participantsService,
         CommentLogsService commentLogsService)
 {
-    public async Task HandleCreateBugEventAsync(ReportIdContext reportIdContext, UserIdentity user, BugSummaryDbModel result)
+    public async Task HandleCreateBugEventAsync(ReportIdContext reportIdContext, UserIdentity user, BugSummary result)
     {
         await Task.WhenAll(
             reportPageHubClient.SendBugCreateAsync(reportIdContext.GroupKey, result, user.SignalRConnectionId),

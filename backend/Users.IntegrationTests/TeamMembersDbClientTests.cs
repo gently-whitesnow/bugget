@@ -2,8 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Users.DA.Interfaces;
-using Users.DA.TeamMembers;
+using Users.BO.Ports;
 using Users.Entities.Dto.Users;
 using Users.IntegrationTests.Fixtures;
 using Xunit;
@@ -93,7 +92,7 @@ public class TeamMembersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var failResult = await _teamMembersRepository.CreateTeamMemberAsync(newMember.Id, team.Id, 2);
         Assert.False((failResult.Error is null));
-        Assert.Equal(Users.DA.TeamMembers.TeamMembersErrors.TeamLimitExceededError, failResult.Error);
+        Assert.Equal(Users.BO.Ports.TeamMembersErrors.TeamLimitExceededError, failResult.Error);
     }
 
     [Fact(DisplayName = "ListTeamMembersAsync по нескольким командам возвращает корректные элементы")]

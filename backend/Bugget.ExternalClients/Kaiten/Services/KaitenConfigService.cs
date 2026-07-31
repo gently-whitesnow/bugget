@@ -1,5 +1,5 @@
-using Bugget.DA.Interfaces;
-using Bugget.Entities.DbModels.Settings;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.Settings;
 
 namespace Bugget.ExternalClients.Kaiten.Services;
 
@@ -32,7 +32,7 @@ public sealed class KaitenConfigService(
         return ExtractConfig(settings);
     }
 
-    private static KaitenWorkspaceConfig? ExtractConfig(WorkspaceSettingDbModel[] settings)
+    private static KaitenWorkspaceConfig? ExtractConfig(WorkspaceSetting[] settings)
     {
         var kaitenSettings = settings.Where(s => s.FeatureKey == KaitenConstants.FeatureKey).ToArray();
 

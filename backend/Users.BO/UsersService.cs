@@ -2,8 +2,8 @@ using Bugget.Entities.Errors;
 using Microsoft.Extensions.DependencyInjection;
 using TaskQueue;
 using Users.BO.Interfaces;
-using Users.DA.Interfaces;
-using Users.Entities.DbModels.Users;
+using Users.BO.Ports;
+using Users.Entities.BO;
 using Users.Entities.Dto.Users;
 
 namespace Users.BO;
@@ -15,7 +15,7 @@ public sealed class UsersService(
     ITaskQueue taskQueue,
     IAvatarDownloadService avatarService) : IUsersService
 {
-    public async Task<UserDbModel> TryInsertUserAsync(CreateUserDto createUserDto)
+    public async Task<User> TryInsertUserAsync(CreateUserDto createUserDto)
     {
         if (string.IsNullOrEmpty(createUserDto.Name))
         {
@@ -81,17 +81,17 @@ public sealed class UsersService(
         return (new UserContext(user, workspacesContext), null);
     }
 
-    public Task<UserDbModel?> GetUserAsync(long userId)
+    public Task<User?> GetUserAsync(long userId)
     {
         return usersDbClient.GetUserAsync(userId);
     }
 
-    public Task<UserDbModel[]> AutocompleteUsersAsync(int workspaceId, string searchString, int skip, int take, int? teamId = null)
+    public Task<User[]> AutocompleteUsersAsync(int workspaceId, string searchString, int skip, int take, int? teamId = null)
     {
         return usersDbClient.AutocompleteUsersAsync(workspaceId, searchString, skip, take, teamId);
     }
 
-    public Task<UserDbModel[]> ListUsersAsync(long[] userIds, int? workspaceId)
+    public Task<User[]> ListUsersAsync(long[] userIds, int? workspaceId)
     {
         return usersDbClient.ListUsersAsync(userIds, workspaceId);
     }
@@ -101,7 +101,7 @@ public sealed class UsersService(
         return usersDbClient.DeleteUserAsync(userId);
     }
 
-    public Task<UserDbModel> PutUserAsync(long userId, PutUserDto putUserDto)
+    public Task<User> PutUserAsync(long userId, PutUserDto putUserDto)
     {
         return usersDbClient.PutUserAsync(userId, putUserDto);
     }

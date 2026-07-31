@@ -1,7 +1,7 @@
 using Bugget.BO.Errors;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Settings;
-using Bugget.DA.Interfaces;
-using Bugget.Entities.DbModels.Settings;
+using Bugget.Entities.BO.Settings;
 using Bugget.Entities.Errors;
 using Bugget.Entities.Views.Settings;
 
@@ -46,7 +46,7 @@ public sealed class KaitenTeamSettingsProcessor(ISettingsDbClient settingsDbClie
             )
         }.ToDictionary(x => x.Id, StringComparer.Ordinal);
 
-    public TeamSettingsSectionView ExtractSettings(TeamSettingDbModel[] teamSettings)
+    public TeamSettingsSectionView ExtractSettings(TeamSetting[] teamSettings)
     {
         var kaitenSettings = teamSettings
             .Where(s => s.FeatureKey == KaitenConstants.FeatureKey)
@@ -82,7 +82,7 @@ public sealed class KaitenTeamSettingsProcessor(ISettingsDbClient settingsDbClie
         string Title,
         string Description)
     {
-        public abstract TeamSettingView BuildView(TeamSettingDbModel[] kaitenSettings);
+        public abstract TeamSettingView BuildView(TeamSetting[] kaitenSettings);
 
         public abstract Task<(TeamSettingView? Value, Error? Error)> UpdateAsync(
             string teamId,
@@ -98,7 +98,7 @@ public sealed class KaitenTeamSettingsProcessor(ISettingsDbClient settingsDbClie
         string Description)
         : KaitenSetting(Id, Title, Description)
     {
-        public override TeamSettingView BuildView(TeamSettingDbModel[] kaitenSettings)
+        public override TeamSettingView BuildView(TeamSetting[] kaitenSettings)
         {
             // Если в БД несколько значений с одним ключом — вернем их все,
             // если нет ни одного — отдадим один пустой элемент.
@@ -152,7 +152,7 @@ public sealed class KaitenTeamSettingsProcessor(ISettingsDbClient settingsDbClie
         bool DefaultValue)
         : KaitenSetting(Id, Title, Description)
     {
-        public override TeamSettingView BuildView(TeamSettingDbModel[] kaitenSettings)
+        public override TeamSettingView BuildView(TeamSetting[] kaitenSettings)
         {
             var raw = kaitenSettings.FirstOrDefault(s => s.FieldKey == Id)?.FieldValue;
             var value = raw ?? DefaultValue.ToString();

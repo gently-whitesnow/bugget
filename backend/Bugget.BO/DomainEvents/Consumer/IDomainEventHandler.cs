@@ -1,5 +1,5 @@
-using System.Data;
-using Bugget.Entities.DbModels.DomainEvents;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.DomainEvents;
 
 namespace Bugget.BO.DomainEvents.Consumer;
 
@@ -19,8 +19,7 @@ public interface IDomainEventHandler
     /// откатит транзакцию, cursor не продвинется, событие переедет на следующем тике.
     /// </summary>
     Task HandleAsync(
-        DomainEventDbModel evt,
-        IDbConnection connection,
-        IDbTransaction transaction,
+        DomainEvent evt,
+        ITransactionScope scope,
         CancellationToken ct);
 }

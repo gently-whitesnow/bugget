@@ -5,11 +5,8 @@ using Users.Api.Controllers.TeamMembers;
 using Users.Api.Controllers.Teams;
 using Users.Api.Controllers.Users;
 using Users.Api.Controllers.Workspaces;
-using Users.Entities.DbModels.Members;
-using Users.Entities.DbModels.Teams;
-using Users.Entities.DbModels.Users;
-using Users.Entities.DbModels.Workspaces;
 using Users.Entities.View.Users;
+using Domain = Users.Entities.BO;
 
 namespace Users.Api.Mappers;
 
@@ -32,7 +29,7 @@ internal static class UsersContractMapper
         Mattermost_user_id = view.MattermostUserId,
     };
 
-    public static UserProfile ToContract(this UserDbModel model) => new()
+    public static UserProfile ToContract(this Domain.User model) => new()
     {
         Id = model.Id,
         External_id = model.ExternalId,
@@ -62,7 +59,7 @@ internal static class UsersContractMapper
         Linked_at = view.LinkedAt,
     };
 
-    public static Workspace ToContract(this WorkspaceDbModel model) => new()
+    public static Workspace ToContract(this Domain.Workspace model) => new()
     {
         Id = model.Id,
         Name = model.Name,
@@ -70,7 +67,7 @@ internal static class UsersContractMapper
         Updated_at = model.UpdatedAt,
     };
 
-    public static WorkspaceMember ToContract(this WorkspaceMemberDbModel model) => new()
+    public static WorkspaceMember ToContract(this Domain.WorkspaceMember model) => new()
     {
         Workspace_id = model.WorkspaceId,
         User_id = model.UserId,
@@ -78,7 +75,7 @@ internal static class UsersContractMapper
         Created_at = model.CreatedAt,
     };
 
-    public static Team ToContract(this TeamDbModel model) => new()
+    public static Team ToContract(this Domain.Team model) => new()
     {
         Id = model.Id,
         Workspace_id = model.WorkspaceId,

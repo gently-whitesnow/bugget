@@ -1,10 +1,8 @@
 using Bugget.BO.Mappers;
-using Bugget.DA.Interfaces;
-using Bugget.DA.WebSockets;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO.AttachmentBo;
 using Bugget.Entities.BO.ReportBo;
 using Bugget.Entities.Constants;
-using Bugget.Entities.DbModels.Attachment;
 using Microsoft.Extensions.Logging;
 
 namespace Bugget.BO.Services.Attachments;
@@ -28,7 +26,7 @@ public sealed class AttachmentOptimizator(
     public async Task OptimizeAttachmentAsync(
         string? organizationId,
         ReportIdContext reportIdContext,
-        AttachmentDbModel fromAttachmentDbModel)
+        Attachment fromAttachmentDbModel)
     {
         if (fromAttachmentDbModel.StorageKind != (int)StorageKind.Temp || fromAttachmentDbModel.StorageKey is null)
         {
@@ -90,7 +88,7 @@ public sealed class AttachmentOptimizator(
         }
 
         // Обновляем модель в БД
-        var toAttachmentDbModel = await attachmentDbClient.UpdateAttachmentAsync(new UpdateAttachmentDbModel
+        var toAttachmentDbModel = await attachmentDbClient.UpdateAttachmentAsync(new AttachmentUpdate
         {
             Id = fromAttachmentDbModel.Id,
             StorageKey = optimizationResult.StorageKey,

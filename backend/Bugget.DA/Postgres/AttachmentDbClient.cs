@@ -1,16 +1,16 @@
-using Bugget.DA.Interfaces;
-using Bugget.Entities.DbModels.Attachment;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.AttachmentBo;
 using Dapper;
 
 namespace Bugget.DA.Postgres;
 
 public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
 {
-    public async Task<AttachmentDbModel[]> DeleteCommentAttachmentsAsync(int commentId)
+    public async Task<Attachment[]> DeleteCommentAttachmentsAsync(int commentId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return (await connection.QueryAsync<AttachmentDbModel>(
+        return (await connection.QueryAsync<Attachment>(
             "SELECT * FROM public.delete_comment_attachments_internal(@commentId)",
             new
             {
@@ -19,11 +19,11 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         )).ToArray();
     }
 
-    public async Task<AttachmentDbModel> UpdateAttachmentAsync(UpdateAttachmentDbModel updateAttachmentDbModel)
+    public async Task<Attachment> UpdateAttachmentAsync(AttachmentUpdate updateAttachmentDbModel)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleAsync<AttachmentDbModel>(
+        return await connection.QuerySingleAsync<Attachment>(
             "SELECT * FROM public.update_attachment_internal(@id, @storage_key, @storage_kind, @length_bytes, @file_name, @mime_type, @has_preview, @is_gzip_compressed)",
             new
             {
@@ -44,11 +44,11 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
     /// файл по `bugget.attachment.created` событию). ACL уже отработан на уровне сети
     /// через `X-Client-Name: beta-bot`. См. TECHSPEC §4.3.3.
     /// </summary>
-    public async Task<AttachmentDbModel?> GetByIdAsync(int attachmentId)
+    public async Task<Attachment?> GetByIdAsync(int attachmentId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleOrDefaultAsync<AttachmentDbModel>(
+        return await connection.QuerySingleOrDefaultAsync<Attachment>(
             @"SELECT id, attach_type, entity_id, storage_key, storage_kind,
                      creator_user_id, length_bytes, file_name, mime_type,
                      has_preview, is_gzip_compressed, created_at
@@ -58,11 +58,11 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         );
     }
 
-    public async Task<AttachmentDbModel?> GetBugAttachmentInternalAsync(int reportId, int bugId, int attachmentId)
+    public async Task<Attachment?> GetBugAttachmentInternalAsync(int reportId, int bugId, int attachmentId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleOrDefaultAsync<AttachmentDbModel>(
+        return await connection.QuerySingleOrDefaultAsync<Attachment>(
             "SELECT * FROM public.get_bug_attachment_internal(@reportId, @bugId, @attachmentId)",
             new
             {
@@ -73,11 +73,11 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         );
     }
 
-    public async Task<AttachmentDbModel?> GetCommentAttachmentInternalAsync(int reportId, int bugId, int commentId, int attachmentId)
+    public async Task<Attachment?> GetCommentAttachmentInternalAsync(int reportId, int bugId, int commentId, int attachmentId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleOrDefaultAsync<AttachmentDbModel>(
+        return await connection.QuerySingleOrDefaultAsync<Attachment>(
             "SELECT * FROM public.get_comment_attachment_internal(@reportId, @bugId, @commentId, @attachmentId)",
             new
             {
@@ -89,11 +89,11 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         );
     }
 
-    public async Task<AttachmentDbModel?> GetBugStepAttachmentInternalAsync(int reportId, int bugId, int stepId, int attachmentId)
+    public async Task<Attachment?> GetBugStepAttachmentInternalAsync(int reportId, int bugId, int stepId, int attachmentId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleOrDefaultAsync<AttachmentDbModel>(
+        return await connection.QuerySingleOrDefaultAsync<Attachment>(
             "SELECT * FROM public.get_bug_step_attachment_internal(@reportId, @bugId, @stepId, @attachmentId)",
             new
             {
@@ -157,11 +157,11 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         return result;
     }
 
-    public async Task<AttachmentDbModel> CreateAttachment(CreateAttachmentDbModel attachmentCreateDbModel)
+    public async Task<Attachment> CreateAttachment(AttachmentCreate attachmentCreateDbModel)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleAsync<AttachmentDbModel>(
+        return await connection.QuerySingleAsync<Attachment>(
             "SELECT * FROM public.create_attachment_internal(@entity_id, @attach_type, @storage_key, @storage_kind, @creator_user_id, @length_bytes, @file_name, @mime_type)",
             new
             {
@@ -177,11 +177,11 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         );
     }
 
-    public async Task<AttachmentDbModel?> DeleteBugAttachmentInternalAsync(int reportId, int bugId, int attachmentId)
+    public async Task<Attachment?> DeleteBugAttachmentInternalAsync(int reportId, int bugId, int attachmentId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleOrDefaultAsync<AttachmentDbModel>(
+        return await connection.QuerySingleOrDefaultAsync<Attachment>(
             "SELECT * FROM public.delete_bug_attachment_internal(@reportId, @bugId, @attachmentId)",
             new
             {
@@ -192,11 +192,11 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         );
     }
 
-    public async Task<AttachmentDbModel?> DeleteCommentAttachmentInternalAsync(int reportId, int bugId, int commentId, int attachmentId)
+    public async Task<Attachment?> DeleteCommentAttachmentInternalAsync(int reportId, int bugId, int commentId, int attachmentId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleOrDefaultAsync<AttachmentDbModel>(
+        return await connection.QuerySingleOrDefaultAsync<Attachment>(
             "SELECT * FROM public.delete_comment_attachment_internal(@reportId, @bugId, @commentId, @attachmentId)",
             new
             {
@@ -208,11 +208,11 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         );
     }
 
-    public async Task<AttachmentDbModel?> DeleteBugStepAttachmentInternalAsync(int reportId, int bugId, int stepId, int attachmentId)
+    public async Task<Attachment?> DeleteBugStepAttachmentInternalAsync(int reportId, int bugId, int stepId, int attachmentId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleOrDefaultAsync<AttachmentDbModel>(
+        return await connection.QuerySingleOrDefaultAsync<Attachment>(
             "SELECT * FROM public.delete_bug_step_attachment_internal(@reportId, @bugId, @stepId, @attachmentId)",
             new
             {
@@ -224,11 +224,11 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         );
     }
 
-    public async Task<AttachmentDbModel[]> DeleteBugStepAttachmentsAsync(int stepId)
+    public async Task<Attachment[]> DeleteBugStepAttachmentsAsync(int stepId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return (await connection.QueryAsync<AttachmentDbModel>(
+        return (await connection.QueryAsync<Attachment>(
             "SELECT * FROM public.delete_bug_step_attachments_internal(@stepId)",
             new
             {

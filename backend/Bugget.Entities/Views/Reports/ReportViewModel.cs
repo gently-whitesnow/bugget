@@ -1,5 +1,5 @@
-using Bugget.Entities.DbModels.Bug;
-using Bugget.Entities.DbModels.ReportLink;
+using Bugget.Entities.BO.Bugs;
+using Bugget.Entities.BO.ReportBo;
 
 namespace Bugget.Entities.Views.Reports;
 
@@ -17,6 +17,6 @@ public sealed class ReportViewModel
     public required int CreatorType { get; init; }
     public required bool IsExcludedFromAnalytics { get; init; }
     public required string[] ParticipantsUserIds { get; set; }
-    public ReportLinkDbModel[]? Links { get; set; }
-    public BugDbModel[]? Bugs { get; set; }
+    public ReportLink[]? Links { get; set; }
+    public Bug[]? Bugs { get; set; }
 }

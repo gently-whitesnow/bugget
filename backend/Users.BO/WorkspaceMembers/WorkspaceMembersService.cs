@@ -1,8 +1,7 @@
 using Bugget.Entities.Errors;
 using Microsoft.Extensions.Options;
-using Users.DA.Interfaces;
+using Users.BO.Ports;
 using Users.Entities.BO;
-using Users.Entities.DbModels.Members;
 using Users.Entities.Options;
 
 namespace Users.BO.WorkspaceMembers;
@@ -12,7 +11,7 @@ public sealed class WorkspaceMembersService(
     IOptions<SelfHostedOptions> selfHostedOptions,
     IAuthorizationRepository authorizationRepository) : IWorkspaceMembersService
 {
-    public async Task<(WorkspaceMemberDbModel? Value, Error? Error)> CreateWorkspaceMemberAsync(long userId, int workspaceId)
+    public async Task<(WorkspaceMember? Value, Error? Error)> CreateWorkspaceMemberAsync(long userId, int workspaceId)
     {
         if (!selfHostedOptions.Value.Enabled)
         {

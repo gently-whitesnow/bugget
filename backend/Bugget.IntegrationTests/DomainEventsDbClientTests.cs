@@ -1,6 +1,5 @@
-using Bugget.DA.Interfaces;
-using Bugget.DA.Transactions;
-using Bugget.Entities.DbModels.DomainEvents;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.IntegrationTests.Fixtures;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +27,7 @@ public class DomainEventsDbClientTests : IClassFixture<AppWithPostgresFixture>
     public async Task InsertAsync_WritesEventInsideTransaction_AndSelectByAggregateReturnsIt()
     {
         // Arrange
-        var evt = new DomainEventDbModel
+        var evt = new DomainEvent
         {
             WorkspaceId = $"ws_{Guid.NewGuid()}",
             AggregateType = "bug",
@@ -75,7 +74,7 @@ public class DomainEventsDbClientTests : IClassFixture<AppWithPostgresFixture>
     public async Task InsertAsync_WithRollback_DoesNotPersistEvent()
     {
         // Arrange
-        var evt = new DomainEventDbModel
+        var evt = new DomainEvent
         {
             WorkspaceId = $"ws_{Guid.NewGuid()}",
             AggregateType = "bug",

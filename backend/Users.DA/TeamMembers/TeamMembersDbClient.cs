@@ -1,19 +1,19 @@
 using Bugget.Entities.Errors;
 using Dapper;
 using Npgsql;
-using Users.DA.TeamMembers;
-using Users.Entities.DbModels.Members;
+using Users.BO.Ports;
+using Users.Entities.BO;
 
 namespace Users.DA.DbClients;
 
 public class TeamMembersDbClient : PostgresClient, ITeamMembersRepository
 {
-    public async Task<(TeamMemberDbModel? Value, Error? Error)> CreateTeamMemberAsync(long userId, int teamId, int sizeLimit)
+    public async Task<(TeamMember? Value, Error? Error)> CreateTeamMemberAsync(long userId, int teamId, int sizeLimit)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
         try
         {
-            return (await conn.QuerySingleAsync<TeamMemberDbModel>(
+            return (await conn.QuerySingleAsync<TeamMember>(
             "SELECT * FROM create_team_member(@user_id, @team_id, @size_limit)",
                 new { user_id = userId, team_id = teamId, size_limit = sizeLimit }
             ), null);
@@ -29,20 +29,20 @@ public class TeamMembersDbClient : PostgresClient, ITeamMembersRepository
         }
     }
 
-    public async Task<TeamMemberDbModel> CreateTeamMemberAsync(long userId, int teamId)
+    public async Task<TeamMember> CreateTeamMemberAsync(long userId, int teamId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
 
-        return await conn.QuerySingleAsync<TeamMemberDbModel>(
+        return await conn.QuerySingleAsync<TeamMember>(
         "SELECT * FROM create_team_member(@user_id, @team_id)",
             new { user_id = userId, team_id = teamId }
         );
     }
 
-    public async Task<TeamMemberDbModel[]> ListTeamMembersAsync(int teamId)
+    public async Task<TeamMember[]> ListTeamMembersAsync(int teamId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return (await conn.QueryAsync<TeamMemberDbModel>(
+        return (await conn.QueryAsync<TeamMember>(
             "SELECT * FROM list_team_members(@team_id)",
             new { team_id = teamId }
         )).ToArray();
@@ -57,10 +57,10 @@ public class TeamMembersDbClient : PostgresClient, ITeamMembersRepository
         );
     }
 
-    public async Task<TeamMemberDbModel[]> ListTeamsMemberAsync(long userId)
+    public async Task<TeamMember[]> ListTeamsMemberAsync(long userId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return (await conn.QueryAsync<TeamMemberDbModel>(
+        return (await conn.QueryAsync<TeamMember>(
             "SELECT * FROM list_teams_member(@user_id)",
             new { user_id = userId }
         )).ToArray();

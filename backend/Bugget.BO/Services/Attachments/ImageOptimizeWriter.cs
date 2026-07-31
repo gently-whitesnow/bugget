@@ -1,7 +1,6 @@
 using Bugget.BO.Interfaces;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO.AttachmentBo;
-using Bugget.Entities.DbModels.Attachment;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
@@ -26,7 +25,7 @@ public sealed class ImageOptimizeWriter(
     public async Task<OptimizationResult> OptimizeWriteAsync(
         string? organizationId,
         int reportId,
-        AttachmentDbModel attachmentDbModel,
+        Attachment attachmentDbModel,
         Stream originalStream,
         CancellationToken ct = default)
     {

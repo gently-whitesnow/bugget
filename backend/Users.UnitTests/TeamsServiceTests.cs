@@ -2,10 +2,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Users.BO;
-using Users.DA.Interfaces;
-using Users.DA.TeamMembers;
-using Users.Entities.DbModels.Members;
-using Users.Entities.DbModels.Teams;
+using Users.BO.Ports;
+using Users.Entities.BO;
 using Users.Entities.Options;
 using Xunit;
 
@@ -45,7 +43,7 @@ public class TeamsServiceTests
         var now = DateTimeOffset.UtcNow;
         var expected = new[]
         {
-            new TeamDbModel
+            new Team
             {
                 Id = 7,
                 WorkspaceId = workspaceId,
@@ -81,7 +79,7 @@ public class TeamsServiceTests
         var userTeamId = 10;
         var now = DateTimeOffset.UtcNow;
 
-        var expectedTeam = new TeamDbModel
+        var expectedTeam = new Team
         {
             Id = 5,
             WorkspaceId = workspaceId,
@@ -117,7 +115,7 @@ public class TeamsServiceTests
         int? userTeamId = null;
         var now = DateTimeOffset.UtcNow;
 
-        var expectedTeam = new TeamDbModel
+        var expectedTeam = new Team
         {
             Id = 5,
             WorkspaceId = workspaceId,
@@ -132,7 +130,7 @@ public class TeamsServiceTests
 
         _teamMembersRepo
             .Setup(r => r.CreateTeamMemberAsync(userId, expectedTeam.Id, 10))
-            .ReturnsAsync((new TeamMemberDbModel
+            .ReturnsAsync((new TeamMember
             {
                 CreatedAt = now,
                 UserId = userId,
@@ -167,7 +165,7 @@ public class TeamsServiceTests
         int? userTeamId = null;
         var now = DateTimeOffset.UtcNow;
 
-        var createdTeam = new TeamDbModel
+        var createdTeam = new Team
         {
             Id = 999,
             WorkspaceId = workspaceId,
@@ -182,7 +180,7 @@ public class TeamsServiceTests
 
         _teamMembersRepo
             .Setup(r => r.CreateTeamMemberAsync(userId, createdTeam.Id, 10))
-            .ReturnsAsync((new TeamMemberDbModel
+            .ReturnsAsync((new TeamMember
             {
                 CreatedAt = now,
                 UserId = userId,
@@ -211,7 +209,7 @@ public class TeamsServiceTests
         var name = "Updated Team";
         var now = DateTimeOffset.UtcNow;
 
-        var expectedTeam = new TeamDbModel
+        var expectedTeam = new Team
         {
             Id = teamId,
             WorkspaceId = workspaceId,

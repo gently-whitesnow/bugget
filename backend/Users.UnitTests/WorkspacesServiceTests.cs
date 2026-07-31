@@ -1,11 +1,8 @@
 using Microsoft.Extensions.Options;
 using Moq;
 using Users.BO;
-using Users.DA.Interfaces;
+using Users.BO.Ports;
 using Users.Entities.BO;
-using Users.Entities.DbModels.Members;
-using Users.Entities.DbModels.Teams;
-using Users.Entities.DbModels.Workspaces;
 using Users.Entities.Options;
 using Xunit;
 
@@ -43,7 +40,7 @@ public class WorkspacesServiceTests
 
         _workspacesRepo
             .Setup(r => r.ListWorkspacesAsync(userId))
-            .ReturnsAsync(Array.Empty<WorkspaceDbModel>());
+            .ReturnsAsync(Array.Empty<Workspace>());
 
         var result = await _sut.GetWorkspacesContextAsync(userId);
 
@@ -61,15 +58,15 @@ public class WorkspacesServiceTests
 
         var workspaces = new[]
         {
-            new WorkspaceDbModel { Id = 1, Name = "WS-1", CreatedAt = now, UpdatedAt = now },
-            new WorkspaceDbModel { Id = 2, Name = "WS-2", CreatedAt = now, UpdatedAt = now },
+            new Workspace { Id = 1, Name = "WS-1", CreatedAt = now, UpdatedAt = now },
+            new Workspace { Id = 2, Name = "WS-2", CreatedAt = now, UpdatedAt = now },
         };
 
         var teams = new[]
         {
-            new TeamDbModel { Id = 10, WorkspaceId = 1, Name = "A", CreatedAt = now, UpdatedAt = now },
-            new TeamDbModel { Id = 11, WorkspaceId = 1, Name = "B", CreatedAt = now, UpdatedAt = now },
-            new TeamDbModel { Id = 20, WorkspaceId = 2, Name = "X", CreatedAt = now, UpdatedAt = now },
+            new Team { Id = 10, WorkspaceId = 1, Name = "A", CreatedAt = now, UpdatedAt = now },
+            new Team { Id = 11, WorkspaceId = 1, Name = "B", CreatedAt = now, UpdatedAt = now },
+            new Team { Id = 20, WorkspaceId = 2, Name = "X", CreatedAt = now, UpdatedAt = now },
         };
 
         _workspacesRepo
@@ -82,7 +79,7 @@ public class WorkspacesServiceTests
 
         _membersRepo
             .Setup(r => r.ListMembersAsync(userId))
-            .ReturnsAsync((Array.Empty<WorkspaceMemberDbModel>(), Array.Empty<TeamMemberDbModel>()));
+            .ReturnsAsync((Array.Empty<WorkspaceMember>(), Array.Empty<TeamMember>()));
 
         var result = await _sut.GetWorkspacesContextAsync(userId);
 
@@ -108,7 +105,7 @@ public class WorkspacesServiceTests
         var userId = 123L;
         var workspaceName = "Test Workspace";
         var now = DateTimeOffset.UtcNow;
-        var expectedWorkspace = new WorkspaceDbModel
+        var expectedWorkspace = new Workspace
         {
             Id = 456,
             Name = workspaceName,
@@ -146,7 +143,7 @@ public class WorkspacesServiceTests
         var newName = "Renamed Workspace";
         var now = DateTimeOffset.UtcNow;
 
-        var expectedWorkspace = new WorkspaceDbModel
+        var expectedWorkspace = new Workspace
         {
             Id = workspaceId,
             Name = newName,

@@ -77,7 +77,7 @@ public sealed class AuthorizationUsersClientAdapter(
             [.. context.Workspaces.Select(w => new WorkspaceMember(w.WorkspaceId, w.Role, w.TeamIds))]), null);
     }
 
-    private static User MapUser(Users.Entities.DbModels.Users.UserDbModel user) => new()
+    private static User MapUser(Users.Entities.BO.User user) => new()
     {
         Id = user.Id,
         ExternalId = user.ExternalId,

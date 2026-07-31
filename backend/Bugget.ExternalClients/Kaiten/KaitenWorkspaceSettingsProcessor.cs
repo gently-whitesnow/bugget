@@ -1,7 +1,7 @@
 using Bugget.BO.Errors;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Settings;
-using Bugget.DA.Interfaces;
-using Bugget.Entities.DbModels.Settings;
+using Bugget.Entities.BO.Settings;
 using Bugget.Entities.Errors;
 using Bugget.Entities.Views.Settings;
 
@@ -29,7 +29,7 @@ public sealed class KaitenWorkspaceSettingsProcessor(
             )
         }.ToDictionary(s => s.Id, StringComparer.Ordinal);
 
-    public WorkspaceSettingsSectionView ExtractSettings(WorkspaceSettingDbModel[] workspaceSettings)
+    public WorkspaceSettingsSectionView ExtractSettings(WorkspaceSetting[] workspaceSettings)
     {
         var kaitenSettings = workspaceSettings
             .Where(s => s.FeatureKey == KaitenConstants.FeatureKey)
@@ -73,7 +73,7 @@ public sealed class KaitenWorkspaceSettingsProcessor(
         string Title,
         string Description)
     {
-        public abstract WorkspaceSettingView BuildView(WorkspaceSettingDbModel[] kaitenSettings);
+        public abstract WorkspaceSettingView BuildView(WorkspaceSetting[] kaitenSettings);
 
         public abstract Task<(WorkspaceSettingView? Value, Error? Error)> UpdateAsync(
             string workspaceId,
@@ -92,7 +92,7 @@ public sealed class KaitenWorkspaceSettingsProcessor(
         string Description)
         : KaitenWorkspaceSetting(Id, Title, Description)
     {
-        public override WorkspaceSettingView BuildView(WorkspaceSettingDbModel[] kaitenSettings)
+        public override WorkspaceSettingView BuildView(WorkspaceSetting[] kaitenSettings)
         {
             var value = kaitenSettings
                 .FirstOrDefault(s => s.FieldKey == Id)?

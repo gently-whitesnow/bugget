@@ -1,8 +1,7 @@
 using Bugget.Entities.Errors;
 using Microsoft.Extensions.Options;
-using Users.DA.Interfaces;
-using Users.DA.TeamMembers;
-using Users.Entities.DbModels.Members;
+using Users.BO.Ports;
+using Users.Entities.BO;
 using Users.Entities.Options;
 
 namespace Users.BO.TeamMembers;
@@ -14,7 +13,7 @@ public sealed class TeamMembersService(
     IAuthorizationRepository authorizationRepository,
     IOptions<SelfHostedOptions> selfHostedOptions) : ITeamMembersService
 {
-    public async Task<(TeamMemberDbModel? Value, Error? Error)> CreateTeamMemberAsync(int teamId, long userId)
+    public async Task<(TeamMember? Value, Error? Error)> CreateTeamMemberAsync(int teamId, long userId)
     {
         if (selfHostedOptions.Value.Enabled)
         {
@@ -32,7 +31,7 @@ public sealed class TeamMembersService(
         return teamMemberResult;
     }
 
-    public Task<TeamMemberDbModel[]> ListTeamMembersAsync(int teamId)
+    public Task<TeamMember[]> ListTeamMembersAsync(int teamId)
     {
         return teamMembersRepository.ListTeamMembersAsync(teamId);
     }

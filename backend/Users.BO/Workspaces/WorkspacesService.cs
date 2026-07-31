@@ -1,10 +1,8 @@
 using Bugget.Entities.Errors;
 using Microsoft.Extensions.Options;
 using Users.BO.Interfaces;
-using Users.DA.Interfaces;
+using Users.BO.Ports;
 using Users.Entities.BO;
-using Users.Entities.DbModels.Members;
-using Users.Entities.DbModels.Workspaces;
 using Users.Entities.Options;
 
 namespace Users.BO;
@@ -16,7 +14,7 @@ public sealed class WorkspacesService(
     IAuthorizationRepository authorizationRepository,
     IOptions<SelfHostedOptions> hostingOptions) : IWorkspacesService
 {
-    public async Task<(WorkspaceDbModel? Value, Error? Error)> CreateWorkspaceAsync(long userId, string name)
+    public async Task<(Workspace? Value, Error? Error)> CreateWorkspaceAsync(long userId, string name)
     {
         if (hostingOptions.Value.Enabled)
         {
@@ -29,62 +27,43 @@ public sealed class WorkspacesService(
         return (workspace, null);
     }
 
-    public Task<WorkspaceDbModel> InternalCreateWorkspaceAsync(string name)
+    public Task<Workspace> InternalCreateWorkspaceAsync(string name)
     {
         return workspacesDbClient.CreateWorkspaceAsync(name);
     }
 
-    public Task<WorkspaceDbModel[]> ListWorkspacesAsync()
+    public Task<Workspace[]> ListWorkspacesAsync()
     {
         return workspacesDbClient.ListWorkspacesAsync();
     }
 
-    public async Task<(Workspace[] Workspaces, WorkspaceMemberDbModel[] WorkspacesMember, TeamMemberDbModel[] TeamsMember)> GetWorkspacesContextAsync(long userId)
+    public async Task<(Workspace[] Workspaces, WorkspaceMember[] WorkspacesMember, TeamMember[] TeamsMember)> GetWorkspacesContextAsync(long userId)
     {
-        var workspacesDbModels = await workspacesDbClient.ListWorkspacesAsync(userId);
-        if (workspacesDbModels.Length == 0)
+        var workspaces = await workspacesDbClient.ListWorkspacesAsync(userId);
+        if (workspaces.Length == 0)
         {
-            return (Array.Empty<Workspace>(), Array.Empty<WorkspaceMemberDbModel>(), Array.Empty<TeamMemberDbModel>());
+            return (Array.Empty<Workspace>(), Array.Empty<WorkspaceMember>(), Array.Empty<TeamMember>());
         }
-        var workspaceIds = workspacesDbModels.Select(e => e.Id).ToArray();
+        var workspaceIds = workspaces.Select(e => e.Id).ToArray();
         var teamsTask = teamsRepository.ListTeamsAsync(workspaceIds);
         var membersTask = membersRepository.ListMembersAsync(userId);
         await Task.WhenAll(teamsTask, membersTask);
         var teams = teamsTask.Result;
         var (workspacesMember, teamsMember) = membersTask.Result;
 
-        var teamsLookup = teams.GroupBy(e => e.WorkspaceId).ToDictionary(e => e.Key, e => e.ToList());
+        var teamsLookup = teams.GroupBy(e => e.WorkspaceId).ToDictionary(e => e.Key, e => e.ToArray());
 
-        var workspaces = new List<Workspace>(workspacesDbModels.Length);
-
-        foreach (var workspaceDbModel in workspacesDbModels)
+        foreach (var workspace in workspaces)
         {
-            var workspace = new Workspace
-            {
-                Id = workspaceDbModel.Id,
-                Name = workspaceDbModel.Name,
-                CreatedAt = workspaceDbModel.CreatedAt,
-                UpdatedAt = workspaceDbModel.UpdatedAt,
-                Teams = null,
-            };
-            if (teamsLookup.TryGetValue(workspaceDbModel.Id, out var workspaceTeams))
-            {
-                workspace.Teams = workspaceTeams.Select(e => new Team
-                {
-                    Id = e.Id,
-                    WorkspaceId = e.WorkspaceId,
-                    Name = e.Name,
-                    CreatedAt = e.CreatedAt,
-                    UpdatedAt = e.UpdatedAt,
-                }).ToArray();
-            }
-            workspaces.Add(workspace);
+            workspace.Teams = teamsLookup.TryGetValue(workspace.Id, out var workspaceTeams)
+                ? workspaceTeams
+                : null;
         }
 
-        return (workspaces.ToArray(), workspacesMember, teamsMember);
+        return (workspaces, workspacesMember, teamsMember);
     }
 
-    public async Task<(WorkspaceDbModel? Value, Error? Error)> UpdateWorkspaceAsync(long userId, int workspaceId, string name)
+    public async Task<(Workspace? Value, Error? Error)> UpdateWorkspaceAsync(long userId, int workspaceId, string name)
     {
         if (hostingOptions.Value.Enabled)
         {

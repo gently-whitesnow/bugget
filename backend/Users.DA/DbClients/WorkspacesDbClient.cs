@@ -1,43 +1,42 @@
 using Dapper;
-using Users.DA.Interfaces;
-using Users.Entities.DbModels.Organizations;
-using Users.Entities.DbModels.Workspaces;
+using Users.BO.Ports;
+using Users.Entities.BO;
 
 namespace Users.DA.DbClients;
 
 public sealed class WorkspacesDbClient : PostgresClient, IWorkspacesRepository
 {
-    public async Task<WorkspaceDbModel> CreateWorkspaceAsync(long userId, string name)
+    public async Task<Workspace> CreateWorkspaceAsync(long userId, string name)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return await conn.QuerySingleAsync<WorkspaceDbModel>(
+        return await conn.QuerySingleAsync<Workspace>(
             "SELECT * FROM create_workspace(@user_id, @name)",
             new { user_id = userId, name = name }
         );
     }
 
-    public async Task<WorkspaceDbModel> CreateWorkspaceAsync(string name)
+    public async Task<Workspace> CreateWorkspaceAsync(string name)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return await conn.QuerySingleAsync<WorkspaceDbModel>(
+        return await conn.QuerySingleAsync<Workspace>(
             "SELECT * FROM create_workspace(@name)",
             new { name = name }
         );
     }
 
-    public async Task<WorkspaceDbModel[]> ListWorkspacesAsync(long userId)
+    public async Task<Workspace[]> ListWorkspacesAsync(long userId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return (await conn.QueryAsync<WorkspaceDbModel>(
+        return (await conn.QueryAsync<Workspace>(
             "SELECT * FROM list_workspaces(@user_id)",
             new { user_id = userId }
         )).ToArray();
     }
 
-    public async Task<WorkspaceDbModel> UpdateWorkspaceAsync(int workspaceId, string name)
+    public async Task<Workspace> UpdateWorkspaceAsync(int workspaceId, string name)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return await conn.QuerySingleAsync<WorkspaceDbModel>(
+        return await conn.QuerySingleAsync<Workspace>(
             "SELECT * FROM update_workspace(@workspace_id, @name)",
             new { workspace_id = workspaceId, name }
         );
@@ -52,10 +51,10 @@ public sealed class WorkspacesDbClient : PostgresClient, IWorkspacesRepository
         );
     }
 
-    public async Task<WorkspaceDbModel[]> ListWorkspacesAsync()
+    public async Task<Workspace[]> ListWorkspacesAsync()
     {
         await using var conn = await DataSource.OpenConnectionAsync();
-        return (await conn.QueryAsync<WorkspaceDbModel>(
+        return (await conn.QueryAsync<Workspace>(
             "SELECT * FROM list_workspaces()"
         )).ToArray();
     }

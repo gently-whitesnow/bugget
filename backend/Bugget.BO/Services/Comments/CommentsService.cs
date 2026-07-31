@@ -1,15 +1,14 @@
 using System.Text.Json;
 using Bugget.BO.DomainEvents;
 using Bugget.BO.Errors;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Bugs;
 using Bugget.BO.Services.Reports;
-using Bugget.DA.Interfaces;
-using Bugget.DA.Transactions;
 using Bugget.Entities.Authentication;
+using Bugget.Entities.BO.Comments;
 using Bugget.Entities.BO.Common;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.Comment;
-using Bugget.Entities.DbModels.DomainEvents;
 using Bugget.Entities.DTO.Comment;
 using Bugget.Entities.Errors;
 using Bugget.Entities.Options;
@@ -28,7 +27,7 @@ public sealed class CommentsService(
     IDomainEventPublisher domainEventPublisher,
     IUnitOfWork unitOfWork)
 {
-    public async Task<(CommentSummaryDbModel? Value, Error? Error)> CreateCommentAsync(UserIdentity user, string aliasId, int bugId, CommentDto commentDto)
+    public async Task<(CommentSummary? Value, Error? Error)> CreateCommentAsync(UserIdentity user, string aliasId, int bugId, CommentDto commentDto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -70,7 +69,7 @@ public sealed class CommentsService(
                 attachments = Array.Empty<object>(),
             });
 
-            await domainEventPublisher.PublishAsync(new DomainEventDbModel
+            await domainEventPublisher.PublishAsync(new DomainEvent
             {
                 WorkspaceId = BugsService.ResolveWorkspaceId(resolvedReport.CreatorTeamId, user.OrganizationId),
                 AggregateType = BuggetAggregateTypes.Comment,
@@ -119,7 +118,7 @@ public sealed class CommentsService(
         return null;
     }
 
-    public async Task<(CommentSummaryDbModel? Value, Error? Error)> UpdateCommentAsync(UserIdentity user, string aliasId, int bugId, int commmentId, CommentDto commentDto)
+    public async Task<(CommentSummary? Value, Error? Error)> UpdateCommentAsync(UserIdentity user, string aliasId, int bugId, int commmentId, CommentDto commentDto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(

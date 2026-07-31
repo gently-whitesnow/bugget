@@ -1,0 +1,67 @@
+namespace Bugget.Entities.BO.AttachmentBo;
+
+public sealed class Attachment
+{
+    public required int Id { get; init; }
+
+    /// <summary>
+    /// Идентификатор сущности к которой прикреплен файл
+    /// </summary>
+    public int EntityId { get; init; }
+
+    /// <summary>
+    /// Тип сущности к которой прикреплен файл
+    /// </summary>
+    public required int AttachType { get; init; }
+
+    private readonly string? _storageKey;
+
+    /// <summary>
+    /// Относительный путь либо S3‑key
+    /// </summary>
+    public string? StorageKey
+    {
+        get => _storageKey;
+        init => _storageKey = value;
+    }
+
+    /// <summary>
+    /// Тип хранилища 0=Temp , 1=Standard, 2=Cold
+    /// </summary>
+    public int? StorageKind { get; init; } = 0;
+
+    /// <summary>
+    /// Дата создания вложения
+    /// </summary>
+    public required DateTimeOffset CreatedAt { get; init; }
+
+    /// <summary>
+    /// Создатель вложения
+    /// </summary>
+    public required string CreatorUserId { get; init; }
+
+    /// <summary>
+    /// Размер вложения
+    /// </summary>
+    public long? LengthBytes { get; init; }
+
+    /// <summary>
+    /// Имя вложения
+    /// </summary>
+    public required string FileName { get; init; }
+
+    /// <summary>
+    /// Тип вложения
+    /// </summary>
+    public string MimeType { get; init; } = "image/webp";
+
+    /// <summary>
+    /// Есть ли превью
+    /// </summary>
+    public bool? HasPreview { get; init; } = false;
+
+    /// <summary>
+    /// Сжато ли вложение gzip
+    /// </summary>
+    public bool? IsGzipCompressed { get; init; } = false;
+}

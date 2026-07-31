@@ -1,13 +1,11 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Bugget.BO.DomainEvents;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Reports;
-using Bugget.DA.Interfaces;
-using Bugget.DA.Transactions;
 using Bugget.Entities.Authentication;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.DomainEvents;
-using Bugget.Entities.DbModels.Report;
 using Bugget.Entities.DTO.Report;
 using Bugget.Entities.Options;
 using Microsoft.Extensions.Options;
@@ -35,8 +33,8 @@ public class ReportExcludedFromAnalyticsToggleTests
     {
         var scope = new Mock<ITransactionScope>().Object;
         var uow = new Mock<IUnitOfWork>();
-        uow.Setup(x => x.ExecuteAsync(It.IsAny<Func<ITransactionScope, CancellationToken, Task<(ReportPatchResultDbModel, ReportPatchDto)>>>(), It.IsAny<CancellationToken>()))
-            .Returns<Func<ITransactionScope, CancellationToken, Task<(ReportPatchResultDbModel, ReportPatchDto)>>, CancellationToken>(
+        uow.Setup(x => x.ExecuteAsync(It.IsAny<Func<ITransactionScope, CancellationToken, Task<(ReportPatchResult, ReportPatchDto)>>>(), It.IsAny<CancellationToken>()))
+            .Returns<Func<ITransactionScope, CancellationToken, Task<(ReportPatchResult, ReportPatchDto)>>, CancellationToken>(
                 (action, ct) => action(scope, ct));
         return uow.Object;
     }
@@ -48,7 +46,7 @@ public class ReportExcludedFromAnalyticsToggleTests
         return new UserIdentity(new ClaimsPrincipal(identity));
     }
 
-    private static ReportPatchResultDbModel BuildPatchResult(int reportId, bool isExcluded) => new()
+    private static ReportPatchResult BuildPatchResult(int reportId, bool isExcluded) => new()
     {
         Id = reportId,
         PublicId = Guid.NewGuid(),
@@ -70,7 +68,7 @@ public class ReportExcludedFromAnalyticsToggleTests
         return q.Object;
     }
 
-    private static (Mock<IReportsDbClient> Db, Mock<IDomainEventPublisher> Publisher, ReportsService Svc, List<DomainEventDbModel> Events) BuildSut(
+    private static (Mock<IReportsDbClient> Db, Mock<IDomainEventPublisher> Publisher, ReportsService Svc, List<DomainEvent> Events) BuildSut(
         int reportId,
         bool? currentIsExcluded)
     {
@@ -83,10 +81,10 @@ public class ReportExcludedFromAnalyticsToggleTests
             .ReturnsAsync((int _, ReportPatchDto dto, ITransactionScope? _, CancellationToken _) =>
                 BuildPatchResult(reportId, dto.IsExcludedFromAnalytics ?? currentIsExcluded ?? false));
 
-        var events = new List<DomainEventDbModel>();
+        var events = new List<DomainEvent>();
         var publisher = new Mock<IDomainEventPublisher>();
-        publisher.Setup(x => x.PublishAsync(It.IsAny<DomainEventDbModel>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()))
-            .Callback<DomainEventDbModel, ITransactionScope, CancellationToken>((e, _, _) => events.Add(e))
+        publisher.Setup(x => x.PublishAsync(It.IsAny<DomainEvent>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()))
+            .Callback<DomainEvent, ITransactionScope, CancellationToken>((e, _, _) => events.Add(e))
             .ReturnsAsync(1L);
 
         var svc = new ReportsService(
@@ -149,7 +147,7 @@ public class ReportExcludedFromAnalyticsToggleTests
         var user = CreateUser("u1", "org-1");
         await svc.PatchReportAsync("42", user, new ReportPatchDto { IsExcludedFromAnalytics = true });
 
-        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEventDbModel>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
+        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEvent>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
         // UPDATE всё ещё происходит — это контракт patch_report_internal (COALESCE);
         // отвечает за «не писать в outbox при равенстве» сервис, не DB-функция.
         db.Verify(x => x.PatchReportAsync(42, It.IsAny<ReportPatchDto>(), It.IsAny<ITransactionScope?>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -163,7 +161,7 @@ public class ReportExcludedFromAnalyticsToggleTests
         var user = CreateUser("u1", "org-1");
         await svc.PatchReportAsync("42", user, new ReportPatchDto { Title = "rename" });
 
-        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEventDbModel>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
+        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEvent>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
         db.Verify(x => x.GetIsExcludedFromAnalyticsAsync(It.IsAny<ITransactionScope>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -180,7 +178,7 @@ public class ReportExcludedFromAnalyticsToggleTests
             .ReturnsAsync(false);
         db.Setup(x => x.PatchReportAsync(7, It.IsAny<ReportPatchDto>(), It.IsAny<ITransactionScope?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((int _, ReportPatchDto dto, ITransactionScope? _, CancellationToken _) =>
-                new ReportPatchResultDbModel
+                new ReportPatchResult
                 {
                     Id = 7,
                     PublicId = Guid.NewGuid(),
@@ -193,10 +191,10 @@ public class ReportExcludedFromAnalyticsToggleTests
                     IsExcludedFromAnalytics = dto.IsExcludedFromAnalytics ?? false,
                 });
 
-        var events = new List<DomainEventDbModel>();
+        var events = new List<DomainEvent>();
         var publisher = new Mock<IDomainEventPublisher>();
-        publisher.Setup(x => x.PublishAsync(It.IsAny<DomainEventDbModel>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()))
-            .Callback<DomainEventDbModel, ITransactionScope, CancellationToken>((e, _, _) => events.Add(e))
+        publisher.Setup(x => x.PublishAsync(It.IsAny<DomainEvent>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()))
+            .Callback<DomainEvent, ITransactionScope, CancellationToken>((e, _, _) => events.Add(e))
             .ReturnsAsync(1L);
 
         var svc = new ReportsService(

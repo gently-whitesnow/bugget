@@ -1,13 +1,11 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Bugget.BO.DomainEvents;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Reports;
-using Bugget.DA.Interfaces;
-using Bugget.DA.Transactions;
 using Bugget.Entities.Authentication;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.DomainEvents;
-using Bugget.Entities.DbModels.Report;
 using Bugget.Entities.DTO.Report;
 using Bugget.Entities.Options;
 using Microsoft.Extensions.Options;
@@ -28,11 +26,11 @@ public class ReportStatusChangedEmissionTests
     {
         var scope = new Mock<ITransactionScope>().Object;
         var uow = new Mock<IUnitOfWork>();
-        uow.Setup(x => x.ExecuteAsync(It.IsAny<Func<ITransactionScope, CancellationToken, Task<(ReportPatchResultDbModel, ReportPatchDto)>>>(), It.IsAny<CancellationToken>()))
-            .Returns<Func<ITransactionScope, CancellationToken, Task<(ReportPatchResultDbModel, ReportPatchDto)>>, CancellationToken>(
+        uow.Setup(x => x.ExecuteAsync(It.IsAny<Func<ITransactionScope, CancellationToken, Task<(ReportPatchResult, ReportPatchDto)>>>(), It.IsAny<CancellationToken>()))
+            .Returns<Func<ITransactionScope, CancellationToken, Task<(ReportPatchResult, ReportPatchDto)>>, CancellationToken>(
                 (action, ct) => action(scope, ct));
-        uow.Setup(x => x.ExecuteAsync(It.IsAny<Func<ITransactionScope, CancellationToken, Task<ReportPatchResultDbModel>>>(), It.IsAny<CancellationToken>()))
-            .Returns<Func<ITransactionScope, CancellationToken, Task<ReportPatchResultDbModel>>, CancellationToken>(
+        uow.Setup(x => x.ExecuteAsync(It.IsAny<Func<ITransactionScope, CancellationToken, Task<ReportPatchResult>>>(), It.IsAny<CancellationToken>()))
+            .Returns<Func<ITransactionScope, CancellationToken, Task<ReportPatchResult>>, CancellationToken>(
                 (action, ct) => action(scope, ct));
         uow.Setup(x => x.ExecuteAsync(It.IsAny<Func<ITransactionScope, CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
             .Returns<Func<ITransactionScope, CancellationToken, Task>, CancellationToken>(
@@ -52,7 +50,7 @@ public class ReportStatusChangedEmissionTests
         return new UserIdentity(new ClaimsPrincipal(identity));
     }
 
-    private static ReportPatchResultDbModel BuildPatchResult(int reportId, int status, string responsibleUserId = "responsible", string pastResponsibleUserId = "past") => new()
+    private static ReportPatchResult BuildPatchResult(int reportId, int status, string responsibleUserId = "responsible", string pastResponsibleUserId = "past") => new()
     {
         Id = reportId,
         PublicId = Guid.NewGuid(),
@@ -82,7 +80,7 @@ public class ReportStatusChangedEmissionTests
         int reportId,
         int currentStatus,
         string? currentResponsibleUserId,
-        Func<ReportPatchDto, ReportPatchResultDbModel>? buildResult = null)
+        Func<ReportPatchDto, ReportPatchResult>? buildResult = null)
     {
         var db = new Mock<IReportsDbClient>();
         db.Setup(x => x.ResolveReportIdAsync(It.IsAny<string>(), It.IsAny<string>(), reportId, It.IsAny<Guid?>(), It.IsAny<int?>()))
@@ -101,13 +99,13 @@ public class ReportStatusChangedEmissionTests
         return (db, observed);
     }
 
-    private static (ReportsService Svc, Mock<IDomainEventPublisher> Publisher, List<DomainEventDbModel> Events) BuildSut(
+    private static (ReportsService Svc, Mock<IDomainEventPublisher> Publisher, List<DomainEvent> Events) BuildSut(
         Mock<IReportsDbClient> db)
     {
-        var events = new List<DomainEventDbModel>();
+        var events = new List<DomainEvent>();
         var publisher = new Mock<IDomainEventPublisher>();
-        publisher.Setup(x => x.PublishAsync(It.IsAny<DomainEventDbModel>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()))
-            .Callback<DomainEventDbModel, ITransactionScope, CancellationToken>((e, _, _) => events.Add(e))
+        publisher.Setup(x => x.PublishAsync(It.IsAny<DomainEvent>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()))
+            .Callback<DomainEvent, ITransactionScope, CancellationToken>((e, _, _) => events.Add(e))
             .ReturnsAsync(1L);
 
         var svc = new ReportsService(
@@ -158,7 +156,7 @@ public class ReportStatusChangedEmissionTests
         var user = CreateUser("u1", "org-1");
         await svc.PatchReportAsync("42", user, new ReportPatchDto { Title = "renamed" });
 
-        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEventDbModel>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
+        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEvent>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
         db.Verify(x => x.GetStatusAndResponsibleAsync(It.IsAny<ITransactionScope>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -171,7 +169,7 @@ public class ReportStatusChangedEmissionTests
         var user = CreateUser("u1", "org-1");
         await svc.PatchReportAsync("42", user, new ReportPatchDto { Status = (int)ReportStatus.Fix });
 
-        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEventDbModel>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
+        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEvent>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // ============ Auto-status driver ============
@@ -265,7 +263,7 @@ public class ReportStatusChangedEmissionTests
 
         // Status в DTO так и остался null (driver не сработал).
         Assert.Null(observed.Single().Status);
-        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEventDbModel>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
+        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEvent>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "Manual override → Backlog из Fix — допустимо: status=Backlog, событие Fix→Backlog")]
@@ -329,6 +327,6 @@ public class ReportStatusChangedEmissionTests
         await svc.PatchReportAsync("7", user, new ReportPatchDto { ResponsibleUserId = "u-a" });
 
         Assert.Null(observed.Single().Status);
-        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEventDbModel>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
+        publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEvent>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

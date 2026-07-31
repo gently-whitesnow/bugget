@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Settings;
-using Bugget.DA.Interfaces;
 using Bugget.Entities.Errors;
 using Bugget.Extensions;
 using Bugget.ExternalClients.Kaiten;
@@ -263,9 +263,9 @@ public sealed class ProblemDetailsFactoryTests
 
         var errors = ReadErrorCatalog<Error>(typeof(Users.BO.BoErrors))
             .Concat(ReadErrorCatalog<Error>(typeof(Authorization.Api.BoErrors)))
-            .Concat(ReadErrorCatalog<Error>(typeof(Users.DA.TeamMembers.TeamMembersErrors)))
-            .Concat(ReadErrorCatalog<Error>(typeof(Users.DA.Teams.TeamsErrors)))
-            .Concat(ReadErrorCatalog<Error>(typeof(Users.DA.WorkspaceMembers.WorkspaceMembersErrors)))
+            .Concat(ReadErrorCatalog<Error>(typeof(Users.BO.Ports.TeamMembersErrors)))
+            .Concat(ReadErrorCatalog<Error>(typeof(Users.BO.Ports.TeamsErrors)))
+            .Concat(ReadErrorCatalog<Error>(typeof(Users.BO.Ports.WorkspaceMembersErrors)))
             .ToArray();
 
         AssertErrorCatalog(

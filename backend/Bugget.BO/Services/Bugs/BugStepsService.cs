@@ -1,9 +1,9 @@
 using Bugget.BO.Errors;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Reports;
-using Bugget.DA.Interfaces;
 using Bugget.Entities.Authentication;
+using Bugget.Entities.BO.Bugs;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.BugSteps;
 using Bugget.Entities.DTO.BugStep;
 using Bugget.Entities.Errors;
 using Bugget.Entities.Options;
@@ -20,7 +20,7 @@ public sealed class BugStepsService(
     ReportsService reportsService,
     ITaskQueue taskQueue)
 {
-    public async Task<(BugStepSummaryDbModel? Value, Error? Error)> CreateBugStepAsync(UserIdentity user, string aliasId, int bugId, BugStepDto createDto)
+    public async Task<(BugStepSummary? Value, Error? Error)> CreateBugStepAsync(UserIdentity user, string aliasId, int bugId, BugStepDto createDto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -75,7 +75,7 @@ public sealed class BugStepsService(
         return null;
     }
 
-    public async Task<(BugStepSummaryDbModel? Value, Error? Error)> PatchBugStepAsync(UserIdentity user, string aliasId, int bugId, int stepId, BugStepDto patchDto)
+    public async Task<(BugStepSummary? Value, Error? Error)> PatchBugStepAsync(UserIdentity user, string aliasId, int bugId, int stepId, BugStepDto patchDto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(
@@ -101,7 +101,7 @@ public sealed class BugStepsService(
         return (bugStepDbModel, null);
     }
 
-    public async Task<(BugStepSummaryDbModel[]? Value, Error? Error)> UpdateBugStepsOrderAsync(UserIdentity user, string aliasId, int bugId, BugStepsOrderDto orderDto)
+    public async Task<(BugStepSummary[]? Value, Error? Error)> UpdateBugStepsOrderAsync(UserIdentity user, string aliasId, int bugId, BugStepsOrderDto orderDto)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         var resolvedReport = await reportsService.ResolveReportIdAsync(

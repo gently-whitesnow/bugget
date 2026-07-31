@@ -1,11 +1,7 @@
-using Bugget.Entities.DbModels.Attachment;
-using Bugget.Entities.DbModels.Bug;
-using Bugget.Entities.DbModels.BugSteps;
-using Bugget.Entities.DbModels.Comment;
-using Bugget.Entities.DbModels.ReportLink;
 using Bugget.Entities.Views;
 using Bugget.Entities.Views.Reports;
 using Bugget.Reports.Contracts.Generated;
+using Domain = Bugget.Entities.BO;
 
 namespace Bugget.Mappers;
 
@@ -98,7 +94,7 @@ internal static class ReportsMapper
         Bugs = view.Bugs?.Select(ToListContract).ToArray(),
     };
 
-    public static BugListItem ToListContract(this BugDbModel model) => new()
+    public static BugListItem ToListContract(this Domain.Bugs.Bug model) => new()
     {
         Id = model.Id,
         Report_id = model.ReportId,
@@ -130,7 +126,7 @@ internal static class ReportsMapper
             .ToArray(),
     };
 
-    public static ReportLink ToContract(this ReportLinkDbModel model) => new()
+    public static ReportLink ToContract(this Domain.ReportBo.ReportLink model) => new()
     {
         Id = model.Id,
         Report_id = model.ReportId,
@@ -140,7 +136,7 @@ internal static class ReportsMapper
         Updated_at = model.UpdatedAt,
     };
 
-    public static Bug ToContract(this BugDbModel model) => new()
+    public static Bug ToContract(this Domain.Bugs.Bug model) => new()
     {
         Id = model.Id,
         Report_id = model.ReportId,
@@ -157,7 +153,7 @@ internal static class ReportsMapper
         Steps = model.Steps?.Select(ToContract).ToArray(),
     };
 
-    public static Comment ToContract(this CommentDbModel model) => new()
+    public static Comment ToContract(this Domain.Comments.Comment model) => new()
     {
         Id = model.Id,
         Bug_id = model.BugId,
@@ -170,7 +166,7 @@ internal static class ReportsMapper
         Attachments = model.Attachments?.Select(ToSummaryContract).ToArray(),
     };
 
-    public static BugSummary ToSummaryContract(this BugSummaryDbModel model) => new()
+    public static BugSummary ToSummaryContract(this Domain.Bugs.BugSummary model) => new()
     {
         Id = model.Id,
         Title = model.Title,
@@ -183,7 +179,7 @@ internal static class ReportsMapper
         Creator_type = model.CreatorType,
     };
 
-    public static BugPatchResult ToContract(this BugPatchResultDbModel model) => new()
+    public static BugPatchResult ToContract(this Domain.Bugs.BugPatchResult model) => new()
     {
         Id = model.Id,
         Title = model.Title,
@@ -193,7 +189,7 @@ internal static class ReportsMapper
         Status = model.Status,
     };
 
-    public static CommentSummary ToSummaryContract(this CommentSummaryDbModel model) => new()
+    public static CommentSummary ToSummaryContract(this Domain.Comments.CommentSummary model) => new()
     {
         Id = model.Id,
         Bug_id = model.BugId,
@@ -205,7 +201,7 @@ internal static class ReportsMapper
         Updated_at = model.UpdatedAt,
     };
 
-    public static BugStep ToContract(this BugStepSummaryDbModel model) => new()
+    public static BugStep ToContract(this Domain.Bugs.BugStepSummary model) => new()
     {
         Id = model.Id,
         Bug_id = model.BugId,
@@ -223,7 +219,7 @@ internal static class ReportsMapper
     /// (`storage_key`, `storage_kind`, `length_bytes`, `mime_type`,
     /// `is_gzip_compressed`) наружу не уходят — причина в ADR-0005.
     /// </remarks>
-    public static AttachmentSummary ToSummaryContract(this AttachmentDbModel model) => new()
+    public static AttachmentSummary ToSummaryContract(this Domain.AttachmentBo.Attachment model) => new()
     {
         Id = model.Id,
         Entity_id = model.EntityId,

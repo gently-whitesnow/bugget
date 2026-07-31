@@ -27,30 +27,16 @@ public sealed record Deviation(string From, string To, string What, string Why, 
 public static class KnownDeviations
 {
     /// <summary>Рёбра «бизнес-логика → инфраструктура», которые сейчас есть в графе проектов.</summary>
-    public static readonly IReadOnlyList<Deviation> BoProjectReferences =
-    [
-        new("Bugget.BO", "Bugget.DA",
-            "бизнес-логика ссылается на data access и транзитивно получает Npgsql и Dapper",
-            "порты I*DbClient объявлены внутри Bugget.DA, инверсия зависимости — отдельная задача программы",
-            "ADR-0001"),
-
-        new("Users.BO", "Users.DA",
-            "то же самое в модуле Users",
-            "Users.* растворяется в целевом квартете, чинить точечно дороже, чем при переезде",
-            "ADR-0001"),
-    ];
+    /// <remarks>
+    /// Пусто: рёбра <c>*.BO → *.DA</c> развёрнуты, порты живут в <c>*.BO/Ports</c>,
+    /// инфраструктура ссылается на бизнес-логику. Строку сюда возвращает только новый
+    /// осознанный долг — с обоснованием в теле коммита (ADR-0002).
+    /// </remarks>
+    public static readonly IReadOnlyList<Deviation> BoProjectReferences = [];
 
     /// <summary>Сборки, которые бизнес-логика тянет напрямую в обход целевого правила.</summary>
     public static readonly IReadOnlyList<Deviation> BoAssemblyReferences =
     [
-        new("Bugget.BO", "System.Data.Common",
-            "контракт Bugget.BO.DomainEvents.Consumer.IDomainEventHandler принимает IDbConnection " +
-            "и IDbTransaction, то есть ADO.NET виден в сигнатурах бизнес-логики",
-            "хендлеры доменных событий работают внутри транзакции poller'а; правильная форма — " +
-            "передавать единицу работы через порт, а не через типы System.Data. " +
-            "Сам драйвер (Npgsql, Dapper) в Bugget.BO уже не протекает",
-            "ADR-0001"),
-
         new("Users.BO", "Microsoft.Extensions.Http",
             "Users.BO.Avatars.AvatarDownloadService инжектит IHttpClientFactory и сам ходит в сеть",
             "поход наружу должен уехать за порт в Infrastructure, переносится при переезде Users.*",

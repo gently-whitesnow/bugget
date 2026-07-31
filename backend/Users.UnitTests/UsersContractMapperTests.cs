@@ -5,10 +5,7 @@ using Users.Api.Controllers.Teams;
 using Users.Api.Controllers.Users;
 using Users.Api.Controllers.Workspaces;
 using Users.Api.Mappers;
-using Users.Entities.DbModels.Members;
-using Users.Entities.DbModels.Teams;
-using Users.Entities.DbModels.Users;
-using Users.Entities.DbModels.Workspaces;
+using Users.Entities.BO;
 using Users.Entities.View.Users;
 using Xunit;
 
@@ -78,7 +75,7 @@ public class UsersContractMapperTests
     [Fact(DisplayName = "Профиль: все поля модели попадают в контракт")]
     public void UserProfile_maps_all_fields()
     {
-        var contract = new UserDbModel
+        var contract = new User
         {
             Id = 42,
             ExternalId = "keycloak|42",
@@ -137,9 +134,9 @@ public class UsersContractMapperTests
     [Fact(DisplayName = "Рабочее пространство и команда: числовые идентификаторы сохраняются числами")]
     public void Workspace_and_team_keep_numeric_ids()
     {
-        var workspace = new WorkspaceDbModel { Id = 1, Name = "пространство", CreatedAt = Moment, UpdatedAt = Moment }
+        var workspace = new Workspace { Id = 1, Name = "пространство", CreatedAt = Moment, UpdatedAt = Moment }
             .ToContract();
-        var team = new TeamDbModel { Id = 7, WorkspaceId = 1, Name = "команда", CreatedAt = Moment, UpdatedAt = Moment }
+        var team = new Team { Id = 7, WorkspaceId = 1, Name = "команда", CreatedAt = Moment, UpdatedAt = Moment }
             .ToContract();
 
         Assert.Equal(1, workspace.Id);
@@ -150,7 +147,7 @@ public class UsersContractMapperTests
     [Fact(DisplayName = "Членство в рабочем пространстве: идентификаторы и роль переносятся")]
     public void WorkspaceMember_maps_fields()
     {
-        var contract = new WorkspaceMemberDbModel
+        var contract = new WorkspaceMember
         {
             WorkspaceId = 1,
             UserId = 42,

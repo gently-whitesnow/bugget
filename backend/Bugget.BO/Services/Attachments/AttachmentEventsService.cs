@@ -2,15 +2,13 @@ using System.Text.Json;
 using Bugget.BO.DomainEvents;
 using Bugget.BO.Interfaces;
 using Bugget.BO.Mappers;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Bugs;
-using Bugget.DA.Interfaces;
-using Bugget.DA.Transactions;
-using Bugget.DA.WebSockets;
 using Bugget.Entities.Authentication;
 using Bugget.Entities.BO;
+using Bugget.Entities.BO.AttachmentBo;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.Attachment;
-using Bugget.Entities.DbModels.DomainEvents;
 using Microsoft.Extensions.Logging;
 
 namespace Bugget.BO.Services.Attachments;
@@ -26,7 +24,7 @@ public class AttachmentEventsService(
     ILogger<AttachmentEventsService> logger
         )
 {
-    public async Task HandleAttachmentCreateEventAsync(ReportIdContext reportIdContext, UserIdentity user, AttachmentDbModel attachmentDbModel)
+    public async Task HandleAttachmentCreateEventAsync(ReportIdContext reportIdContext, UserIdentity user, Attachment attachmentDbModel)
     {
         await Task.WhenAll(
             reportPageHubClient.SendAttachmentCreateAsync(reportIdContext.GroupKey, attachmentDbModel.ToSocketView(), user.SignalRConnectionId),
@@ -34,7 +32,7 @@ public class AttachmentEventsService(
             PublishDomainEventAsync(reportIdContext, user, attachmentDbModel));
     }
 
-    public async Task HandleAttachmentDeleteEventAsync(ReportIdContext reportIdContext, UserIdentity user, AttachmentDbModel attachmentDbModel)
+    public async Task HandleAttachmentDeleteEventAsync(ReportIdContext reportIdContext, UserIdentity user, Attachment attachmentDbModel)
     {
         var tasks = new List<Task>
         {
@@ -51,7 +49,7 @@ public class AttachmentEventsService(
         await Task.WhenAll(tasks);
     }
 
-    public Task HandleAttachmentRenameEventAsync(ReportIdContext reportIdContext, AttachmentDbModel attachmentDbModel)
+    public Task HandleAttachmentRenameEventAsync(ReportIdContext reportIdContext, Attachment attachmentDbModel)
     {
         return reportPageHubClient.SendAttachmentChangedAsync(reportIdContext.GroupKey, attachmentDbModel.ToSocketView());
     }
@@ -59,7 +57,7 @@ public class AttachmentEventsService(
     private Task PublishDomainEventAsync(
         ReportIdContext reportIdContext,
         UserIdentity user,
-        AttachmentDbModel attachmentDbModel)
+        Attachment attachmentDbModel)
     {
         if (attachmentDbModel.AttachType != (int)AttachType.Comment)
         {
@@ -72,7 +70,7 @@ public class AttachmentEventsService(
     private async Task PublishCommentAttachmentCreatedAsync(
         ReportIdContext reportIdContext,
         UserIdentity user,
-        AttachmentDbModel attachmentDbModel)
+        Attachment attachmentDbModel)
     {
         var comment = await commentsDbClient.GetCommentAsync(attachmentDbModel.EntityId);
         if (comment is null)
@@ -97,7 +95,7 @@ public class AttachmentEventsService(
         });
 
         await unitOfWork.ExecuteAsync((scope, ct) =>
-            domainEventPublisher.PublishAsync(new DomainEventDbModel
+            domainEventPublisher.PublishAsync(new DomainEvent
             {
                 WorkspaceId = BugsService.ResolveWorkspaceId(reportIdContext.TeamId, user.OrganizationId),
                 AggregateType = BuggetAggregateTypes.Attachment,

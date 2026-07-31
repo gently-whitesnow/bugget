@@ -1,4 +1,4 @@
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO.Common;
 using Bugget.Entities.DTO.Bug;
 using Bugget.Entities.DTO.Report;
@@ -367,7 +367,7 @@ public class CommentsDbClientTests : IClassFixture<AppWithPostgresFixture>
 
     #region Helper Methods
 
-    private async Task<Bugget.Entities.DbModels.Report.ReportSummaryDbModel> CreateTestReportAsync(
+    private async Task<Bugget.Entities.BO.ReportBo.ReportSummary> CreateTestReportAsync(
         string userId,
         string? organizationId = null)
     {
@@ -378,7 +378,7 @@ public class CommentsDbClientTests : IClassFixture<AppWithPostgresFixture>
         return await _reportsDbClient.CreateReportAsync(userId, null, organizationId, reportDto);
     }
 
-    private async Task<Bugget.Entities.DbModels.Bug.BugSummaryDbModel> CreateTestBugAsync(
+    private async Task<Bugget.Entities.BO.Bugs.BugSummary> CreateTestBugAsync(
         string userId,
         int reportId)
     {
@@ -390,7 +390,7 @@ public class CommentsDbClientTests : IClassFixture<AppWithPostgresFixture>
         return await _bugsDbClient.CreateBugAsync(userId, reportId, bugDto);
     }
 
-    private async Task<Bugget.Entities.DbModels.Comment.CommentSummaryDbModel> CreateTestCommentAsync(
+    private async Task<Bugget.Entities.BO.Comments.CommentSummary> CreateTestCommentAsync(
         string userId,
         int bugId,
         string text)

@@ -1,5 +1,5 @@
-using Bugget.DA.Interfaces;
-using Bugget.Entities.DbModels.DomainEvents;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.DomainEvents;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -9,11 +9,11 @@ namespace Bugget.BO.DomainEvents.Consumer;
 /// <summary>
 /// Polling-консьюмер `domain_events`: читает события по cursor, диспатчит в handler'ы по
 /// EventType, двигает cursor в той же транзакции, что side-effects (per-event tx → at-least-once
-/// с откатом на handler exception). Npgsql-specifics инкапсулированы в
-/// <see cref="IDomainEventsConsumerRuntime"/> — BO не импортирует Npgsql.
+/// с откатом на handler exception). Транзакция берётся портом <see cref="IUnitOfWork"/> —
+/// драйвер БД в BO не виден.
 /// </summary>
 public sealed class DomainEventsPoller(
-    IDomainEventsConsumerRuntime runtime,
+    IUnitOfWork unitOfWork,
     IDomainEventsCursorClient cursorClient,
     IDomainEventsDbClient eventsClient,
     IEnumerable<IDomainEventHandler> handlers,
@@ -128,13 +128,13 @@ public sealed class DomainEventsPoller(
         return processed;
     }
 
-    private async Task ProcessOneAsync(DomainEventDbModel evt, CancellationToken ct)
+    private async Task ProcessOneAsync(DomainEvent evt, CancellationToken ct)
     {
-        await runtime.RunInTransactionAsync(async (connection, tx, innerCt) =>
+        await unitOfWork.ExecuteAsync(async (scope, innerCt) =>
         {
             if (_handlers.TryGetValue(evt.EventType, out var handler))
             {
-                await handler.HandleAsync(evt, connection, tx, innerCt);
+                await handler.HandleAsync(evt, scope, innerCt);
             }
             else
             {
@@ -144,7 +144,7 @@ public sealed class DomainEventsPoller(
                     evt.Id, evt.EventType);
             }
 
-            var updated = await cursorClient.UpdateAsync(_options.ConsumerName, evt.Id, connection, tx, innerCt);
+            var updated = await cursorClient.UpdateAsync(_options.ConsumerName, evt.Id, scope, innerCt);
             if (updated == 0)
             {
                 // Monotonic guard в UPDATE отклонил движение cursor'а назад. UNIQUE(source_event_id)

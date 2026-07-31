@@ -1,10 +1,9 @@
 using Authentication;
 using Bugget.Http;
-using Bugget.Http;
 using Microsoft.AspNetCore.Mvc;
 using Users.Api.Generated;
 using Users.BO.Interfaces;
-using Users.DA.Interfaces;
+using Users.BO.Ports;
 using FileParameter = Users.Api.Generated.FileParameter;
 using HttpProblemDetailsFactory = Bugget.Http.ProblemDetailsFactory;
 

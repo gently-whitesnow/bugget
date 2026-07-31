@@ -8,7 +8,7 @@ HTTP-контракт после contract-first защищён гейтом back
 Скрипт сверяет четыре стороны и краснеет на расхождении любой:
 
   1) контракт      specs/contracts/events.yaml;
-  2) объявление    интерфейс публикации (Bugget.DA/WebSockets/IReportPageHubClient.cs);
+  2) объявление    интерфейс публикации (Bugget.BO/Ports/IReportPageHubClient.cs);
   3) обработчик    реализация, которая шлёт в группу (Bugget/Hubs/ReportPageHubClient.cs);
   4) подписки      enum SocketEvent и customParsers на фронте.
 

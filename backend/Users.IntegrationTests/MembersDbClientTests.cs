@@ -1,9 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Users.BO.Ports;
 using Users.DA.DbClients;
-using Users.DA.Interfaces;
-using Users.DA.TeamMembers;
 using Users.Entities.BO;
 using Users.Entities.Dto.Users;
 using Users.IntegrationTests.Fixtures;

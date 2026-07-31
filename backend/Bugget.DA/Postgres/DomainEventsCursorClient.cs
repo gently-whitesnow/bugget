@@ -1,5 +1,5 @@
-using System.Data;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
+using Bugget.DA.Transactions;
 using Dapper;
 
 namespace Bugget.DA.Postgres;
@@ -34,8 +34,7 @@ ON CONFLICT (consumer_name) DO NOTHING;";
     public async Task<int> UpdateAsync(
         string consumerName,
         long newLastEventId,
-        IDbConnection connection,
-        IDbTransaction transaction,
+        ITransactionScope scope,
         CancellationToken ct)
     {
         const string sql = @"
@@ -44,6 +43,7 @@ SET last_event_id = @newLastEventId, updated_at = now()
 WHERE consumer_name = @consumerName
   AND last_event_id < @newLastEventId;";
 
+        var (connection, transaction) = scope.Unwrap();
         return await connection.ExecuteAsync(new CommandDefinition(
             sql,
             new { consumerName, newLastEventId },

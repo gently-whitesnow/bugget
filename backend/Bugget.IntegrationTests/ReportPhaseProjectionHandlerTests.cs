@@ -4,11 +4,10 @@ using System.Text.Json;
 using Bugget.BO.DomainEvents;
 using Bugget.BO.DomainEvents.Consumer;
 using Bugget.BO.DomainEvents.Handlers;
-using Bugget.DA.Interfaces;
-using Bugget.DA.Transactions;
+using Bugget.BO.Ports;
 using Bugget.Entities.Authentication;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DbModels.DomainEvents;
 using Bugget.Entities.DTO.Report;
 using Bugget.IntegrationTests.Fixtures;
 using Dapper;
@@ -30,7 +29,7 @@ namespace Bugget.IntegrationTests;
 public sealed class ReportPhaseProjectionHandlerTests : IClassFixture<AppWithPostgresFixture>
 {
     private readonly AppWithPostgresFixture _fixture;
-    private readonly IDomainEventsConsumerRuntime _runtime;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IDomainEventsCursorClient _cursorClient;
     private readonly IDomainEventsDbClient _eventsClient;
     private readonly IReportPhaseIntervalsDbClient _intervalsClient;
@@ -42,7 +41,7 @@ public sealed class ReportPhaseProjectionHandlerTests : IClassFixture<AppWithPos
     {
         _fixture = fixture;
         using var scope = fixture.Services.CreateScope();
-        _runtime = scope.ServiceProvider.GetRequiredService<IDomainEventsConsumerRuntime>();
+        _unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         _cursorClient = scope.ServiceProvider.GetRequiredService<IDomainEventsCursorClient>();
         _eventsClient = scope.ServiceProvider.GetRequiredService<IDomainEventsDbClient>();
         _intervalsClient = scope.ServiceProvider.GetRequiredService<IReportPhaseIntervalsDbClient>();
@@ -433,7 +432,7 @@ RETURNING id;";
             ErrorBackoff = TimeSpan.FromMilliseconds(10),
         });
         return new DomainEventsPoller(
-            _runtime,
+            _unitOfWork,
             _cursorClient,
             _eventsClient,
             handlers,
@@ -464,10 +463,10 @@ RETURNING id;";
 
         public string EventType => inner.EventType;
 
-        public async Task HandleAsync(DomainEventDbModel evt, IDbConnection connection, IDbTransaction transaction, CancellationToken ct)
+        public async Task HandleAsync(DomainEvent evt, ITransactionScope scope, CancellationToken ct)
         {
             HandledEventTypes.Add(evt.EventType);
-            await inner.HandleAsync(evt, connection, transaction, ct);
+            await inner.HandleAsync(evt, scope, ct);
         }
     }
 }

@@ -1,13 +1,13 @@
 using System.Linq;
-using Bugget.DA.Interfaces;
-using Bugget.Entities.DbModels.Settings;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.Settings;
 using Dapper;
 
 namespace Bugget.DA.Postgres;
 
 public sealed class SettingsDbClient : PostgresClient, ISettingsDbClient
 {
-    public async Task<(WorkspaceSettingDbModel[], TeamSettingDbModel[], UserSettingDbModel[])> GetSettingsAsync(string workspaceId, string teamId, string userId)
+    public async Task<(WorkspaceSetting[], TeamSetting[], UserSetting[])> GetSettingsAsync(string workspaceId, string teamId, string userId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
@@ -17,40 +17,40 @@ public sealed class SettingsDbClient : PostgresClient, ISettingsDbClient
             SELECT * FROM public.list_user_settings(@user_id);
         ", new { team_id = teamId, workspace_id = workspaceId, user_id = userId });
 
-        var workspaceSettings = await multi.ReadAsync<WorkspaceSettingDbModel>();
-        var teamSettings = await multi.ReadAsync<TeamSettingDbModel>();
-        var userSettings = await multi.ReadAsync<UserSettingDbModel>();
+        var workspaceSettings = await multi.ReadAsync<WorkspaceSetting>();
+        var teamSettings = await multi.ReadAsync<TeamSetting>();
+        var userSettings = await multi.ReadAsync<UserSetting>();
 
         return (workspaceSettings.ToArray(), teamSettings.ToArray(), userSettings.ToArray());
     }
 
-    public async Task<WorkspaceSettingDbModel[]> GetWorkspaceSettingsAsync(string workspaceId)
+    public async Task<WorkspaceSetting[]> GetWorkspaceSettingsAsync(string workspaceId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        var workspaceSettings = await connection.QueryAsync<WorkspaceSettingDbModel>(
+        var workspaceSettings = await connection.QueryAsync<WorkspaceSetting>(
             "SELECT * FROM public.list_workspace_settings(@workspace_id);",
             new { workspace_id = workspaceId });
 
         return workspaceSettings.ToArray();
     }
 
-    public async Task<TeamSettingDbModel[]> GetTeamSettingsAsync(string teamId)
+    public async Task<TeamSetting[]> GetTeamSettingsAsync(string teamId)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        var teamSettings = await connection.QueryAsync<TeamSettingDbModel>(
+        var teamSettings = await connection.QueryAsync<TeamSetting>(
             "SELECT * FROM public.list_team_settings(@team_id);",
             new { team_id = teamId });
 
         return teamSettings.ToArray();
     }
 
-    public async Task<WorkspaceSettingDbModel> UpsertWorkspaceSettingAsync(string workspaceId, string sectionId, string settingId, string value)
+    public async Task<WorkspaceSetting> UpsertWorkspaceSettingAsync(string workspaceId, string sectionId, string settingId, string value)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleAsync<WorkspaceSettingDbModel>(
+        return await connection.QuerySingleAsync<WorkspaceSetting>(
             "SELECT * FROM public.upsert_workspace_setting(@workspace_id, @feature_key, @field_key, @field_value);",
             new
             {
@@ -61,11 +61,11 @@ public sealed class SettingsDbClient : PostgresClient, ISettingsDbClient
             });
     }
 
-    public async Task<TeamSettingDbModel> UpsertTeamSettingAsync(string teamId, string sectionId, string settingId, string value)
+    public async Task<TeamSetting> UpsertTeamSettingAsync(string teamId, string sectionId, string settingId, string value)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleAsync<TeamSettingDbModel>(
+        return await connection.QuerySingleAsync<TeamSetting>(
             "SELECT * FROM public.upsert_team_setting(@team_id, @feature_key, @field_key, @field_value);",
             new
             {
@@ -76,11 +76,11 @@ public sealed class SettingsDbClient : PostgresClient, ISettingsDbClient
             });
     }
 
-    public async Task<UserSettingDbModel> UpsertUserSettingAsync(string userId, string sectionId, string settingId, string value)
+    public async Task<UserSetting> UpsertUserSettingAsync(string userId, string sectionId, string settingId, string value)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleAsync<UserSettingDbModel>(
+        return await connection.QuerySingleAsync<UserSetting>(
             "SELECT * FROM public.upsert_user_setting(@user_id, @feature_key, @field_key, @field_value);",
             new
             {
@@ -91,12 +91,12 @@ public sealed class SettingsDbClient : PostgresClient, ISettingsDbClient
             });
     }
 
-    public async Task<WorkspaceSettingDbModel[]> UpsertWorkspaceSettingsAsync(string workspaceId, string sectionId, string settingId, string[] value)
+    public async Task<WorkspaceSetting[]> UpsertWorkspaceSettingsAsync(string workspaceId, string sectionId, string settingId, string[] value)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
         var fieldValues = value ?? Array.Empty<string>();
 
-        var updated = await connection.QueryAsync<WorkspaceSettingDbModel>(
+        var updated = await connection.QueryAsync<WorkspaceSetting>(
             "SELECT * FROM public.replace_workspace_settings_section(@workspace_id, @feature_key, @field_key, @field_values);",
             new
             {
@@ -109,12 +109,12 @@ public sealed class SettingsDbClient : PostgresClient, ISettingsDbClient
         return updated.ToArray();
     }
 
-    public async Task<TeamSettingDbModel[]> UpsertTeamSettingsAsync(string teamId, string sectionId, string settingId, string[] value)
+    public async Task<TeamSetting[]> UpsertTeamSettingsAsync(string teamId, string sectionId, string settingId, string[] value)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
         var fieldValues = value ?? Array.Empty<string>();
 
-        var updated = await connection.QueryAsync<TeamSettingDbModel>(
+        var updated = await connection.QueryAsync<TeamSetting>(
             "SELECT * FROM public.replace_team_settings_section(@team_id, @feature_key, @field_key, @field_values);",
             new
             {
@@ -127,12 +127,12 @@ public sealed class SettingsDbClient : PostgresClient, ISettingsDbClient
         return updated.ToArray();
     }
 
-    public async Task<UserSettingDbModel[]> UpsertUserSettingsAsync(string userId, string sectionId, string settingId, string[] value)
+    public async Task<UserSetting[]> UpsertUserSettingsAsync(string userId, string sectionId, string settingId, string[] value)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
         var fieldValues = value ?? Array.Empty<string>();
 
-        var updated = await connection.QueryAsync<UserSettingDbModel>(
+        var updated = await connection.QueryAsync<UserSetting>(
             "SELECT * FROM public.replace_user_settings_section(@user_id, @feature_key, @field_key, @field_values);",
             new
             {

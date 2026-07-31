@@ -1,6 +1,6 @@
 using Bugget.BO.DomainEvents;
-using Bugget.DA.Transactions;
-using Bugget.Entities.DbModels.DomainEvents;
+using Bugget.BO.Ports;
+using Bugget.Entities.BO.DomainEvents;
 using Bugget.IntegrationTests.Fixtures;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,7 +62,7 @@ public class DomainEventPublisherTests : IClassFixture<AppWithPostgresFixture>
         Assert.Equal(0, count);
     }
 
-    private static DomainEventDbModel NewEvent() => new()
+    private static DomainEvent NewEvent() => new()
     {
         WorkspaceId = $"ws_{Guid.NewGuid()}",
         AggregateType = "bug",

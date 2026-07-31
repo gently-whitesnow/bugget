@@ -1,8 +1,7 @@
 using System.Diagnostics;
 using Bugget.BO.Interfaces;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO.AttachmentBo;
-using Bugget.Entities.DbModels.Attachment;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -21,7 +20,7 @@ public sealed class VideoOptimizeWriter(
     public async Task<OptimizationResult> OptimizeWriteAsync(
         string? organizationId,
         int reportId,
-        AttachmentDbModel attachmentDbModel,
+        Attachment attachmentDbModel,
         Stream originalStream,
         CancellationToken ct = default)
     {

@@ -1,9 +1,8 @@
 using System.Buffers;
 using System.IO.Compression;
 using Bugget.BO.Interfaces;
-using Bugget.DA.Interfaces;
+using Bugget.BO.Ports;
 using Bugget.Entities.BO.AttachmentBo;
-using Bugget.Entities.DbModels.Attachment;
 
 namespace Bugget.BO.Services.Attachments;
 
@@ -17,7 +16,7 @@ public sealed class TextOptimizeWriter(
     public async Task<OptimizationResult> OptimizeWriteAsync(
         string? organizationId,
         int reportId,
-        AttachmentDbModel attachmentDbModel,
+        Attachment attachmentDbModel,
         Stream originalStream,
         CancellationToken ct = default)
     {

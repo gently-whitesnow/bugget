@@ -19,11 +19,11 @@ public class SolutionGraphRulesTests
     private static readonly Dictionary<string, (string[] Projects, string[] Packages)> BoAllowlist = new(StringComparer.Ordinal)
     {
         ["Bugget.BO"] = (
-            Projects: ["Bugget.Analytics.Contracts", "TaskQueue"],
+            Projects: ["Bugget.Analytics.Contracts", "Bugget.Entities", "TaskQueue"],
             Packages: ["Mime", "SixLabors.ImageSharp", "Xabe.FFmpeg", "Xabe.FFmpeg.Downloader"]),
 
         ["Users.BO"] = (
-            Projects: ["Bugget.Entities", "TaskQueue"],
+            Projects: ["Bugget.Entities", "TaskQueue", "Users.Entities"],
             Packages: []),
     };
 
@@ -122,6 +122,49 @@ public class SolutionGraphRulesTests
             "интерфейсом к нему — тогда слой над ним тестируется без базы.",
             string.Join(" / ", PersistencePackages),
             string.Join(", ", violations));
+    }
+
+    [Fact(DisplayName = "*.BO не добирается до драйвера БД ни на какой глубине ссылок")]
+    public void Bo_projects_do_not_reach_persistence_driver_transitively()
+    {
+        // Прямую ссылку ловит правило выше. Здесь — то, ради чего разворачивали
+        // зависимость (ADR-0001): бизнес-логика не должна получать Npgsql/Dapper и
+        // через цепочку проектов. Пока Bugget.BO ссылался на Bugget.DA, драйвер
+        // приезжал в неё транзитивно, и в .csproj бизнес-логики этого видно не было.
+        var leaks = SolutionGraph.FindPersistenceDriverLeaks(
+            SolutionGraph.Projects,
+            BoAllowlist.Keys,
+            PersistencePackages);
+
+        leaks.Should().BeEmpty(
+            "бизнес-логика снова дотягивается до драйвера БД по цепочке ProjectReference: {0}. " +
+            "Порты объявляются в *.BO/Ports, реализации остаются в *.DA, а ссылка идёт " +
+            "в обратную сторону — Infrastructure → Application. " +
+            "Ссылку на *.DA добавляет композиционный корень (Bugget, Users.Api), а не *.BO.",
+            string.Join("; ", leaks));
+    }
+
+    [Fact(DisplayName = "Правило транзитивной зависимости краснеет на подсунутом ребре")]
+    public void Transitive_persistence_rule_is_provably_red()
+    {
+        // Гейт без доказательства красноты — это гейт, про который никто не знает,
+        // работает ли он (ADR-0002). Прогоняем то же правило на синтетическом графе,
+        // где ребро BO → DA восстановлено, и убеждаемся, что путь до драйвера найден.
+        var withRestoredEdge = new Dictionary<string, ProjectNode>(StringComparer.Ordinal)
+        {
+            ["Bugget.BO"] = new("Bugget.BO", "Microsoft.NET.Sdk", ["Bugget.DA"], [], false),
+            ["Bugget.DA"] = new("Bugget.DA", "Microsoft.NET.Sdk", ["Bugget.Entities"], ["Dapper", "Npgsql"], false),
+            ["Bugget.Entities"] = new("Bugget.Entities", "Microsoft.NET.Sdk", [], [], false),
+        };
+
+        var leaks = SolutionGraph.FindPersistenceDriverLeaks(
+            withRestoredEdge,
+            ["Bugget.BO"],
+            PersistencePackages);
+
+        leaks.Should().Equal(
+            "Bugget.BO → Bugget.DA → Dapper",
+            "Bugget.BO → Bugget.DA → Npgsql");
     }
 
     [Fact(DisplayName = "Известные отступления не протухли")]

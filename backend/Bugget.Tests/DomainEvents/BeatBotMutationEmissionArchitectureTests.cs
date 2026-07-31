@@ -2,9 +2,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Bugget.BO.DomainEvents;
+using Bugget.BO.Ports;
 using Bugget.BO.Services.Bugs;
 using Bugget.BO.Services.Comments;
-using Bugget.DA.Transactions;
 using Npgsql;
 
 namespace Bugget.Tests.DomainEvents;

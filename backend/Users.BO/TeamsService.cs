@@ -1,9 +1,8 @@
 using Bugget.Entities.Errors;
 using Microsoft.Extensions.Options;
 using Users.BO.Interfaces;
-using Users.DA.Interfaces;
-using Users.DA.TeamMembers;
-using Users.Entities.DbModels.Teams;
+using Users.BO.Ports;
+using Users.Entities.BO;
 using Users.Entities.Options;
 
 namespace Users.BO;
@@ -15,24 +14,24 @@ public sealed class TeamsService(
     IOptions<TeamsOptions> teamsOptions,
     IOptions<SelfHostedOptions> selfHostedOptions) : ITeamsService
 {
-    public Task<TeamDbModel[]> ListTeamsAsync(int[] workspaceIds)
+    public Task<Team[]> ListTeamsAsync(int[] workspaceIds)
     {
         return teamsRepository.ListTeamsAsync(workspaceIds);
     }
 
-    public Task<TeamDbModel[]> ListTeamsAsync(int workspaceId, int[] teamIds)
+    public Task<Team[]> ListTeamsAsync(int workspaceId, int[] teamIds)
     {
         return teamsRepository.ListTeamsAsync(workspaceId, teamIds);
     }
 
-    public Task<TeamDbModel[]> AutocompleteTeamsAsync(int workspaceId, string searchString, int skip, int take)
+    public Task<Team[]> AutocompleteTeamsAsync(int workspaceId, string searchString, int skip, int take)
     {
         return teamsRepository.AutocompleteTeamsAsync(workspaceId, searchString, skip, take);
     }
 
-    public async Task<(TeamDbModel? Value, Error? Error)> CreateTeamAsync(int workspaceId, string name, long userId, int? userTeamId)
+    public async Task<(Team? Value, Error? Error)> CreateTeamAsync(int workspaceId, string name, long userId, int? userTeamId)
     {
-        TeamDbModel team;
+        Team team;
 
         if (selfHostedOptions.Value.Enabled)
         {
@@ -58,7 +57,7 @@ public sealed class TeamsService(
         return (team, null);
     }
 
-    public Task<TeamDbModel> UpdateTeamAsync(int workspaceId, int teamId, string name)
+    public Task<Team> UpdateTeamAsync(int workspaceId, int teamId, string name)
     {
         return teamsRepository.UpdateTeamAsync(workspaceId, teamId, name);
     }

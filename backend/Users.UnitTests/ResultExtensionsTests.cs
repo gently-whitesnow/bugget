@@ -1,7 +1,7 @@
+using Bugget.Entities.Errors;
+using Bugget.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Users.Api.Extensions;
-using Users.Entities.Errors;
 using Xunit;
 
 namespace Users.UnitTests;

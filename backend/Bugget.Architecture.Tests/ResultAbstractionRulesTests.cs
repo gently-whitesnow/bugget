@@ -95,6 +95,7 @@ public class ResultAbstractionRulesTests
     [InlineData("using Failure = global::Bugget.Entities.Errors.Error; public sealed record Outcome<T>(T? Data, Failure? Problem);")]
     [InlineData("namespace App { using Failure = Bugget.Entities.Errors.Error; public sealed record Outcome<T>(T? Data, Failure? Error); }")]
     [InlineData("namespace App; using Failure = Bugget.Entities.Errors.Error; public sealed class Outcome<T> : Choice<T, Failure> { }")]
+    [InlineData("using Wrapper = Bugget.Contracts.Choice<string, Bugget.Entities.Errors.Error>; public sealed class Outcome : Wrapper { }")]
     public void Aliased_error_type_fixture_is_rejected(string source)
     {
         ResultLikeDeclarations(source).Should().Equal("Outcome");
@@ -113,8 +114,17 @@ public class ResultAbstractionRulesTests
     [Theory(DisplayName = "Гейт не срабатывает на псевдониме с тем же именем, но чужой целью")]
     [InlineData("using Failure = Bugget.Entities.Reports.Failure; public sealed record Outcome<T>(T? Data, Failure? Error);")]
     [InlineData("using Failure = Bugget.Entities.Reports.Failure; public sealed class Outcome<T> : Choice<T, Failure> { }")]
+    [InlineData("using Failure = ThirdParty.Error; public sealed record Outcome<T>(T? Data, Failure? Error);")]
     public void Alias_to_a_foreign_type_is_allowed(string source)
     {
+        ResultLikeDeclarations(source).Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Параметр типа затеняет одноимённый using-псевдоним")]
+    public void Type_parameter_shadowing_an_error_alias_is_allowed()
+    {
+        const string source = "using Failure = Bugget.Entities.Errors.Error; public sealed record Page<Failure>(string Data, Failure? Value);";
+
         ResultLikeDeclarations(source).Should().BeEmpty();
     }
 

@@ -19,7 +19,7 @@ public class SolutionGraphRulesTests
     private static readonly Dictionary<string, (string[] Projects, string[] Packages)> BoAllowlist = new(StringComparer.Ordinal)
     {
         ["Bugget.BO"] = (
-            Projects: ["Bugget.Analytics.Contracts", "Monade", "TaskQueue"],
+            Projects: ["Bugget.Analytics.Contracts", "TaskQueue"],
             Packages: ["Mime", "SixLabors.ImageSharp", "Xabe.FFmpeg", "Xabe.FFmpeg.Downloader"]),
 
         ["Users.BO"] = (

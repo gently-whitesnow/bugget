@@ -106,14 +106,18 @@ describe("пути репортов", () => {
     expect(sent().url).toBe(`${contextPrefix}/v2/reports/legacy/42`);
   });
 
-  it.fails(
-    "legacy-идентификатор сохраняет исходный сегмент URL дословно",
-    async () => {
-      await resolveLegacyReport("00042");
+  it("legacy-идентификатор с ведущими нулями сохраняет их в адресе", async () => {
+    await resolveLegacyReport("00042");
 
-      expect(sent().url).toBe(`${contextPrefix}/v2/reports/legacy/00042`);
-    }
-  );
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/legacy/00042`);
+  });
+
+  it("нечисловой legacy-сегмент уходит как есть, а не превращается в NaN", async () => {
+    await resolveLegacyReport("abc");
+
+    expect(sent().url).toBe(`${contextPrefix}/v2/reports/legacy/abc`);
+    expect(sent().url).not.toContain("NaN");
+  });
 
   it("аналитика репорта остаётся sub-resource репорта", async () => {
     await analyticsApi.getReportAnalytics(7);

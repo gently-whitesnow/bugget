@@ -31,11 +31,16 @@ export type LegacyReportResolveResult = Result<
   "get"
 >;
 
-// Контракт объявляет `legacyId` числом, а в адресе страницы он приходит строкой:
-// приводим на границе, а не подставляем строку в числовой параметр.
+// Контракт объявляет `legacyId` числом, а в адресе страницы он приходит строкой,
+// и приводить её нельзя: `Number("00042")` теряет ведущие нули, а нечисловой
+// сегмент превращается в `NaN` — старая ссылка перестаёт открываться, хотя
+// публичные URL обязаны остаться 1:1. Сегмент уходит в путь дословно; провод от
+// этого не меняется, `buildOperationPath` всё равно подставляет `String(value)`.
+// Расходится только тип path-параметра, поэтому сужение точечное и снимается,
+// как только контракт объявит `legacyId` строкой.
 export const resolveLegacyReport = (legacyId: string) =>
   request("/v2/reports/legacy/{legacyId}", "get", {
-    path: { legacyId: Number(legacyId) },
+    path: { legacyId: legacyId as unknown as number },
   });
 
 export type ReportAnalyticsResult = Result<"/v2/reports/{id}/analytics", "get">;

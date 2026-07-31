@@ -35,18 +35,18 @@ public sealed class BugStepsService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var bugDbModel = await bugsService.GetBugAsync(resolvedReport.Id, bugId);
-        if (bugDbModel == null)
+        var bug = await bugsService.GetBugAsync(resolvedReport.Id, bugId);
+        if (bug == null)
         {
             return (null, BoErrors.BugNotFoundError);
         }
 
-        var bugStepDbModel = await bugStepsDbClient.CreateBugStepAsync(user.Id, bugId, createDto);
+        var bugStep = await bugStepsDbClient.CreateBugStepAsync(user.Id, bugId, createDto);
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await taskQueue.EnqueueAsync(() => bugStepEventsService.HandleCreateBugStepEventAsync(reportIdContext, user, bugStepDbModel));
+        await taskQueue.EnqueueAsync(() => bugStepEventsService.HandleCreateBugStepEventAsync(reportIdContext, user, bugStep));
 
-        return (bugStepDbModel, null);
+        return (bugStep, null);
     }
 
     public async Task<Error?> DeleteBugStepAsync(UserIdentity user, string aliasId, int bugId, int stepId)
@@ -64,8 +64,8 @@ public sealed class BugStepsService(
             return BoErrors.ReportNotFoundError;
         }
 
-        var deletedBugStepDbModel = await bugStepsDbClient.DeleteBugStepInternalAsync(resolvedReport.Id, bugId, stepId);
-        if (deletedBugStepDbModel == null)
+        var deletedBugStep = await bugStepsDbClient.DeleteBugStepInternalAsync(resolvedReport.Id, bugId, stepId);
+        if (deletedBugStep == null)
         {
             return null;
         }
@@ -90,15 +90,15 @@ public sealed class BugStepsService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var bugStepDbModel = await bugStepsDbClient.PatchBugStepInternalAsync(resolvedReport.Id, bugId, stepId, patchDto);
-        if (bugStepDbModel == null)
+        var bugStep = await bugStepsDbClient.PatchBugStepInternalAsync(resolvedReport.Id, bugId, stepId, patchDto);
+        if (bugStep == null)
         {
             return (null, BoErrors.BugStepNotFoundError);
         }
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await bugStepEventsService.HandlePatchBugStepEventAsync(reportIdContext, bugId, user, bugStepDbModel);
-        return (bugStepDbModel, null);
+        await bugStepEventsService.HandlePatchBugStepEventAsync(reportIdContext, bugId, user, bugStep);
+        return (bugStep, null);
     }
 
     public async Task<(BugStepSummary[]? Value, Error? Error)> UpdateBugStepsOrderAsync(UserIdentity user, string aliasId, int bugId, BugStepsOrderDto orderDto)
@@ -116,21 +116,21 @@ public sealed class BugStepsService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var bugStepsDbModels = await bugStepsDbClient.ListBugStepsInternalAsync(resolvedReport.Id, bugId);
-        if (bugStepsDbModels.Length == 0)
+        var bugSteps = await bugStepsDbClient.ListBugStepsInternalAsync(resolvedReport.Id, bugId);
+        if (bugSteps.Length == 0)
         {
             return (null, BoErrors.BugStepsNotFoundError);
         }
 
-        if (bugStepsDbModels.Length != orderDto.StepIds.Length)
+        if (bugSteps.Length != orderDto.StepIds.Length)
         {
             return (null, BoErrors.BugStepsOrderSizeMismatchError);
         }
 
-        var resultBugStepsDbModels = await bugStepsDbClient.UpdateBugStepsOrderInternalAsync(resolvedReport.Id, bugId, orderDto);
+        var resultBugSteps = await bugStepsDbClient.UpdateBugStepsOrderInternalAsync(resolvedReport.Id, bugId, orderDto);
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await bugStepEventsService.HandleUpdateBugStepsOrderEventAsync(reportIdContext, bugId, user, resultBugStepsDbModels);
-        return (resultBugStepsDbModels, null);
+        await bugStepEventsService.HandleUpdateBugStepsOrderEventAsync(reportIdContext, bugId, user, resultBugSteps);
+        return (resultBugSteps, null);
     }
 }

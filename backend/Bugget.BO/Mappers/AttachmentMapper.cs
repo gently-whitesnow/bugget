@@ -6,31 +6,31 @@ namespace Bugget.BO.Mappers;
 
 public static class AttachmentMapper
 {
-    public static AttachmentSocketView ToSocketView(this Attachment attachmentDbModel)
+    public static AttachmentSocketView ToSocketView(this Attachment attachment)
     {
         return new AttachmentSocketView
         {
-            Id = attachmentDbModel.Id,
-            EntityId = attachmentDbModel.EntityId,
-            AttachType = attachmentDbModel.AttachType,
-            CreatedAt = attachmentDbModel.CreatedAt,
-            CreatorUserId = attachmentDbModel.CreatorUserId,
-            FileName = attachmentDbModel.FileName,
-            HasPreview = attachmentDbModel.HasPreview == true,
+            Id = attachment.Id,
+            EntityId = attachment.EntityId,
+            AttachType = attachment.AttachType,
+            CreatedAt = attachment.CreatedAt,
+            CreatorUserId = attachment.CreatorUserId,
+            FileName = attachment.FileName,
+            HasPreview = attachment.HasPreview == true,
         };
     }
 
-    public static AttachmentView ToView(this Attachment attachmentDbModel)
+    public static AttachmentView ToView(this Attachment attachment)
     {
         return new AttachmentView
         {
-            Id = attachmentDbModel.Id,
-            EntityId = attachmentDbModel.EntityId,
-            AttachType = attachmentDbModel.AttachType,
-            CreatedAt = attachmentDbModel.CreatedAt,
-            CreatorUserId = attachmentDbModel.CreatorUserId,
-            FileName = attachmentDbModel.FileName,
-            HasPreview = attachmentDbModel.HasPreview == true,
+            Id = attachment.Id,
+            EntityId = attachment.EntityId,
+            AttachType = attachment.AttachType,
+            CreatedAt = attachment.CreatedAt,
+            CreatorUserId = attachment.CreatorUserId,
+            FileName = attachment.FileName,
+            HasPreview = attachment.HasPreview == true,
         };
     }
 }

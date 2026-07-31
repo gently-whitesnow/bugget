@@ -24,71 +24,71 @@ public class AttachmentEventsService(
     ILogger<AttachmentEventsService> logger
         )
 {
-    public async Task HandleAttachmentCreateEventAsync(ReportIdContext reportIdContext, UserIdentity user, Attachment attachmentDbModel)
+    public async Task HandleAttachmentCreateEventAsync(ReportIdContext reportIdContext, UserIdentity user, Attachment attachment)
     {
         await Task.WhenAll(
-            reportPageHubClient.SendAttachmentCreateAsync(reportIdContext.GroupKey, attachmentDbModel.ToSocketView(), user.SignalRConnectionId),
-            attachmentOptimizator.OptimizeAttachmentAsync(user.OrganizationId, reportIdContext, attachmentDbModel),
-            PublishDomainEventAsync(reportIdContext, user, attachmentDbModel));
+            reportPageHubClient.SendAttachmentCreateAsync(reportIdContext.GroupKey, attachment.ToSocketView(), user.SignalRConnectionId),
+            attachmentOptimizator.OptimizeAttachmentAsync(user.OrganizationId, reportIdContext, attachment),
+            PublishDomainEventAsync(reportIdContext, user, attachment));
     }
 
-    public async Task HandleAttachmentDeleteEventAsync(ReportIdContext reportIdContext, UserIdentity user, Attachment attachmentDbModel)
+    public async Task HandleAttachmentDeleteEventAsync(ReportIdContext reportIdContext, UserIdentity user, Attachment attachment)
     {
         var tasks = new List<Task>
         {
-            reportPageHubClient.SendAttachmentDeleteAsync(reportIdContext.GroupKey, attachmentDbModel.Id, attachmentDbModel.EntityId, attachmentDbModel.AttachType, user.SignalRConnectionId),
+            reportPageHubClient.SendAttachmentDeleteAsync(reportIdContext.GroupKey, attachment.Id, attachment.EntityId, attachment.AttachType, user.SignalRConnectionId),
         };
-        if (attachmentDbModel.StorageKey is not null)
+        if (attachment.StorageKey is not null)
         {
-            tasks.Add(fileStorageClient.DeleteAsync(attachmentDbModel.StorageKey));
-            if (attachmentDbModel.HasPreview == true)
+            tasks.Add(fileStorageClient.DeleteAsync(attachment.StorageKey));
+            if (attachment.HasPreview == true)
             {
-                tasks.Add(fileStorageClient.DeleteAsync(keyGen.GetPreviewKey(attachmentDbModel.StorageKey)));
+                tasks.Add(fileStorageClient.DeleteAsync(keyGen.GetPreviewKey(attachment.StorageKey)));
             }
         }
         await Task.WhenAll(tasks);
     }
 
-    public Task HandleAttachmentRenameEventAsync(ReportIdContext reportIdContext, Attachment attachmentDbModel)
+    public Task HandleAttachmentRenameEventAsync(ReportIdContext reportIdContext, Attachment attachment)
     {
-        return reportPageHubClient.SendAttachmentChangedAsync(reportIdContext.GroupKey, attachmentDbModel.ToSocketView());
+        return reportPageHubClient.SendAttachmentChangedAsync(reportIdContext.GroupKey, attachment.ToSocketView());
     }
 
     private Task PublishDomainEventAsync(
         ReportIdContext reportIdContext,
         UserIdentity user,
-        Attachment attachmentDbModel)
+        Attachment attachment)
     {
-        if (attachmentDbModel.AttachType != (int)AttachType.Comment)
+        if (attachment.AttachType != (int)AttachType.Comment)
         {
             return Task.CompletedTask;
         }
 
-        return PublishCommentAttachmentCreatedAsync(reportIdContext, user, attachmentDbModel);
+        return PublishCommentAttachmentCreatedAsync(reportIdContext, user, attachment);
     }
 
     private async Task PublishCommentAttachmentCreatedAsync(
         ReportIdContext reportIdContext,
         UserIdentity user,
-        Attachment attachmentDbModel)
+        Attachment attachment)
     {
-        var comment = await commentsDbClient.GetCommentAsync(attachmentDbModel.EntityId);
+        var comment = await commentsDbClient.GetCommentAsync(attachment.EntityId);
         if (comment is null)
         {
             logger.LogWarning(
                 "attachment.create domain event skipped: comment not found comment_id={CommentId} attachment_id={AttachmentId}",
-                attachmentDbModel.EntityId, attachmentDbModel.Id);
+                attachment.EntityId, attachment.Id);
             return;
         }
 
         var payload = JsonSerializer.Serialize(new
         {
-            attachmentId = attachmentDbModel.Id,
+            attachmentId = attachment.Id,
             commentId = comment.Id,
             bugId = comment.BugId,
-            attachType = attachmentDbModel.AttachType,
-            fileName = attachmentDbModel.FileName,
-            contentType = attachmentDbModel.MimeType,
+            attachType = attachment.AttachType,
+            fileName = attachment.FileName,
+            contentType = attachment.MimeType,
             creatorType = comment.CreatorType,
             creatorUserId = comment.CreatorUserId,
             audience = comment.Audience,
@@ -99,7 +99,7 @@ public class AttachmentEventsService(
             {
                 WorkspaceId = BugsService.ResolveWorkspaceId(reportIdContext.TeamId, user.OrganizationId),
                 AggregateType = BuggetAggregateTypes.Attachment,
-                AggregateId = attachmentDbModel.Id.ToString(),
+                AggregateId = attachment.Id.ToString(),
                 EventType = BuggetEventTypes.AttachmentCreated,
                 Payload = payload,
                 ActorUserId = comment.CreatorUserId,

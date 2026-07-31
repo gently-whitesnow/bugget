@@ -24,8 +24,8 @@ public class CommentLogsService(IUsersClient usersClient, ICommentsDbClient comm
 
         var commentText = GetCommentText(patchDto, actorUser.Name);
 
-        var commentSummaryDbModel = await commentsDbClient.CreateCommentAsync(SystemCreators.Bot, bugId, commentText, (int)CreatorType.System);
-        await reportPageHubClient.SendCommentCreateAsync(reportIdContext.GroupKey, commentSummaryDbModel, null);
+        var commentSummary = await commentsDbClient.CreateCommentAsync(SystemCreators.Bot, bugId, commentText, (int)CreatorType.System);
+        await reportPageHubClient.SendCommentCreateAsync(reportIdContext.GroupKey, commentSummary, null);
     }
 
     private string GetCommentText(BugPatchDto patchDto, string actorName)

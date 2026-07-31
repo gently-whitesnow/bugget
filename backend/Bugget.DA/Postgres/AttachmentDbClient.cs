@@ -19,7 +19,7 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         )).ToArray();
     }
 
-    public async Task<Attachment> UpdateAttachmentAsync(AttachmentUpdate updateAttachmentDbModel)
+    public async Task<Attachment> UpdateAttachmentAsync(AttachmentUpdate update)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
@@ -27,14 +27,14 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
             "SELECT * FROM public.update_attachment_internal(@id, @storage_key, @storage_kind, @length_bytes, @file_name, @mime_type, @has_preview, @is_gzip_compressed)",
             new
             {
-                id = updateAttachmentDbModel.Id,
-                storage_key = updateAttachmentDbModel.StorageKey,
-                storage_kind = updateAttachmentDbModel.StorageKind,
-                length_bytes = updateAttachmentDbModel.LengthBytes,
-                file_name = updateAttachmentDbModel.FileName,
-                mime_type = updateAttachmentDbModel.MimeType,
-                has_preview = updateAttachmentDbModel.HasPreview,
-                is_gzip_compressed = updateAttachmentDbModel.IsGzipCompressed
+                id = update.Id,
+                storage_key = update.StorageKey,
+                storage_kind = update.StorageKind,
+                length_bytes = update.LengthBytes,
+                file_name = update.FileName,
+                mime_type = update.MimeType,
+                has_preview = update.HasPreview,
+                is_gzip_compressed = update.IsGzipCompressed
             }
         );
     }
@@ -157,7 +157,7 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         return result;
     }
 
-    public async Task<Attachment> CreateAttachment(AttachmentCreate attachmentCreateDbModel)
+    public async Task<Attachment> CreateAttachment(AttachmentCreate create)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
@@ -165,14 +165,14 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
             "SELECT * FROM public.create_attachment_internal(@entity_id, @attach_type, @storage_key, @storage_kind, @creator_user_id, @length_bytes, @file_name, @mime_type)",
             new
             {
-                entity_id = attachmentCreateDbModel.EntityId,
-                attach_type = attachmentCreateDbModel.AttachType,
-                storage_key = attachmentCreateDbModel.StorageKey,
-                storage_kind = attachmentCreateDbModel.StorageKind,
-                creator_user_id = attachmentCreateDbModel.CreatorUserId,
-                length_bytes = attachmentCreateDbModel.LengthBytes,
-                file_name = attachmentCreateDbModel.FileName,
-                mime_type = attachmentCreateDbModel.MimeType,
+                entity_id = create.EntityId,
+                attach_type = create.AttachType,
+                storage_key = create.StorageKey,
+                storage_kind = create.StorageKind,
+                creator_user_id = create.CreatorUserId,
+                length_bytes = create.LengthBytes,
+                file_name = create.FileName,
+                mime_type = create.MimeType,
             }
         );
     }

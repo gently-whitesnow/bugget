@@ -26,41 +26,41 @@ public sealed class AttachmentOptimizator(
     public async Task OptimizeAttachmentAsync(
         string? organizationId,
         ReportIdContext reportIdContext,
-        Attachment fromAttachmentDbModel)
+        Attachment fromAttachment)
     {
-        if (fromAttachmentDbModel.StorageKind != (int)StorageKind.Temp || fromAttachmentDbModel.StorageKey is null)
+        if (fromAttachment.StorageKind != (int)StorageKind.Temp || fromAttachment.StorageKey is null)
         {
             return;
         }
 
-        await using var fileStream = await fileStorage.ReadAsync(fromAttachmentDbModel.StorageKey);
+        await using var fileStream = await fileStorage.ReadAsync(fromAttachment.StorageKey);
 
         // Создаем новую оптимизированную версию файла
         OptimizationResult optimizationResult;
-        if (AttachmentConstants.ImageMimeTypes.Contains(fromAttachmentDbModel.MimeType, StringComparer.OrdinalIgnoreCase))
+        if (AttachmentConstants.ImageMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
         {
             optimizationResult = await imageOptimizatorWriter.OptimizeWriteAsync(
                 organizationId,
                 reportIdContext.ReportId,
-                fromAttachmentDbModel,
+                fromAttachment,
                 fileStream
             );
         }
-        else if (AttachmentConstants.VideoMimeTypes.Contains(fromAttachmentDbModel.MimeType, StringComparer.OrdinalIgnoreCase))
+        else if (AttachmentConstants.VideoMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
         {
             optimizationResult = await videoOptimizeWriter.OptimizeWriteAsync(
                 organizationId,
                 reportIdContext.ReportId,
-                fromAttachmentDbModel,
+                fromAttachment,
                 fileStream
             );
         }
-        else if (AttachmentConstants.CompressibleMimeTypes.Contains(fromAttachmentDbModel.MimeType, StringComparer.OrdinalIgnoreCase))
+        else if (AttachmentConstants.CompressibleMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
         {
             optimizationResult = await textOptimizator.OptimizeWriteAsync(
                 organizationId,
                 reportIdContext.ReportId,
-                fromAttachmentDbModel,
+                fromAttachment,
                 fileStream
             );
         }
@@ -73,7 +73,7 @@ public sealed class AttachmentOptimizator(
         if (originalLength.HasValue && originalLength.Value > 0)
         {
             logger.LogInformation("Attachment saved: {@FileName}, compress score {@from}-{@to}-{@preview} percent {@percent}%",
-                fromAttachmentDbModel.FileName,
+                fromAttachment.FileName,
                 originalLength.Value,
                 optimizationResult.LengthBytes,
                 optimizationResult.PreviewLengthBytes,
@@ -82,15 +82,15 @@ public sealed class AttachmentOptimizator(
         else
         {
             logger.LogInformation("Attachment saved: {@FileName}, size {@to}-{@preview}",
-                fromAttachmentDbModel.FileName,
+                fromAttachment.FileName,
                 optimizationResult.LengthBytes,
                 optimizationResult.PreviewLengthBytes);
         }
 
         // Обновляем модель в БД
-        var toAttachmentDbModel = await attachmentDbClient.UpdateAttachmentAsync(new AttachmentUpdate
+        var toAttachment = await attachmentDbClient.UpdateAttachmentAsync(new AttachmentUpdate
         {
-            Id = fromAttachmentDbModel.Id,
+            Id = fromAttachment.Id,
             StorageKey = optimizationResult.StorageKey,
             StorageKind = (int)StorageKind.Standard,
             LengthBytes = optimizationResult.LengthBytes + optimizationResult.PreviewLengthBytes,
@@ -101,9 +101,9 @@ public sealed class AttachmentOptimizator(
         });
 
         // Уведомляем клиентов
-        await reportPageHubClient.SendAttachmentChangedAsync(reportIdContext.GroupKey, toAttachmentDbModel.ToSocketView());
+        await reportPageHubClient.SendAttachmentChangedAsync(reportIdContext.GroupKey, toAttachment.ToSocketView());
 
         // Удаляем старый файл
-        await fileStorage.DeleteAsync(fromAttachmentDbModel.StorageKey);
+        await fileStorage.DeleteAsync(fromAttachment.StorageKey);
     }
 }

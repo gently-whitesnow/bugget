@@ -33,13 +33,13 @@ public sealed class ReportsController(
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        var reportSummaryDbModel = await reportsService.CreateReportAsync(
+        var reportSummary = await reportsService.CreateReportAsync(
             user.Id,
             user.TeamId,
             user.OrganizationId,
             new ReportCreateDto { Title = body.Title });
 
-        return reportSummaryDbModel.ToViewModel(reportAliasOptions.Value).ToContract();
+        return reportSummary.ToViewModel(reportAliasOptions.Value).ToContract();
     }
 
     public override Task<ActionResult<Report>> GetReport(

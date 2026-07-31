@@ -43,7 +43,7 @@ public sealed class BugsService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var bugSummaryDbModel = await unitOfWork.ExecuteAsync(async (scope, ct) =>
+        var bugSummary = await unitOfWork.ExecuteAsync(async (scope, ct) =>
         {
             var summary = await bugsDbClient.CreateBugAsync(scope, user.Id, resolvedReport.Id, bug);
 
@@ -73,8 +73,8 @@ public sealed class BugsService(
         });
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await taskQueue.EnqueueAsync(() => bugsEventsService.HandleCreateBugEventAsync(reportIdContext, user, bugSummaryDbModel));
-        return (bugSummaryDbModel, null);
+        await taskQueue.EnqueueAsync(() => bugsEventsService.HandleCreateBugEventAsync(reportIdContext, user, bugSummary));
+        return (bugSummary, null);
     }
 
     public async Task<(BugPatchResult? Value, Error? Error)> PatchBugAsync(UserIdentity user, string aliasId, int bugId, BugPatchDto patchDto)
@@ -92,7 +92,7 @@ public sealed class BugsService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var bugPatchResultDbModel = await unitOfWork.ExecuteAsync(async (scope, ct) =>
+        var bugPatchResult = await unitOfWork.ExecuteAsync(async (scope, ct) =>
         {
             int? oldStatus = null;
             if (patchDto.Status.HasValue)
@@ -132,7 +132,7 @@ public sealed class BugsService(
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(() => bugsEventsService.HandlePatchBugEventAsync(reportIdContext, bugId, user, patchDto));
-        return (bugPatchResultDbModel, null);
+        return (bugPatchResult, null);
     }
 
     public async Task<BugSummary?> GetBugAsync(int reportId, int bugId)

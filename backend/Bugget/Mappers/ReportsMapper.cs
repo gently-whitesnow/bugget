@@ -6,7 +6,7 @@ using Domain = Bugget.Entities.BO;
 namespace Bugget.Mappers;
 
 /// <summary>
-/// View/DbModel → Contracts для эндпоинтов модуля reports. Контрактные DTO
+/// Домен/View → Contracts для эндпоинтов модуля reports. Контрактные DTO
 /// сгенерированы из <c>specs/contracts/reports/openapi.yaml</c> и видны только
 /// в проекте Bugget, поэтому маппер живёт здесь, а не в Bugget.BO.
 ///
@@ -15,7 +15,7 @@ namespace Bugget.Mappers;
 /// <c>Bugget.IntegrationTests/Contract/Snapshots</c>. Единственное осознанное сужение —
 /// вложения и элемент списка репортов (ADR-0005, «Сужение wire-контракта reports»).
 ///
-/// Лишний хоп (DbModel → ViewModel → Contract) сохранён сознательно: те же
+/// Лишний хоп (доменная модель → ViewModel → Contract) сохранён сознательно: те же
 /// ViewModel'и уходят в SignalR-хаб, и схлопывать хопы имеет смысл вместе с
 /// контрактом realtime-событий, а не в этом PR.
 /// </summary>

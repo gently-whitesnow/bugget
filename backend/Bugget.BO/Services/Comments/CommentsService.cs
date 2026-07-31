@@ -42,13 +42,13 @@ public sealed class CommentsService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var bugDbModel = await bugsService.GetBugAsync(resolvedReport.Id, bugId);
-        if (bugDbModel == null)
+        var bug = await bugsService.GetBugAsync(resolvedReport.Id, bugId);
+        if (bug == null)
         {
             return (null, BoErrors.BugNotFoundError);
         }
 
-        var commentDbModel = await unitOfWork.ExecuteAsync(async (scope, ct) =>
+        var comment = await unitOfWork.ExecuteAsync(async (scope, ct) =>
         {
             var audience = (int)(commentDto.Audience.HasValue
                 ? (CommentAudience)commentDto.Audience.Value
@@ -86,9 +86,9 @@ public sealed class CommentsService(
         });
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentCreateEventAsync(reportIdContext, user, commentDbModel));
+        await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentCreateEventAsync(reportIdContext, user, comment));
 
-        return (commentDbModel, null);
+        return (comment, null);
     }
 
     public async Task<Error?> DeleteCommentAsync(UserIdentity user, string aliasId, int bugId, int commentId)
@@ -106,8 +106,8 @@ public sealed class CommentsService(
             return BoErrors.ReportNotFoundError;
         }
 
-        var commentDbModel = await commentsDbClient.DeleteCommentInternalAsync(user.Id, resolvedReport.Id, bugId, commentId);
-        if (commentDbModel == null)
+        var comment = await commentsDbClient.DeleteCommentInternalAsync(user.Id, resolvedReport.Id, bugId, commentId);
+        if (comment == null)
         {
             return null;
         }
@@ -133,15 +133,15 @@ public sealed class CommentsService(
             return (null, BoErrors.ReportNotFoundError);
         }
 
-        var commentDbModel = await commentsDbClient.UpdateCommentInternalAsync(user.Id, resolvedReport.Id, bugId, commmentId, commentDto.Text);
-        if (commentDbModel == null)
+        var comment = await commentsDbClient.UpdateCommentInternalAsync(user.Id, resolvedReport.Id, bugId, commmentId, commentDto.Text);
+        if (comment == null)
         {
             return (null, BoErrors.UserCommentNotFound);
         }
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentUpdateEventAsync(reportIdContext, user, commentDbModel));
+        await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentUpdateEventAsync(reportIdContext, user, comment));
 
-        return (commentDbModel, null);
+        return (comment, null);
     }
 }

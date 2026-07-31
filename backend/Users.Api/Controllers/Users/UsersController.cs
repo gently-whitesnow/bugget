@@ -35,14 +35,14 @@ public sealed class UsersController(
         string teamId,
         CancellationToken cancellationToken = default)
     {
-        var user = User.GetIdentity();
-        var userDbModel = await userService.GetUserAsync(user.Id);
-        if (userDbModel is null)
+        var identity = User.GetIdentity();
+        var user = await userService.GetUserAsync(identity.Id);
+        if (user is null)
         {
             return NotFound();
         }
 
-        return Ok(userDbModel.ToUserView(user.WorkspaceRole).ToContract());
+        return Ok(user.ToUserView(identity.WorkspaceRole).ToContract());
     }
 
     /// <summary>

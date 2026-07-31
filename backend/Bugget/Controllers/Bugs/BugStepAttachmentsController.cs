@@ -79,13 +79,13 @@ public sealed class BugStepAttachmentsController(AttachmentService attachmentSer
             return error.ToProblemDetails(HttpContext);
         }
 
-        var (content, attachmentDbModel) = attachment!.Value;
-        if (attachmentDbModel.IsGzipCompressed == true)
+        var (content, meta) = attachment!.Value;
+        if (meta.IsGzipCompressed == true)
         {
             Response.Headers["Content-Encoding"] = "gzip";
         }
 
-        return new FileStreamResult(content, attachmentDbModel.MimeType);
+        return new FileStreamResult(content, meta.MimeType);
     }
 
     public override async Task<IActionResult> GetBugStepAttachmentPreview(

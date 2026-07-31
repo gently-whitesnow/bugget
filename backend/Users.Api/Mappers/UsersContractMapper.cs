@@ -11,7 +11,7 @@ using Domain = Users.Entities.BO;
 namespace Users.Api.Mappers;
 
 /// <summary>
-/// View/DbModel → Contracts для фронтовой поверхности модуля users. Контрактные
+/// Домен/View → Contracts для фронтовой поверхности модуля users. Контрактные
 /// DTO сгенерированы из <c>specs/contracts/users/openapi.yaml</c>.
 ///
 /// Формы намеренно повторяют то, что уходило фронту до перехода на contract-first:

@@ -54,20 +54,20 @@ public static class ReportMapper
         };
     }
 
-    public static ReportSummaryViewModel ToViewModel(this ReportSummary summaryDbModel, ReportAliasOptions aliasOptions)
+    public static ReportSummaryViewModel ToViewModel(this ReportSummary summary, ReportAliasOptions aliasOptions)
     {
         return new ReportSummaryViewModel
         {
-            Id = ReportIdResolveHelper.ToAliasId(summaryDbModel.Id, summaryDbModel.PublicId, summaryDbModel.TeamReportId, aliasOptions),
-            Title = summaryDbModel.Title,
-            Status = summaryDbModel.Status,
-            ResponsibleUserId = summaryDbModel.ResponsibleUserId,
-            PastResponsibleUserId = summaryDbModel.PastResponsibleUserId,
-            CreatorUserId = summaryDbModel.CreatorUserId,
-            CreatorTeamId = summaryDbModel.CreatorTeamId,
-            CreatedAt = summaryDbModel.CreatedAt,
-            UpdatedAt = summaryDbModel.UpdatedAt,
-            CreatorType = summaryDbModel.CreatorType
+            Id = ReportIdResolveHelper.ToAliasId(summary.Id, summary.PublicId, summary.TeamReportId, aliasOptions),
+            Title = summary.Title,
+            Status = summary.Status,
+            ResponsibleUserId = summary.ResponsibleUserId,
+            PastResponsibleUserId = summary.PastResponsibleUserId,
+            CreatorUserId = summary.CreatorUserId,
+            CreatorTeamId = summary.CreatorTeamId,
+            CreatedAt = summary.CreatedAt,
+            UpdatedAt = summary.UpdatedAt,
+            CreatorType = summary.CreatorType
         };
     }
 

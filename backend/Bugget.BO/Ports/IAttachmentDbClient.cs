@@ -6,7 +6,7 @@ public interface IAttachmentDbClient
 {
     Task<Attachment[]> DeleteCommentAttachmentsAsync(int commentId);
 
-    Task<Attachment> UpdateAttachmentAsync(AttachmentUpdate updateAttachmentDbModel);
+    Task<Attachment> UpdateAttachmentAsync(AttachmentUpdate update);
 
     Task<Attachment?> GetByIdAsync(int attachmentId);
 
@@ -22,7 +22,7 @@ public interface IAttachmentDbClient
 
     Task<int> GetBugStepAttachmentsCountInternalAsync(int reportId, int bugId, int stepId);
 
-    Task<Attachment> CreateAttachment(AttachmentCreate attachmentCreateDbModel);
+    Task<Attachment> CreateAttachment(AttachmentCreate create);
 
     Task<Attachment?> DeleteBugAttachmentInternalAsync(int reportId, int bugId, int attachmentId);
 

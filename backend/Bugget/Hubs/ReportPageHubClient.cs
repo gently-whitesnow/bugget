@@ -140,28 +140,28 @@ public class ReportPageHubClient(IHubContext<ReportPageHub> hubContext) : IRepor
             .SendAsync("ReceiveCommentUpdate", comment);
     }
 
-    public Task SendReportLinkCreateAsync(string groupKey, ReportLink reportLinkDbModel, string? signalRConnectionId)
+    public Task SendReportLinkCreateAsync(string groupKey, ReportLink link, string? signalRConnectionId)
     {
         if (signalRConnectionId == null)
         {
             return hubContext.Clients.Group($"{groupKey}")
-                .SendAsync("ReceiveReportLinkCreate", reportLinkDbModel);
+                .SendAsync("ReceiveReportLinkCreate", link);
         }
 
         return hubContext.Clients.GroupExcept($"{groupKey}", signalRConnectionId)
-            .SendAsync("ReceiveReportLinkCreate", reportLinkDbModel);
+            .SendAsync("ReceiveReportLinkCreate", link);
     }
 
-    public Task SendReportLinkUpdateAsync(string groupKey, ReportLink reportLinkDbModel, string? signalRConnectionId)
+    public Task SendReportLinkUpdateAsync(string groupKey, ReportLink link, string? signalRConnectionId)
     {
         if (signalRConnectionId == null)
         {
             return hubContext.Clients.Group($"{groupKey}")
-                .SendAsync("ReceiveReportLinkUpdate", reportLinkDbModel);
+                .SendAsync("ReceiveReportLinkUpdate", link);
         }
 
         return hubContext.Clients.GroupExcept($"{groupKey}", signalRConnectionId)
-            .SendAsync("ReceiveReportLinkUpdate", reportLinkDbModel);
+            .SendAsync("ReceiveReportLinkUpdate", link);
     }
 
     public Task SendReportLinkDeleteAsync(string groupKey, int linkId, string? signalRConnectionId)

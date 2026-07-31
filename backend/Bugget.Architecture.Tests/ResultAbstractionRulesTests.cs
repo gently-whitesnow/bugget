@@ -171,6 +171,15 @@ public class ResultAbstractionRulesTests
         ResultLikeDeclarations(usings, declaration).Should().Equal("Outcome");
     }
 
+    [Fact(DisplayName = "Гейт краснеет, когда Error и payload partial-типа разнесены по файлам")]
+    public void Partial_result_like_fixture_split_across_files_is_rejected()
+    {
+        const string errorPart = "public sealed partial class Outcome<T> { public Error? Error { get; init; } }";
+        const string payloadPart = "public sealed partial class Outcome<T> { public T? Data { get; init; } }";
+
+        ResultLikeDeclarations(errorPart, payloadPart).Should().Contain("Outcome");
+    }
+
     [Theory(DisplayName = "Гейт не путает каноническую ошибку с посторонним типом того же имени")]
     [InlineData("public sealed record Outcome<T>(T? Data, ThirdParty.Error? Error);")]
     [InlineData("using Failure = ThirdParty.Error; public sealed record Outcome<T>(T? Data, Failure? Error);")]

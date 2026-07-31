@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
+using static Bugget.Architecture.Tests.ResultLikeFixtures;
 
 namespace Bugget.Architecture.Tests;
 
@@ -13,18 +13,20 @@ namespace Bugget.Architecture.Tests;
 /// краснеет на объявленном типе, который совмещает каноническую ошибку с payload/value или
 /// признаком успеха. Кортеж под правило не попадает: это не объявленный тип.
 ///
-/// Правило читает исходники, а не сборки: так оно видит и те проекты, на которые
-/// архитектурные тесты не ссылаются, и новый проект, добавленный завтра. Что перед ним за
-/// тип, оно спрашивает у компилятора — см. <see cref="ResultLikeTypes"/>.
+/// Правило смотрит на исходники всего решения, а не на те проекты, на которые ссылается сам
+/// тест: новый проект попадает под него в день появления. Что перед ним за тип, оно
+/// спрашивает у компилятора — см. <see cref="ResultLikeTypes"/> и <see cref="BackendSolution"/>.
 /// </summary>
 public class ResultAbstractionRulesTests
 {
     private static readonly string[] ForbiddenProjectNames = ["Monade", "Flow"];
 
     [Fact(DisplayName = "Новых Result-подобных обёрток нет: успех и ошибка не заворачиваются в тип")]
-    public void No_result_like_wrapper_types()
+    public async Task No_result_like_wrapper_types()
     {
-        var violations = ProductProjects
+        var projects = await BackendSolution.ProductProjectsAsync();
+
+        var violations = projects
             .SelectMany(project => ResultLikeTypes
                 .Find(project.Scanned, project.Compilation)
                 .Select(declaration => $"{declaration.File}: {declaration.Type} (проект {project.Name})"))
@@ -41,22 +43,65 @@ public class ResultAbstractionRulesTests
             string.Join("; ", violations));
     }
 
-    [Fact(DisplayName = "Гейт видит каноническую ошибку в компиляции каждого проекта")]
-    public void Canonical_error_type_is_bound_in_every_project()
+    [Fact(DisplayName = "Компиляции проектов связываются без ошибок: иначе правило слепнет")]
+    public async Task Product_compilations_bind_without_errors()
     {
-        var blind = ProductProjects
-            .Where(project => project.Compilation.GetTypeByMetadataName(ResultLikeTypes.CanonicalErrorMetadataName)
-                is not INamedTypeSymbol { TypeKind: not TypeKind.Error })
+        var projects = await BackendSolution.ProductProjectsAsync();
+
+        var broken = projects
+            .SelectMany(project => project.Compilation
+                .GetDiagnostics()
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+                .Take(3)
+                .Select(diagnostic => $"{project.Name}: {diagnostic}"))
+            .ToArray();
+
+        broken.Should().BeEmpty(
+            "правило смотрит на связанные типы. Несвязанный тип становится error-символом: " +
+            "база обёртки перестаёт быть базой, и нарушение проходит молча. Ошибки связывания: {0}.",
+            string.Join("; ", broken));
+    }
+
+    /// <summary>
+    /// Проекты, которые обязаны видеть каноническую ошибку: именно они возвращали Result-монады
+    /// до ADR-0004, и именно на них правило обязано работать. Проект, потерявший её из виду,
+    /// правило молча пропустит.
+    /// </summary>
+    private static readonly string[] ProjectsThatReturnErrors =
+    [
+        "Authorization.Api", "Bugget", "Bugget.BO", "Bugget.DA", "Bugget.Entities", "Bugget.Http",
+        "Users.Api", "Users.BO", "Users.DA"
+    ];
+
+    [Fact(DisplayName = "Каноническая ошибка приходит из сборки Bugget.Entities всюду, где она вообще доступна")]
+    public async Task Canonical_error_type_is_bound_where_its_assembly_is_referenced()
+    {
+        var projects = await BackendSolution.ProductProjectsAsync();
+
+        var blind = projects
+            .Where(project => ResultLikeTypes.SeesCanonicalErrors(project.Compilation))
+            .Where(project => ResultLikeTypes.CanonicalError(project.Compilation) is null)
             .Select(project => project.Name)
             .ToArray();
 
         blind.Should().BeEmpty(
-            "правило сравнивает связанный тип с каноническим {0}. Если в компиляции проекта " +
-            "этого типа нет или он неоднозначен (объявлен и исходниками, и ссылкой), связывание " +
-            "отдаёт error-символ, сравнение не совпадёт никогда и гейт замолчит, оставаясь " +
-            "зелёным. Проекты, в которых канонический тип не связался: {1}.",
+            "правило сравнивает связанный тип с символом {0} из сборки {1}. Если сборка подключена, " +
+            "а символ не связался, сравнение не совпадёт никогда и гейт замолчит, оставаясь " +
+            "зелёным. Проекты, в которых канонический тип не связался: {2}.",
             ResultLikeTypes.CanonicalErrorMetadataName,
+            ResultLikeTypes.CanonicalErrorAssemblyName,
             string.Join(", ", blind));
+
+        var unreachable = ProjectsThatReturnErrors
+            .Except(projects
+                .Where(project => ResultLikeTypes.CanonicalError(project.Compilation) is not null)
+                .Select(project => project.Name))
+            .ToArray();
+
+        unreachable.Should().BeEmpty(
+            "проекты, которые возвращают ошибки, обязаны видеть канонический тип — иначе правило " +
+            "пропускает их целиком и молчит. Не видят: {0}.",
+            string.Join(", ", unreachable));
     }
 
     [Theory(DisplayName = "Гейт краснеет на прежних монадах и типах payload-or-error при любом имени payload")]
@@ -72,7 +117,7 @@ public class ResultAbstractionRulesTests
         ResultLikeDeclarations(source).Should().NotBeEmpty();
     }
 
-    [Theory(DisplayName = "Гейт краснеет на generic Result-обёртке, собранной через наследование, при любой квалификации имени")]
+    [Theory(DisplayName = "Гейт краснеет на generic Result-обёртке, собранной наследованием, при любой квалификации имени")]
     [InlineData("public sealed class Outcome<T> : Choice<T, Error> { }")]
     [InlineData("public sealed class Outcome<T> : Contracts.Choice<T, Error> { }")]
     [InlineData("public sealed class Outcome<T> : Bugget.Contracts.Choice<T, Error> { }")]
@@ -80,6 +125,14 @@ public class ResultAbstractionRulesTests
     [InlineData("public sealed class Outcome<T> : Choice<T, Bugget.Entities.Errors.Error> { }")]
     [InlineData("public sealed class Outcome<T> : Choice<T, global::Bugget.Entities.Errors.Error> { }")]
     public void Inherited_generic_result_like_fixture_is_rejected(string source)
+    {
+        ResultLikeDeclarations(source).Should().Equal("Outcome");
+    }
+
+    [Theory(DisplayName = "Generic-интерфейс — такая же Result-подобная форма, как базовый класс")]
+    [InlineData("public sealed class Outcome<T> : IChoice<T, Error> { }")]
+    [InlineData("public sealed record Outcome<T> : IChoice<T, Error>;")]
+    public void Result_like_generic_interface_is_rejected(string source)
     {
         ResultLikeDeclarations(source).Should().Equal("Outcome");
     }
@@ -126,6 +179,29 @@ public class ResultAbstractionRulesTests
     public void Foreign_type_named_error_is_allowed(string source)
     {
         ResultLikeDeclarations(source).Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Тип с тем же полным именем из чужой сборки каноническим не считается")]
+    public void Foreign_assembly_with_the_canonical_metadata_name_is_not_canonical()
+    {
+        const string source = "public sealed record Outcome<T>(T? Data, Bugget.Entities.Errors.Error? Error);";
+
+        // Тот же исходник со сборкой Bugget.Entities правило считает нарушением — значит
+        // разница ровно в том, откуда пришёл символ, а не в форме типа.
+        ResultLikeDeclarations(source).Should().Equal("Outcome");
+
+        ResultLikeTypes
+            .CanonicalError(CompileFixture([source], canonicalErrors: false))
+            .Should().BeNull("канонической ошибку делает сборка Bugget.Entities, а не полное имя типа");
+    }
+
+    [Fact(DisplayName = "Обёртка над чужой ошибкой того же имени нарушением не считается")]
+    public void Wrapper_over_a_foreign_error_type_is_allowed()
+    {
+        const string source = "public sealed record Outcome<T>(T? Data, Bugget.Entities.Errors.Error? Error);";
+
+        ResultLikeDeclarationsWithForeignErrors(source).Should().BeEmpty(
+            "канонической ошибку делает сборка Bugget.Entities: тип из чужой сборки — это чужой тип");
     }
 
     [Theory(DisplayName = "Гейт не срабатывает на псевдониме с тем же именем, но чужой целью")]
@@ -202,6 +278,14 @@ public class ResultAbstractionRulesTests
         ResultLikeDeclarations(source).Should().BeEmpty();
     }
 
+    [Fact(DisplayName = "Гейт оставляет допустимой запись, которая несёт только ошибку")]
+    public void Record_carrying_only_an_error_is_allowed()
+    {
+        const string source = "public sealed record FailureState(Error? Error);";
+
+        ResultLikeDeclarations(source).Should().BeEmpty();
+    }
+
     [Fact(DisplayName = "Гейт не склеивает вложенный тип с payload внешнего")]
     public void Nested_type_members_do_not_leak_to_the_outer_type()
     {
@@ -249,137 +333,5 @@ public class ResultAbstractionRulesTests
             "Вернулись: {1}.",
             string.Join(", ", ForbiddenProjectNames),
             string.Join(", ", returned));
-    }
-
-    /// <summary>
-    /// Окружение fixtures: канонический <c>Error</c> с иерархией, посторонний тип того же
-    /// имени, посторонний <c>Failure</c> и generic-базы, которыми пользуются fixtures.
-    /// Объявления живут в отдельном файле компиляции и самим правилом не проверяются —
-    /// проверяется ровно то, что передано в fixture.
-    /// </summary>
-    private const string FixtureContext = """
-        global using Bugget.Entities.Errors;
-
-        namespace Bugget.Entities.Errors
-        {
-            public abstract record Error(string Code, string Title);
-
-            public sealed record BadRequestError(string Code, string Title) : Error(Code, Title);
-
-            public sealed record NotFoundError(string Code, string Title) : Error(Code, Title);
-        }
-
-        namespace Bugget.Entities.Reports
-        {
-            public sealed record Failure(string Reason);
-        }
-
-        namespace ThirdParty
-        {
-            public sealed record Error(string Code, string Title);
-        }
-
-        namespace Contracts
-        {
-            public class Choice<TValue, TError>;
-        }
-
-        namespace Bugget.Contracts
-        {
-            public class Choice<TValue, TError>;
-        }
-
-        public class Choice<TValue, TError>;
-
-        public class ErrorCarrier<TError>;
-        """;
-
-    /// <summary>
-    /// Прогон правила по fixture: каждая строка — отдельный файл одного проекта, поэтому
-    /// <c>global using</c> из одного файла виден остальным.
-    ///
-    /// Fixture обязан компилироваться: зелёный вердикт на коде, который не собирается,
-    /// не доказывает ничего — связывание там не состоялось бы в любом случае.
-    /// </summary>
-    private static IReadOnlyList<string> ResultLikeDeclarations(params string[] sources)
-    {
-        var scanned = sources
-            .Select((text, index) => ResultLikeTypes.Parse($"Fixture{index}.cs", text))
-            .ToArray();
-        var context = ResultLikeTypes.Parse("FixtureContext.cs", FixtureContext);
-
-        var compilation = ResultLikeTypes.Compile(
-            "Fixtures",
-            [.. scanned.Select(source => source.Tree), context.Tree],
-            ResultLikeTypes.RuntimeReferences);
-
-        compilation.GetDiagnostics()
-            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
-            .Should().BeEmpty("fixture обязан компилироваться, иначе его вердикт ничего не значит");
-
-        return [.. ResultLikeTypes.Find(scanned, compilation).Select(declaration => declaration.Type)];
-    }
-
-    /// <summary>Продуктовый проект: что проверяем и в какой компиляции связываем.</summary>
-    private sealed record ProductProject(string Name, IReadOnlyList<ParsedSource> Scanned, CSharpCompilation Compilation);
-
-    private static IReadOnlyList<ProductProject> ProductProjects => LazyProductProjects.Value;
-
-    private static readonly Lazy<IReadOnlyList<ProductProject>> LazyProductProjects = new(LoadProductProjects);
-
-    /// <summary>
-    /// Компиляция на каждый продуктовый проект: свои деревья плюс сборки среды выполнения
-    /// теста — в них уже лежат собранные соседние проекты, поэтому канонический <c>Error</c> и
-    /// базовые типы связываются, а <c>global using</c> остаётся в границах проекта.
-    ///
-    /// Соседние проекты приходят именно сборками, а не второй компиляцией их исходников:
-    /// один и тот же тип из двух ссылок становится неоднозначным, связывание отдаёт
-    /// error-символ, и правило молча зеленеет. За тем, что канонический тип действительно
-    /// связался, следит отдельный тест — молчащий гейт хуже отсутствующего.
-    ///
-    /// Проверяются не все деревья компиляции: сгенерированное из OpenAPI участвует в связывании
-    /// как контекст, но правилу не предъявляется — его источник правды не в коде (ADR-0005).
-    /// </summary>
-    private static IReadOnlyList<ProductProject> LoadProductProjects()
-    {
-        var backend = SolutionGraph.BackendRoot;
-        var projects = new List<(string Name, ParsedSource[] All, ParsedSource[] Scanned)>();
-
-        foreach (var project in SolutionGraph.Projects.Values
-                     .Where(project => !project.IsTestProject)
-                     .OrderBy(project => project.Name, StringComparer.Ordinal))
-        {
-            var projectDir = Path.Combine(backend, project.Name);
-            if (!Directory.Exists(projectDir))
-            {
-                continue;
-            }
-
-            var all = Directory
-                .EnumerateFiles(projectDir, "*.cs", SearchOption.AllDirectories)
-                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-                .OrderBy(path => path, StringComparer.Ordinal)
-                .Select(path => ResultLikeTypes.Parse(Path.GetRelativePath(backend, path), File.ReadAllText(path)))
-                .ToArray();
-
-            if (all.Length == 0)
-            {
-                continue;
-            }
-
-            projects.Add((
-                project.Name,
-                all,
-                [.. all.Where(source => !source.Path.EndsWith(".g.cs", StringComparison.Ordinal))]));
-        }
-
-        return
-        [
-            .. projects.Select(project => new ProductProject(
-                project.Name,
-                project.Scanned,
-                ResultLikeTypes.Compile(project.Name, project.All.Select(source => source.Tree), ResultLikeTypes.RuntimeReferences)))
-        ];
     }
 }

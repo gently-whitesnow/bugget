@@ -45,10 +45,12 @@ public partial class ResultAbstractionRulesTests
             string.Join("; ", violations));
     }
 
-    [Theory(DisplayName = "Гейт краснеет на прежних монадах и Result(Value, Error)")]
+    [Theory(DisplayName = "Гейт краснеет на прежних монадах и типах payload-or-error при любом имени payload")]
     [InlineData("public record struct MonadeStruct<T> { public T? Value { get; init; } public Error? Error { get; init; } }")]
     [InlineData("public record struct ResultStruct { public Error? Error { get; init; } public bool IsSuccess => Error is null; }")]
     [InlineData("public sealed record Result<T>(T? Value, Error? Error);")]
+    [InlineData("public sealed record Outcome<T>(T? Data, Error? Error);")]
+    [InlineData("public sealed record Outcome<T> { public T? Data { get; init; } public Error? Error { get; init; } }")]
     public void Result_like_fixture_is_rejected(string source)
     {
         ContainsResultLikeDeclaration(source).Should().BeTrue();
@@ -106,7 +108,7 @@ public partial class ResultAbstractionRulesTests
     private static bool ContainsResultLikeDeclaration(string source) =>
         PrimaryConstructorWrapperPattern().IsMatch(source) ||
         (ErrorMemberPattern().IsMatch(source) &&
-         (ValueMemberPattern().IsMatch(source) || SuccessFlagPattern().IsMatch(source)));
+         (PayloadMemberPattern().IsMatch(source) || SuccessFlagPattern().IsMatch(source)));
 
     [GeneratedRegex(@"\b(?:public|internal|protected|private)\s+bool\s+(IsSuccess|IsFailure|IsError|HasError)\b")]
     private static partial Regex SuccessFlagPattern();
@@ -114,9 +116,9 @@ public partial class ResultAbstractionRulesTests
     [GeneratedRegex(@"\b(?:public|internal|protected|private)\s+Error\??\s+Error\s*(\{|=>|;)")]
     private static partial Regex ErrorMemberPattern();
 
-    [GeneratedRegex(@"\b(?:public|internal|protected|private)\s+[\w<>,.?\[\]]+\s+(Value|Payload)\s*(\{|=>|;)")]
-    private static partial Regex ValueMemberPattern();
+    [GeneratedRegex(@"\b(?:public|internal|protected|private)\s+[\w<>,.?\[\]]+\s+(?!Error\b)\w+\s*(\{|=>|;)")]
+    private static partial Regex PayloadMemberPattern();
 
-    [GeneratedRegex(@"\brecord(?:\s+(?:class|struct))?\s+\w+(?:\s*<[^>{};]+>)?\s*\((?=[^;{}]*\b(?:Value|Payload)\b)(?=[^;{}]*\bError\??\s+Error\b)[^;{}]*\)\s*(?:;|\{)")]
+    [GeneratedRegex(@"\brecord(?:\s+(?:class|struct))?\s+\w+(?:\s*<[^>{};]+>)?\s*\((?=[^;{}]*,)(?=[^;{}]*\bError\??\s+Error\b)[^;{}]*\)\s*(?:;|\{)")]
     private static partial Regex PrimaryConstructorWrapperPattern();
 }

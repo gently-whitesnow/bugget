@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using Bugget.BO.Services.Attachments;
 using Bugget.Entities.BO.AttachmentBo;
 using FluentAssertions;
@@ -12,6 +13,14 @@ namespace Bugget.Tests.Services.Attachments;
 /// </summary>
 public sealed class VideoTranscodeGateTests
 {
+    private static readonly string[] ExpectedMetricNames =
+    [
+        "bugget.video.optimize.queued",
+        "bugget.video.optimize.active",
+        "bugget.video.optimize.duration",
+        "bugget.video.ffmpeg.peak_rss",
+    ];
+
     private static VideoTranscodeGate Gate(int concurrency) =>
         new(Options.Create(new OptimizatorSettings { VideoMaxConcurrency = concurrency }),
             new VideoOptimizationMetrics());
@@ -100,5 +109,65 @@ public sealed class VideoTranscodeGateTests
         held.Dispose();
         using var next = await gate.AcquireAsync(CancellationToken.None);
         next.Should().NotBeNull();
+    }
+
+    [Fact(DisplayName = "Отмена очереди и следующий job обнуляют queued и active")]
+    public async Task Metrics_return_to_zero_after_queued_cancellation_and_next_job()
+    {
+        using var listener = new MeterListener();
+        var instruments = new List<Instrument>();
+        listener.InstrumentPublished = (instrument, _) =>
+        {
+            if (instrument.Meter.Name == VideoOptimizationMetrics.MeterName)
+            {
+                instruments.Add(instrument);
+                listener.EnableMeasurementEvents(instrument);
+            }
+        };
+
+        var queued = 0;
+        var active = 0;
+        var durationResults = new List<string>();
+        listener.SetMeasurementEventCallback<int>((instrument, value, _, _) =>
+        {
+            if (instrument.Name == "bugget.video.optimize.queued")
+            {
+                queued += value;
+            }
+            else if (instrument.Name == "bugget.video.optimize.active")
+            {
+                active += value;
+            }
+        });
+        listener.SetMeasurementEventCallback<double>((instrument, _, tags, _) =>
+        {
+            if (instrument.Name == "bugget.video.optimize.duration")
+            {
+                durationResults.Add(tags.ToArray().Single().Value!.ToString()!);
+            }
+        });
+        listener.Start();
+
+        using var metrics = new VideoOptimizationMetrics();
+        var gate = new VideoTranscodeGate(
+            Options.Create(new OptimizatorSettings { VideoMaxConcurrency = 1 }), metrics);
+        using var held = await gate.AcquireAsync(CancellationToken.None);
+        using var cts = new CancellationTokenSource();
+
+        var canceled = gate.AcquireAsync(cts.Token);
+        await cts.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => canceled);
+        held.Complete(VideoOptimizeOutcome.Success);
+        held.Dispose();
+
+        using (var next = await gate.AcquireAsync(CancellationToken.None))
+        {
+            next.Complete(VideoOptimizeOutcome.Success);
+        }
+
+        queued.Should().Be(0);
+        active.Should().Be(0);
+        durationResults.Should().OnlyContain(result => result == "success");
+        instruments.Should().OnlyContain(instrument => ExpectedMetricNames.Contains(instrument.Name));
     }
 }

@@ -8,7 +8,6 @@
     "Bugget.DbUp",
     "Bugget.Entities",
     "Bugget.ExternalClients",
-    "Monade",
     "TaskQueue",
     "Bugget.Tests",
     "Bugget.IntegrationTests"

@@ -22,7 +22,6 @@
   <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Users.'))
                          Or $(MSBuildProjectName.StartsWith('Authorization.'))
                          Or '$(MSBuildProjectName)' == 'Authentication'
-                         Or '$(MSBuildProjectName)' == 'Flow'
                          Or '$(MSBuildProjectName)' == 'Caching.Local'
                          Or '$(MSBuildProjectName)' == 'BugReport.Logging'
                          Or '$(MSBuildProjectName)' == 'FakeAuth'

@@ -46,7 +46,7 @@ public class BusinessLogicIsolationRulesTests
             // Infrastructure, но переезд идёт отдельной задачей, а не здесь.
             "SixLabors.ImageSharp", "Xabe.FFmpeg", "Xabe.FFmpeg.Downloader", "Mime",
             "System.Diagnostics.Process", "System.IO.Compression",
-            "Bugget.Analytics.Contracts", "Bugget.DA", "Bugget.Entities", "Monade", "TaskQueue",
+            "Bugget.Analytics.Contracts", "Bugget.DA", "Bugget.Entities", "TaskQueue",
         ],
 
         ["Users.BO"] =
@@ -55,7 +55,7 @@ public class BusinessLogicIsolationRulesTests
             "System.ComponentModel",
             "System.Security.Cryptography", // HMAC для токенов приглашений в команду
             "Microsoft.Extensions.Configuration.Binder",
-            "Bugget.Entities", "Flow", "TaskQueue", "Users.DA", "Users.Entities",
+            "Bugget.Entities", "TaskQueue", "Users.DA", "Users.Entities",
         ],
     };
 

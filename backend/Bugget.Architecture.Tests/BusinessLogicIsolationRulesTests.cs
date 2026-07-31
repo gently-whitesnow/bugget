@@ -46,6 +46,9 @@ public class BusinessLogicIsolationRulesTests
             // Infrastructure, но переезд идёт отдельной задачей, а не здесь.
             "SixLabors.ImageSharp", "Xabe.FFmpeg", "Xabe.FFmpeg.Downloader", "Mime",
             "System.Diagnostics.Process", "System.IO.Compression",
+            // Приборы фоновой видеооптимизации (MAIN-194): System.Diagnostics.Metrics —
+            // часть BCL, экспортёр остаётся в транспорте и в BO не протекает.
+            "System.Diagnostics.DiagnosticSource",
             "Bugget.Analytics.Contracts", "Bugget.Entities", "TaskQueue",
         ],
 

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Bugget.Entities.BO.AttachmentBo;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,6 +11,9 @@ public sealed class FfmpegService(IOptions<OptimizatorSettings> options, ILogger
 {
     private readonly SemaphoreSlim _ffmpegLock = new(1, 1);
     private bool _ffmpegReady;
+
+    /// <summary>Первая строка <c>ffmpeg -version</c>: без неё непонятно, чей профиль потоков мы видим в логах.</summary>
+    public string? Version { get; private set; }
 
     public async Task EnsureAsync(CancellationToken ct)
     {
@@ -30,19 +34,16 @@ public sealed class FfmpegService(IOptions<OptimizatorSettings> options, ILogger
             Directory.CreateDirectory(ffmpegDirectory);
 
             var ffmpegPath = GetExecutablePath(ffmpegDirectory);
-            if (File.Exists(ffmpegPath))
+            if (!File.Exists(ffmpegPath))
             {
-                FFmpeg.SetExecutablesPath(ffmpegDirectory);
-                _ffmpegReady = true;
-                logger.LogInformation("Using existing FFmpeg at {path}", ffmpegPath);
-                return;
+                logger.LogInformation("Downloading FFmpeg to {path}", ffmpegDirectory);
+                await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official, ffmpegDirectory);
             }
 
-            logger.LogInformation("Downloading FFmpeg to {path}", ffmpegDirectory);
-            await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official, ffmpegDirectory);
             FFmpeg.SetExecutablesPath(ffmpegDirectory);
             _ffmpegReady = true;
-            logger.LogInformation("FFmpeg download completed");
+            Version = await ReadVersionAsync(ffmpegPath, ct);
+            logger.LogInformation("FFmpeg ready at {path}, version {version}", ffmpegPath, Version ?? "unknown");
         }
         catch (Exception ex)
         {
@@ -69,6 +70,36 @@ public sealed class FfmpegService(IOptions<OptimizatorSettings> options, ILogger
         var directory = ResolveFfmpegDirectory();
         var path = GetExecutablePath(directory);
         return File.Exists(path) ? path : null;
+    }
+
+    private async Task<string?> ReadVersionAsync(string ffmpegPath, CancellationToken ct)
+    {
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = ffmpegPath,
+                ArgumentList = { "-version" },
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+
+            if (process == null)
+            {
+                return null;
+            }
+
+            var firstLine = await process.StandardOutput.ReadLineAsync(ct);
+            await process.WaitForExitAsync(ct);
+            return firstLine?.Trim();
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to read FFmpeg version");
+            return null;
+        }
     }
 
     private string ResolveFfmpegDirectory()

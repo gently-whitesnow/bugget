@@ -30,6 +30,7 @@ using Bugget.Middlewares;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using OpenTelemetry.Metrics;
 using Serilog;
@@ -42,7 +43,12 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<FileStorageOptions>(configuration.GetSection(nameof(FileStorageOptions)));
-        services.Configure<OptimizatorSettings>(configuration.GetSection(nameof(OptimizatorSettings)));
+        // Профиль оптимизации приходит из external_settings.json: нулевой потолок или
+        // невыполнимый бюджет потоков обязан валить старт, а не всплывать OOM'ом (MAIN-194).
+        services.AddOptions<OptimizatorSettings>()
+            .Bind(configuration.GetSection(nameof(OptimizatorSettings)))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<OptimizatorSettings>, OptimizatorSettingsValidator>();
         services.Configure<AuthHeadersOptions>(configuration.GetSection("ExternalSettings:Authentication"));
         services.Configure<ReportAliasOptions>(configuration.GetSection(nameof(ReportAliasOptions)));
         services.Configure<DomainEventsConsumerOptions>(configuration.GetSection("DomainEventsConsumer"));
@@ -96,6 +102,9 @@ public static class ServiceCollectionExtensions
             .AddSingleton<ImageOptimizeWriter>()
             .AddSingleton<FfmpegService>()
             .AddHostedService<FfmpegWarmupService>()
+            .AddSingleton<VideoOptimizationMetrics>()
+            .AddSingleton<VideoTranscodeGate>()
+            .AddSingleton<FfmpegProcessRunner>()
             .AddSingleton<VideoOptimizeWriter>()
             .AddSingleton<TextOptimizeWriter>()
             .AddSingleton<IAttachmentKeyGenerator, LocalAttachmentKeyGenerator>()
@@ -172,6 +181,7 @@ public static class ServiceCollectionExtensions
                 .AddRuntimeInstrumentation()
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
+                .AddMeter(VideoOptimizationMetrics.MeterName)
                 .AddPrometheusExporter());
 
         services.AddCors(options =>

@@ -152,7 +152,7 @@ public static class SolutionGraph
             "Архитектурные тесты читают .csproj с диска и запускаются из дерева репозитория.");
     }
 
-    private static Dictionary<string, ProjectNode> LoadProjects(string backendRoot)
+    internal static IReadOnlyDictionary<string, ProjectNode> LoadProjects(string backendRoot)
     {
         var projects = Directory
             .EnumerateFiles(backendRoot, "*.csproj", SearchOption.AllDirectories)

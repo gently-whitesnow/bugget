@@ -1,16 +1,17 @@
-import { appApi } from "@/shared/api";
+import { externalApi } from "@/shared/api";
 import type { KaitenBoardResponse } from "./contracts";
+
+/**
+ * Доски Kaiten глазами страницы настроек. Транспорт живёт в операциях модуля
+ * (`shared/api/external`) — здесь остаётся только журналирование отказа, с
+ * которым эта страница жила и до миграции.
+ */
 
 export async function searchKaitenBoards(
   query?: string
 ): Promise<KaitenBoardResponse[]> {
   try {
-    const params = query ? { query } : {};
-    const { data } = await appApi.get<KaitenBoardResponse[]>(
-      "/v1/external/kaiten/boards",
-      { params }
-    );
-    return data;
+    return await externalApi.searchKaitenBoards(query);
   } catch (error) {
     console.error(error);
     throw error;
@@ -22,11 +23,7 @@ export async function fetchKaitenBoards(
 ): Promise<KaitenBoardResponse[]> {
   try {
     if (ids.length === 0) return [];
-    const { data } = await appApi.post<KaitenBoardResponse[]>(
-      "/v1/external/kaiten/boards/batch-get",
-      { ids }
-    );
-    return data;
+    return await externalApi.batchGetKaitenBoards({ ids });
   } catch (error) {
     console.error(error);
     throw error;

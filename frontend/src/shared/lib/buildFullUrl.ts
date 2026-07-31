@@ -1,4 +1,7 @@
-import { getAppContext } from "@/shared/api";
+// Импорт из инстансов, а не из индекса `@/shared/api`: индекс тянет за собой
+// транспортные границы модулей, а одна из них (`shared/api/reports`) собирает
+// браузерный адрес вложения этим же хелпером.
+import { getAppContext } from "@/shared/api/instances";
 
 /**
  * Строит полный API URL с учетом workspace/team контекста

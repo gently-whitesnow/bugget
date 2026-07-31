@@ -8,6 +8,10 @@ import tseslint from "typescript-eslint";
 import { noUnsafeInnerHtmlOption } from "./eslint-rules/no-unsafe-inner-html.js";
 import { noDirectReportsTransportOptions } from "./eslint-rules/no-direct-reports-transport.js";
 import { noDirectUsersTransportOptions } from "./eslint-rules/no-direct-users-transport.js";
+import { noDirectAnalyticsTransportOptions } from "./eslint-rules/no-direct-analytics-transport.js";
+import { noDirectExternalTransportOptions } from "./eslint-rules/no-direct-external-transport.js";
+import { noDirectSettingsTransportOptions } from "./eslint-rules/no-direct-settings-transport.js";
+import { noDirectAuthorizationTransportOptions } from "./eslint-rules/no-direct-authorization-transport.js";
 
 export default tseslint.config(
   // src/shared/api/generated — вывод openapi-typescript из specs/contracts/**.
@@ -59,10 +63,14 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         noUnsafeInnerHtmlOption,
-        // Модули reports и users переведены на операции контракта: прямой вызов
-        // их путей мимо src/shared/api/<модуль> снова разводит адрес и контракт.
+        // Модули переведены на операции контракта: прямой вызов их путей мимо
+        // src/shared/api/<модуль> снова разводит адрес и контракт.
         ...noDirectReportsTransportOptions,
         ...noDirectUsersTransportOptions,
+        ...noDirectAnalyticsTransportOptions,
+        ...noDirectExternalTransportOptions,
+        ...noDirectSettingsTransportOptions,
+        ...noDirectAuthorizationTransportOptions,
       ],
       "max-len": [
         "error",
@@ -82,6 +90,10 @@ export default tseslint.config(
     files: [
       "src/shared/api/reports/**/*.ts",
       "src/shared/api/users/**/*.ts",
+      "src/shared/api/analytics/**/*.ts",
+      "src/shared/api/external/**/*.ts",
+      "src/shared/api/settings/**/*.ts",
+      "src/shared/api/authorization/**/*.ts",
       "src/shared/api/instances/*.test.ts",
     ],
     rules: {

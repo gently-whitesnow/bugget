@@ -171,6 +171,78 @@ public class ResultAbstractionRulesTests
         ResultLikeDeclarations(usings, declaration).Should().Equal("Outcome");
     }
 
+    [Fact(DisplayName = "Гейт краснеет, когда Error и payload partial-типа разнесены по файлам")]
+    public void Partial_result_like_fixture_split_across_files_is_rejected()
+    {
+        const string errorPart = "public sealed partial class Outcome<T> { public Error? Error { get; init; } }";
+        const string payloadPart = "public sealed partial class Outcome<T> { public T? Data { get; init; } }";
+
+        ResultLikeDeclarations(errorPart, payloadPart).Should().Equal("Outcome");
+    }
+
+    [Fact(DisplayName = "Гейт краснеет на partial-типе, у которого признак успеха в другой части")]
+    public void Partial_success_flag_in_another_part_is_rejected()
+    {
+        const string errorPart = "public sealed partial class Outcome { public Error? Error { get; init; } }";
+        const string flagPart = "public sealed partial class Outcome { public bool IsSuccess => Error is null; }";
+
+        ResultLikeDeclarations(errorPart, flagPart).Should().Equal("Outcome");
+    }
+
+    [Fact(DisplayName = "Partial-тип попадает в результат один раз, а не по числу частей")]
+    public void Partial_type_is_reported_once()
+    {
+        const string errorPart = "public sealed partial class Outcome<T> { public Error? Error { get; init; } }";
+        const string payloadPart = "public sealed partial class Outcome<T> { public T? Data { get; init; } }";
+
+        ResultLikeDeclarations(payloadPart, errorPart).Should().ContainSingle()
+            .Which.Should().Be("Outcome");
+    }
+
+    [Fact(DisplayName = "Гейт оставляет допустимым partial-тип, который несёт только ошибку")]
+    public void Partial_type_carrying_only_an_error_is_allowed()
+    {
+        const string errorPart = "public sealed partial class FailureState { public Error? Error { get; init; } }";
+        const string behaviourPart = "public sealed partial class FailureState { public override string ToString() => \"failed\"; }";
+
+        ResultLikeDeclarations(errorPart, behaviourPart).Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Гейт не объединяет одноимённые partial-типы из разных namespace")]
+    public void Partial_types_with_the_same_name_in_different_namespaces_are_not_merged()
+    {
+        const string errorPart = "namespace Failures { public sealed partial class Page { public Error? Error { get; init; } } }";
+        const string payloadPart = "namespace Pages { public sealed partial class Page { public string Content { get; init; } = string.Empty; } }";
+
+        ResultLikeDeclarations(errorPart, payloadPart).Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Гейт не объединяет одноимённые вложенные типы разных внешних типов")]
+    public void Nested_types_with_the_same_name_in_different_outer_types_are_not_merged()
+    {
+        const string errorPart = "public sealed partial class Failures { public sealed partial class Page { public Error? Error { get; init; } } }";
+        const string payloadPart = "public sealed partial class Pages { public sealed partial class Page { public string Content { get; init; } = string.Empty; } }";
+
+        ResultLikeDeclarations(errorPart, payloadPart).Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Гейт не отдаёт payload вложенного типа внешнему partial-типу")]
+    public void Nested_type_payload_does_not_leak_to_the_outer_partial_type()
+    {
+        const string errorPart = "public sealed partial class Page { public Error? Error { get; init; } }";
+        const string nestedPart = """
+            public sealed partial class Page
+            {
+                public sealed class Content
+                {
+                    public string Text { get; init; } = string.Empty;
+                }
+            }
+            """;
+
+        ResultLikeDeclarations(errorPart, nestedPart).Should().BeEmpty();
+    }
+
     [Theory(DisplayName = "Гейт не путает каноническую ошибку с посторонним типом того же имени")]
     [InlineData("public sealed record Outcome<T>(T? Data, ThirdParty.Error? Error);")]
     [InlineData("using Failure = ThirdParty.Error; public sealed record Outcome<T>(T? Data, Failure? Error);")]

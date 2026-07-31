@@ -59,6 +59,11 @@ internal static class ResultLikeTypes
     /// Result-подобные типы, объявленные в <paramref name="scanned"/>. Связывание идёт в
     /// <paramref name="compilation"/>, в которой эти деревья обязаны присутствовать: остальные
     /// её деревья и ссылки — контекст (сгенерированный код, соседние проекты), он не проверяется.
+    ///
+    /// Единица проверки — объявленный тип, а не его синтаксическая часть: у <c>partial</c>-типа
+    /// частей несколько, и ошибка с payload могут лежать в разных файлах. Части собираются по
+    /// символу, поэтому такой тип виден целиком и попадает в результат один раз — файлом
+    /// называется первая по алфавиту проверяемая часть.
     /// </summary>
     /// <exception cref="InvalidOperationException">
     /// Сборка с канонической ошибкой подключена, а самого типа в компиляции нет. Молчать в
@@ -80,29 +85,51 @@ internal static class ResultLikeTypes
                 $"но тип {CanonicalErrorMetadataName} в ней не связался: правилу не с чем сравнивать, " +
                 "и оно осталось бы зелёным на любом нарушении");
 
-        var declarations = new List<ResultLikeDeclaration>();
+        var models = new Dictionary<SyntaxTree, SemanticModel>();
+        SemanticModel ModelFor(SyntaxTree tree) =>
+            models.TryGetValue(tree, out var cached) ? cached : models[tree] = compilation.GetSemanticModel(tree);
+
+        // Тип, объявленный частями, — по-прежнему один тип. Части собираются по символу:
+        // ключ словаря сравнивается через SymbolEqualityComparer, поэтому одноимённые типы из
+        // разных namespace или из разных внешних типов остаются разными.
+        var partsBySymbol = new Dictionary<ISymbol, SortedSet<string>>(SymbolEqualityComparer.Default);
+        var order = new List<INamedTypeSymbol>();
 
         foreach (var file in scanned)
         {
-            var model = compilation.GetSemanticModel(file.Tree);
+            var model = ModelFor(file.Tree);
 
-            declarations.AddRange(file.Tree
-                .GetRoot()
-                .DescendantNodes()
-                .OfType<TypeDeclarationSyntax>()
-                .Where(declaration => IsResultLike(declaration, model, canonical))
-                .Select(declaration => new ResultLikeDeclaration(file.Path, declaration.Identifier.ValueText)));
+            foreach (var declaration in file.Tree.GetRoot().DescendantNodes().OfType<TypeDeclarationSyntax>())
+            {
+                if (model.GetDeclaredSymbol(declaration) is not { } symbol)
+                {
+                    continue;
+                }
+
+                if (!partsBySymbol.TryGetValue(symbol, out var files))
+                {
+                    partsBySymbol[symbol] = files = new SortedSet<string>(StringComparer.Ordinal);
+                    order.Add(symbol);
+                }
+
+                files.Add(file.Path);
+            }
         }
 
-        return declarations;
+        return
+        [
+            .. order
+                .Where(symbol => IsResultLike(symbol, ModelFor, canonical))
+                .Select(symbol => new ResultLikeDeclaration(partsBySymbol[symbol].First(), symbol.Name))
+        ];
     }
 
     private static bool IsResultLike(
-        TypeDeclarationSyntax declaration,
-        SemanticModel model,
+        INamedTypeSymbol symbol,
+        Func<SyntaxTree, SemanticModel> modelFor,
         INamedTypeSymbol canonical)
     {
-        if (model.GetDeclaredSymbol(declaration) is not { } symbol || IsError(symbol, canonical))
+        if (IsError(symbol, canonical))
         {
             return false;
         }
@@ -110,8 +137,9 @@ internal static class ResultLikeTypes
         var carriers = InheritedErrorCarriers(symbol, canonical);
         var carriesInheritedError = carriers.Length > 0;
 
-        var dataMembers = DataMembers(declaration)
-            .Select(member => (member.Name, Type: model.GetTypeInfo(member.Type).Type))
+        var dataMembers = DeclaredParts(symbol)
+            .SelectMany(part => DataMembers(part)
+                .Select(member => (member.Name, Type: modelFor(part.SyntaxTree).GetTypeInfo(member.Type).Type)))
             .ToArray();
         var errorMembers = dataMembers.Where(member => IsCanonical(member.Type, canonical)).ToArray();
 
@@ -155,7 +183,17 @@ internal static class ResultLikeTypes
     }
 
     /// <summary>
-    /// Данные, которые несёт сам тип: позиционные параметры записи и нестатические поля и
+    /// Все синтаксические части объявления типа. У обычного типа она одна, у
+    /// <c>partial</c> — столько, сколько файлов его объявляют, включая сгенерированные:
+    /// разнести ошибку и payload по частям — это всё тот же один тип.
+    /// </summary>
+    private static IEnumerable<TypeDeclarationSyntax> DeclaredParts(INamedTypeSymbol symbol) =>
+        symbol.DeclaringSyntaxReferences
+            .Select(reference => reference.GetSyntax())
+            .OfType<TypeDeclarationSyntax>();
+
+    /// <summary>
+    /// Данные, которые несёт часть типа: позиционные параметры записи и нестатические поля и
     /// свойства. Статика исключена намеренно — справочник ошибок
     /// (<c>public static readonly NotFoundError …</c>) хранит ошибки, но ничего не заворачивает.
     /// Члены вложенных типов принадлежат вложенному типу, а не внешнему: перебираются только

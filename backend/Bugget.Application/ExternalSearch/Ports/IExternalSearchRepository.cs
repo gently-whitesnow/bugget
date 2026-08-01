@@ -1,6 +1,6 @@
 using Bugget.Application.ExternalSearch.Models;
 
-namespace Bugget.Application.Interfaces;
+namespace Bugget.Application.ExternalSearch.Ports;
 
 public interface IExternalSearchRepository
 {

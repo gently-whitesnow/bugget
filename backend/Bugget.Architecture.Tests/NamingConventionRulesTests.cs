@@ -58,19 +58,43 @@ public class NamingConventionRulesTests
     {
         // Порт объявляет прикладной слой, инфраструктура его реализует (ADR-0001). Без порта
         // сервис нельзя подменить через DI и протестировать без БД.
-        var violations = Quartet.InfrastructureAsm.GetTypes()
-            .Where(type => type.IsClass && !type.IsAbstract)
-            .Where(type => type.Name.EndsWith("DbClient", StringComparison.Ordinal))
-            .Where(type => !type.GetInterfaces().Any(IsApplicationPort))
-            .Select(type => type.FullName ?? type.Name)
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToArray();
+        var violations = FindDbClientsWithoutApplicationPort(Quartet.InfrastructureAsm.GetTypes());
 
         violations.Should().BeEmpty(
             "каждый *DbClient обязан реализовывать порт из Bugget.Application/**/Ports. Без порта " +
             "прикладной слой нельзя протестировать без БД. Заведи интерфейс рядом с вызывающим " +
             "кодом и подключи через ': IFooDbClient'. Нарушители: {0}",
             string.Join(", ", violations));
+    }
+
+    [Fact(DisplayName = "Все Postgres-адаптеры следуют соглашению *DbClient")]
+    public void Postgres_adapters_follow_DbClient_naming()
+    {
+        // Предыдущее правило начинается с имени *DbClient. Эта обратная проверка гарантирует,
+        // что конкретный наследник общей Postgres-базы не сможет обойти правило и порт,
+        // назвавшись просто *Client или *Repository.
+        var violations = FindPostgresAdaptersWithoutDbClientSuffix(Quartet.InfrastructureAsm.GetTypes());
+
+        violations.Should().BeEmpty(
+            "каждый конкретный наследник PostgresClient — persistence-адаптер и обязан называться " +
+            "*DbClient, чтобы попасть под проверку порта. Нарушители: {0}",
+            string.Join(", ", violations));
+    }
+
+    [Fact(DisplayName = "Правило *DbClient краснеет на интерфейсе вне *.Ports")]
+    public void DbClient_port_rule_is_provably_red_for_an_interface_outside_ports()
+    {
+        FindDbClientsWithoutApplicationPort([typeof(LegacyDbClient)])
+            .Should().ContainSingle()
+            .Which.Should().EndWith(nameof(LegacyDbClient));
+    }
+
+    [Fact(DisplayName = "Правило Postgres-адаптеров краснеет на суффиксе вне *DbClient")]
+    public void Postgres_adapter_rule_is_provably_red_for_an_unchecked_suffix()
+    {
+        FindPostgresAdaptersWithoutDbClientSuffix([typeof(EscapingPersistenceClient)])
+            .Should().ContainSingle()
+            .Which.Should().EndWith(nameof(EscapingPersistenceClient));
     }
 
     [Fact(DisplayName = "*Controller в Bugget.Api наследует ApiController или сгенерированную базу")]
@@ -126,4 +150,45 @@ public class NamingConventionRulesTests
         && ns.StartsWith("Bugget.Application", StringComparison.Ordinal)
         && ns.EndsWith(".Ports", StringComparison.Ordinal)
         && !contract.IsGenericType;
+
+    private static string[] FindDbClientsWithoutApplicationPort(IEnumerable<Type> types) =>
+    [
+        .. types
+            .Where(type => type.IsClass && !type.IsAbstract)
+            .Where(type => type.Name.EndsWith("DbClient", StringComparison.Ordinal))
+            .Where(type => !type.GetInterfaces().Any(IsApplicationPort))
+            .Select(type => type.FullName ?? type.Name)
+            .OrderBy(name => name, StringComparer.Ordinal)
+    ];
+
+    private static string[] FindPostgresAdaptersWithoutDbClientSuffix(IEnumerable<Type> types) =>
+    [
+        .. types
+            .Where(type => type.IsClass && !type.IsAbstract)
+            .Where(InheritsPostgresClient)
+            .Where(type => !type.Name.EndsWith("DbClient", StringComparison.Ordinal))
+            .Select(type => type.FullName ?? type.Name)
+            .OrderBy(name => name, StringComparer.Ordinal)
+    ];
+
+    private static bool InheritsPostgresClient(Type type)
+    {
+        for (var current = type.BaseType; current is not null; current = current.BaseType)
+        {
+            if (current.Name.Equals("PostgresClient", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private interface ILegacyContract;
+
+    private sealed class LegacyDbClient : ILegacyContract;
+
+    private abstract class PostgresClient;
+
+    private sealed class EscapingPersistenceClient : PostgresClient;
 }

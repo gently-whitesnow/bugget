@@ -1,4 +1,4 @@
-using Bugget.Application.ExternalProducer.Interfaces;
+using Bugget.Application.ExternalProducer.Ports;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Bugget.Infrastructure.ExternalClients.Notifications.Mattermost;

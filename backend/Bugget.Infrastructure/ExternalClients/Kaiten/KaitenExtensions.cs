@@ -1,4 +1,4 @@
-using Bugget.Application.Interfaces;
+using Bugget.Application.ExternalSearch.Ports;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Settings;
 using Bugget.Infrastructure.ExternalClients.Kaiten.Services;

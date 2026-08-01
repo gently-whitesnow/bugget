@@ -1,4 +1,3 @@
-using Bugget.Application.Users.Interfaces;
 using Bugget.Application.Users.Ports;
 using Microsoft.Extensions.Logging;
 namespace Bugget.Infrastructure.Users.Avatars;

@@ -1,7 +1,7 @@
 using Bugget.Application.Errors;
 using Bugget.Application.Ports;
 using Bugget.Application.Results.Settings;
-using Bugget.Application.Services.Settings;
+using Bugget.Application.Settings.Ports;
 using Bugget.Domain.Errors;
 using Bugget.Domain.Settings;
 

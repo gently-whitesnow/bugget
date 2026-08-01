@@ -1,5 +1,5 @@
 using Bugget.Application.ExternalProducer.Context;
-using Bugget.Application.ExternalProducer.Interfaces;
+using Bugget.Application.ExternalProducer.Ports;
 using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Reports;

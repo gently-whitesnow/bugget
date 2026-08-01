@@ -1,7 +1,7 @@
 using Bugget.Application.ExternalSearch.Models;
 using Bugget.Domain.Authentication;
 
-namespace Bugget.Application.Interfaces;
+namespace Bugget.Application.ExternalSearch.Ports;
 
 public interface IExternalApplyRepository
 {

@@ -1,6 +1,6 @@
 using Bugget.Application.Errors;
 using Bugget.Application.ExternalSearch.Models;
-using Bugget.Application.Interfaces;
+using Bugget.Application.ExternalSearch.Ports;
 using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Reports;

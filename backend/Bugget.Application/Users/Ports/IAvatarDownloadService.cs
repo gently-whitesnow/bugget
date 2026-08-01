@@ -1,4 +1,4 @@
-namespace Bugget.Application.Users.Interfaces;
+namespace Bugget.Application.Users.Ports;
 
 public interface IAvatarDownloadService
 {

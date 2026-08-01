@@ -1,5 +1,5 @@
 using Bugget.Application.ExternalSearch.Models;
-using Bugget.Application.Interfaces;
+using Bugget.Application.ExternalSearch.Ports;
 using Bugget.Application.Ports;
 using Bugget.Infrastructure.ExternalClients.Kaiten.Models;
 using Bugget.Infrastructure.ExternalClients.Kaiten.Services;

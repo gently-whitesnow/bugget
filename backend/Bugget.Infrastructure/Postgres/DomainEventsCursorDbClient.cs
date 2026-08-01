@@ -4,7 +4,7 @@ using Dapper;
 
 namespace Bugget.Infrastructure.Postgres;
 
-public sealed class DomainEventsCursorClient : PostgresClient, IDomainEventsCursorClient
+public sealed class DomainEventsCursorDbClient : PostgresClient, IDomainEventsCursorClient
 {
     public async Task<long?> GetAsync(string consumerName, CancellationToken ct)
     {

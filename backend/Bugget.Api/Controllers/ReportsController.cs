@@ -39,7 +39,10 @@ public sealed class ReportsController(
             user.OrganizationId,
             new ReportCreateDto { Title = body.Title });
 
-        return reportSummary.ToViewModel(reportAliasOptions.Value).ToContract();
+        var contract = reportSummary.ToViewModel(reportAliasOptions.Value).ToContract();
+        var location = $"/api/app/workspaces/{user.OrganizationId}/teams/{user.TeamId}/v2/reports/{contract.Id}";
+
+        return Created(location, contract);
     }
 
     public override Task<ActionResult<Report>> GetReport(

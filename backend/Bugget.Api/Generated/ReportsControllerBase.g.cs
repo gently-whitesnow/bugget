@@ -34,7 +34,7 @@ namespace Bugget.Api.Generated.Reports
         /// </summary>
         /// <remarks>
         /// Автор и команда берутся из identity, в теле — только заголовок.
-        /// <br/>Отвечает 200, а не 201: контроллер возвращает модель напрямую.
+        /// <br/>Возвращает созданный репорт и внешний origin-relative путь к нему.
         /// </remarks>
         /// <returns>Репорт создан.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports")]

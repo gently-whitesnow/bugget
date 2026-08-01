@@ -27,6 +27,8 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
     public ReportCountsControllerTests(AppWithPostgresFixture fixture)
     {
         _client = fixture.CreateClient();
+        _client.DefaultRequestHeaders.Add("X-Test-Workspace-Id", "test-workspace");
+        _client.DefaultRequestHeaders.Add("X-Test-Team-Id", "test-team");
         var scope = fixture.Services.CreateScope();
         _reportsDbClient = scope.ServiceProvider.GetRequiredService<IReportsDbClient>();
     }
@@ -38,7 +40,7 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
         var userId = $"user_{Guid.NewGuid():N}";
 
         var betaReport = await _reportsDbClient.CreateReportAsync(
-            userId, team, organizationId: null, new ReportCreateDto { Title = "Beta backlog" });
+            userId, team, organizationId: "test-workspace", new ReportCreateDto { Title = "Beta backlog" });
         await SetReportCreatorTypeAsync(betaReport.Id, (short)CreatorType.TgBetaTester);
 
         var request = new

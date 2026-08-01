@@ -23,8 +23,7 @@ namespace Bugget.IntegrationTests;
 public sealed class AnalyticsForeignWorkspaceTests
     : IClassFixture<AnalyticsControllerTests.AnalyticsAppFixture>
 {
-    private const string OrganizationHeader = "X-Organization-Id";
-    private const string UserHeader = "X-User-Id";
+    private const string OrganizationHeader = "X-Organization-Id", TeamHeader = "X-Team-Id", UserHeader = "X-User-Id", TeamId = "test-team";
 
     private readonly HttpClient _client;
     private readonly string _connectionString;
@@ -35,6 +34,7 @@ public sealed class AnalyticsForeignWorkspaceTests
         _workspaceId = $"ws_{Guid.NewGuid():N}";
         _client = fixture.CreateClient();
         _client.DefaultRequestHeaders.Add(OrganizationHeader, _workspaceId);
+        _client.DefaultRequestHeaders.Add(TeamHeader, TeamId);
         _client.DefaultRequestHeaders.Add(UserHeader, "test-user");
         _connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING")!;
     }

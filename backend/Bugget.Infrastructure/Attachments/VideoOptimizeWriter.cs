@@ -1,21 +1,27 @@
-using System.Diagnostics;
+using System.Globalization;
 using Bugget.Application.Interfaces;
 using Bugget.Application.Ports;
+using Bugget.Application.Services.Attachments;
 using Bugget.Domain.Attachments;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Bugget.Infrastructure.Attachments;
 
+/// <summary>
+/// Фоновая оптимизация видео: перекодирование в mp4 и превью. Загрузка к этому моменту
+/// уже завершена и оригинал доступен, поэтому задача может ждать сколько нужно — важнее
+/// удержать память процесса, чем ускорить кодирование (MAIN-188, MAIN-194).
+/// </summary>
 public sealed class VideoOptimizeWriter(
     IFileStorageClient fileStorageClient,
     IAttachmentKeyGenerator keyGen,
-    FfmpegService ffmpegService,
+    FfmpegProcessRunner ffmpegRunner,
+    VideoTranscodeGate transcodeGate,
     IOptions<OptimizatorSettings> opt,
     ILogger<VideoOptimizeWriter> logger)
 {
-    private static readonly SemaphoreSlim TranscodeLock = new(2, 2);
-    private const int FfmpegLogLimit = 64 * 1024;
+    private int _profileLogged;
 
     public async Task<OptimizationResult> OptimizeWriteAsync(
         string? organizationId,
@@ -24,15 +30,50 @@ public sealed class VideoOptimizeWriter(
         Stream originalStream,
         CancellationToken ct = default)
     {
-        await ffmpegService.EnsureAsync(ct);
+        var settings = opt.Value;
+        if (!settings.VideoOptimizationEnabled)
+        {
+            return await WriteOriginalAsync(organizationId, reportId, attachment, originalStream, ct);
+        }
 
+        LogProfileOnce(settings);
+
+        // Слот берётся до подготовки временного входа: ожидающие задачи не должны
+        // держать ни копии оригинала на диске, ни дочерних процессов.
+        using var lease = await transcodeGate.AcquireAsync(ct);
+        try
+        {
+            var result = await TranscodeAsync(organizationId, reportId, attachment, originalStream, settings, ct);
+            lease.Complete(VideoOptimizeOutcome.Success);
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            lease.Complete(VideoOptimizeOutcome.Canceled);
+            throw;
+        }
+        catch (TimeoutException)
+        {
+            lease.Complete(VideoOptimizeOutcome.Timeout);
+            throw;
+        }
+    }
+
+    private async Task<OptimizationResult> TranscodeAsync(
+        string? organizationId,
+        int reportId,
+        Attachment attachment,
+        Stream originalStream,
+        OptimizatorSettings settings,
+        CancellationToken ct)
+    {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "bugget-video", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDirectory);
 
-        var inputExtension = Path.GetExtension(attachment.FileName);
-        var inputPath = Path.Combine(tempDirectory, $"{Guid.NewGuid():N}{inputExtension}");
+        var inputPath = Path.Combine(tempDirectory, $"{Guid.NewGuid():N}{Path.GetExtension(attachment.FileName)}");
         var outputPath = Path.Combine(tempDirectory, $"{Guid.NewGuid():N}.mp4");
         var previewPath = Path.Combine(tempDirectory, $"{Guid.NewGuid():N}.webp");
+        var timeout = TimeSpan.FromSeconds(settings.VideoTimeoutSeconds);
 
         try
         {
@@ -41,52 +82,24 @@ public sealed class VideoOptimizeWriter(
             // Проверяем, что файл был записан и не пустой
             if (!File.Exists(inputPath) || new FileInfo(inputPath).Length == 0)
             {
-                throw new InvalidOperationException($"Input file was not created or is empty: {inputPath}");
+                // Путь во временном каталоге наружу не отдаём — исключение фоновой задачи уходит в общий лог.
+                throw new InvalidOperationException("Input file for transcoding was not created or is empty.");
             }
 
-            await RunFfmpegAsync(new[]
-            {
-                "-y",
-                "-i", inputPath,
-                "-map_metadata", "-1",
-                "-map", "0:v:0",
-                "-map", "0:a:0?",
-                "-sn",
-                "-dn",
-                "-vf", $"scale=min({opt.Value.VideoMaxWidth}\\,iw):-2,setsar=1",
-                "-metadata:s:v:0", "rotate=0",
-                "-c:v", "libx264",
-                "-preset", opt.Value.VideoPreset,
-                "-crf", opt.Value.VideoCrf.ToString(),
-                "-pix_fmt", "yuv420p",
-                "-c:a", "aac",
-                "-b:a", $"{opt.Value.VideoAudioBitrateKbps}k",
-                "-movflags", "+faststart",
-                outputPath
-            }, ct);
+            await ffmpegRunner.RunAsync(BuildTranscodeArguments(settings, inputPath, outputPath), timeout, ct);
+            await ffmpegRunner.RunAsync(BuildPreviewArguments(settings, outputPath, previewPath), timeout, ct);
 
-            await RunFfmpegAsync(new[]
-            {
-                "-y",
-                "-i", outputPath,
-                "-frames:v", "1",
-                "-vf", $"scale=min({opt.Value.MaxPreviewSize}\\,iw):-2",
-                "-f", "webp",
-                previewPath
-            }, ct);
-
-            var storageKey = keyGen.GetOriginalKey(
-                organizationId,
-                reportId,
-                attachment.EntityId,
-                ".mp4");
+            var storageKey = keyGen.GetOriginalKey(organizationId, reportId, attachment.EntityId, ".mp4");
             var previewKey = keyGen.GetPreviewKey(storageKey);
 
             await using var outputStream = new FileStream(outputPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             await using var previewStream = new FileStream(previewPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+            // Точка невозврата: перекодирование прервать можно, запись результата — уже нет.
+            var persist = AttachmentPersistence.BeginPersisting(ct);
             await Task.WhenAll(
-                fileStorageClient.WriteAsync(storageKey, outputStream, ct),
-                fileStorageClient.WriteAsync(previewKey, previewStream, ct));
+                fileStorageClient.WriteAsync(storageKey, outputStream, persist),
+                fileStorageClient.WriteAsync(previewKey, previewStream, persist));
 
             return new OptimizationResult(
                 FileName: Path.ChangeExtension(attachment.FileName, ".mp4"),
@@ -107,6 +120,105 @@ public sealed class VideoOptimizeWriter(
         }
     }
 
+    /// <summary>
+    /// Видеооптимизация выключена: оригинал переезжает из временного ключа в постоянный
+    /// как есть. Так вложение не остаётся навсегда в состоянии «ждёт обработки».
+    /// </summary>
+    private async Task<OptimizationResult> WriteOriginalAsync(
+        string? organizationId,
+        int reportId,
+        Attachment attachment,
+        Stream originalStream,
+        CancellationToken ct)
+    {
+        var storageKey = keyGen.GetOriginalKey(
+            organizationId,
+            reportId,
+            attachment.EntityId,
+            Path.GetExtension(attachment.FileName).ToLowerInvariant());
+
+        // Выключенная оптимизация — тот же шов: прерваться можно только до начала записи.
+        await fileStorageClient.WriteAsync(storageKey, originalStream, AttachmentPersistence.BeginPersisting(ct));
+
+        return new OptimizationResult(
+            FileName: attachment.FileName,
+            StorageKey: storageKey,
+            MimeType: attachment.MimeType,
+            LengthBytes: originalStream.CanSeek ? originalStream.Length : attachment.LengthBytes ?? 0,
+            IsGzipCompressed: false,
+            HasPreview: false,
+            PreviewLengthBytes: 0
+        );
+    }
+
+    /// <summary>
+    /// Потолки потоков — главный рычаг памяти, и их три, а не один: <c>-filter_threads</c>
+    /// глобальный, <c>-threads</c> до <c>-i</c> ограничивает декодер, <c>-threads</c> перед
+    /// выходом — кодировщик. Декодер самый дорогой: на 4K он и держал лишние сотни мегабайт.
+    /// </summary>
+    public static string[] BuildTranscodeArguments(OptimizatorSettings settings, string inputPath, string outputPath) =>
+    [
+        "-y",
+        "-nostdin",
+        "-filter_threads", Format(settings.VideoFilterThreads),
+        "-threads", Format(settings.VideoDecoderThreads),
+        "-i", inputPath,
+        "-map_metadata", "-1",
+        "-map", "0:v:0",
+        "-map", "0:a:0?",
+        "-sn",
+        "-dn",
+        "-vf", $"scale=min({Format(settings.VideoMaxWidth)}\\,iw):-2,setsar=1",
+        "-metadata:s:v:0", "rotate=0",
+        "-c:v", "libx264",
+        "-preset", settings.VideoPreset,
+        "-crf", Format(settings.VideoCrf),
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac",
+        "-b:a", $"{Format(settings.VideoAudioBitrateKbps)}k",
+        "-threads", Format(settings.VideoEncoderThreads),
+        "-movflags", "+faststart",
+        outputPath
+    ];
+
+    public static string[] BuildPreviewArguments(OptimizatorSettings settings, string inputPath, string previewPath) =>
+    [
+        "-y",
+        "-nostdin",
+        "-filter_threads", Format(settings.VideoFilterThreads),
+        "-threads", Format(settings.VideoDecoderThreads),
+        "-i", inputPath,
+        "-frames:v", "1",
+        "-vf", $"scale=min({Format(settings.MaxPreviewSize)}\\,iw):-2",
+        "-threads", Format(settings.VideoEncoderThreads),
+        "-f", "webp",
+        previewPath
+    ];
+
+    /// <summary>Профиль пишется один раз на процесс: имён файлов и секретов в нём нет.</summary>
+    private void LogProfileOnce(OptimizatorSettings settings)
+    {
+        if (Interlocked.Exchange(ref _profileLogged, 1) == 1)
+        {
+            return;
+        }
+
+        logger.LogInformation(
+            "Video optimization profile: concurrency={concurrency}, encoder_threads={encoderThreads}, " +
+            "decoder_threads={decoderThreads}, filter_threads={filterThreads}, timeout={timeoutSeconds}s, " +
+            "crf={crf}, preset={preset}, width={width}",
+            transcodeGate.MaxConcurrency,
+            settings.VideoEncoderThreads,
+            settings.VideoDecoderThreads,
+            settings.VideoFilterThreads,
+            settings.VideoTimeoutSeconds,
+            settings.VideoCrf,
+            settings.VideoPreset,
+            settings.VideoMaxWidth);
+    }
+
+    private static string Format(int value) => value.ToString(CultureInfo.InvariantCulture);
+
     private static async Task WriteStreamToFileAsync(Stream stream, string path, CancellationToken ct)
     {
         if (stream.CanSeek)
@@ -116,125 +228,6 @@ public sealed class VideoOptimizeWriter(
 
         await using var output = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true);
         await stream.CopyToAsync(output, ct);
-    }
-
-    private async Task RunFfmpegAsync(IEnumerable<string> arguments, CancellationToken ct)
-    {
-        await TranscodeLock.WaitAsync(ct);
-        try
-        {
-            var ffmpegPath = ffmpegService.GetFfmpegPath();
-            if (string.IsNullOrWhiteSpace(ffmpegPath))
-            {
-                throw new InvalidOperationException("FFmpeg executable not found.");
-            }
-
-            var argsList = arguments.ToList();
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = ffmpegPath,
-                RedirectStandardError = true,
-                RedirectStandardOutput = false,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            foreach (var arg in argsList)
-            {
-                startInfo.ArgumentList.Add(arg);
-            }
-
-            logger.LogDebug("Running FFmpeg with arguments: {args}", string.Join(" ", argsList));
-
-            using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start ffmpeg process.");
-            var stderrTask = ReadLimitedAsync(process.StandardError, FfmpegLogLimit, ct);
-
-            using var registration = ct.Register(() =>
-            {
-                try
-                {
-                    if (!process.HasExited)
-                    {
-                        process.Kill(true);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to terminate ffmpeg process");
-                }
-            });
-
-            try
-            {
-                await process.WaitForExitAsync(ct);
-            }
-            catch (OperationCanceledException)
-            {
-                try
-                {
-                    if (!process.HasExited)
-                    {
-                        process.Kill(true);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to terminate ffmpeg process after cancellation");
-                }
-
-                throw;
-            }
-
-            var stderr = await stderrTask;
-
-            if (process.ExitCode != 0)
-            {
-                var errorMessage = $"FFmpeg failed with exit code {process.ExitCode}. " +
-                                 $"Command: {ffmpegPath} {string.Join(" ", argsList)}. " +
-                                 $"Error output: {stderr}";
-                logger.LogError("FFmpeg failed: {errorMessage}", errorMessage);
-                throw new InvalidOperationException(errorMessage);
-            }
-        }
-        finally
-        {
-            TranscodeLock.Release();
-        }
-    }
-
-    private async Task<string> ReadLimitedAsync(StreamReader reader, int maxChars, CancellationToken ct)
-    {
-        var buffer = new char[4096];
-        var remaining = maxChars;
-        var builder = new System.Text.StringBuilder(Math.Min(maxChars, 8192));
-
-        var truncated = false;
-        while (true)
-        {
-            var read = await reader.ReadAsync(buffer.AsMemory(0, buffer.Length), ct);
-            if (read == 0)
-            {
-                break;
-            }
-
-            if (remaining > 0)
-            {
-                var take = Math.Min(read, remaining);
-                builder.Append(buffer, 0, take);
-                remaining -= take;
-            }
-            else
-            {
-                truncated = true;
-            }
-        }
-
-        if (truncated)
-        {
-            builder.Append("…");
-        }
-
-        return builder.ToString();
     }
 
     private void TryDeleteFile(string path)

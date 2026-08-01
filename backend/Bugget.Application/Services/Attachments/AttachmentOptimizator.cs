@@ -24,40 +24,32 @@ public sealed class AttachmentOptimizator(
     public async Task OptimizeAttachmentAsync(
         string? organizationId,
         ReportIdContext reportIdContext,
-        Attachment fromAttachment)
+        Attachment fromAttachment,
+        CancellationToken ct = default)
     {
         if (fromAttachment.StorageKind != (int)StorageKind.Temp || fromAttachment.StorageKey is null)
         {
             return;
         }
 
-        await using var fileStream = await fileStorage.ReadAsync(fromAttachment.StorageKey);
+        await using var fileStream = await fileStorage.ReadAsync(fromAttachment.StorageKey, ct);
 
         // Создаём новую оптимизированную версию файла: чем именно пережимать, решает
-        // реализация порта — прикладной слой в медиа-форматы не лезет.
+        // реализация порта — прикладной слой в медиа-форматы не лезет. Отменяемо: до
+        // начала постоянной записи внутри писателя прервать работу можно (MAIN-243).
         var optimizationResult = await optimizer.OptimizeAsync(
             organizationId,
             reportIdContext.ReportId,
             fromAttachment,
-            fileStream);
+            fileStream,
+            ct);
 
-        var originalLength = fileStream.CanSeek ? fileStream.Length : (long?)null;
-        if (originalLength.HasValue && originalLength.Value > 0)
-        {
-            logger.LogInformation("Attachment saved: {@FileName}, compress score {@from}-{@to}-{@preview} percent {@percent}%",
-                fromAttachment.FileName,
-                originalLength.Value,
-                optimizationResult.LengthBytes,
-                optimizationResult.PreviewLengthBytes,
-                (1 - (double)optimizationResult.LengthBytes / originalLength.Value) * 100);
-        }
-        else
-        {
-            logger.LogInformation("Attachment saved: {@FileName}, size {@to}-{@preview}",
-                fromAttachment.FileName,
-                optimizationResult.LengthBytes,
-                optimizationResult.PreviewLengthBytes);
-        }
+        LogOptimizationResult(fromAttachment, fileStream, optimizationResult);
+
+        // Писатель уже перешёл точку невозврата: результат лежит под постоянным ключом.
+        // Остаток цепочки — только изменяющие вызовы, и они обязаны довыполниться, иначе
+        // вложение останется с записанным файлом и строкой в БД на удалённый temp-ключ.
+        var persist = AttachmentPersistence.Persisting;
 
         // Обновляем модель в БД
         var toAttachment = await attachmentDbClient.UpdateAttachmentAsync(new AttachmentUpdate
@@ -76,6 +68,26 @@ public sealed class AttachmentOptimizator(
         await reportPageHubClient.SendAttachmentChangedAsync(reportIdContext.GroupKey, toAttachment.ToSocketView());
 
         // Удаляем старый файл
-        await fileStorage.DeleteAsync(fromAttachment.StorageKey);
+        await fileStorage.DeleteAsync(fromAttachment.StorageKey, persist);
+    }
+
+    private void LogOptimizationResult(Attachment fromAttachment, Stream fileStream, OptimizationResult result)
+    {
+        var originalLength = fileStream.CanSeek ? fileStream.Length : (long?)null;
+        if (originalLength is > 0)
+        {
+            logger.LogInformation("Attachment saved: {@FileName}, compress score {@from}-{@to}-{@preview} percent {@percent}%",
+                fromAttachment.FileName,
+                originalLength.Value,
+                result.LengthBytes,
+                result.PreviewLengthBytes,
+                (1 - (double)result.LengthBytes / originalLength.Value) * 100);
+            return;
+        }
+
+        logger.LogInformation("Attachment saved: {@FileName}, size {@to}-{@preview}",
+            fromAttachment.FileName,
+            result.LengthBytes,
+            result.PreviewLengthBytes);
     }
 }

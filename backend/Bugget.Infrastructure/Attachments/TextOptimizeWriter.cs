@@ -2,6 +2,7 @@ using System.Buffers;
 using System.IO.Compression;
 using Bugget.Application.Interfaces;
 using Bugget.Application.Ports;
+using Bugget.Application.Services.Attachments;
 using Bugget.Domain.Attachments;
 
 namespace Bugget.Infrastructure.Attachments;
@@ -57,8 +58,8 @@ public sealed class TextOptimizeWriter(
         }
         compressedMs.Position = 0;
 
-        // 4) Пишем в файловое хранилище
-        await fileStorage.WriteAsync(storageKey, compressedMs, ct);
+        // 4) Пишем в файловое хранилище — точка невозврата, дальше отмены нет
+        await fileStorage.WriteAsync(storageKey, compressedMs, AttachmentPersistence.BeginPersisting(ct));
 
         // 5) Возвращаем информацию о результате
         return new OptimizationResult(

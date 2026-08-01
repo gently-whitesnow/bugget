@@ -1,5 +1,6 @@
 using Bugget.Application.Interfaces;
 using Bugget.Application.Ports;
+using Bugget.Application.Services.Attachments;
 using Bugget.Domain.Attachments;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
@@ -79,9 +80,10 @@ public sealed class ImageOptimizeWriter(
         await previewImg.SaveAsWebpAsync(prevMs, _encoder, ct);
         prevMs.Position = 0;
 
-        // 6) Параллельно шлём оба потока в хранилище
-        var writeOrigTask = fileStorageClient.WriteAsync(storageKey, origMs, ct);
-        var writePreviewTask = fileStorageClient.WriteAsync(previewKey, prevMs, ct);
+        // 6) Параллельно шлём оба потока в хранилище — точка невозврата, дальше отмены нет
+        var persist = AttachmentPersistence.BeginPersisting(ct);
+        var writeOrigTask = fileStorageClient.WriteAsync(storageKey, origMs, persist);
+        var writePreviewTask = fileStorageClient.WriteAsync(previewKey, prevMs, persist);
         await Task.WhenAll(writeOrigTask, writePreviewTask);
 
         // 7) Возвращаем результат

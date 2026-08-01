@@ -30,6 +30,7 @@ using Bugget.Infrastructure.Transactions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using OpenTelemetry.Metrics;
 using Serilog;
@@ -169,6 +170,7 @@ public static class ServiceCollectionExtensions
                 .AddRuntimeInstrumentation()
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
+                .AddMeter(VideoOptimizationMetrics.MeterName)
                 .AddPrometheusExporter());
 
         services.AddCors(options =>

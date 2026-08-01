@@ -1,6 +1,7 @@
 using Bugget.Application.Ports;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 
 namespace Bugget.Infrastructure.Attachments;
@@ -16,7 +17,12 @@ public static class AttachmentOptimizationExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.Configure<OptimizatorSettings>(configuration.GetSection(nameof(OptimizatorSettings)));
+        // Профиль оптимизации приходит из external_settings.json: нулевой потолок или
+        // невыполнимый бюджет потоков обязан валить старт, а не всплывать OOM'ом (MAIN-194).
+        services.AddOptions<OptimizatorSettings>()
+            .Bind(configuration.GetSection(nameof(OptimizatorSettings)))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<OptimizatorSettings>, OptimizatorSettingsValidator>();
 
         // Настройка декодера картинок: параллелизм по числу ядер и непрерывные буферы —
         // раньше это стояло в Program, рядом с остальной композицией хоста.
@@ -28,6 +34,9 @@ public static class AttachmentOptimizationExtensions
             .AddSingleton<TextOptimizeWriter>()
             .AddSingleton<VideoOptimizeWriter>()
             .AddSingleton<FfmpegService>()
+            .AddSingleton<VideoOptimizationMetrics>()
+            .AddSingleton<VideoTranscodeGate>()
+            .AddSingleton<FfmpegProcessRunner>()
             .AddHostedService<FfmpegWarmupService>()
             .AddSingleton<IAttachmentOptimizer, AttachmentOptimizer>()
             .AddSingleton<IMimeTypeDetector, MimeTypeDetector>();

@@ -146,6 +146,13 @@ Realtime-события SignalR описаны в `specs/contracts/events.yaml`.
 Настройки читаются из `appsettings.json`, переменных окружения и внешнего
 `external_settings.json` (монтируется в контейнер) — последний перекрывает остальные.
 
+Контекст workspace/team обязателен для работы приложения. В
+`ExternalSettings:Authentication` должны быть заданы непустые
+`OrganizationIdHeaderName` (organization identity используется как внешний workspace) и
+`TeamIdHeaderName`. Приложение проверяет оба имени на старте и не запускается с пустой
+конфигурацией; штатный compose монтирует готовые значения из
+`deploy/external-settings/bugget-api/external_settings.json`.
+
 Переменные окружения:
 
 | Переменная | Назначение |

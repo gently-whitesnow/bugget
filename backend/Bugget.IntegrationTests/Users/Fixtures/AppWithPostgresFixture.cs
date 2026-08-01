@@ -34,6 +34,8 @@ public class AppWithPostgresFixture(PostgresContainerFixture fixture)
         var keysDir = Path.Combine(Path.GetTempPath(), "bugget-users-tests-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(keysDir);
         builder.UseSetting("KeyStoreOptions:PemFilePath", Path.Combine(keysDir, "rsa_pairs.json"));
+        builder.UseSetting("ExternalSettings:Authentication:TeamIdHeaderName", "X-Test-Team-Id");
+        builder.UseSetting("ExternalSettings:Authentication:OrganizationIdHeaderName", "X-Test-Workspace-Id");
 
         builder.ConfigureTestServices(services =>
         {

@@ -509,7 +509,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
 
             // Включаем header-based auth, чтобы UserIdentity.OrganizationId был не null.
             builder.UseSetting("ExternalSettings:Authentication:UserIdHeaderName", UserHeader);
-            builder.UseSetting("ExternalSettings:Authentication:OrganizationIdHeaderName", OrganizationHeader);
+            builder.UseSetting("ExternalSettings:Authentication:OrganizationIdHeaderName", OrganizationHeader).UseSetting("ExternalSettings:Authentication:TeamIdHeaderName", OrganizationHeader);
 
             builder.ConfigureTestServices(services =>
             {

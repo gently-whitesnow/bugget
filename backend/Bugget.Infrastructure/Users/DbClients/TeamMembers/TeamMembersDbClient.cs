@@ -1,12 +1,13 @@
 using Bugget.Application.Users.Ports;
 using Bugget.Domain.Errors;
 using Bugget.Domain.Users;
+using Bugget.Infrastructure.Postgres;
 using Dapper;
 using Npgsql;
 
 namespace Bugget.Infrastructure.Users.DbClients;
 
-public class TeamMembersDbClient : PostgresClient, ITeamMembersRepository
+public class TeamMembersDbClient() : PostgresClient(Constants.PostgresConnectionStringEnv), ITeamMembersDbClient
 {
     public async Task<(TeamMember? Value, Error? Error)> CreateTeamMemberAsync(long userId, int teamId, int sizeLimit)
     {

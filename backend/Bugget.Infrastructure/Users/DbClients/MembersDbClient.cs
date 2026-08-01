@@ -1,10 +1,11 @@
 using Bugget.Application.Users.Ports;
 using Bugget.Domain.Users;
+using Bugget.Infrastructure.Postgres;
 using Dapper;
 
 namespace Bugget.Infrastructure.Users.DbClients;
 
-public class MembersDbClient : PostgresClient, IMembersRepository
+public class MembersDbClient() : PostgresClient(Constants.PostgresConnectionStringEnv), IMembersDbClient
 {
     public async Task<(WorkspaceMember[], TeamMember[])> ListMembersAsync(long userId)
     {

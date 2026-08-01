@@ -13,22 +13,22 @@ namespace Bugget.IntegrationTests.Users;
 [Collection("PostgresCollection")]
 public class MembersDbClientTests : IClassFixture<AppWithPostgresFixture>
 {
-    private readonly IMembersRepository _membersDbClient;
-    private readonly IWorkspaceMembersRepository _workspaceMembersDbClient;
-    private readonly ITeamMembersRepository _teamMembersDbClient;
-    private readonly IUsersRepository _usersDbClient;
-    private readonly ITeamsRepository _teamsDbClient;
-    private readonly IWorkspacesRepository _workspacesDbClient;
+    private readonly IMembersDbClient _membersDbClient;
+    private readonly IWorkspaceMembersDbClient _workspaceMembersDbClient;
+    private readonly ITeamMembersDbClient _teamMembersDbClient;
+    private readonly IUsersDbClient _usersDbClient;
+    private readonly ITeamsDbClient _teamsDbClient;
+    private readonly IWorkspacesDbClient _workspacesDbClient;
 
     public MembersDbClientTests(AppWithPostgresFixture fixture)
     {
         using var scope = fixture.Services.CreateScope();
-        _membersDbClient = scope.ServiceProvider.GetRequiredService<IMembersRepository>();
-        _usersDbClient = scope.ServiceProvider.GetRequiredService<IUsersRepository>();
-        _teamsDbClient = scope.ServiceProvider.GetRequiredService<ITeamsRepository>();
-        _workspacesDbClient = scope.ServiceProvider.GetRequiredService<IWorkspacesRepository>();
-        _workspaceMembersDbClient = scope.ServiceProvider.GetRequiredService<IWorkspaceMembersRepository>();
-        _teamMembersDbClient = scope.ServiceProvider.GetRequiredService<ITeamMembersRepository>();
+        _membersDbClient = scope.ServiceProvider.GetRequiredService<IMembersDbClient>();
+        _usersDbClient = scope.ServiceProvider.GetRequiredService<IUsersDbClient>();
+        _teamsDbClient = scope.ServiceProvider.GetRequiredService<ITeamsDbClient>();
+        _workspacesDbClient = scope.ServiceProvider.GetRequiredService<IWorkspacesDbClient>();
+        _workspaceMembersDbClient = scope.ServiceProvider.GetRequiredService<IWorkspaceMembersDbClient>();
+        _teamMembersDbClient = scope.ServiceProvider.GetRequiredService<ITeamMembersDbClient>();
     }
 
     [Fact(DisplayName = "Пустой список участий для нового пользователя")]

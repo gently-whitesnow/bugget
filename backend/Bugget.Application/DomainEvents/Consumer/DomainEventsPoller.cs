@@ -14,7 +14,7 @@ namespace Bugget.Application.DomainEvents.Consumer;
 /// </summary>
 public sealed class DomainEventsPoller(
     IUnitOfWork unitOfWork,
-    IDomainEventsCursorClient cursorClient,
+    IDomainEventsCursorDbClient cursorClient,
     IDomainEventsDbClient eventsClient,
     IEnumerable<IDomainEventHandler> handlers,
     IOptions<DomainEventsConsumerOptions> options,

@@ -75,7 +75,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IAttachmentDbClient, AttachmentDbClient>()
             .AddSingleton<IParticipantsDbClient, ParticipantsDbClient>()
             .AddSingleton<IDomainEventsDbClient, DomainEventsDbClient>()
-            .AddSingleton<IDomainEventsCursorClient, DomainEventsCursorDbClient>()
+            .AddSingleton<IDomainEventsCursorDbClient, DomainEventsCursorDbClient>()
             .AddSingleton<IReportPhaseIntervalsDbClient, ReportPhaseIntervalsDbClient>()
             .AddSingleton<IAnalyticsDbClient, AnalyticsDbClient>()
             .AddSingleton<ISettingsDbClient, SettingsDbClient>()

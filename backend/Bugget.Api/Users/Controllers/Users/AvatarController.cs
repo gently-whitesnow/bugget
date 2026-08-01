@@ -1,11 +1,13 @@
 using Bugget.Api.Generated.Users;
 using Bugget.Api.Http;
 using Bugget.Api.Users.Authentication;
+using Bugget.Application.Ports;
 using Bugget.Application.Users.Interfaces;
 using Bugget.Application.Users.Ports;
 using Microsoft.AspNetCore.Mvc;
 using FileParameter = Bugget.Api.Generated.Users.FileParameter;
 using HttpProblemDetailsFactory = Bugget.Api.Http.ProblemDetailsFactory;
+using UsersModule = Bugget.Api.Users.Extensions.ServiceCollectionExtensions;
 
 namespace Bugget.Api.Users.Controllers.Users;
 
@@ -23,7 +25,7 @@ namespace Bugget.Api.Users.Controllers.Users;
 public sealed class AvatarController(
     IUsersService userService,
     IAvatarDownloadService avatarService,
-    IFileStorageClient fileStorageClient) : AvatarControllerBase
+    [FromKeyedServices(UsersModule.FileStorageServiceKey)] IFileStorageClient fileStorageClient) : AvatarControllerBase
 {
     private const long MaxAvatarSize = 200 * 1024; // 200 KB
     private static readonly HashSet<string> AllowedAvatarContentTypes = new(StringComparer.OrdinalIgnoreCase)

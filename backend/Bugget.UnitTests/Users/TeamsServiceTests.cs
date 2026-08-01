@@ -11,9 +11,9 @@ namespace Bugget.UnitTests.Users;
 
 public class TeamsServiceTests
 {
-    private readonly Mock<ITeamsRepository> _teamsRepo;
-    private readonly Mock<ITeamMembersRepository> _teamMembersRepo;
-    private readonly Mock<IAuthorizationRepository> _authorizationRepo;
+    private readonly Mock<ITeamsDbClient> _teamsDbClient;
+    private readonly Mock<ITeamMembersDbClient> _teamMembersDbClient;
+    private readonly Mock<IUserCacheInvalidator> _userCacheInvalidator;
     private readonly Mock<ILogger<TeamsService>> _logger;
     private readonly TeamsService _sut;
     private readonly Mock<IOptions<TeamsOptions>> _options;
@@ -21,15 +21,15 @@ public class TeamsServiceTests
     private readonly int _defaultSizeLimit = 10;
     public TeamsServiceTests()
     {
-        _teamsRepo = new Mock<ITeamsRepository>(MockBehavior.Strict);
-        _teamMembersRepo = new Mock<ITeamMembersRepository>(MockBehavior.Strict);
-        _authorizationRepo = new Mock<IAuthorizationRepository>(MockBehavior.Strict);
+        _teamsDbClient = new Mock<ITeamsDbClient>(MockBehavior.Strict);
+        _teamMembersDbClient = new Mock<ITeamMembersDbClient>(MockBehavior.Strict);
+        _userCacheInvalidator = new Mock<IUserCacheInvalidator>(MockBehavior.Strict);
         _logger = new Mock<ILogger<TeamsService>>(MockBehavior.Loose);
         _options = new Mock<IOptions<TeamsOptions>>(MockBehavior.Strict);
         _options.Setup(o => o.Value).Returns(new TeamsOptions { DefaultSizeLimit = _defaultSizeLimit, DefaultTeamsCountLimit = 5 });
         _selfHostedOptions = new Mock<IOptions<SelfHostedOptions>>(MockBehavior.Strict);
         _selfHostedOptions.Setup(o => o.Value).Returns(new SelfHostedOptions { Enabled = true });
-        _sut = new TeamsService(_teamsRepo.Object, _teamMembersRepo.Object, _authorizationRepo.Object, _options.Object, _selfHostedOptions.Object);
+        _sut = new TeamsService(_teamsDbClient.Object, _teamMembersDbClient.Object, _userCacheInvalidator.Object, _options.Object, _selfHostedOptions.Object);
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class TeamsServiceTests
             }
         };
 
-        _teamsRepo
+        _teamsDbClient
             .Setup(r => r.AutocompleteTeamsAsync(workspaceId, search, skip, take))
             .ReturnsAsync(expected);
 
@@ -64,9 +64,9 @@ public class TeamsServiceTests
         Assert.Single(result);
         Assert.Equal(expected[0].Id, result[0].Id);
         Assert.Equal(expected[0].Name, result[0].Name);
-        _teamsRepo.Verify(r => r.AutocompleteTeamsAsync(workspaceId, search, skip, take), Times.Once);
-        _teamMembersRepo.VerifyNoOtherCalls();
-        _authorizationRepo.VerifyNoOtherCalls();
+        _teamsDbClient.Verify(r => r.AutocompleteTeamsAsync(workspaceId, search, skip, take), Times.Once);
+        _teamMembersDbClient.VerifyNoOtherCalls();
+        _userCacheInvalidator.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class TeamsServiceTests
             UpdatedAt = now
         };
 
-        _teamsRepo
+        _teamsDbClient
             .Setup(r => r.CreateTeamAsync(workspaceId, name))
             .ReturnsAsync(expectedTeam);
 
@@ -101,8 +101,8 @@ public class TeamsServiceTests
         Assert.Equal(expectedTeam.Name, result.Value!.Name);
         Assert.Equal(expectedTeam.WorkspaceId, result.Value!.WorkspaceId);
 
-        _teamsRepo.Verify(r => r.CreateTeamAsync(workspaceId, name), Times.Once);
-        _teamMembersRepo.Verify(r => r.CreateTeamMemberAsync(It.IsAny<long>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        _teamsDbClient.Verify(r => r.CreateTeamAsync(workspaceId, name), Times.Once);
+        _teamMembersDbClient.Verify(r => r.CreateTeamMemberAsync(It.IsAny<long>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 
     [Fact]
@@ -124,11 +124,11 @@ public class TeamsServiceTests
             UpdatedAt = now
         };
 
-        _teamsRepo
+        _teamsDbClient
             .Setup(r => r.CreateTeamAsync(workspaceId, name))
             .ReturnsAsync(expectedTeam);
 
-        _teamMembersRepo
+        _teamMembersDbClient
             .Setup(r => r.CreateTeamMemberAsync(userId, expectedTeam.Id, 10))
             .ReturnsAsync((new TeamMember
             {
@@ -137,7 +137,7 @@ public class TeamsServiceTests
                 TeamId = expectedTeam.Id
             }, null));
 
-        _authorizationRepo
+        _userCacheInvalidator
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask);
 
@@ -150,9 +150,9 @@ public class TeamsServiceTests
         Assert.Equal(expectedTeam.Name, result.Value!.Name);
         Assert.Equal(expectedTeam.WorkspaceId, result.Value!.WorkspaceId);
 
-        _teamsRepo.Verify(r => r.CreateTeamAsync(workspaceId, name), Times.Once);
-        _teamMembersRepo.Verify(r => r.CreateTeamMemberAsync(userId, expectedTeam.Id, 10), Times.Once);
-        _authorizationRepo.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
+        _teamsDbClient.Verify(r => r.CreateTeamAsync(workspaceId, name), Times.Once);
+        _teamMembersDbClient.Verify(r => r.CreateTeamMemberAsync(userId, expectedTeam.Id, 10), Times.Once);
+        _userCacheInvalidator.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
     }
 
     [Fact]
@@ -174,11 +174,11 @@ public class TeamsServiceTests
             UpdatedAt = now
         };
 
-        _teamsRepo
+        _teamsDbClient
             .Setup(r => r.CreateTeamAsync(workspaceId, name))
             .ReturnsAsync(createdTeam);
 
-        _teamMembersRepo
+        _teamMembersDbClient
             .Setup(r => r.CreateTeamMemberAsync(userId, createdTeam.Id, 10))
             .ReturnsAsync((new TeamMember
             {
@@ -188,7 +188,7 @@ public class TeamsServiceTests
             }, null))
             .Verifiable();
 
-        _authorizationRepo
+        _userCacheInvalidator
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask);
 
@@ -196,8 +196,8 @@ public class TeamsServiceTests
         await _sut.CreateTeamAsync(workspaceId, name, userId, userTeamId);
 
         // Assert
-        _teamMembersRepo.Verify(r => r.CreateTeamMemberAsync(userId, createdTeam.Id, 10), Times.Once);
-        _authorizationRepo.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
+        _teamMembersDbClient.Verify(r => r.CreateTeamMemberAsync(userId, createdTeam.Id, 10), Times.Once);
+        _userCacheInvalidator.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
     }
 
     [Fact]
@@ -218,7 +218,7 @@ public class TeamsServiceTests
             UpdatedAt = now
         };
 
-        _teamsRepo
+        _teamsDbClient
             .Setup(r => r.UpdateTeamAsync(workspaceId, teamId, name))
             .ReturnsAsync(expectedTeam);
 
@@ -230,9 +230,9 @@ public class TeamsServiceTests
         Assert.Equal(expectedTeam.Name, result.Name);
         Assert.Equal(expectedTeam.WorkspaceId, result.WorkspaceId);
 
-        _teamsRepo.Verify(r => r.UpdateTeamAsync(workspaceId, teamId, name), Times.Once);
-        _teamMembersRepo.VerifyNoOtherCalls();
-        _authorizationRepo.VerifyNoOtherCalls();
+        _teamsDbClient.Verify(r => r.UpdateTeamAsync(workspaceId, teamId, name), Times.Once);
+        _teamMembersDbClient.VerifyNoOtherCalls();
+        _userCacheInvalidator.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -242,7 +242,7 @@ public class TeamsServiceTests
         var workspaceId = 2;
         var teamId = 11;
 
-        _teamsRepo
+        _teamsDbClient
             .Setup(r => r.DeleteTeamAsync(workspaceId, teamId))
             .Returns(Task.CompletedTask);
 
@@ -250,8 +250,8 @@ public class TeamsServiceTests
         await _sut.DeleteTeamAsync(workspaceId, teamId);
 
         // Assert
-        _teamsRepo.Verify(r => r.DeleteTeamAsync(workspaceId, teamId), Times.Once);
-        _teamMembersRepo.VerifyNoOtherCalls();
-        _authorizationRepo.VerifyNoOtherCalls();
+        _teamsDbClient.Verify(r => r.DeleteTeamAsync(workspaceId, teamId), Times.Once);
+        _teamMembersDbClient.VerifyNoOtherCalls();
+        _userCacheInvalidator.VerifyNoOtherCalls();
     }
 }

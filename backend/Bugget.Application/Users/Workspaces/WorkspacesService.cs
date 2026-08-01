@@ -8,10 +8,10 @@ using Microsoft.Extensions.Options;
 namespace Bugget.Application.Users;
 
 public sealed class WorkspacesService(
-    IWorkspacesRepository workspacesDbClient,
-    ITeamsRepository teamsRepository,
-    IMembersRepository membersRepository,
-    IAuthorizationRepository authorizationRepository,
+    IWorkspacesDbClient workspacesDbClient,
+    ITeamsDbClient teamsDbClient,
+    IMembersDbClient membersDbClient,
+    IUserCacheInvalidator userCacheInvalidator,
     IOptions<SelfHostedOptions> hostingOptions) : IWorkspacesService
 {
     public async Task<(Workspace? Value, Error? Error)> CreateWorkspaceAsync(long userId, string name)
@@ -23,7 +23,7 @@ public sealed class WorkspacesService(
 
         var workspace = await workspacesDbClient.CreateWorkspaceAsync(userId, name);
 
-        await authorizationRepository.InvalidateUserCacheAsync(userId);
+        await userCacheInvalidator.InvalidateUserCacheAsync(userId);
         return (workspace, null);
     }
 
@@ -45,8 +45,8 @@ public sealed class WorkspacesService(
             return (Array.Empty<Workspace>(), Array.Empty<WorkspaceMember>(), Array.Empty<TeamMember>());
         }
         var workspaceIds = workspaces.Select(e => e.Id).ToArray();
-        var teamsTask = teamsRepository.ListTeamsAsync(workspaceIds);
-        var membersTask = membersRepository.ListMembersAsync(userId);
+        var teamsTask = teamsDbClient.ListTeamsAsync(workspaceIds);
+        var membersTask = membersDbClient.ListMembersAsync(userId);
         await Task.WhenAll(teamsTask, membersTask);
         var teams = teamsTask.Result;
         var (workspacesMember, teamsMember) = membersTask.Result;
@@ -71,7 +71,7 @@ public sealed class WorkspacesService(
         }
 
         var workspace = await workspacesDbClient.UpdateWorkspaceAsync(workspaceId, name);
-        await authorizationRepository.InvalidateUserCacheAsync(userId);
+        await userCacheInvalidator.InvalidateUserCacheAsync(userId);
         return (workspace, null);
     }
 
@@ -83,7 +83,7 @@ public sealed class WorkspacesService(
         }
 
         await workspacesDbClient.DeleteWorkspaceAsync(workspaceId);
-        await authorizationRepository.InvalidateUserCacheAsync(userId);
+        await userCacheInvalidator.InvalidateUserCacheAsync(userId);
         return null;
     }
 }

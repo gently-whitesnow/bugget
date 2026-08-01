@@ -7,39 +7,39 @@ using Microsoft.Extensions.Options;
 namespace Bugget.Application.Users.TeamMembers;
 
 public sealed class TeamMembersService(
-    ITeamMembersRepository teamMembersRepository,
+    ITeamMembersDbClient teamMembersDbClient,
     IOptions<TeamsOptions> teamsOptions,
-    IWorkspaceMembersRepository workspaceMembersRepository,
-    IAuthorizationRepository authorizationRepository,
+    IWorkspaceMembersDbClient workspaceMembersDbClient,
+    IUserCacheInvalidator userCacheInvalidator,
     IOptions<SelfHostedOptions> selfHostedOptions) : ITeamMembersService
 {
     public async Task<(TeamMember? Value, Error? Error)> CreateTeamMemberAsync(int teamId, long userId)
     {
         if (selfHostedOptions.Value.Enabled)
         {
-            var teamMember = await teamMembersRepository.CreateTeamMemberAsync(userId, teamId);
-            await authorizationRepository.InvalidateUserCacheAsync(userId);
+            var teamMember = await teamMembersDbClient.CreateTeamMemberAsync(userId, teamId);
+            await userCacheInvalidator.InvalidateUserCacheAsync(userId);
             return (teamMember, null);
         }
 
-        var teamMemberResult = await teamMembersRepository.CreateTeamMemberAsync(userId, teamId, teamsOptions.Value.DefaultSizeLimit);
+        var teamMemberResult = await teamMembersDbClient.CreateTeamMemberAsync(userId, teamId, teamsOptions.Value.DefaultSizeLimit);
         if (teamMemberResult.Error is not null)
         {
             return (null, teamMemberResult.Error);
         }
-        await authorizationRepository.InvalidateUserCacheAsync(userId);
+        await userCacheInvalidator.InvalidateUserCacheAsync(userId);
         return teamMemberResult;
     }
 
     public Task<TeamMember[]> ListTeamMembersAsync(int teamId)
     {
-        return teamMembersRepository.ListTeamMembersAsync(teamId);
+        return teamMembersDbClient.ListTeamMembersAsync(teamId);
     }
 
     public async Task DeleteTeamMemberAsync(long userId, int teamId)
     {
-        await teamMembersRepository.DeleteTeamMemberAsync(userId, teamId);
-        await workspaceMembersRepository.DeleteWorkspaceMemberAsync(userId, teamId);
-        await authorizationRepository.InvalidateUserCacheAsync(userId);
+        await teamMembersDbClient.DeleteTeamMemberAsync(userId, teamId);
+        await workspaceMembersDbClient.DeleteWorkspaceMemberAsync(userId, teamId);
+        await userCacheInvalidator.InvalidateUserCacheAsync(userId);
     }
 }

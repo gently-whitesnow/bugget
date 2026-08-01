@@ -31,7 +31,7 @@ public sealed class ReportPhaseProjectionHandlerTests : IClassFixture<AppWithPos
 {
     private readonly AppWithPostgresFixture _fixture;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IDomainEventsCursorClient _cursorClient;
+    private readonly IDomainEventsCursorDbClient _cursorClient;
     private readonly IDomainEventsDbClient _eventsClient;
     private readonly IReportPhaseIntervalsDbClient _intervalsClient;
     private readonly IReportsDbClient _reportsDbClient;
@@ -43,7 +43,7 @@ public sealed class ReportPhaseProjectionHandlerTests : IClassFixture<AppWithPos
         _fixture = fixture;
         using var scope = fixture.Services.CreateScope();
         _unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        _cursorClient = scope.ServiceProvider.GetRequiredService<IDomainEventsCursorClient>();
+        _cursorClient = scope.ServiceProvider.GetRequiredService<IDomainEventsCursorDbClient>();
         _eventsClient = scope.ServiceProvider.GetRequiredService<IDomainEventsDbClient>();
         _intervalsClient = scope.ServiceProvider.GetRequiredService<IReportPhaseIntervalsDbClient>();
         _reportsDbClient = scope.ServiceProvider.GetRequiredService<IReportsDbClient>();

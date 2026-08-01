@@ -9,8 +9,8 @@ namespace Bugget.UnitTests.Users;
 
 public class UsersServiceTests
 {
-    private readonly Mock<IUsersRepository> _usersRepo;
-    private readonly Mock<IMembersRepository> _membersRepo;
+    private readonly Mock<IUsersDbClient> _usersDbClient;
+    private readonly Mock<IMembersDbClient> _membersDbClient;
     private readonly Mock<ITeamsService> _teamsService;
     private readonly Mock<ITaskQueue> _taskQueue;
     private readonly Mock<IAvatarDownloadService> _avatarService;
@@ -18,11 +18,11 @@ public class UsersServiceTests
 
     public UsersServiceTests()
     {
-        _usersRepo = new Mock<IUsersRepository>(MockBehavior.Strict);
-        _membersRepo = new Mock<IMembersRepository>(MockBehavior.Strict);
+        _usersDbClient = new Mock<IUsersDbClient>(MockBehavior.Strict);
+        _membersDbClient = new Mock<IMembersDbClient>(MockBehavior.Strict);
         _teamsService = new Mock<ITeamsService>(MockBehavior.Strict);
         _taskQueue = new Mock<ITaskQueue>(MockBehavior.Loose);
         _avatarService = new Mock<IAvatarDownloadService>(MockBehavior.Strict);
-        _sut = new UsersService(_usersRepo.Object, _membersRepo.Object, _teamsService.Object, _taskQueue.Object, _avatarService.Object);
+        _sut = new UsersService(_usersDbClient.Object, _membersDbClient.Object, _teamsService.Object, _taskQueue.Object, _avatarService.Object);
     }
 }

@@ -3,7 +3,7 @@ using Bugget.Domain.Users;
 
 namespace Bugget.Application.Users.Ports;
 
-public interface ITeamMembersRepository
+public interface ITeamMembersDbClient
 {
     Task<(TeamMember? Value, Error? Error)> CreateTeamMemberAsync(long userId, int teamId, int sizeLimit);
     Task<TeamMember> CreateTeamMemberAsync(long userId, int teamId);

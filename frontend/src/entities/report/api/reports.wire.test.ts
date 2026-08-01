@@ -159,12 +159,12 @@ describe("тела запросов уходят в snake_case контракт�
       requestCount += 1;
       captured = config;
       return {
-        data: { id: "team-42", title: "Новый репорт" },
+        data: { id: "body-alias", title: "Новый репорт" },
         status: 201,
         statusText: "Created",
         headers: {
           "content-type": "application/json",
-          location: `${contextPrefix}/v2/reports/team-42`,
+          location: "https://other.example/v2/reports/header-alias",
         },
         config,
       };
@@ -175,7 +175,7 @@ describe("тела запросов уходят в snake_case контракт�
     expect(sent().method).toBe("post");
     expect(sent().url).toBe(`${contextPrefix}/v2/reports`);
     expect(sentJsonBody()).toEqual({ title: "Новый репорт" });
-    expect(report).toEqual({ id: "team-42", title: "Новый репорт" });
+    expect(report).toEqual({ id: "body-alias", title: "Новый репорт" });
     expect(requestCount).toBe(1);
   });
 

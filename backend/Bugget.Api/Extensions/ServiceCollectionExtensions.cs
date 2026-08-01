@@ -42,7 +42,15 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<FileStorageOptions>(configuration.GetSection(nameof(FileStorageOptions)));
-        services.Configure<AuthHeadersOptions>(configuration.GetSection("ExternalSettings:Authentication"));
+        services.AddOptions<AuthHeadersOptions>()
+            .Bind(configuration.GetSection("ExternalSettings:Authentication"))
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.OrganizationIdHeaderName),
+                $"{nameof(AuthHeadersOptions.OrganizationIdHeaderName)} обязателен: он задаёт workspace identity.")
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.TeamIdHeaderName),
+                $"{nameof(AuthHeadersOptions.TeamIdHeaderName)} обязателен: он задаёт team identity.")
+            .ValidateOnStart();
         services.Configure<ReportAliasOptions>(configuration.GetSection(nameof(ReportAliasOptions)));
         services.Configure<DomainEventsConsumerOptions>(configuration.GetSection("DomainEventsConsumer"));
         return services;

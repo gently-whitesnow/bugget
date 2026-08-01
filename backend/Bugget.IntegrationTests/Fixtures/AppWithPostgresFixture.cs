@@ -35,6 +35,8 @@ public class AppWithPostgresFixture(PostgresContainerFixture fixture)
         var fileStorageDir = Path.Combine(Path.GetTempPath(), "bugget-tests-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(fileStorageDir);
         builder.UseSetting("FileStorageOptions:BaseDirectory", fileStorageDir);
+        builder.UseSetting("ExternalSettings:Authentication:TeamIdHeaderName", "X-Test-Team-Id");
+        builder.UseSetting("ExternalSettings:Authentication:OrganizationIdHeaderName", "X-Test-Workspace-Id");
 
         if (!string.IsNullOrEmpty(AliasModeOverride))
         {
@@ -59,4 +61,3 @@ public class AppWithPostgresFixture(PostgresContainerFixture fixture)
         });
     }
 }
-

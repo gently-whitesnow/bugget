@@ -1,0 +1,26 @@
+# Снимок журнала schemaversions боевой базы users_db: имена времён отдельного
+# проекта Users.DbUp. Ведётся руками — см. пояснение в reports.txt.
+
+Users.DbUp.sql.000_ddl.sql
+Users.DbUp.sql.001_users.sql
+Users.DbUp.sql.002_workspaces.sql
+Users.DbUp.sql.003_teams.sql
+Users.DbUp.sql.004_members.sql
+Users.DbUp.sql.005_team_invites.sql
+Users.DbUp.sql.006_delete_members_workspaces.sql
+Users.DbUp.sql.007_fix_create_workspace_members.sql
+Users.DbUp.sql.008_users_only_id_required.sql
+Users.DbUp.sql.009_self_hosted_workspace.sql
+Users.DbUp.sql.010_update_user_image_url.sql
+Users.DbUp.sql.011_put_user.sql
+Users.DbUp.sql.012_self_hosted_workmem_api.sql
+Users.DbUp.sql.013_get_user_by_external_id.sql
+Users.DbUp.sql.013_update_delete_teams.sql
+Users.DbUp.sql.014_add_mattermost_user_id.sql
+Users.DbUp.sql.015_autocomplete_teams.sql
+Users.DbUp.sql.016_user_external_links.sql
+Users.DbUp.sql.017_merge_users.sql
+Users.DbUp.sql.018_autocomplete_users_team_ranking.sql
+Users.DbUp.sql.019_create_team_with_limit.sql
+Users.DbUp.sql.020_update_workspace.sql
+Users.DbUp.sql.021_admin_users.sql

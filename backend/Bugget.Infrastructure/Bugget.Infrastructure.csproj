@@ -29,6 +29,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Characterization обновления собирает боевые движки DbUp, а не свою копию:
+             иначе проверка инварианта журнала проверяла бы сама себя. Границу это не
+             ослабляет — правило «internal только тестам» держит Bugget.Architecture.Tests. -->
+        <InternalsVisibleTo Include="Bugget.IntegrationTests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <EmbeddedResource Include="DbUp/sql/migrations/*.sql" />
         <EmbeddedResource Include="DbUp/sql/functions/*.sql" />
         <EmbeddedResource Include="Users/DbUp/sql/*.sql" />

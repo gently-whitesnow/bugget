@@ -32,4 +32,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Снимок боевого журнала schemaversions для characterization обновления DbUp. -->
+    <None Update="data/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

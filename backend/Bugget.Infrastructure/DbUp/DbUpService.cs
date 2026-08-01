@@ -40,41 +40,45 @@ public sealed class DbUpService(ILogger<DbUpService> logger) : IHostedService
             return Task.CompletedTask;
         }
 
-        var assembly = Assembly.GetExecutingAssembly();
-
-        var migrationsRunner = DeployChanges.To
-            .PostgresqlDatabase(connectionString)
-            .WithScripts(new EmbeddedSqlScriptProvider(
-                assembly,
-                MigrationsNamespace,
-                resource => resource.Replace(
-                    $"{MigrationsNamespace}.",
-                    $"{LegacyJournalNamespace}.",
-                    StringComparison.Ordinal)))
-            .WithTransaction()
-            .LogToConsole()
-            .Build();
-
-        if (!Run(migrationsRunner, "migrations"))
+        if (!Run(BuildMigrationsRunner(connectionString), "migrations"))
         {
             return Task.CompletedTask;
         }
 
-        var functionsRunner = DeployChanges.To
-            .PostgresqlDatabase(connectionString)
-            .WithScripts(new EmbeddedSqlScriptProvider(
-                assembly,
-                FunctionsNamespace,
-                resource => resource))
-            .JournalTo(new NullJournal())
-            .WithTransactionPerScript()
-            .LogToConsole()
-            .Build();
-
-        Run(functionsRunner, "functions");
+        Run(BuildFunctionsRunner(connectionString), "functions");
 
         return Task.CompletedTask;
     }
+
+    /// <summary>
+    /// Движок первого прохода — миграции с журналом. Вынесен из <see cref="StartAsync"/>,
+    /// чтобы characterization обновления собирал ровно тот же движок, что и боевой запуск,
+    /// а не свою похожую копию.
+    /// </summary>
+    internal static UpgradeEngine BuildMigrationsRunner(string connectionString) => DeployChanges.To
+        .PostgresqlDatabase(connectionString)
+        .WithScripts(new EmbeddedSqlScriptProvider(
+            Assembly.GetExecutingAssembly(),
+            MigrationsNamespace,
+            resource => resource.Replace(
+                $"{MigrationsNamespace}.",
+                $"{LegacyJournalNamespace}.",
+                StringComparison.Ordinal)))
+        .WithTransaction()
+        .LogToConsole()
+        .Build();
+
+    /// <summary>Движок второго прохода — функции, накатываются каждый раз заново.</summary>
+    internal static UpgradeEngine BuildFunctionsRunner(string connectionString) => DeployChanges.To
+        .PostgresqlDatabase(connectionString)
+        .WithScripts(new EmbeddedSqlScriptProvider(
+            Assembly.GetExecutingAssembly(),
+            FunctionsNamespace,
+            resource => resource))
+        .JournalTo(new NullJournal())
+        .WithTransactionPerScript()
+        .LogToConsole()
+        .Build();
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 

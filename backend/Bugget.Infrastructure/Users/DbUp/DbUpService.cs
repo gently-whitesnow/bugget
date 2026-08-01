@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Bugget.Domain.Users;
 using Bugget.Infrastructure.DbUp;
 using DbUp;
+using DbUp.Engine;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -31,20 +32,7 @@ public sealed class DbUpService(ILogger<DbUpService> logger) : IHostedService
             return Task.CompletedTask;
         }
 
-        var upgrader = DeployChanges.To
-            .PostgresqlDatabase(connectionString)
-            .WithScripts(new EmbeddedSqlScriptProvider(
-                Assembly.GetExecutingAssembly(),
-                ScriptsNamespace,
-                resource => resource.Replace(
-                    $"{ScriptsNamespace}.",
-                    $"{LegacyJournalNamespace}.",
-                    StringComparison.Ordinal)))
-            .WithTransaction()
-            .LogToConsole()
-            .Build();
-
-        var result = upgrader.PerformUpgrade();
+        var result = BuildRunner(connectionString).PerformUpgrade();
 
         if (!result.Successful)
         {
@@ -59,4 +47,21 @@ public sealed class DbUpService(ILogger<DbUpService> logger) : IHostedService
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    /// <summary>
+    /// Движок миграций модуля users. Вынесен из <see cref="StartAsync"/>, чтобы
+    /// characterization обновления собирал ровно тот же движок, что и боевой запуск.
+    /// </summary>
+    internal static UpgradeEngine BuildRunner(string connectionString) => DeployChanges.To
+        .PostgresqlDatabase(connectionString)
+        .WithScripts(new EmbeddedSqlScriptProvider(
+            Assembly.GetExecutingAssembly(),
+            ScriptsNamespace,
+            resource => resource.Replace(
+                $"{ScriptsNamespace}.",
+                $"{LegacyJournalNamespace}.",
+                StringComparison.Ordinal)))
+        .WithTransaction()
+        .LogToConsole()
+        .Build();
 }

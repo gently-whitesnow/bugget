@@ -1,0 +1,42 @@
+# Снимок журнала schemaversions боевой базы app_db: имена, которыми DbUp записал
+# уже применённые миграции во времена отдельного проекта Bugget.DbUp.
+#
+# Снимок ведётся руками и намеренно не выводится из кода: он играет роль базы
+# заказчика в characterization обновления (DbUpLegacyJournalTests). Если вывести
+# его из проверяемого переименования, проверка станет круговой — и переименование
+# префикса пройдёт незамеченным.
+#
+# Новая миграция дописывается сюда тем же коммитом: тест сверяет, что снимок
+# покрывает ровно те же файлы, что лежат в DbUp/sql/migrations.
+
+Bugget.DbUp.sql.001_ddl.sql
+Bugget.DbUp.sql.006_add_gin_index.sql
+Bugget.DbUp.sql.008_fill.sql
+Bugget.DbUp.sql.009_report_team_organization.sql
+Bugget.DbUp.sql.010_dml_reports_v2.sql
+Bugget.DbUp.sql.012_ddl_attachment_v2.sql
+Bugget.DbUp.sql.013_dml_attachment_v2.sql
+Bugget.DbUp.sql.014_dml_comment_v2.sql
+Bugget.DbUp.sql.018_dml_list_reports_v2.sql
+Bugget.DbUp.sql.019_dml_reports_search_v3.sql
+Bugget.DbUp.sql.020_bug_steps.sql
+Bugget.DbUp.sql.021_ddl_settings.sql
+Bugget.DbUp.sql.022_dml_settings.sql
+Bugget.DbUp.sql.023_report_links.sql
+Bugget.DbUp.sql.024_public_report.sql
+Bugget.DbUp.sql.025_no_one_round_trip_logic.sql
+Bugget.DbUp.sql.026_four_status_bl.sql
+Bugget.DbUp.sql.027_team_report_alias.sql
+Bugget.DbUp.sql.028_team_report_alias_resolve_fix.sql
+Bugget.DbUp.sql.029_bug_title.sql
+Bugget.DbUp.sql.030_creator_type.sql
+Bugget.DbUp.sql.031_comment_audience.sql
+Bugget.DbUp.sql.032_search_creator_type.sql
+Bugget.DbUp.sql.033_domain_events.sql
+Bugget.DbUp.sql.034_idempotency_cache.sql
+Bugget.DbUp.sql.035_internal_creator_type_param.sql
+Bugget.DbUp.sql.036_list_reports_creator_types.sql
+Bugget.DbUp.sql.037_workspace_report_resolve_in_team_context.sql
+Bugget.DbUp.sql.039_analytics_foundation.sql
+Bugget.DbUp.sql.040_domain_events_cursor.sql
+Bugget.DbUp.sql.041_drop_report_function_signatures.sql

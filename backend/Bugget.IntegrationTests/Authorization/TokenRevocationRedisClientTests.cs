@@ -75,4 +75,17 @@ public class TokenRevocationRedisClientTests
         _timeProvider.Advance(TimeSpan.FromTicks(1));
         Assert.False(await sut.IsRevokedAsync(jti));
     }
+
+    [Fact(DisplayName = "Значение прежнего формата считается отозванным до уборки по TTL")]
+    public async Task IsRevokedAsync_TreatsLegacyValue_AsRevoked()
+    {
+        var sut = new TokenRevocationRedisClient(_mux, _timeProvider);
+        var jti = $"jti_{Guid.NewGuid():N}";
+
+        // Ключи, записанные прежней версией, границы не несут: до истечения их TTL
+        // токен обязан оставаться отозванным.
+        await _mux.GetDatabase().StringSetAsync("jwt:revoked:" + jti, "1", TimeSpan.FromMinutes(5));
+
+        Assert.True(await sut.IsRevokedAsync(jti));
+    }
 }

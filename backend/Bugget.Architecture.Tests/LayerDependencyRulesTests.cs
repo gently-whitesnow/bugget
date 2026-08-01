@@ -24,8 +24,14 @@ public class LayerDependencyRulesTests
     /// <summary>Части BCL, разрешённые любому слою.</summary>
     private static readonly string[] Bcl = ["System", "netstandard"];
 
-    /// <summary>DI, конфигурация, логирование и хостинг — то, чем прикладной слой пользуется как абстракцией.</summary>
-    private static readonly string[] MicrosoftExtensions = ["Microsoft.Extensions"];
+    /// <summary>Сборки abstractions, разрешённые прикладному слою поимённо.</summary>
+    private static readonly string[] MicrosoftExtensionsAbstractions =
+    [
+        "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "Microsoft.Extensions.Hosting.Abstractions",
+        "Microsoft.Extensions.Logging.Abstractions",
+        "Microsoft.Extensions.Options",
+    ];
 
     [Fact(DisplayName = "Bugget.Domain не зависит ни от чего, кроме System")]
     public void Domain_depends_on_bcl_only()
@@ -58,14 +64,14 @@ public class LayerDependencyRulesTests
             string.Join(", ", violations));
     }
 
-    [Fact(DisplayName = "Bugget.Application — только System, Microsoft.Extensions.* и Domain")]
+    [Fact(DisplayName = "Bugget.Application — только System, разрешённые Microsoft.Extensions abstractions и Domain")]
     public void Application_does_not_depend_on_transport_or_persistence()
     {
         var violations = Quartet.FindDisallowedReferences(
             Quartet.Application,
             Quartet.ReferencesOf(Quartet.ApplicationAsm),
-            [.. Bcl, .. MicrosoftExtensions, Quartet.Domain],
-            [.. KnownDeviations.TargetsFor(
+            Bcl,
+            [.. MicrosoftExtensionsAbstractions, Quartet.Domain, .. KnownDeviations.TargetsFor(
                 KnownDeviations.ApplicationAssemblyReferences, Quartet.Application)]);
 
         violations.Should().BeEmpty(
@@ -77,6 +83,26 @@ public class LayerDependencyRulesTests
             "реализацию в Bugget.Infrastructure, а перевод в контракт — маппером в Bugget.Api. " +
             "Текущие отступления — KnownDeviations.ApplicationAssemblyReferences.",
             string.Join(", ", violations));
+    }
+
+    [Fact(DisplayName = "Allowlist Application пропускает abstractions и краснеет на Microsoft.Extensions.Http")]
+    public void Application_allowlist_is_provably_red_and_green()
+    {
+        var violations = Quartet.FindDisallowedReferences(
+            Quartet.Application,
+            [
+                "System.Runtime",
+                Quartet.Domain,
+                .. MicrosoftExtensionsAbstractions,
+                "Microsoft.Extensions.Http",
+                "Microsoft.Extensions.Logging",
+            ],
+            Bcl,
+            [.. MicrosoftExtensionsAbstractions, Quartet.Domain]);
+
+        violations.Should().Equal(
+            "Bugget.Application → Microsoft.Extensions.Http",
+            "Bugget.Application → Microsoft.Extensions.Logging");
     }
 
     [Fact(DisplayName = "Bugget.Infrastructure не знает про Bugget.Api")]

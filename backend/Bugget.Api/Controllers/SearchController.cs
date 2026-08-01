@@ -19,7 +19,7 @@ namespace Bugget.Api.Controllers;
 /// </summary>
 [ApiController]
 public sealed class SearchController(
-    ReportsService reportsService,
+    IReportsService reportsService,
     IOptions<ReportAliasOptions> reportAliasOptions) : SearchControllerBase
 {
     public override async Task<ActionResult<ReportList>> SearchReports(

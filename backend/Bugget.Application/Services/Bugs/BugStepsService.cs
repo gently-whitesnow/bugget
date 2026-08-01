@@ -15,9 +15,9 @@ public sealed class BugStepsService(
     IBugStepsDbClient bugStepsDbClient,
     BugStepEventsService bugStepEventsService,
     IOptions<ReportAliasOptions> aliasOptions,
-    BugsService bugsService,
-    ReportsService reportsService,
-    ITaskQueue taskQueue)
+    IBugsService bugsService,
+    IReportsService reportsService,
+    ITaskQueue taskQueue) : IBugStepsService
 {
     public async Task<(BugStepSummary? Value, Error? Error)> CreateBugStepAsync(UserIdentity user, string aliasId, int bugId, BugStepDto createDto)
     {

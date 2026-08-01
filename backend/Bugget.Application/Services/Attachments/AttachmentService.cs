@@ -23,8 +23,8 @@ public sealed class AttachmentService(
     ILogger<AttachmentService> logger,
     IFileStorageClient fileStorageClient,
     IAttachmentKeyGenerator keyGen,
-    ReportsService reportsService,
-    IOptions<ReportAliasOptions> aliasOptions)
+    IReportsService reportsService,
+    IOptions<ReportAliasOptions> aliasOptions) : IAttachmentService
 {
     private Task<ResolvedReportId?> ResolveReportAsync(UserIdentity user, string aliasId)
     {

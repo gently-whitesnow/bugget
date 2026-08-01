@@ -9,7 +9,7 @@ namespace Bugget.Application.Services.Analytics;
 /// <see cref="IAnalyticsDbClient"/> и сводит их в BO через pure-функцию
 /// <see cref="ComputeSummary"/>.
 /// </summary>
-public sealed class AnalyticsService(IAnalyticsDbClient analyticsDb, TimeProvider timeProvider)
+public sealed class AnalyticsService(IAnalyticsDbClient analyticsDb, TimeProvider timeProvider) : IAnalyticsService
 {
     /// <summary>
     /// Сводка по workspace. <paramref name="teamId"/> — опциональный фильтр по

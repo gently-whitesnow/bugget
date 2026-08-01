@@ -14,7 +14,7 @@ namespace Bugget.Api.Controllers.Comments;
 /// <c>specs/contracts/reports/openapi.yaml</c> через <see cref="CommentsControllerBase"/>.
 /// </summary>
 [ApiController]
-public sealed class CommentsController(CommentsService commentsService) : CommentsControllerBase
+public sealed class CommentsController(ICommentsService commentsService) : CommentsControllerBase
 {
     public override Task<ActionResult<CommentSummary>> CreateComment(
         string aliasId,

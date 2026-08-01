@@ -11,7 +11,7 @@ namespace Bugget.Api.Hubs;
 
 public sealed class ReportPageHub(
     ILogger<ReportPageHub> logger,
-    ReportsService reportsService,
+    IReportsService reportsService,
     IOptions<ReportAliasOptions> aliasOptions) : Hub
 {
     // Подключение к группе комментариев по reportId

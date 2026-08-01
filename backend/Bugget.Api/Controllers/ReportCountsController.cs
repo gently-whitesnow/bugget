@@ -16,7 +16,7 @@ namespace Bugget.Api.Controllers;
 /// Маршрут, тело запроса и форма ответа приходят из <c>specs/contracts/reports/openapi.yaml</c>.
 /// </summary>
 [ApiController]
-public sealed class ReportCountsController(ReportsService reportsService) : ReportCountsControllerBase
+public sealed class ReportCountsController(IReportsService reportsService) : ReportCountsControllerBase
 {
     private const int MaxScopes = 50;
 

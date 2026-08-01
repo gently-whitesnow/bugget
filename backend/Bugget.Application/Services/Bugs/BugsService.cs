@@ -18,10 +18,10 @@ public sealed class BugsService(
     IBugsDbClient bugsDbClient,
     BugEventsService bugsEventsService,
     ITaskQueue taskQueue,
-    ReportsService reportsService,
+    IReportsService reportsService,
     IOptions<ReportAliasOptions> aliasOptions,
     IDomainEventPublisher domainEventPublisher,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork) : IBugsService
 {
     public async Task<(BugSummary? Value, Error? Error)> CreateBugAsync(UserIdentity user, string aliasId, BugDto bug)
     {

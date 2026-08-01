@@ -8,7 +8,7 @@ namespace Bugget.Application.Services.Bugs;
 
 public sealed class BugStepEventsService(
     IReportPageHubClient reportPageHubClient,
-    AttachmentService attachmentService,
+    IAttachmentService attachmentService,
     ParticipantsService participantsService)
 {
     public async Task HandleCreateBugStepEventAsync(ReportIdContext reportIdContext, UserIdentity user, BugStepSummary bugStepSummary)

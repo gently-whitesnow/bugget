@@ -21,7 +21,7 @@ namespace Bugget.Api.Controllers;
 /// метода.
 /// </remarks>
 [ApiController]
-public sealed class SettingsController(SettingsService settingsService) : SettingsControllerBase
+public sealed class SettingsController(ISettingsService settingsService) : SettingsControllerBase
 {
     public override async Task<ActionResult<SettingsSections>> GetSettingsSections(
         CancellationToken cancellationToken = default)

@@ -20,11 +20,11 @@ public sealed class CommentsService(
     ICommentsDbClient commentsDbClient,
     CommentEventsService commentEventsService,
     ITaskQueue taskQueue,
-    ReportsService reportsService,
+    IReportsService reportsService,
     IOptions<ReportAliasOptions> aliasOptions,
-    BugsService bugsService,
+    IBugsService bugsService,
     IDomainEventPublisher domainEventPublisher,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork) : ICommentsService
 {
     public async Task<(CommentSummary? Value, Error? Error)> CreateCommentAsync(UserIdentity user, string aliasId, int bugId, CommentDto commentDto)
     {

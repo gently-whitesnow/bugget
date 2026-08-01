@@ -5,7 +5,7 @@ using Bugget.Domain.Errors;
 
 namespace Bugget.Application.Services;
 
-public sealed class SettingsService(SettingsProcessorProvider settingsProcessorProvider, ISettingsDbClient settingsDbClient)
+public sealed class SettingsService(SettingsProcessorProvider settingsProcessorProvider, ISettingsDbClient settingsDbClient) : ISettingsService
 {
     public Task<(WorkspaceSettingView? Value, Error? Error)> UpdateWorkspaceSettingAsync(string organizationId, string sectionId, string settingId, string[] values)
     {
@@ -53,4 +53,3 @@ public sealed class SettingsService(SettingsProcessorProvider settingsProcessorP
         };
     }
 }
-

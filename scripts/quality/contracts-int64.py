@@ -438,6 +438,21 @@ def scan(text: str) -> list[tuple[int, str]]:
             continue
 
         entry = split_entry(segment)
+        key = None
+        if entry is not None:
+            key_anchor, key_tagged, key_raw = decorated(entry[0])
+            key, key_reason = resolve(key_raw, None, anchors)
+            if key_tagged:
+                found.append((number, "тег на ключе гейт не разбирает"))
+                pending = None
+                continue
+            if key is None:
+                found.append((number, f"ключ не разобран: {key_reason}"))
+                pending = None
+                continue
+            if key_anchor:
+                anchors[key_anchor] = key
+
         raw = entry[1] if entry else strip_sequence(segment)
         anchor, tagged, raw = decorated(raw)
         value, reason = resolve(raw, body, anchors)
@@ -455,7 +470,6 @@ def scan(text: str) -> list[tuple[int, str]]:
             continue
 
         pending = None
-        key, _ = resolve(decorated(entry[0])[2], None, anchors)
         if key != "format":
             continue
         if not raw and body is None:
@@ -601,6 +615,48 @@ def self_test() -> int:
                 once=True,
             ),
             False,
+        ),
+        (
+            "алиас на ключ `format` тоже запрещён",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          x-seed:\n            &fmt format: date-time\n"
+                "          *fmt: int64",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "алиас на другой ключ объявлением не становится",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          x-seed:\n            &kind type: string\n"
+                "          *kind: int64",
+                once=True,
+            ),
+            False,
+        ),
+        (
+            "неразрешённый алиас в ключе — красный, а не пропуск",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          *fmt: int64",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "тег на ключе — красный, а не пропуск",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          !!str format: int64",
+                once=True,
+            ),
+            True,
         ),
         (
             "неразрешённый алиас в значении `format` — красный, а не пропуск",

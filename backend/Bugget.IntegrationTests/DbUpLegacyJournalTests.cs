@@ -97,6 +97,40 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
             "миграции users");
     }
 
+    [Fact(DisplayName = "Неизвестная зависимость останавливает 022 и откатывает удаление TTL-инвайтов")]
+    public async Task Users_upgrade_with_unknown_dependency_rolls_back_drop_migration()
+    {
+        var target = await PrepareLegacyDatabaseAsync(
+            databaseName: "dbup_legacy_users_dependency",
+            snapshotFile: "users.txt",
+            scriptsNamespace: UsersScriptsNamespace);
+
+        await SeedTeamInviteAsync(target);
+        await ExecuteAsync(target, "CREATE VIEW unexpected_team_invites AS SELECT id FROM team_invites;");
+
+        Assert.True(await TeamInvitesTableExistsAsync(target));
+        Assert.Equal(1, await TeamInviteRowCountAsync(target));
+        Assert.Equal(ExpectedTeamInviteFunctionSignatures, await TeamInviteFunctionSignaturesAsync(target));
+
+        var runner = Bugget.Infrastructure.Users.DbUp.DbUpService.BuildRunner(target);
+        Assert.Equal(UsersPostBaselineJournalNames(), runner.GetScriptsToExecute().Select(script => script.Name));
+
+        var result = runner.PerformUpgrade();
+
+        Assert.False(result.Successful, "022 должна fail-closed остановиться на неизвестной зависимости");
+        Assert.Equal(UsersPostBaselineJournalNames().Single(), result.ErrorScript?.Name);
+        var postgresError = Assert.IsType<PostgresException>(result.Error);
+        Assert.Equal(PostgresErrorCodes.DependentObjectsStillExist, postgresError.SqlState);
+        Assert.True(await UnexpectedTeamInvitesViewExistsAsync(target));
+        Assert.True(await TeamInvitesTableExistsAsync(target));
+        Assert.Equal(1, await TeamInviteRowCountAsync(target));
+        Assert.Equal(ExpectedTeamInviteFunctionSignatures, await TeamInviteFunctionSignaturesAsync(target));
+        Assert.False(await JournalContainsAsync(target, UsersPostBaselineJournalNames().Single()));
+
+        var retry = Bugget.Infrastructure.Users.DbUp.DbUpService.BuildRunner(target);
+        Assert.Equal(UsersPostBaselineJournalNames(), retry.GetScriptsToExecute().Select(script => script.Name));
+    }
+
     [Fact(DisplayName = "Чистая установка users не оставляет объектов TTL-инвайтов")]
     public async Task Users_clean_install_leaves_no_team_invite_objects()
     {
@@ -276,6 +310,15 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
     private static readonly string[] TeamInviteFunctions =
         ["create_team_invite", "update_team_invite", "get_team_invite", "delete_team_invite", "accept_team_invite"];
 
+    private static readonly string[] ExpectedTeamInviteFunctionSignatures =
+    [
+        "accept_team_invite(bytea)",
+        "create_team_invite(integer, integer, bytea, timestamp with time zone)",
+        "delete_team_invite(integer, integer)",
+        "get_team_invite(integer)",
+        "update_team_invite(integer, integer, bytea, timestamp with time zone)"
+    ];
+
     /// <summary>Строка инвайта на валидных внешних ключах: база заказчика удаляется с данными.</summary>
     private static Task SeedTeamInviteAsync(string connectionString) => ExecuteAsync(
         connectionString,
@@ -303,6 +346,42 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
         await using var connection = new NpgsqlConnection(connectionString);
         return await connection.ExecuteScalarAsync<bool>(
             "SELECT to_regclass('public.team_invites') IS NOT NULL;");
+    }
+
+    private static async Task<bool> UnexpectedTeamInvitesViewExistsAsync(string connectionString)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        return await connection.ExecuteScalarAsync<bool>(
+            "SELECT to_regclass('public.unexpected_team_invites') IS NOT NULL;");
+    }
+
+    private static async Task<int> TeamInviteRowCountAsync(string connectionString)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        return await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM team_invites;");
+    }
+
+    private static async Task<string[]> TeamInviteFunctionSignaturesAsync(string connectionString)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        var signatures = await connection.QueryAsync<string>(
+            """
+            SELECT p.proname || '(' || pg_catalog.oidvectortypes(p.proargtypes) || ')'
+            FROM pg_proc p
+            JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname = 'public' AND p.proname = ANY(@names)
+            ORDER BY p.proname;
+            """,
+            new { names = TeamInviteFunctions });
+        return signatures.ToArray();
+    }
+
+    private static async Task<bool> JournalContainsAsync(string connectionString, string scriptName)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        return await connection.ExecuteScalarAsync<bool>(
+            "SELECT EXISTS (SELECT 1 FROM schemaversions WHERE scriptname = @scriptName);",
+            new { scriptName });
     }
 
     private static async Task<int> TeamInviteFunctionCountAsync(string connectionString)

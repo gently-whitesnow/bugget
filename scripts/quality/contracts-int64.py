@@ -375,7 +375,11 @@ def resolve(raw: str, body: str | None, anchors: dict[str, str]) -> tuple[str | 
 
 
 def unescape(text: str) -> str:
-    """Экранирование двойных кавычек: `int\\x36\\x34` → `int64`."""
+    """Экранирование двойных кавычек: `int\\x36\\x34` → `int64`.
+
+    Обратный слеш перед физическим переносом удаляет и перенос, и отступ строки
+    продолжения: YAML разбирает ``"int\\\n  64"`` как ``int64``.
+    """
     result = ""
     position = 0
     while position < len(text):
@@ -385,6 +389,11 @@ def unescape(text: str) -> str:
             position += 1
             continue
         code = text[position + 1]
+        if code == "\n":
+            position += 2
+            while position < len(text) and text[position] in " \t":
+                position += 1
+            continue
         size = NUMERIC_ESCAPES.get(code)
         if size:
             digits = text[position + 2 : position + 2 + size]
@@ -559,6 +568,16 @@ def self_test() -> int:
                 box / "reports" / "openapi.yaml",
                 "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
                 '        total: { type: integer, format: "int\\x36\\x34" }',
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "экранированный перенос в двойных кавычках тоже запрещён",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                '        total:\n          type: integer\n          format: "int\\\n            64"',
                 once=True,
             ),
             True,

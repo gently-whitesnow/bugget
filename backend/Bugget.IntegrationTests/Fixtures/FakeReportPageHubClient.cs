@@ -1,10 +1,10 @@
 using System.Collections.Concurrent;
-using Bugget.BO.Ports;
-using Bugget.Entities.BO.Bugs;
-using Bugget.Entities.BO.Comments;
-using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DTO.Bug;
-using Bugget.Entities.SocketViews;
+using Bugget.Application.Commands.Bug;
+using Bugget.Application.Ports;
+using Bugget.Application.Realtime;
+using Bugget.Domain.Bugs;
+using Bugget.Domain.Comments;
+using Bugget.Domain.Reports;
 
 namespace Bugget.IntegrationTests.Fixtures;
 

@@ -2,14 +2,14 @@
 """Гейт покрытия realtime-контракта: specs/contracts/events.yaml против четырёх сторон.
 
 HTTP-контракт после contract-first защищён гейтом backend-contracts, а SignalR не был
-защищён ничем: имена событий жили строковыми литералами в Bugget/Hubs и в enum SocketEvent
+защищён ничем: имена событий жили строковыми литералами в Bugget.Api/Hubs и в enum SocketEvent
 на фронте, и разъехаться могли молча — ни компилятор C#, ни tsc про эту связь не знают.
 
 Скрипт сверяет четыре стороны и краснеет на расхождении любой:
 
   1) контракт      specs/contracts/events.yaml;
-  2) объявление    интерфейс публикации (Bugget.BO/Ports/IReportPageHubClient.cs);
-  3) обработчик    реализация, которая шлёт в группу (Bugget/Hubs/ReportPageHubClient.cs);
+  2) объявление    интерфейс публикации (Bugget.Application/Ports/IReportPageHubClient.cs);
+  3) обработчик    реализация, которая шлёт в группу (Bugget.Api/Hubs/ReportPageHubClient.cs);
   4) подписки      enum SocketEvent и customParsers на фронте.
 
 Что именно проверяется:
@@ -56,7 +56,7 @@ CONTRACT = "specs/contracts/events.yaml"
 # Где ищем публикацию в обход контракта. Тестовые проекты исключены: там живут фейки
 # хаб-клиента, они по определению повторяют те же имена событий.
 BACKEND_SCAN = "backend"
-BACKEND_SKIP = (".Tests/", ".IntegrationTests/", "/obj/", "/bin/")
+BACKEND_SKIP = (".Tests/", ".UnitTests/", ".IntegrationTests/", "/obj/", "/bin/")
 
 FRONTEND_SCAN = "frontend/src"
 
@@ -762,7 +762,7 @@ def self_test() -> int:
         ),
         (
             "поле формы ошибки переименовано в коде",
-            mutation("backend/Bugget.Http/RealtimeErrorPayload.cs", "string Title)", "string Reason)"),
+            mutation("backend/Bugget.Api/Http/RealtimeErrorPayload.cs", "string Title)", "string Reason)"),
             True,
         ),
         (
@@ -798,7 +798,7 @@ def self_test() -> int:
         (
             "доверенный тип переименован только в коде",
             mutation(
-                "backend/Bugget/Hubs/RealtimeProblemException.cs",
+                "backend/Bugget.Api/Hubs/RealtimeProblemException.cs",
                 "class RealtimeProblemException(",
                 "class RealtimeProblemExceptionX(",
             ),
@@ -816,7 +816,7 @@ def self_test() -> int:
         (
             "граница перестала быть fail-closed",
             mutation(
-                "backend/Bugget/Middlewares/HubExceptionHandlerFilter.cs",
+                "backend/Bugget.Api/Middlewares/HubExceptionHandlerFilter.cs",
                 "catch (RealtimeProblemException)",
                 "catch (HubException)",
             ),

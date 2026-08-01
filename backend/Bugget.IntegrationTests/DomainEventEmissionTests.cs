@@ -1,10 +1,10 @@
 using System.Text.Json;
-using Bugget.BO.DomainEvents;
-using Bugget.BO.Ports;
-using Bugget.Entities.BO.Common;
-using Bugget.Entities.BO.DomainEvents;
-using Bugget.Entities.DTO.Bug;
-using Bugget.Entities.DTO.Report;
+using Bugget.Application.Commands.Bug;
+using Bugget.Application.Commands.Report;
+using Bugget.Application.DomainEvents;
+using Bugget.Application.Ports;
+using Bugget.Domain.Common;
+using Bugget.Domain.DomainEvents;
 using Bugget.IntegrationTests.Fixtures;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;

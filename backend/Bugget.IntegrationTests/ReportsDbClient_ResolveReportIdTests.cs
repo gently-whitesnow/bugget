@@ -1,6 +1,6 @@
-using Bugget.BO.Ports;
-using Bugget.Entities.BO.ReportBo;
-using Bugget.Entities.DTO.Report;
+using Bugget.Application.Commands.Report;
+using Bugget.Application.Ports;
+using Bugget.Domain.Reports;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -223,7 +223,7 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
         Assert.Null(result);
     }
 
-    private async Task<Bugget.Entities.BO.ReportBo.ResolvedReportId?> ResolveByAsync(
+    private async Task<Bugget.Domain.Reports.ResolvedReportId?> ResolveByAsync(
         ResolveBy resolveBy,
         string? workspaceId,
         ReportSummary report)

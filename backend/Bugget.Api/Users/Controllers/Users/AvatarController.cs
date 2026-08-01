@@ -1,0 +1,146 @@
+using Bugget.Api.Generated.Users;
+using Bugget.Api.Http;
+using Bugget.Api.Users.Authentication;
+using Bugget.Application.Users.Interfaces;
+using Bugget.Application.Users.Ports;
+using Microsoft.AspNetCore.Mvc;
+using FileParameter = Bugget.Api.Generated.Users.FileParameter;
+using HttpProblemDetailsFactory = Bugget.Api.Http.ProblemDetailsFactory;
+
+namespace Bugget.Api.Users.Controllers.Users;
+
+/// <summary>
+/// Аватары пользователей. Маршруты и формы приходят из
+/// <c>specs/contracts/users/openapi.yaml</c> через <see cref="AvatarControllerBase"/>.
+/// </summary>
+/// <remarks>
+/// Как и профиль, все ручки живут по адресу с контекстом рабочего пространства
+/// и команды: по нему ходит фронт. Идентификаторы из пути не используются —
+/// пользователь берётся из identity.
+/// </remarks>
+[ApiController]
+[Auth]
+public sealed class AvatarController(
+    IUsersService userService,
+    IAvatarDownloadService avatarService,
+    IFileStorageClient fileStorageClient) : AvatarControllerBase
+{
+    private const long MaxAvatarSize = 200 * 1024; // 200 KB
+    private static readonly HashSet<string> AllowedAvatarContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/jpeg", "image/png", "image/gif", "image/webp"
+    };
+    private static readonly Dictionary<string, string> ContentTypeByExtension = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [".jpg"] = "image/jpeg",
+        [".jpeg"] = "image/jpeg",
+        [".png"] = "image/png",
+        [".gif"] = "image/gif",
+        [".webp"] = "image/webp"
+    };
+
+    /// <summary>
+    /// Удалить свой аватар
+    /// </summary>
+    public override async Task<IActionResult> DeleteAvatarInContext(
+        string workspaceId,
+        string teamId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = User.GetIdentity();
+        await avatarService.DeleteAvatarAsync(user.Id, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Загрузить свой аватар
+    /// </summary>
+    public override async Task<IActionResult> UploadAvatarInContext(
+        string workspaceId,
+        string teamId,
+        [FromForm] FileParameter file,
+        CancellationToken cancellationToken = default)
+    {
+        var content = file.Data;
+        if (content.Length > MaxAvatarSize)
+        {
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.AvatarTooLarge);
+        }
+
+        if (!AllowedAvatarContentTypes.Contains(file.ContentType))
+        {
+            return HttpProblemDetailsFactory.Create(HttpContext, ProblemDescriptors.AvatarFormatNotAllowed);
+        }
+
+        var user = User.GetIdentity();
+        await using var stream = content;
+        await avatarService.UploadAvatarAsync(user.Id, stream, file.ContentType, cancellationToken);
+        return Ok();
+    }
+
+    /// <summary>
+    /// Получить свой аватар
+    /// </summary>
+    public override async Task<IActionResult> GetAvatarContentInContext(
+        string workspaceId,
+        string teamId,
+        CancellationToken cancellationToken = default)
+    {
+        var identity = User.GetIdentity();
+        var user = await userService.GetUserAsync(identity.Id);
+        if (user?.ImageUrl is null)
+        {
+            return NotFound();
+        }
+
+        return await StreamAvatarAsync(user.ImageUrl, cancellationToken);
+    }
+
+    /// <summary>
+    /// Получить аватар пользователя из текущего workspace
+    /// </summary>
+    [WorkspaceRequired]
+    [RouteParameterConstraint("userId", "long")]
+    public override async Task<IActionResult> GetUserAvatarContentInContext(
+        string workspaceId,
+        string teamId,
+        long userId,
+        CancellationToken cancellationToken = default)
+    {
+        var identity = User.GetIdentity();
+        if (identity.WorkspaceId is null)
+        {
+            return NotFound();
+        }
+
+        var users = await userService.ListUsersAsync([userId], identity.WorkspaceId);
+        var user = users.FirstOrDefault();
+        if (user?.ImageUrl is null)
+        {
+            return NotFound();
+        }
+
+        return await StreamAvatarAsync(user.ImageUrl, cancellationToken);
+    }
+
+    private async Task<IActionResult> StreamAvatarAsync(string storageKey, CancellationToken ct)
+    {
+        try
+        {
+            var content = await fileStorageClient.ReadAsync(storageKey, ct);
+            return new FileStreamResult(content, GetContentType(storageKey));
+        }
+        catch (FileNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    private static string GetContentType(string storageKey)
+    {
+        var extension = Path.GetExtension(storageKey);
+        return ContentTypeByExtension.TryGetValue(extension, out var contentType)
+            ? contentType
+            : "application/octet-stream";
+    }
+}

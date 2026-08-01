@@ -1,5 +1,5 @@
-using Bugget.BO.Ports;
-using Bugget.Entities.DTO.Report;
+using Bugget.Application.Commands.Report;
+using Bugget.Application.Ports;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -51,7 +51,7 @@ public sealed class ReportsDbClientReviewFixesTests : IClassFixture<AppWithPostg
         Assert.Equal(userId, secondPatch.PastResponsibleUserId);
     }
 
-    private Task<Bugget.Entities.BO.ReportBo.ReportSummary> CreateTestReportAsync(
+    private Task<Bugget.Domain.Reports.ReportSummary> CreateTestReportAsync(
         string? userId = null)
     {
         return _reportsDbClient.CreateReportAsync(

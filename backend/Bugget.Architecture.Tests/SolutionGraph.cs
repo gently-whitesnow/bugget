@@ -5,7 +5,7 @@ namespace Bugget.Architecture.Tests;
 /// <summary>
 /// Один проект решения: как он объявлен в своём .csproj.
 /// </summary>
-/// <param name="Name">Имя проекта без расширения, оно же имя сборки: <c>Bugget.BO</c>.</param>
+/// <param name="Name">Имя проекта без расширения, оно же имя сборки: <c>Bugget.Application</c>.</param>
 /// <param name="Sdk">Значение атрибута Sdk: <c>Microsoft.NET.Sdk</c> или <c>Microsoft.NET.Sdk.Web</c>.</param>
 /// <param name="ProjectReferences">Имена проектов из ProjectReference — прямые рёбра графа.</param>
 /// <param name="PackageReferences">Имена пакетов из PackageReference — прямые внешние зависимости.</param>
@@ -33,30 +33,23 @@ public static class SolutionGraph
     /// <summary>Все проекты backend/, ключ — имя проекта.</summary>
     public static IReadOnlyDictionary<string, ProjectNode> Projects { get; } = LoadProjects(BackendRoot);
 
-    /// <summary>Проекты модуля: <c>Users</c> → Users.Api, Users.BO, Users.DA, …</summary>
-    public static string ModuleOf(string projectName)
-    {
-        var dot = projectName.IndexOf('.');
-        return dot < 0 ? projectName : projectName[..dot];
-    }
-
     /// <summary>
-    /// Ищет пути, по которым <paramref name="businessLogicProjects"/> добираются до пакета
+    /// Ищет пути, по которым <paramref name="applicationProjects"/> добираются до пакета
     /// драйвера БД — на любую глубину ProjectReference, а не только прямой ссылкой.
     ///
     /// Правило намеренно читает граф из словаря, а не из <see cref="Projects"/>: так его
     /// можно прогнать на синтетическом графе и доказать, что оно действительно краснеет
     /// (см. тест «правило транзитивной зависимости краснеет на подсунутом ребре»).
     /// </summary>
-    /// <returns>По строке на найденную утечку: <c>Bugget.BO → Bugget.DA → Npgsql</c>.</returns>
+    /// <returns>По строке на найденную утечку: <c>Bugget.Application → Bugget.Infrastructure → Npgsql</c>.</returns>
     public static IReadOnlyList<string> FindPersistenceDriverLeaks(
         IReadOnlyDictionary<string, ProjectNode> projects,
-        IEnumerable<string> businessLogicProjects,
+        IEnumerable<string> applicationProjects,
         IReadOnlyCollection<string> persistencePackages)
     {
         var leaks = new List<string>();
 
-        foreach (var start in businessLogicProjects)
+        foreach (var start in applicationProjects)
         {
             var visited = new HashSet<string>(StringComparer.Ordinal);
             Walk(start, [start]);

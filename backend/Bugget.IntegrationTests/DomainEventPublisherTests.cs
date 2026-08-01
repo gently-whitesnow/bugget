@@ -1,6 +1,6 @@
-using Bugget.BO.DomainEvents;
-using Bugget.BO.Ports;
-using Bugget.Entities.BO.DomainEvents;
+using Bugget.Application.DomainEvents;
+using Bugget.Application.Ports;
+using Bugget.Domain.DomainEvents;
 using Bugget.IntegrationTests.Fixtures;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;

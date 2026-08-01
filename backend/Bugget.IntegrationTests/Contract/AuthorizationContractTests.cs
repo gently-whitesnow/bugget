@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
-using Authorization.Api.Interfaces;
+using Bugget.Api.Authorization.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 

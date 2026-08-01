@@ -1,5 +1,5 @@
-using Bugget.BO.Ports;
-using Bugget.Entities.DTO.Report;
+using Bugget.Application.Commands.Report;
+using Bugget.Application.Ports;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -95,7 +95,7 @@ public class ReportsDbClient_PatchReportTests : IClassFixture<AppWithPostgresFix
         Assert.Equal(3, updated!.Status);
     }
 
-    private async Task<Bugget.Entities.BO.ReportBo.ReportSummary> CreateTestReportAsync(string userId)
+    private async Task<Bugget.Domain.Reports.ReportSummary> CreateTestReportAsync(string userId)
     {
         var reportDto = new ReportCreateDto
         {

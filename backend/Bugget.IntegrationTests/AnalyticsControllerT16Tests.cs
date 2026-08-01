@@ -1,8 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Bugget.Entities.BO.Bugs;
-using Bugget.Entities.BO.ReportBo;
+using Bugget.Application.Ports;
+using Bugget.Domain.Bugs;
+using Bugget.Domain.Reports;
 using Bugget.IntegrationTests.Fixtures;
 using Dapper;
 using Microsoft.AspNetCore.Hosting;
@@ -12,7 +13,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
-using TaskQueue;
 using Testcontainers.PostgreSql;
 using Xunit;
 

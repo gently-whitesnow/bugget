@@ -199,6 +199,16 @@ def self_test() -> int:
             True,
         ),
         (
+            "flow-style `format: int64` тоже запрещён",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total: { type: integer, format: int64 }",
+                once=True,
+            ),
+            True,
+        ),
+        (
             "pattern ослаблен до любых цифр — пускает значение за Int64",
             lambda box: _patch_pattern(box, r"^[0-9]+$"),
             True,

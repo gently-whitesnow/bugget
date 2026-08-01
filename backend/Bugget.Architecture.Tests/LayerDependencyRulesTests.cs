@@ -24,10 +24,14 @@ public class LayerDependencyRulesTests
     /// <summary>Части BCL, разрешённые любому слою.</summary>
     private static readonly string[] Bcl = ["System", "netstandard"];
 
-    /// <summary>Сборки abstractions, разрешённые прикладному слою поимённо.</summary>
+    /// <summary>
+    /// Сборки abstractions, которыми прикладной слой фактически пользуется и которые разрешены поимённо.
+    /// Разрешённый в <see cref="SolutionGraphRulesTests"/> пакет не разрешает автоматически все
+    /// доставленные им транзитивные сборки: новая запись появляется здесь только вместе с фактической
+    /// ссылкой Application и при сохранении границы ADR-0001.
+    /// </summary>
     private static readonly string[] MicrosoftExtensionsAbstractions =
     [
-        "Microsoft.Extensions.DependencyInjection.Abstractions",
         "Microsoft.Extensions.Hosting.Abstractions",
         "Microsoft.Extensions.Logging.Abstractions",
         "Microsoft.Extensions.Options",
@@ -85,7 +89,7 @@ public class LayerDependencyRulesTests
             string.Join(", ", violations));
     }
 
-    [Fact(DisplayName = "Allowlist Application пропускает abstractions и краснеет на Microsoft.Extensions.Http")]
+    [Fact(DisplayName = "Allowlist Application пропускает abstractions и краснеет на HTTP и non-abstractions")]
     public void Application_allowlist_is_provably_red_and_green()
     {
         var violations = Quartet.FindDisallowedReferences(

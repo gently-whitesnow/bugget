@@ -4,7 +4,7 @@ using Bugget.Api.Authorization.Interfaces;
 using Bugget.Api.Authorization.Models;
 using Bugget.Application.Authorization;
 using Bugget.Application.Authorization.Ports;
-using Bugget.Contracts.Users.Dto.Users;
+using Bugget.Application.Users.Commands.Users;
 using Bugget.Domain.Errors;
 using UserExternalLinksService = Bugget.Application.Users.Interfaces.IUserExternalLinksService;
 using UsersService = Bugget.Application.Users.Interfaces.IUsersService;

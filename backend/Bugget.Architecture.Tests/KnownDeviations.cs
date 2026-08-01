@@ -14,7 +14,9 @@ public sealed record Deviation(string From, string To, string What, string Why, 
 }
 
 /// <summary>
-/// Реестр отступлений текущего кода от целевой раскладки ADR-0001.
+/// Реестр отступлений текущего кода от целевой раскладки ADR-0001. Сейчас пуст: граф
+/// проектов совпадает с целевым, а <c>Bugget.Api</c> видит инфраструктуру только из
+/// поимённого композиционного корня (<see cref="Quartet.CompositionRoot"/>).
 ///
 /// Правило чтения: это долг, а не разрешение. Пополнять список — значит осознанно
 /// увеличивать долг, и такой коммит нужно обосновывать так же, как отключение гейта
@@ -37,33 +39,17 @@ public static class KnownDeviations
     /// <summary>Сборки, которые прикладной слой тянет напрямую в обход целевого правила.</summary>
     /// <remarks>
     /// Пусто: поход в сеть за аватаром уехал в <c>Bugget.Infrastructure/Users/Avatars</c>,
-    /// и <c>Microsoft.Extensions.Http</c> / <c>System.Net.Http</c> в прикладном слое не осталось.
+    /// а обработка медиа — за порты <c>IAttachmentOptimizer</c> и <c>IMimeTypeDetector</c>
+    /// в <c>Bugget.Infrastructure/Attachments</c>. Ни HTTP-клиента, ни ImageSharp, ни ffmpeg,
+    /// ни libmagic в прикладном слое не осталось.
     /// </remarks>
     public static readonly IReadOnlyList<Deviation> ApplicationAssemblyReferences = [];
-
-    /// <summary>
-    /// Места в <c>Bugget.Api</c>, которые видят инфраструктуру не из композиционного корня.
-    /// </summary>
-    public static readonly IReadOnlyList<Deviation> ApiToInfrastructureTypes =
-    [
-        new("Bugget.Api.Controllers.ExternalController", "Bugget.Infrastructure.ExternalClients.Kaiten",
-            "контроллер инжектит KaitenBoardsService — тип интеграции, а не порт прикладного слоя",
-            "снимается портом досок Kaiten в Bugget.Application/Ports: это новая абстракция, " +
-            "то есть функциональная правка, а PR слияния проектов их не содержит",
-            "ADR-0001"),
-
-        new("Bugget.Api.Mappers.ExternalMapper", "Bugget.Infrastructure.ExternalClients.Kaiten.Models",
-            "маппер превращает StoredBoard из интеграции прямо в контракт",
-            "снимается вместе с предыдущей строкой",
-            "ADR-0001"),
-    ];
 
     /// <summary>Все отступления одним списком — для сообщений и проверки на протухание.</summary>
     public static IReadOnlyList<Deviation> All =>
     [
         .. ApplicationProjectReferences,
         .. ApplicationAssemblyReferences,
-        .. ApiToInfrastructureTypes,
     ];
 
     /// <summary>Разрешённые цели отступлений для проекта — то, что правило обязано пропустить.</summary>

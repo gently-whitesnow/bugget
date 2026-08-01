@@ -1,6 +1,6 @@
+using Bugget.Application.Commands.Bug;
+using Bugget.Application.Commands.Report;
 using Bugget.Application.Ports;
-using Bugget.Contracts.Dto.Bug;
-using Bugget.Contracts.Dto.Report;
 using Bugget.Domain.Attachments;
 using Bugget.Domain.Search;
 using Bugget.IntegrationTests.Fixtures;

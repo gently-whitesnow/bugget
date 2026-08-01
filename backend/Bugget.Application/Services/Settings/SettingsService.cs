@@ -1,6 +1,6 @@
 using Bugget.Application.Ports;
+using Bugget.Application.Results.Settings;
 using Bugget.Application.Services.Settings;
-using Bugget.Contracts.Views.Settings;
 using Bugget.Domain.Errors;
 
 namespace Bugget.Application.Services;

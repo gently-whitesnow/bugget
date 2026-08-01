@@ -19,9 +19,9 @@ using Bugget.Application.Services.External;
 using Bugget.Application.Services.ReportLinks;
 using Bugget.Application.Services.Reports;
 using Bugget.Application.Services.Settings;
-using Bugget.Domain.Attachments;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Constants;
+using Bugget.Infrastructure.Attachments;
 using Bugget.Infrastructure.DbUp;
 using Bugget.Infrastructure.ExternalClients;
 using Bugget.Infrastructure.Files;
@@ -41,7 +41,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<FileStorageOptions>(configuration.GetSection(nameof(FileStorageOptions)));
-        services.Configure<OptimizatorSettings>(configuration.GetSection(nameof(OptimizatorSettings)));
         services.Configure<AuthHeadersOptions>(configuration.GetSection("ExternalSettings:Authentication"));
         services.Configure<ReportAliasOptions>(configuration.GetSection(nameof(ReportAliasOptions)));
         services.Configure<DomainEventsConsumerOptions>(configuration.GetSection("DomainEventsConsumer"));
@@ -78,6 +77,10 @@ public static class ServiceCollectionExtensions
         // Миграции накатываются в любой среде — так же, как в модуле users.
         services.AddHostedService<DbUpService>();
 
+        // Пережатие вложений и определение mime: реализации портов и всё, что знает
+        // про ImageSharp, ffmpeg и libmagic, регистрирует сама инфраструктура.
+        services.AddAttachmentOptimization(configuration);
+
         return services;
     }
 
@@ -92,11 +95,6 @@ public static class ServiceCollectionExtensions
             .AddSingleton<AttachmentOptimizator>()
             .AddSingleton<AttachmentService>()
             .AddSingleton<AttachmentEventsService>()
-            .AddSingleton<ImageOptimizeWriter>()
-            .AddSingleton<FfmpegService>()
-            .AddHostedService<FfmpegWarmupService>()
-            .AddSingleton<VideoOptimizeWriter>()
-            .AddSingleton<TextOptimizeWriter>()
             .AddSingleton<IAttachmentKeyGenerator, LocalAttachmentKeyGenerator>()
             .AddSingleton<CommentsService>()
             .AddSingleton<CommentEventsService>()

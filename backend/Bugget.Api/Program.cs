@@ -2,7 +2,6 @@ using Bugget.Api.Extensions;
 using Bugget.Api.Logging;
 using Bugget.Api.Modules;
 using Serilog;
-using SixLabors.ImageSharp;
 
 public class Program
 {
@@ -47,8 +46,6 @@ public class Program
 
             #region заклинания
             Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
-            Configuration.Default.MaxDegreeOfParallelism = Environment.ProcessorCount;
-            Configuration.Default.PreferContiguousImageBuffers = true;
             #endregion
 
             var app = builder.Build();

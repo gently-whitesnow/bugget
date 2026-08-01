@@ -1,11 +1,11 @@
 using System.Text.Json;
+using Bugget.Application.Commands.Comment;
 using Bugget.Application.DomainEvents;
 using Bugget.Application.Errors;
 using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Bugs;
 using Bugget.Application.Services.Reports;
-using Bugget.Contracts.Dto.Comment;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Comments;
 using Bugget.Domain.Common;

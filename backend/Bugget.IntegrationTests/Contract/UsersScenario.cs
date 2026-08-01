@@ -1,6 +1,6 @@
 using System.Globalization;
+using Bugget.Application.Users.Commands.Users;
 using Bugget.Application.Users.Interfaces;
-using Bugget.Contracts.Users.Dto.Users;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;

@@ -18,9 +18,9 @@ public class SolutionGraphRulesTests
     private static readonly Dictionary<string, string[]> AllowedProjectReferences = new(StringComparer.Ordinal)
     {
         [Quartet.Domain] = [],
-        [Quartet.Contracts] = [Quartet.Domain],
-        [Quartet.Application] = [Quartet.Domain, Quartet.Contracts],
-        [Quartet.Infrastructure] = [Quartet.Application, Quartet.Contracts, Quartet.Domain],
+        [Quartet.Contracts] = [],
+        [Quartet.Application] = [Quartet.Domain],
+        [Quartet.Infrastructure] = [Quartet.Application, Quartet.Domain],
         [Quartet.Api] = [Quartet.Application, Quartet.Contracts, Quartet.Domain, Quartet.Infrastructure],
     };
 
@@ -34,8 +34,6 @@ public class SolutionGraphRulesTests
             "Microsoft.Extensions.Hosting.Abstractions",
             "Microsoft.Extensions.Logging.Abstractions",
             "Microsoft.Extensions.Options.ConfigurationExtensions",
-            // Обработка медиа пока живёт в прикладном слое — см. LayerDependencyRulesTests.
-            "Mime", "SixLabors.ImageSharp", "Xabe.FFmpeg", "Xabe.FFmpeg.Downloader",
         ],
     };
 
@@ -90,8 +88,8 @@ public class SolutionGraphRulesTests
         }
 
         violations.Should().BeEmpty(
-            "направление ссылок в квартете задано ADR-0001: Api → Application/Infrastructure, " +
-            "Infrastructure → Application, Application → Domain/Contracts, Domain — лист. " +
+            "направление ссылок в квартете задано ADR-0001: Api → Application/Infrastructure/Contracts, " +
+            "Infrastructure → Application, Application → Domain, а Domain и Contracts — листья. " +
             "Лишнее: {0}. Если слою нужен контракт снизу — объяви порт рядом с вызывающим кодом " +
             "и реализуй его в инфраструктуре.",
             string.Join(", ", violations));

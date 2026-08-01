@@ -1,6 +1,6 @@
+using Bugget.Application.Results;
+using Bugget.Application.Results.Reports;
 using Bugget.Contracts.Reports.Generated;
-using Bugget.Contracts.Views;
-using Bugget.Contracts.Views.Reports;
 using DomainModel = Bugget.Domain;
 
 namespace Bugget.Api.Mappers;

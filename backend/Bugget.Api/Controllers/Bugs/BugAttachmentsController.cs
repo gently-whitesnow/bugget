@@ -3,6 +3,7 @@ using Bugget.Api.Controllers.Attachments;
 using Bugget.Api.Extensions;
 using Bugget.Api.Generated.Reports;
 using Bugget.Api.Mappers;
+using Bugget.Application.Ports;
 using Bugget.Application.Services.Attachments;
 using Bugget.Contracts.Reports.Generated;
 using Bugget.Domain;
@@ -20,7 +21,9 @@ namespace Bugget.Api.Controllers;
 /// <c>specs/contracts/reports/openapi.yaml</c> через <see cref="BugAttachmentsControllerBase"/>.
 /// </summary>
 [ApiController]
-public sealed class BugAttachmentsController(AttachmentService attachmentService) : BugAttachmentsControllerBase
+public sealed class BugAttachmentsController(
+    AttachmentService attachmentService,
+    IMimeTypeDetector mimeTypeDetector) : BugAttachmentsControllerBase
 {
     public override async Task<ActionResult<AttachmentSummary>> CreateBugAttachment(
         string aliasId,
@@ -31,7 +34,7 @@ public sealed class BugAttachmentsController(AttachmentService attachmentService
         [FromForm] FileParameter file,
         CancellationToken cancellationToken = default)
     {
-        var (content, meta) = await AttachmentUploadReader.ReadAsync(file, cancellationToken);
+        var (content, meta) = await AttachmentUploadReader.ReadAsync(file, mimeTypeDetector, cancellationToken);
 
         return await attachmentService.SaveBugAttachmentAsync(
             User.GetIdentity(),

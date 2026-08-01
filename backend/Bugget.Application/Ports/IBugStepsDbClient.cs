@@ -1,4 +1,4 @@
-using Bugget.Contracts.Dto.BugStep;
+using Bugget.Application.Commands.BugStep;
 using Bugget.Domain.Bugs;
 
 namespace Bugget.Application.Ports;

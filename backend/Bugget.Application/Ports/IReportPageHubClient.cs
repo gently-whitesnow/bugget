@@ -1,5 +1,5 @@
-using Bugget.Contracts.Dto.Bug;
-using Bugget.Contracts.SocketViews;
+using Bugget.Application.Commands.Bug;
+using Bugget.Application.Realtime;
 using Bugget.Domain.Bugs;
 using Bugget.Domain.Comments;
 using Bugget.Domain.Reports;

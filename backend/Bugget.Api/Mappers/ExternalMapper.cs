@@ -1,5 +1,5 @@
+using Bugget.Application.ExternalSearch.Models;
 using Bugget.Contracts.External.Generated;
-using Bugget.Infrastructure.ExternalClients.Kaiten.Models;
 // Одноимённые типы: контрактная схема и BO-модель. Берём по алиасу, чтобы
 // не гадать, кто победил в разрешении имени.
 using BoSearchResult = Bugget.Application.ExternalSearch.Models.ExternalSearchResult;
@@ -24,7 +24,7 @@ internal static class ExternalMapper
         })],
     };
 
-    public static ICollection<KaitenBoard> ToContract(this IEnumerable<StoredBoard> boards) =>
+    public static ICollection<KaitenBoard> ToContract(this IEnumerable<ExternalBoard> boards) =>
         [.. boards.Select(board => new KaitenBoard
         {
             Id = board.Id,

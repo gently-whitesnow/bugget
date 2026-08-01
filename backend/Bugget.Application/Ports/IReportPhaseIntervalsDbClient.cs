@@ -4,15 +4,15 @@ using Bugget.Domain.Analytics;
 namespace Bugget.Application.Ports;
 
 /// <summary>
-/// Доступ к read-model <c>report_phase_intervals</c>. Все методы принимают
-/// <see cref="ITransactionScope"/> — операции выполняются внутри транзакции poller'а.
+/// Проекция интервалов фаз репорта: сколько времени репорт провёл в каждой фазе и
+/// сколько раз в неё возвращался. Все методы принимают <see cref="ITransactionScope"/> —
+/// проекция обновляется в той же транзакции, в которой poller продвигает курсор событий.
 /// </summary>
 public interface IReportPhaseIntervalsDbClient
 {
     /// <summary>
-    /// Считает количество закрытых интервалов указанной фазы у репорта; используется
-    /// для <c>regression_cycle_index</c> при открытии нового интервала
-    /// (0 = первичный заход, 1 = первый ретест и т.д.).
+    /// Сколько раз репорт уже выходил из указанной фазы. По этому числу нумеруется
+    /// заход в фазу: 0 — первичный, 1 — первый повтор и так далее.
     /// </summary>
     Task<int> CountClosedIntervalsAsync(
         ITransactionScope scope,
@@ -21,11 +21,12 @@ public interface IReportPhaseIntervalsDbClient
         CancellationToken ct);
 
     /// <summary>
-    /// Закрывает активный (<c>exited_at IS NULL</c>) интервал репорта датой события.
-    /// Идемпотентность при replay: апдейт пропускается, если активный интервал открыт
-    /// позже <paramref name="exitedAt"/> (inversion) или тем же событием
-    /// (<paramref name="currentEventId"/>, self-close при replay).
+    /// Закрывает открытый интервал репорта моментом события. Повторная доставка события
+    /// ничего не меняет: интервал не закрывается ни задним числом
+    /// (<paramref name="exitedAt"/> раньше момента его открытия), ни тем самым событием,
+    /// которым он был открыт (<paramref name="currentEventId"/>).
     /// </summary>
+    /// <returns>Сколько интервалов закрылось: 0 — обработка была повторной.</returns>
     Task<int> CloseActiveIntervalAsync(
         ITransactionScope scope,
         int reportId,
@@ -34,10 +35,11 @@ public interface IReportPhaseIntervalsDbClient
         CancellationToken ct);
 
     /// <summary>
-    /// Открывает новый интервал. <c>INSERT … ON CONFLICT (source_event_id) DO NOTHING</c> —
-    /// идемпотентность при повторной доставке события.
+    /// Открывает интервал фазы. Операция идемпотентна по событию-источнику: повторная
+    /// доставка того же события второй интервал не создаёт.
     /// </summary>
-    Task<int> InsertIntervalAsync(
+    /// <returns>Сколько интервалов открылось: 0 — событие уже было обработано.</returns>
+    Task<int> OpenIntervalAsync(
         ITransactionScope scope,
         OpenReportPhaseIntervalCommand command,
         CancellationToken ct);

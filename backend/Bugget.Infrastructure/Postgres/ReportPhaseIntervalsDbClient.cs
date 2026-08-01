@@ -57,7 +57,7 @@ WHERE report_id = @reportId
             cancellationToken: ct));
     }
 
-    public async Task<int> InsertIntervalAsync(
+    public async Task<int> OpenIntervalAsync(
         ITransactionScope scope,
         OpenReportPhaseIntervalCommand command,
         CancellationToken ct)

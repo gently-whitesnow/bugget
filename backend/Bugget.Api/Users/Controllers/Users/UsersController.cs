@@ -55,7 +55,7 @@ public sealed class UsersController(
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
-        var updated = await userService.PutUserAsync(user.Id, new Bugget.Contracts.Users.Dto.Users.PutUserDto { Name = body.Name });
+        var updated = await userService.PutUserAsync(user.Id, new Bugget.Application.Users.Commands.Users.PutUserDto { Name = body.Name });
         return updated.ToContract();
     }
 
@@ -120,9 +120,9 @@ public sealed class UsersController(
             take ?? 10,
             user.TeamId);
 
-        return Ok(new Bugget.Contracts.Users.View.Users.AutocompleteUsersView
+        return Ok(new Bugget.Application.Users.Results.Users.AutocompleteUsersView
         {
-            Users = users.Select(e => new Bugget.Contracts.Users.View.Users.AutocompleteUserView
+            Users = users.Select(e => new Bugget.Application.Users.Results.Users.AutocompleteUserView
             {
                 Id = e.Id.ToString(),
                 Name = e.Name,

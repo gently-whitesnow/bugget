@@ -5,7 +5,7 @@ using Bugget.Api.Users.Controllers.Teams;
 using Bugget.Api.Users.Controllers.Users;
 using Bugget.Api.Users.Controllers.Workspaces;
 using Bugget.Api.Users.Mappers;
-using Bugget.Contracts.Users.View.Users;
+using Bugget.Application.Users.Results.Users;
 using Bugget.Domain.Users;
 using Xunit;
 

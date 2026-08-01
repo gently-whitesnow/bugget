@@ -1,5 +1,5 @@
+using Bugget.Application.Results.Settings;
 using Bugget.Contracts.Settings.Generated;
-using Bugget.Contracts.Views.Settings;
 
 namespace Bugget.Api.Mappers;
 

@@ -1,4 +1,4 @@
-using Bugget.Contracts.Dto.Link;
+using Bugget.Application.Commands.Link;
 using Bugget.Domain.Reports;
 
 namespace Bugget.Application.Ports;

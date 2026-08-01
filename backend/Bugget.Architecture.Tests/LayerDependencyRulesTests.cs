@@ -8,7 +8,7 @@ namespace Bugget.Architecture.Tests;
 /// <code>
 /// Bugget.Api ──────────► Bugget.Application ──────► Bugget.Domain
 ///     │                        ▲
-///     └──► Bugget.Infrastructure┘      Bugget.Contracts ──► Bugget.Domain
+///     └──► Bugget.Infrastructure┘      Bugget.Contracts (без зависимостей)
 ///          (только DI-композиция)
 /// </code>
 ///
@@ -27,14 +27,6 @@ public class LayerDependencyRulesTests
     /// <summary>DI, конфигурация, логирование и хостинг — то, чем прикладной слой пользуется как абстракцией.</summary>
     private static readonly string[] MicrosoftExtensions = ["Microsoft.Extensions"];
 
-    /// <summary>
-    /// Обработка медиа идёт прямо в прикладном слое: картинки — ImageSharp, видео — ffmpeg
-    /// (внешний процесс), определение типа — Mime. По ADR-0001 это работа для Infrastructure,
-    /// но вынос за порт — функциональная правка, а не перемещение файлов.
-    /// </summary>
-    private static readonly string[] Media =
-        ["Mime", "SixLabors.ImageSharp", "Xabe.FFmpeg", "Xabe.FFmpeg.Downloader"];
-
     [Fact(DisplayName = "Bugget.Domain не зависит ни от чего, кроме System")]
     public void Domain_depends_on_bcl_only()
     {
@@ -50,37 +42,39 @@ public class LayerDependencyRulesTests
             string.Join(", ", violations));
     }
 
-    [Fact(DisplayName = "Bugget.Contracts зависит только от System и Bugget.Domain")]
-    public void Contracts_depend_on_bcl_and_domain_only()
+    [Fact(DisplayName = "Bugget.Contracts не зависит ни от чего, кроме System")]
+    public void Contracts_depend_on_bcl_only()
     {
         var violations = Quartet.FindDisallowedReferences(
             Quartet.Contracts,
             Quartet.ReferencesOf(Quartet.ContractsAsm),
-            [.. Bcl, Quartet.Domain]);
+            Bcl);
 
         violations.Should().BeEmpty(
-            "контракты — описание провода наружу: сгенерированное из specs/contracts (ADR-0005), " +
-            "DTO запросов и view-модели ответов. Единственная законная ссылка — домен: часть " +
-            "view-моделей отдаёт доменные типы как есть, и их копия меняла бы форму ответа. " +
-            "Лишнее: {0}.",
+            "контракты — описание провода наружу и такой же лист графа, как домен: только то, " +
+            "что сгенерировано из specs/contracts/**/openapi.yaml (ADR-0005). Лишнее: {0}. " +
+            "Команды и результаты прикладного слоя живут в Bugget.Application и превращаются " +
+            "в контрактные типы мапперами на границе Bugget.Api.",
             string.Join(", ", violations));
     }
 
-    [Fact(DisplayName = "Bugget.Application — System, Microsoft.Extensions.*, Domain и Contracts")]
+    [Fact(DisplayName = "Bugget.Application — только System, Microsoft.Extensions.* и Domain")]
     public void Application_does_not_depend_on_transport_or_persistence()
     {
         var violations = Quartet.FindDisallowedReferences(
             Quartet.Application,
             Quartet.ReferencesOf(Quartet.ApplicationAsm),
-            [.. Bcl, .. MicrosoftExtensions, Quartet.Domain, Quartet.Contracts],
-            [.. Media, .. KnownDeviations.TargetsFor(
+            [.. Bcl, .. MicrosoftExtensions, Quartet.Domain],
+            [.. KnownDeviations.TargetsFor(
                 KnownDeviations.ApplicationAssemblyReferences, Quartet.Application)]);
 
         violations.Should().BeEmpty(
             "прикладной слой начал пользоваться сборкой вне белого списка: {0}. " +
             "Если это транспорт (Microsoft.AspNetCore.*), HTTP-клиент (Microsoft.Extensions.Http, " +
-            "System.Net.Http) или драйвер БД (Npgsql, Dapper) — правило сработало по назначению: " +
-            "объяви порт в Bugget.Application/Ports и оставь реализацию в Bugget.Infrastructure. " +
+            "System.Net.Http), драйвер БД (Npgsql, Dapper), обработка медиа (SixLabors.ImageSharp, " +
+            "Xabe.FFmpeg, Mime) или сгенерированный контракт (Bugget.Contracts) — правило " +
+            "сработало по назначению: объяви порт в Bugget.Application/**/Ports и оставь " +
+            "реализацию в Bugget.Infrastructure, а перевод в контракт — маппером в Bugget.Api. " +
             "Текущие отступления — KnownDeviations.ApplicationAssemblyReferences.",
             string.Join(", ", violations));
     }

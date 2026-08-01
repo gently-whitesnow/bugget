@@ -1,4 +1,4 @@
-using Bugget.Contracts.Views.Settings;
+using Bugget.Application.Results.Settings;
 using Bugget.Domain.Errors;
 using Bugget.Domain.Settings;
 

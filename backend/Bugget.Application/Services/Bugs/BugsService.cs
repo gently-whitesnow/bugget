@@ -1,10 +1,10 @@
 using System.Text.Json;
+using Bugget.Application.Commands.Bug;
 using Bugget.Application.DomainEvents;
 using Bugget.Application.Errors;
 using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Reports;
-using Bugget.Contracts.Dto.Bug;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Bugs;
 using Bugget.Domain.DomainEvents;

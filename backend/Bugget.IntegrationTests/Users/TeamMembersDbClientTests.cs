@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Bugget.Application.Users.Commands.Users;
 using Bugget.Application.Users.Ports;
-using Bugget.Contracts.Users.Dto.Users;
 using Bugget.IntegrationTests.Users.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

@@ -1,6 +1,6 @@
+using Bugget.Application.Commands.Link;
+using Bugget.Application.Commands.Report;
 using Bugget.Application.Ports;
-using Bugget.Contracts.Dto.Link;
-using Bugget.Contracts.Dto.Report;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

@@ -3,10 +3,10 @@ using Bugget.Api.Extensions;
 using Bugget.Api.Generated.External;
 using Bugget.Api.Mappers;
 using Bugget.Application.Errors;
+using Bugget.Application.Ports;
 using Bugget.Application.Services.External;
 using Bugget.Contracts.External.Generated;
 using Bugget.Domain.Authentication;
-using Bugget.Infrastructure.ExternalClients.Kaiten;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bugget.Api.Controllers;
@@ -18,7 +18,7 @@ namespace Bugget.Api.Controllers;
 [ApiController]
 public sealed class ExternalController(
     ExternalSearchService externalSearchService,
-    KaitenBoardsService kaitenBoardsService) : ExternalControllerBase
+    IExternalBoardsClient externalBoardsClient) : ExternalControllerBase
 {
     public override async Task<ActionResult<ExternalSearchResult>> SearchExternal(
         string? query = null,
@@ -84,7 +84,7 @@ public sealed class ExternalController(
             return BoErrors.OrganizationIdRequired.ToProblemDetails(HttpContext);
         }
 
-        var boards = await kaitenBoardsService.GetBoardsAsync(
+        var boards = await externalBoardsClient.GetBoardsAsync(
             user.OrganizationId,
             query,
             (uint)(skip ?? 0),
@@ -104,7 +104,7 @@ public sealed class ExternalController(
             return BoErrors.OrganizationIdRequired.ToProblemDetails(HttpContext);
         }
 
-        var boards = await kaitenBoardsService.BatchGetBoardsAsync(user.OrganizationId, [.. body.Ids]);
+        var boards = await externalBoardsClient.BatchGetBoardsAsync(user.OrganizationId, [.. body.Ids]);
         return Ok(boards.ToContract());
     }
 }

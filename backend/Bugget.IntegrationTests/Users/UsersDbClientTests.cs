@@ -1,5 +1,5 @@
+using Bugget.Application.Users.Commands.Users;
 using Bugget.Application.Users.Ports;
-using Bugget.Contracts.Users.Dto.Users;
 using Bugget.Domain.Users;
 using Bugget.IntegrationTests.Users.Fixtures;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,8 +1,8 @@
+using Bugget.Application.Commands.BugStep;
 using Bugget.Application.Errors;
 using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Reports;
-using Bugget.Contracts.Dto.BugStep;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Bugs;
 using Bugget.Domain.Errors;

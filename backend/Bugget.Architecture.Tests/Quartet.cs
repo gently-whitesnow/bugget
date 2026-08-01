@@ -22,11 +22,18 @@ public static class Quartet
     public static readonly Assembly ApiAsm = typeof(global::Bugget.Api.AssemblyMarker).Assembly;
 
     /// <summary>
-    /// Пространства имён композиционного корня: единственное место в <c>Bugget.Api</c>,
-    /// которому разрешено видеть <c>Bugget.Infrastructure</c>. Всё остальное в Api
-    /// разговаривает с инфраструктурой через порты прикладного слоя.
+    /// Композиционный корень: поимённый список типов <c>Bugget.Api</c>, которым разрешено
+    /// видеть <c>Bugget.Infrastructure</c>. Именно список, а не суффикс <c>*Extensions</c>:
+    /// суффикс — соглашение об именовании, и любой новый класс с таким именем молча получал
+    /// бы право тянуть инфраструктуру мимо портов. Строка сюда добавляется вместе с новой
+    /// точкой сборки контейнера и видна в диффе.
     /// </summary>
-    public static readonly string[] CompositionRootTypeSuffixes = ["Extensions", "Program"];
+    public static readonly string[] CompositionRoot =
+    [
+        "Bugget.Api.Extensions.ServiceCollectionExtensions",
+        "Bugget.Api.Users.Extensions.ServiceCollectionExtensions",
+        "Bugget.Api.Authorization.Extensions.ServiceCollectionExtensions",
+    ];
 
     /// <summary>
     /// Имена сборок, на которые ссылается <paramref name="assembly"/> и которых нет

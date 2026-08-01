@@ -4,8 +4,8 @@ using Bugget.Api.Users.Controllers.TeamMembers;
 using Bugget.Api.Users.Controllers.Teams;
 using Bugget.Api.Users.Controllers.Users;
 using Bugget.Api.Users.Controllers.Workspaces;
+using Bugget.Application.Users.Results.Users;
 using Bugget.Contracts.Users.Generated;
-using Bugget.Contracts.Users.View.Users;
 using DomainModel = Bugget.Domain.Users;
 
 namespace Bugget.Api.Users.Mappers;

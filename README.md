@@ -116,9 +116,11 @@ Realtime-события SignalR описаны в `specs/contracts/events.yaml`.
 Один процесс, один образ и один квартет проектов (ADR-0001):
 
 - `Bugget.Domain` — доменные модели, лист графа: зависит только от BCL;
-- `Bugget.Contracts` — провод наружу: сгенерированное из `specs/contracts/**/openapi.yaml`,
-  DTO запросов и view-модели ответов;
-- `Bugget.Application` — сервисы, доменные события и порты (`I*DbClient` и прочие);
+- `Bugget.Contracts` — провод наружу и такой же лист графа: только то, что сгенерировано
+  из `specs/contracts/**/openapi.yaml`;
+- `Bugget.Application` — сервисы, доменные события, порты (`I*DbClient` и прочие), а также
+  команды и результаты, которыми сервисы разговаривают с транспортом; в контрактные типы
+  их переводят мапперы в `Bugget.Api`;
 - `Bugget.Infrastructure` — Postgres, файловое хранилище, внешние интеграции, миграции,
   Redis, фоновая очередь: реализует порты прикладного слоя;
 - `Bugget.Api` — контроллеры, SignalR-хаб, middleware и DI-композиция.

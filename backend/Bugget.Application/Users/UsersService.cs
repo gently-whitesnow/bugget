@@ -1,7 +1,7 @@
 using Bugget.Application.Ports;
+using Bugget.Application.Users.Commands.Users;
 using Bugget.Application.Users.Interfaces;
 using Bugget.Application.Users.Ports;
-using Bugget.Contracts.Users.Dto.Users;
 using Bugget.Domain.Errors;
 using Bugget.Domain.Users;
 using Microsoft.Extensions.DependencyInjection;

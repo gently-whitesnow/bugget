@@ -1,8 +1,8 @@
 using Bugget.Api.Extensions;
 using Bugget.Api.Generated.Reports;
 using Bugget.Api.Mappers;
+using Bugget.Application.Commands.Comment;
 using Bugget.Application.Services.Comments;
-using Bugget.Contracts.Dto.Comment;
 using Bugget.Contracts.Reports.Generated;
 using Bugget.Domain.Authentication;
 using Microsoft.AspNetCore.Mvc;

@@ -1,8 +1,8 @@
+using Bugget.Application.Commands.Link;
 using Bugget.Application.Errors;
 using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Reports;
-using Bugget.Contracts.Dto.Link;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Errors;
 using Bugget.Domain.Reports;

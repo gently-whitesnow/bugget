@@ -1,5 +1,5 @@
+using Bugget.Application.Commands.Report;
 using Bugget.Application.Ports;
-using Bugget.Contracts.Dto.Report;
 using Bugget.Domain;
 using Bugget.Domain.Attachments;
 using Bugget.Domain.Bugs;

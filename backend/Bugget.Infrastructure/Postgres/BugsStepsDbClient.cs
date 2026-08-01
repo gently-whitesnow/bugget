@@ -1,8 +1,8 @@
 using System.Text.Json;
+using Bugget.Application.Commands;
+using Bugget.Application.Commands.Bug;
+using Bugget.Application.Commands.BugStep;
 using Bugget.Application.Ports;
-using Bugget.Contracts.Dto;
-using Bugget.Contracts.Dto.Bug;
-using Bugget.Contracts.Dto.BugStep;
 using Bugget.Domain.Bugs;
 using Bugget.Infrastructure.Transactions;
 using Dapper;

@@ -1,11 +1,11 @@
 using System.Data;
 using System.Security.Claims;
 using System.Text.Json;
+using Bugget.Application.Commands.Report;
 using Bugget.Application.DomainEvents;
 using Bugget.Application.DomainEvents.Consumer;
 using Bugget.Application.DomainEvents.Handlers;
 using Bugget.Application.Ports;
-using Bugget.Contracts.Dto.Report;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.DomainEvents;
 using Bugget.Domain.Reports;

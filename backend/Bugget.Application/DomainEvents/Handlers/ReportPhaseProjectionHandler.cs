@@ -11,12 +11,10 @@ using Microsoft.Extensions.Logging;
 namespace Bugget.Application.DomainEvents.Handlers;
 
 /// <summary>
-/// Projection-handler для read-model <c>report_phase_intervals</c>. Слушает
-/// <c>bugget.report.status_changed</c>: закрывает активный интервал репорта (если есть),
-/// для рабочих фаз (Test/Fix) открывает новый с <c>regression_cycle_index</c> = числу
-/// уже закрытых интервалов той же фазы. INSERT идёт через
-/// <c>ON CONFLICT (source_event_id) DO NOTHING</c> — основной механизм идемпотентности
-/// при at-least-once доставке.
+/// Строит проекцию интервалов фаз репорта по событиям <c>bugget.report.status_changed</c>:
+/// закрывает открытый интервал и для рабочих фаз (Test/Fix) открывает новый, нумеруя заход
+/// по числу предыдущих выходов из этой фазы. Доставка событий at-least-once, поэтому
+/// обработка идемпотентна по событию-источнику: повторное событие проекцию не меняет.
 /// </summary>
 public sealed class ReportPhaseProjectionHandler(
     IReportPhaseIntervalsDbClient intervalsClient,
@@ -64,7 +62,7 @@ public sealed class ReportPhaseProjectionHandler(
             var regressionCycleIndex = await intervalsClient.CountClosedIntervalsAsync(
                 scope, reportId, phase, ct);
 
-            var inserted = await intervalsClient.InsertIntervalAsync(
+            var opened = await intervalsClient.OpenIntervalAsync(
                 scope,
                 new OpenReportPhaseIntervalCommand
                 {
@@ -76,9 +74,9 @@ public sealed class ReportPhaseProjectionHandler(
                 },
                 ct);
 
-            if (inserted == 0)
+            if (opened == 0)
             {
-                // Повторная доставка того же события — UNIQUE(source_event_id) отработал.
+                // Событие уже обрабатывалось: интервал по нему открыт, второй не нужен.
                 logger.LogDebug(
                     "report_phase_intervals duplicate source_event_id, skipping insert: report_id={ReportId} phase={Phase} event_id={EventId}",
                     reportId, phase, evt.Id);

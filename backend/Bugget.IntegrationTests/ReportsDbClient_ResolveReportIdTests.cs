@@ -1,5 +1,5 @@
+using Bugget.Application.Commands.Report;
 using Bugget.Application.Ports;
-using Bugget.Contracts.Dto.Report;
 using Bugget.Domain.Reports;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;

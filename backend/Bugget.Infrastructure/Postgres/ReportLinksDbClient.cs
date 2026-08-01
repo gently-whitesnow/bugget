@@ -1,5 +1,5 @@
+using Bugget.Application.Commands.Link;
 using Bugget.Application.Ports;
-using Bugget.Contracts.Dto.Link;
 using Bugget.Domain.Reports;
 using Dapper;
 

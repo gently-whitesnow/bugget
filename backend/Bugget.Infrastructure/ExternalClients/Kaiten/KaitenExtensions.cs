@@ -1,4 +1,5 @@
 using Bugget.Application.Interfaces;
+using Bugget.Application.Ports;
 using Bugget.Application.Services.Settings;
 using Bugget.Infrastructure.ExternalClients.Kaiten.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +23,7 @@ public static class KaitenExtensions
         services.AddSingleton<KaitenBoardsLoaderService>();
 
         // Сервис для автокомплита
-        services.AddSingleton<KaitenBoardsService>();
+        services.AddSingleton<IExternalBoardsClient, KaitenBoardsService>();
 
         // Сервис для работы с настройками Kaiten
         services.AddSingleton<KaitenConfigService>();

@@ -1,5 +1,5 @@
+using Bugget.Application.Commands.Bug;
 using Bugget.Application.Ports;
-using Bugget.Contracts.Dto.Bug;
 using Bugget.Domain.Bugs;
 using Bugget.Infrastructure.Transactions;
 using Dapper;

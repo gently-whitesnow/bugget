@@ -1,4 +1,5 @@
 using Bugget.Api.Generated.Reports;
+using Bugget.Application.Ports;
 using Bugget.Domain.Attachments;
 using Bugget.Domain.Constants;
 using Microsoft.AspNetCore.WebUtilities;
@@ -25,6 +26,7 @@ internal static class AttachmentUploadReader
     /// </remarks>
     public static async Task<(Stream Content, FileMeta Meta)> ReadAsync(
         FileParameter file,
+        IMimeTypeDetector mimeTypeDetector,
         CancellationToken cancellationToken)
     {
         var content = file.Data;
@@ -45,7 +47,7 @@ internal static class AttachmentUploadReader
 
         var mimeType = IsDevelopment
             ? file.ContentType
-            : await MimeHelper.GuessMimeAsync(content, cancellationToken);
+            : await mimeTypeDetector.DetectAsync(content, cancellationToken);
 
         return (content, new FileMeta(file.FileName, content.Length, mimeType));
     }

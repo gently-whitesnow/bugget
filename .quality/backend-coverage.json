@@ -17,25 +17,25 @@
   "$comment-gapsFocus": "Сборки, по которым backend-coverage.py --gaps строит список приоритетных дыр: домен и прикладной слой, где непокрытая ветка стоит дороже всего.",
   "baseline": {
     "total": {
-      "line": 75.8,
-      "branch": 45.7
+      "line": 75.7,
+      "branch": 45.6
     },
     "assemblies": {
       "Bugget.Api": {
-        "line": 84.2,
+        "line": 84.3,
         "branch": 52.5
       },
       "Bugget.Application": {
-        "line": 80.8,
-        "branch": 60.8
+        "line": 86.2,
+        "branch": 66.9
       },
       "Bugget.Domain": {
         "line": 68.2,
         "branch": 50.0
       },
       "Bugget.Infrastructure": {
-        "line": 47.2,
-        "branch": 16.2
+        "line": 46.1,
+        "branch": 15.4
       }
     }
   }

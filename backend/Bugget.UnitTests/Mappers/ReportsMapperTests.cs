@@ -1,5 +1,5 @@
 using Bugget.Api.Mappers;
-using Bugget.Contracts.Views.Reports;
+using Bugget.Application.Results.Reports;
 using Bugget.Domain.Attachments;
 using Bugget.Domain.Bugs;
 using Bugget.Domain.Comments;

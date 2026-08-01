@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
+using Bugget.Application.Users.Commands.Users;
 using Bugget.Application.Users.Ports;
-using Bugget.Contracts.Users.Dto.Users;
 using Bugget.Domain.Users;
 using Bugget.Infrastructure.Users.DbClients;
 using Bugget.IntegrationTests.Users.Fixtures;

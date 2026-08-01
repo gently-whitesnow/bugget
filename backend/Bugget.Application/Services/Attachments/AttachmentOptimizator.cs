@@ -9,9 +9,7 @@ namespace Bugget.Application.Services.Attachments;
 
 public sealed class AttachmentOptimizator(
     IFileStorageClient fileStorage,
-    TextOptimizeWriter textOptimizator,
-    ImageOptimizeWriter imageOptimizatorWriter,
-    VideoOptimizeWriter videoOptimizeWriter,
+    IAttachmentOptimizer optimizer,
     IAttachmentDbClient attachmentDbClient,
     ILogger<AttachmentOptimizator> logger,
     IReportPageHubClient reportPageHubClient
@@ -35,39 +33,13 @@ public sealed class AttachmentOptimizator(
 
         await using var fileStream = await fileStorage.ReadAsync(fromAttachment.StorageKey);
 
-        // Создаем новую оптимизированную версию файла
-        OptimizationResult optimizationResult;
-        if (AttachmentConstants.ImageMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
-        {
-            optimizationResult = await imageOptimizatorWriter.OptimizeWriteAsync(
-                organizationId,
-                reportIdContext.ReportId,
-                fromAttachment,
-                fileStream
-            );
-        }
-        else if (AttachmentConstants.VideoMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
-        {
-            optimizationResult = await videoOptimizeWriter.OptimizeWriteAsync(
-                organizationId,
-                reportIdContext.ReportId,
-                fromAttachment,
-                fileStream
-            );
-        }
-        else if (AttachmentConstants.CompressibleMimeTypes.Contains(fromAttachment.MimeType, StringComparer.OrdinalIgnoreCase))
-        {
-            optimizationResult = await textOptimizator.OptimizeWriteAsync(
-                organizationId,
-                reportIdContext.ReportId,
-                fromAttachment,
-                fileStream
-            );
-        }
-        else
-        {
-            throw new InvalidOperationException("Unsupported mime type");
-        }
+        // Создаём новую оптимизированную версию файла: чем именно пережимать, решает
+        // реализация порта — прикладной слой в медиа-форматы не лезет.
+        var optimizationResult = await optimizer.OptimizeAsync(
+            organizationId,
+            reportIdContext.ReportId,
+            fromAttachment,
+            fileStream);
 
         var originalLength = fileStream.CanSeek ? fileStream.Length : (long?)null;
         if (originalLength.HasValue && originalLength.Value > 0)

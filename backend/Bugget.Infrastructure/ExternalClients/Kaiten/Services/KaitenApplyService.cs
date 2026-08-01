@@ -1,9 +1,9 @@
+using Bugget.Application.Commands.Link;
 using Bugget.Application.ExternalSearch.Models;
 using Bugget.Application.Interfaces;
 using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.ReportLinks;
-using Bugget.Contracts.Dto.Link;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Settings;
 using Bugget.Infrastructure.ExternalClients.Kaiten.Services;

@@ -57,12 +57,6 @@
       "actual": 8
     },
     {
-      "code": "METHOD_LOC",
-      "path": "backend/Bugget.Application/Services/Attachments/AttachmentOptimizator.cs",
-      "subject": "AttachmentOptimizator.OptimizeAttachmentAsync",
-      "actual": 73
-    },
-    {
       "code": "FILE_LOC",
       "path": "backend/Bugget.Application/Services/Attachments/AttachmentService.cs",
       "subject": "backend/Bugget.Application/Services/Attachments/AttachmentService.cs",
@@ -81,22 +75,22 @@
       "actual": 454
     },
     {
+      "code": "CTOR_DEPS",
+      "path": "backend/Bugget.Application/Services/Comments/CommentsService.cs",
+      "subject": "CommentsService (первичный конструктор)",
+      "actual": 8
+    },
+    {
       "code": "METHOD_LOC",
-      "path": "backend/Bugget.Application/Services/Attachments/VideoOptimizeWriter.cs",
+      "path": "backend/Bugget.Infrastructure/Attachments/VideoOptimizeWriter.cs",
       "subject": "VideoOptimizeWriter.OptimizeWriteAsync",
       "actual": 79
     },
     {
       "code": "METHOD_LOC",
-      "path": "backend/Bugget.Application/Services/Attachments/VideoOptimizeWriter.cs",
+      "path": "backend/Bugget.Infrastructure/Attachments/VideoOptimizeWriter.cs",
       "subject": "VideoOptimizeWriter.RunFfmpegAsync",
       "actual": 74
-    },
-    {
-      "code": "CTOR_DEPS",
-      "path": "backend/Bugget.Application/Services/Comments/CommentsService.cs",
-      "subject": "CommentsService (первичный конструктор)",
-      "actual": 8
     },
     {
       "code": "METHOD_CC",

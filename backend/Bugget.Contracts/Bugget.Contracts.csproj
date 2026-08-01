@@ -3,21 +3,18 @@
     <PropertyGroup>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!-- CS1591 (нет XML-комментария у public-члена) выключен: XML-документация
-             включена ради сгенерированных из OpenAPI типов и контроллеров, которым
-             комментарии пишет генератор, а не человек (ADR-0005). Послабление приехало
-             из проектов, слитых в квартет в MAIN-20, и в снимке .quality/backend-suppress-baseline.json
-             сокращается: было десять записей, стало три. -->
+             включена ради сгенерированных из OpenAPI типов, которым комментарии пишет
+             генератор, а не человек (ADR-0005). Послабление приехало из проектов,
+             слитых в квартет в MAIN-20, и в снимке .quality/backend-suppress-baseline.json
+             сокращается. -->
         <NoWarn>$(NoWarn);1591</NoWarn>
     </PropertyGroup>
 
     <!--
-      Провод наружу: сгенерированное из specs/contracts/**/openapi.yaml (ADR-0005),
-      DTO запросов и view-модели ответов. Внешних пакетов нет; единственная ссылка —
-      на домен: часть view-моделей отдаёт доменные типы как есть, и заводить их копию
-      значило бы менять форму ответа.
+      Провод наружу и ничего кроме: сгенерированное из specs/contracts/**/openapi.yaml
+      (ADR-0005) плюс partial-объявления строгости из StrictContracts.cs. Лист графа —
+      ни проектов решения, ни пакетов. Команды и результаты прикладного слоя живут в
+      Bugget.Application и превращаются в эти типы мапперами на границе Bugget.Api.
     -->
-    <ItemGroup>
-        <ProjectReference Include="..\Bugget.Domain\Bugget.Domain.csproj" />
-    </ItemGroup>
 
 </Project>

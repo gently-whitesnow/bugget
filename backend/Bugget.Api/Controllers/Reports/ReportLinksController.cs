@@ -1,8 +1,8 @@
 using Bugget.Api.Extensions;
 using Bugget.Api.Generated.Reports;
 using Bugget.Api.Mappers;
+using Bugget.Application.Commands.Link;
 using Bugget.Application.Services.ReportLinks;
-using Bugget.Contracts.Dto.Link;
 using Bugget.Contracts.Reports.Generated;
 using Bugget.Domain.Authentication;
 using Microsoft.AspNetCore.Mvc;

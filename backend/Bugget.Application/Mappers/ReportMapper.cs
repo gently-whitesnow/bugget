@@ -1,8 +1,8 @@
+using Bugget.Application.Commands.Report;
 using Bugget.Application.Options;
+using Bugget.Application.Realtime;
+using Bugget.Application.Results.Reports;
 using Bugget.Application.Services.Reports;
-using Bugget.Contracts.Dto.Report;
-using Bugget.Contracts.SocketViews;
-using Bugget.Contracts.Views.Reports;
 using Bugget.Domain;
 using Bugget.Domain.Reports;
 using Bugget.Domain.Search;

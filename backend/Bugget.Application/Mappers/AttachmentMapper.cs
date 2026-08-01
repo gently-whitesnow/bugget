@@ -1,5 +1,5 @@
-using Bugget.Contracts.SocketViews;
-using Bugget.Contracts.Views.Attachment;
+using Bugget.Application.Realtime;
+using Bugget.Application.Results.Attachment;
 using Bugget.Domain.Attachments;
 
 namespace Bugget.Application.Mappers;

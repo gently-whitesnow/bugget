@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
+using Bugget.Application.Commands.Bug;
 using Bugget.Application.Ports;
-using Bugget.Contracts.Dto.Bug;
-using Bugget.Contracts.SocketViews;
+using Bugget.Application.Realtime;
 using Bugget.Domain.Bugs;
 using Bugget.Domain.Comments;
 using Bugget.Domain.Reports;

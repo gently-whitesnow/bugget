@@ -1,9 +1,9 @@
+using Bugget.Application.Commands.Report;
 using Bugget.Application.DomainEvents;
 using Bugget.Application.Errors;
 using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Bugs;
-using Bugget.Contracts.Dto.Report;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Bugs;
 using Bugget.Domain.Errors;

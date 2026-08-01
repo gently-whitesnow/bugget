@@ -2,6 +2,7 @@ using Bugget.Api.Controllers.Attachments;
 using Bugget.Api.Extensions;
 using Bugget.Api.Generated.Reports;
 using Bugget.Api.Mappers;
+using Bugget.Application.Ports;
 using Bugget.Application.Services.Attachments;
 using Bugget.Contracts.Reports.Generated;
 using Bugget.Domain.Authentication;
@@ -19,7 +20,9 @@ namespace Bugget.Api.Controllers;
 /// <see cref="CommentAttachmentsControllerBase"/>.
 /// </summary>
 [ApiController]
-public sealed class CommentAttachmentsController(AttachmentService attachmentService) : CommentAttachmentsControllerBase
+public sealed class CommentAttachmentsController(
+    AttachmentService attachmentService,
+    IMimeTypeDetector mimeTypeDetector) : CommentAttachmentsControllerBase
 {
     public override async Task<ActionResult<AttachmentSummary>> CreateCommentAttachment(
         string aliasId,
@@ -28,7 +31,7 @@ public sealed class CommentAttachmentsController(AttachmentService attachmentSer
         [FromForm] FileParameter file,
         CancellationToken cancellationToken = default)
     {
-        var (content, meta) = await AttachmentUploadReader.ReadAsync(file, cancellationToken);
+        var (content, meta) = await AttachmentUploadReader.ReadAsync(file, mimeTypeDetector, cancellationToken);
 
         return await attachmentService.SaveCommentAttachmentAsync(
             User.GetIdentity(),

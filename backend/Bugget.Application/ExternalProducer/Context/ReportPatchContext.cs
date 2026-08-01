@@ -1,4 +1,4 @@
-using Bugget.Contracts.Dto.Report;
+using Bugget.Application.Commands.Report;
 using Bugget.Domain.Reports;
 
 namespace Bugget.Application.ExternalProducer.Context;

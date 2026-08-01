@@ -6,6 +6,7 @@ using Bugget.Application.Authorization;
 using Bugget.Application.Authorization.Ports;
 using Bugget.UnitTests.Authorization.TokensService;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using Microsoft.IdentityModel.Tokens;
 
 public sealed class TokensServiceTests
@@ -16,6 +17,8 @@ public sealed class TokensServiceTests
 
     // С-префикс: System Under Test
     private readonly TokensService _sut;
+    private readonly FakeTimeProvider _timeProvider = new(
+        new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
     private readonly JwtOptions _opts = new()
     {
         Issuer = "https://auth.test",
@@ -36,8 +39,9 @@ public sealed class TokensServiceTests
             new PrivateKeyStorageMock(accPriv),
             new PrivateKeyStorageMock(refPriv),
             new JwkStorageMock(accPub, refPub),
-            new InMemoryTokenRevocationStore(),
-            new InMemoryRefreshRotationCache());
+            new InMemoryTokenRevocationStore(_timeProvider),
+            new InMemoryRefreshRotationCache(_timeProvider),
+            _timeProvider);
     }
 
     /* ---------- позитивные сценарии ---------- */
@@ -74,10 +78,8 @@ public sealed class TokensServiceTests
     {
         var (_, refresh) = await _sut.GenerateTokensAsync(3);
 
-        // Ждем истечения токена + ClockSkew
-        // RefreshLifetime = 4 sec, ClockSkew = 10 sec
-        // Токен считается валидным до exp + ClockSkew = 4 + 10 = 14 sec
-        await Task.Delay(_opts.RefreshLifetime + TimeSpan.FromSeconds(10) + TimeSpan.FromMilliseconds(500));
+        _timeProvider.Advance(
+            _opts.RefreshLifetime + TimeSpan.FromSeconds(10) + TimeSpan.FromMilliseconds(500));
 
         // После истечения токена + ClockSkew, ValidateRefreshTokenWithoutRevocationCheckAsync выбросит SecurityTokenExpiredException
         await Assert.ThrowsAsync<SecurityTokenExpiredException>(
@@ -130,7 +132,10 @@ public sealed class TokensServiceTests
             ValidateAudience = true,
             ValidateLifetime = true,
             RequireSignedTokens = true,
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            LifetimeValidator = (notBefore, expires, _, _) =>
+                notBefore <= _timeProvider.GetUtcNow().UtcDateTime
+                && expires >= _timeProvider.GetUtcNow().UtcDateTime
         };
         return h.ValidateToken(jwt, prm, out _);
     }

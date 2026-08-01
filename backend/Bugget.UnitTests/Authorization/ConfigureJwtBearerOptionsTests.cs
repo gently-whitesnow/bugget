@@ -51,7 +51,8 @@ public sealed class ConfigureJwtBearerOptionsTests
             new PrivateKeyStorageMock(refPriv),
             new JwkStorageMock(accPub, refPub),
             _revocation,
-            _cache);
+            _cache,
+            TimeProvider.System);
 
         var services = new ServiceCollection();
         services.AddLogging();

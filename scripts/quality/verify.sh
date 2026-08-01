@@ -234,17 +234,22 @@ now_ms() {
 fmt_ms() { printf '%d.%01ds' $(( $1 / 1000 )) $(( ($1 % 1000) / 100 )); }
 
 run_in() {
-  # run_in <workdir> <команды...> — команды читаются со stdin, выполняются по очереди.
+  # run_in <workdir> <continue-on-fail> — команды читаются со stdin и выполняются по очереди.
   local wd="$1"
+  local continue_on_fail="${2:-false}"
   local dir="$ROOT/$wd"
   [ -d "$dir" ] || { printf '%s\n' "нет директории $dir" >&2; return 1; }
   local cmd
+  local failed=0
   while IFS= read -r cmd; do
     [ -n "$cmd" ] || continue
     printf '%s$ (%s) %s%s\n' "$C_DIM" "$wd" "$cmd" "$C_RESET"
-    ( cd "$dir" && eval "$cmd" ) || return 1
+    if ! ( cd "$dir" && eval "$cmd" ); then
+      failed=1
+      [ "$continue_on_fail" = "true" ] || return 1
+    fi
   done
-  return 0
+  [ "$failed" -eq 0 ]
 }
 
 STATUSES=()
@@ -256,7 +261,7 @@ for s in "${ACTIVE_SCOPES[@]}"; do
   [ -n "$prepare" ] || continue
   info ""
   info "${C_BOLD}== подготовка: $s ==${C_RESET}"
-  if ! printf '%s\n' "$prepare" | run_in "$(scope_field "$s" workdir)"; then
+  if ! printf '%s\n' "$prepare" | run_in "$(scope_field "$s" workdir)" false; then
     printf '%s\n' "${C_RED}подготовка области $s не прошла${C_RESET}" >&2
     exit 1
   fi
@@ -266,7 +271,7 @@ for id in "${SELECTED[@]}"; do
   info ""
   info "${C_BOLD}== гейт: $id ==${C_RESET} ${C_DIM}$(gate_field "$id" description)${C_RESET}"
   started="$(now_ms)"
-  if gate_commands "$id" | run_in "$(gate_workdir "$id")"; then
+  if gate_commands "$id" | run_in "$(gate_workdir "$id")" "$(gate_field "$id" continueOnFail)"; then
     STATUSES+=("ok")
   else
     STATUSES+=("fail")

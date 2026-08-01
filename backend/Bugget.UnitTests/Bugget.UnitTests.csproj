@@ -19,6 +19,7 @@
         </PackageReference>
         <PackageReference Include="FluentAssertions" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+        <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
         <PackageReference Include="RichardSzalay.MockHttp" />
     </ItemGroup>
 

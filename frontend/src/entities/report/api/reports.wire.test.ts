@@ -437,7 +437,8 @@ describe("DELETE CRUD-операций не отправляет тело и que
 });
 
 describe("ответы приходят в camelCase кода", () => {
-  it("тело ответа конвертируется целиком, null/пустые массивы и attach_type 0..3 сохраняются", async () => {
+  it("тело ответа конвертируется целиком, null/пустые массивы и строковые attach_type сохраняются", async () => {
+    const attachTypes = ["fact", "expected", "comment", "bug_step"];
     appApi.defaults.adapter = (async (config) => ({
       data: {
         id: "team-42",
@@ -451,7 +452,7 @@ describe("ответы приходят в camelCase кода", () => {
             creator_user_id: "u-3",
             steps: null,
             comments: [],
-            attachments: [0, 1, 2, 3].map((attach_type) => ({
+            attachments: attachTypes.map((attach_type) => ({
               attach_type,
               file_name: `${attach_type}.png`,
             })),
@@ -475,6 +476,37 @@ describe("ответы приходят в camelCase кода", () => {
     expect(report.bugs?.[0].comments).toEqual([]);
     expect(
       report.bugs?.[0].attachments?.map((item) => item.attachType)
-    ).toEqual([0, 1, 2, 3]);
+    ).toEqual(attachTypes);
+  });
+
+  it("legacy-числа enum в ответе отклоняются на HTTP-границе", async () => {
+    appApi.defaults.adapter = (async (config) => ({
+      data: {
+        id: "team-42",
+        status: 0,
+        creator_type: 0,
+        bugs: [
+          {
+            id: 7,
+            status: 0,
+            creator_type: 0,
+            comments: [
+              {
+                id: 11,
+                creator_type: 0,
+                audience: 0,
+              },
+            ],
+            attachments: [{ id: 12, attach_type: 0 }],
+          },
+        ],
+      },
+      status: 200,
+      statusText: "OK",
+      headers: { "content-type": "application/json" },
+      config,
+    })) as AxiosAdapter;
+
+    await expect(fetchReport("team-42")).rejects.toThrow();
   });
 });

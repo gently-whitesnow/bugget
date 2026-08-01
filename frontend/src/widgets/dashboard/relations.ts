@@ -10,7 +10,11 @@ import {
 } from "@/entities/report-list";
 import { fetchCurrentUserFx, $authUserStore } from "@/entities/user";
 
-import { ReportStatuses, lastReportsDashboardTake } from "@/shared/config";
+import {
+  ReportStatuses,
+  lastReportsDashboardTake,
+  reportStatusOrder,
+} from "@/shared/config";
 
 import {
   $isRecentlyResolvedSectionOpenStore,
@@ -24,7 +28,7 @@ export const loadRecentlyResolvedFx = createEffect(async (userId: string) => {
   const data = await fetchReportsList(
     userId,
     null,
-    [Number(ReportStatuses.RESOLVED), Number(ReportStatuses.REJECTED)],
+    [ReportStatuses.RESOLVED, ReportStatuses.REJECTED],
     0,
     lastReportsDashboardTake
   );
@@ -45,7 +49,9 @@ export const $responsibleReports = combine(
     const reports = data.reports;
     return reports
       .filter((report) => report.responsibleUserId === user?.id)
-      .sort((a, b) => b.status - a.status);
+      .sort(
+        (a, b) => reportStatusOrder[b.status] - reportStatusOrder[a.status]
+      );
   }
 );
 
@@ -56,7 +62,9 @@ export const $participantReports = combine(
     const reports = data.reports;
     return reports
       .filter((report) => report.responsibleUserId !== user?.id)
-      .sort((a, b) => b.status - a.status);
+      .sort(
+        (a, b) => reportStatusOrder[b.status] - reportStatusOrder[a.status]
+      );
   }
 );
 

@@ -27,6 +27,111 @@ namespace Bugget.Contracts.Reports.Generated
     
 
     /// <summary>
+    /// Статус репорта. Числа домена: `backlog` 0, `resolved` 1, `fix` 2,
+    /// <br/>`rejected` 3, `test` 4.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum ReportStatus
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"backlog")]
+        Backlog = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"resolved")]
+        Resolved = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"fix")]
+        Fix = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"rejected")]
+        Rejected = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"test")]
+        Test = 4,
+
+    }
+
+    /// <summary>
+    /// Статус бага. Числа домена: `open` 0, `verified` 1, `rejected` 2,
+    /// <br/>`fixed` 3.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum BugStatus
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"open")]
+        Open = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"verified")]
+        Verified = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"rejected")]
+        Rejected = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"fixed")]
+        Fixed = 3,
+
+    }
+
+    /// <summary>
+    /// Тип автора. Числа домена: `user` 0, `system` 1 (журнал действий),
+    /// <br/>`tg_beta_tester` 2 (внешний автор через beta-test bot).
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum CreatorType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"user")]
+        User = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"system")]
+        System = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"tg_beta_tester")]
+        Tg_beta_tester = 2,
+
+    }
+
+    /// <summary>
+    /// Кому виден комментарий: `internal` — команде, `external` — уходит
+    /// <br/>внешнему автору. Числа домена: `internal` 0, `external` 1.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum CommentAudience
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"internal")]
+        Internal = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"external")]
+        External = 1,
+
+    }
+
+    /// <summary>
+    /// К чему прикреплён файл: `fact` — фактический результат, `expected` —
+    /// <br/>ожидаемый, `comment` — комментарий, `bug_step` — шаг воспроизведения.
+    /// <br/>Числа домена: 0, 1, 2, 3 в том же порядке.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum AttachType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"fact")]
+        Fact = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"expected")]
+        Expected = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"comment")]
+        Comment = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"bug_step")]
+        Bug_step = 3,
+
+    }
+
+    /// <summary>
     /// Тело создания репорта.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -69,13 +174,11 @@ namespace Bugget.Contracts.Reports.Generated
         public string Title { get; set; }
 
         /// <summary>
-        /// Новый статус репорта: 0 — backlog, 1 — resolved, 2 — fix,
-        /// <br/>3 — rejected, 4 — test.
-        /// <br/>
+        /// Новый статус репорта.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        [System.ComponentModel.DataAnnotations.Range(0, 4)]
-        public int? Status { get; set; }
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ReportStatus>))]
+        public ReportStatus? Status { get; set; }
 
         /// <summary>
         /// Новый ответственный за репорт.
@@ -209,11 +312,11 @@ namespace Bugget.Contracts.Reports.Generated
         public string Expect { get; set; }
 
         /// <summary>
-        /// Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+        /// Новый статус бага.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        [System.ComponentModel.DataAnnotations.Range(0, 3)]
-        public int? Status { get; set; }
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<BugStatus>))]
+        public BugStatus? Status { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -344,13 +447,13 @@ namespace Bugget.Contracts.Reports.Generated
         public string Text { get; set; }
 
         /// <summary>
-        /// 0 — внутренний (для команды, по умолчанию), 1 — внешний (пересылается
-        /// <br/>тестеру). Пропущенное поле трактуется как внутренний.
+        /// `internal` — для команды (по умолчанию), `external` — пересылается
+        /// <br/>тестеру. Пропущенное поле трактуется как `internal`.
         /// <br/>
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("audience")]
-        [System.ComponentModel.DataAnnotations.Range(0, 1)]
-        public int? Audience { get; set; }
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CommentAudience>))]
+        public CommentAudience? Audience { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -382,7 +485,8 @@ namespace Bugget.Contracts.Reports.Generated
         /// Фильтр по статусам репорта.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("statuses")]
-        public System.Collections.Generic.IReadOnlyList<int> Statuses { get; set; }
+        // TODO(system.text.json): Add ItemConverterType with enum converter when supported
+        public System.Collections.Generic.IReadOnlyList<ReportStatus> Statuses { get; set; }
 
         /// <summary>
         /// Фильтр по команде-создателю.
@@ -394,7 +498,8 @@ namespace Bugget.Contracts.Reports.Generated
         /// Фильтр по типу создателя.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("creator_types")]
-        public System.Collections.Generic.IReadOnlyList<int> Creator_types { get; set; }
+        // TODO(system.text.json): Add ItemConverterType with enum converter when supported
+        public System.Collections.Generic.IReadOnlyList<CreatorType> Creator_types { get; set; }
 
     }
 
@@ -628,17 +733,15 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Creator_user_id { get; set; }
 
-        /// <summary>
-        /// Тип автора — человек или бот.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
-        public int Creator_type { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CreatorType>))]
+        public CreatorType Creator_type { get; set; }
 
-        /// <summary>
-        /// 0 — внутренний (для команды), 1 — внешний (уходит тестеру).
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("audience")]
-        public int Audience { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CommentAudience>))]
+        public CommentAudience Audience { get; set; }
 
         /// <summary>
         /// Момент создания.
@@ -736,17 +839,15 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Creator_user_id { get; set; }
 
-        /// <summary>
-        /// Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public int Status { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<BugStatus>))]
+        public BugStatus Status { get; set; }
 
-        /// <summary>
-        /// Тип автора — человек или бот.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
-        public int Creator_type { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CreatorType>))]
+        public CreatorType Creator_type { get; set; }
 
         /// <summary>
         /// Вложения бага. `null` — не запрашивались.
@@ -841,17 +942,15 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Creator_user_id { get; set; }
 
-        /// <summary>
-        /// Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public int Status { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<BugStatus>))]
+        public BugStatus Status { get; set; }
 
-        /// <summary>
-        /// Тип автора — человек или бот.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
-        public int Creator_type { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CreatorType>))]
+        public CreatorType Creator_type { get; set; }
 
         /// <summary>
         /// Комментарии бага. `null` — не запрашивались.
@@ -927,17 +1026,15 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Creator_user_id { get; set; }
 
-        /// <summary>
-        /// Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public int Status { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<BugStatus>))]
+        public BugStatus Status { get; set; }
 
-        /// <summary>
-        /// Тип автора — человек или бот.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
-        public int Creator_type { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CreatorType>))]
+        public CreatorType Creator_type { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -993,11 +1090,10 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.DateTimeOffset Updated_at { get; set; }
 
-        /// <summary>
-        /// Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public int Status { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<BugStatus>))]
+        public BugStatus Status { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -1045,17 +1141,15 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Creator_user_id { get; set; }
 
-        /// <summary>
-        /// Тип автора — человек или бот.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
-        public int Creator_type { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CreatorType>))]
+        public CreatorType Creator_type { get; set; }
 
-        /// <summary>
-        /// 0 — внутренний (для команды), 1 — внешний (уходит тестеру).
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("audience")]
-        public int Audience { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CommentAudience>))]
+        public CommentAudience Audience { get; set; }
 
         /// <summary>
         /// Момент создания.
@@ -1107,12 +1201,10 @@ namespace Bugget.Contracts.Reports.Generated
         [System.Text.Json.Serialization.JsonPropertyName("entity_id")]
         public int Entity_id { get; set; }
 
-        /// <summary>
-        /// Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
-        /// <br/>2 — комментарий, 3 — шаг воспроизведения.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("attach_type")]
-        public int Attach_type { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<AttachType>))]
+        public AttachType Attach_type { get; set; }
 
         /// <summary>
         /// Момент загрузки.
@@ -1231,11 +1323,10 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Title { get; set; }
 
-        /// <summary>
-        /// Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public int Status { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ReportStatus>))]
+        public ReportStatus Status { get; set; }
 
         /// <summary>
         /// Текущий ответственный.
@@ -1278,11 +1369,10 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.DateTimeOffset Updated_at { get; set; }
 
-        /// <summary>
-        /// Тип автора — человек или бот.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
-        public int Creator_type { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CreatorType>))]
+        public CreatorType Creator_type { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -1316,11 +1406,10 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Title { get; set; }
 
-        /// <summary>
-        /// Статус репорта.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public int Status { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ReportStatus>))]
+        public ReportStatus Status { get; set; }
 
         /// <summary>
         /// Текущий ответственный.
@@ -1375,11 +1464,10 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Title { get; set; }
 
-        /// <summary>
-        /// Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public int Status { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ReportStatus>))]
+        public ReportStatus Status { get; set; }
 
         /// <summary>
         /// Текущий ответственный.
@@ -1422,11 +1510,10 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.DateTimeOffset Updated_at { get; set; }
 
-        /// <summary>
-        /// Тип автора — человек или бот.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
-        public int Creator_type { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CreatorType>))]
+        public CreatorType Creator_type { get; set; }
 
         /// <summary>
         /// Исключён ли репорт из агрегатов аналитики.
@@ -1487,11 +1574,10 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Title { get; set; }
 
-        /// <summary>
-        /// Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public int Status { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ReportStatus>))]
+        public ReportStatus Status { get; set; }
 
         /// <summary>
         /// Текущий ответственный.
@@ -1534,11 +1620,10 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.DateTimeOffset Updated_at { get; set; }
 
-        /// <summary>
-        /// Тип автора — человек или бот.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("creator_type")]
-        public int Creator_type { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CreatorType>))]
+        public CreatorType Creator_type { get; set; }
 
         /// <summary>
         /// Исключён ли репорт из агрегатов аналитики.

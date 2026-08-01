@@ -1,5 +1,6 @@
 import { reportsApi } from "@/shared/api";
 import type { AttachmentResponse } from "./contracts";
+import type { AttachmentTypes } from "@/shared/config";
 
 /**
  * Вложения бага, комментария и шага. Multipart, имя поля файла и `attachType`
@@ -10,7 +11,7 @@ import type { AttachmentResponse } from "./contracts";
 type UploadAttachmentParameters = {
   reportId: string;
   bugId: number;
-  attachType: number;
+  attachType: AttachmentTypes;
   file: File;
 };
 

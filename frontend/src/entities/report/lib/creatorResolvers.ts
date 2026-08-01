@@ -22,11 +22,10 @@ const resolvers: Partial<Record<CreatorTypes, CreatorResolver>> = {
 
 export const resolveCreatorName = (
   creatorUserId: string,
-  creatorType: number,
+  creatorType: CreatorTypes,
   ctx: CreatorResolverContext
 ): string | null => {
   if (!creatorUserId) return null;
-  const resolver =
-    resolvers[creatorType as CreatorTypes] ?? internalUserResolver;
+  const resolver = resolvers[creatorType] ?? internalUserResolver;
   return resolver(creatorUserId, ctx);
 };

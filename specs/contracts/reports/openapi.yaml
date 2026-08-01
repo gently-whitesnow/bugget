@@ -82,21 +82,21 @@ paths:
         - name: reportStatuses
           in: query
           required: false
-          description: Фильтр по статусам репорта (числовые значения `ReportStatus`).
+          description: Фильтр по статусам репорта.
           schema:
             type: array
             nullable: true
             items:
-              type: integer
+              $ref: '#/components/schemas/ReportStatus'
         - name: creatorTypes
           in: query
           required: false
-          description: Фильтр по типу создателя (числовые значения `CreatorType`).
+          description: Фильтр по типу создателя.
           schema:
             type: array
             nullable: true
             items:
-              type: integer
+              $ref: '#/components/schemas/CreatorType'
         - name: skip
           in: query
           required: false
@@ -358,7 +358,7 @@ paths:
             type: array
             nullable: true
             items:
-              type: integer
+              $ref: '#/components/schemas/ReportStatus'
         - name: userId
           in: query
           required: false
@@ -404,7 +404,7 @@ paths:
             type: array
             nullable: true
             items:
-              type: integer
+              $ref: '#/components/schemas/CreatorType'
       responses:
         '200':
           description: Страница найденных репортов.
@@ -662,9 +662,12 @@ paths:
         - name: attachType
           in: query
           required: true
-          description: К чему относится вложение — 0 факт, 1 ожидание.
+          description: |-
+            К чему относится вложение. Ручка бага принимает только `fact` и
+            `expected`; `comment` и `bug_step` сервер выводит из маршрута и
+            здесь отклоняет.
           schema:
-            type: integer
+            $ref: '#/components/schemas/AttachType'
       requestBody:
         required: true
         content:
@@ -1045,6 +1048,66 @@ components:
 
   schemas:
 
+    # Enum-like значения провода — закрытые множества строк `snake_case`.
+    # Внутри домена и в Postgres те же значения остаются числами: перевод
+    # числа в строку и обратно живёт ровно на HTTP-границе (ADR-0012).
+    # Порядок значений совпадает с числовым представлением домена, но
+    # опираться на него нельзя: соответствие задаёт явный маппер.
+
+    ReportStatus:
+      type: string
+      description: |-
+        Статус репорта. Числа домена: `backlog` 0, `resolved` 1, `fix` 2,
+        `rejected` 3, `test` 4.
+      enum:
+        - backlog
+        - resolved
+        - fix
+        - rejected
+        - test
+
+    BugStatus:
+      type: string
+      description: |-
+        Статус бага. Числа домена: `open` 0, `verified` 1, `rejected` 2,
+        `fixed` 3.
+      enum:
+        - open
+        - verified
+        - rejected
+        - fixed
+
+    CreatorType:
+      type: string
+      description: |-
+        Тип автора. Числа домена: `user` 0, `system` 1 (журнал действий),
+        `tg_beta_tester` 2 (внешний автор через beta-test bot).
+      enum:
+        - user
+        - system
+        - tg_beta_tester
+
+    CommentAudience:
+      type: string
+      description: |-
+        Кому виден комментарий: `internal` — команде, `external` — уходит
+        внешнему автору. Числа домена: `internal` 0, `external` 1.
+      enum:
+        - internal
+        - external
+
+    AttachType:
+      type: string
+      description: |-
+        К чему прикреплён файл: `fact` — фактический результат, `expected` —
+        ожидаемый, `comment` — комментарий, `bug_step` — шаг воспроизведения.
+        Числа домена: 0, 1, 2, 3 в том же порядке.
+      enum:
+        - fact
+        - expected
+        - comment
+        - bug_step
+
     ReportCreateRequest:
       type: object
       description: Тело создания репорта.
@@ -1070,13 +1133,10 @@ components:
           maxLength: 128
           description: Новый заголовок репорта.
         status:
-          type: integer
+          allOf:
+            - $ref: '#/components/schemas/ReportStatus'
           nullable: true
-          minimum: 0
-          maximum: 4
-          description: |
-            Новый статус репорта: 0 — backlog, 1 — resolved, 2 — fix,
-            3 — rejected, 4 — test.
+          description: Новый статус репорта.
         responsible_user_id:
           type: string
           nullable: true
@@ -1158,11 +1218,10 @@ components:
           maxLength: 2048
           description: Ожидаемый результат.
         status:
-          type: integer
+          allOf:
+            - $ref: '#/components/schemas/BugStatus'
           nullable: true
-          minimum: 0
-          maximum: 3
-          description: Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+          description: Новый статус бага.
 
     BugStepRequest:
       type: object
@@ -1223,13 +1282,12 @@ components:
           maxLength: 2048
           description: Текст комментария.
         audience:
-          type: integer
+          allOf:
+            - $ref: '#/components/schemas/CommentAudience'
           nullable: true
-          minimum: 0
-          maximum: 1
           description: |
-            0 — внутренний (для команды, по умолчанию), 1 — внешний (пересылается
-            тестеру). Пропущенное поле трактуется как внутренний.
+            `internal` — для команды (по умолчанию), `external` — пересылается
+            тестеру. Пропущенное поле трактуется как `internal`.
 
     ReportCountsScope:
       type: object
@@ -1249,7 +1307,7 @@ components:
           nullable: true
           description: Фильтр по статусам репорта.
           items:
-            type: integer
+            $ref: '#/components/schemas/ReportStatus'
         team_id:
           type: string
           nullable: true
@@ -1259,7 +1317,7 @@ components:
           nullable: true
           description: Фильтр по типу создателя.
           items:
-            type: integer
+            $ref: '#/components/schemas/CreatorType'
 
     ReportCountsBatchRequest:
       type: object
@@ -1405,11 +1463,9 @@ components:
           type: string
           description: Автор комментария.
         creator_type:
-          type: integer
-          description: Тип автора — человек или бот.
+          $ref: '#/components/schemas/CreatorType'
         audience:
-          type: integer
-          description: 0 — внутренний (для команды), 1 — внешний (уходит тестеру).
+          $ref: '#/components/schemas/CommentAudience'
         created_at:
           type: string
           format: date-time
@@ -1480,11 +1536,9 @@ components:
           type: string
           description: Автор бага.
         status:
-          type: integer
-          description: Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+          $ref: '#/components/schemas/BugStatus'
         creator_type:
-          type: integer
-          description: Тип автора — человек или бот.
+          $ref: '#/components/schemas/CreatorType'
         attachments:
           type: array
           nullable: true
@@ -1556,11 +1610,9 @@ components:
           type: string
           description: Автор бага.
         status:
-          type: integer
-          description: Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+          $ref: '#/components/schemas/BugStatus'
         creator_type:
-          type: integer
-          description: Тип автора — человек или бот.
+          $ref: '#/components/schemas/CreatorType'
         comments:
           type: array
           nullable: true
@@ -1614,11 +1666,9 @@ components:
           type: string
           description: Автор бага.
         status:
-          type: integer
-          description: Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+          $ref: '#/components/schemas/BugStatus'
         creator_type:
-          type: integer
-          description: Тип автора — человек или бот.
+          $ref: '#/components/schemas/CreatorType'
 
     BugPatchResult:
       type: object
@@ -1656,8 +1706,7 @@ components:
           format: date-time
           description: Момент последнего изменения.
         status:
-          type: integer
-          description: Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected.
+          $ref: '#/components/schemas/BugStatus'
 
     CommentSummary:
       type: object
@@ -1687,11 +1736,9 @@ components:
           type: string
           description: Автор комментария.
         creator_type:
-          type: integer
-          description: Тип автора — человек или бот.
+          $ref: '#/components/schemas/CreatorType'
         audience:
-          type: integer
-          description: 0 — внутренний (для команды), 1 — внешний (уходит тестеру).
+          $ref: '#/components/schemas/CommentAudience'
         created_at:
           type: string
           format: date-time
@@ -1726,10 +1773,7 @@ components:
           type: integer
           description: Идентификатор сущности, к которой прикреплён файл.
         attach_type:
-          type: integer
-          description: |-
-            Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
-            2 — комментарий, 3 — шаг воспроизведения.
+          $ref: '#/components/schemas/AttachType'
         created_at:
           type: string
           format: date-time
@@ -1798,8 +1842,7 @@ components:
           type: string
           description: Заголовок репорта.
         status:
-          type: integer
-          description: Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test.
+          $ref: '#/components/schemas/ReportStatus'
         responsible_user_id:
           type: string
           description: Текущий ответственный.
@@ -1822,8 +1865,7 @@ components:
           format: date-time
           description: Момент последнего изменения.
         creator_type:
-          type: integer
-          description: Тип автора — человек или бот.
+          $ref: '#/components/schemas/CreatorType'
 
     ReportPatchResult:
       type: object
@@ -1843,8 +1885,7 @@ components:
           type: string
           description: Заголовок репорта.
         status:
-          type: integer
-          description: Статус репорта.
+          $ref: '#/components/schemas/ReportStatus'
         responsible_user_id:
           type: string
           description: Текущий ответственный.
@@ -1882,8 +1923,7 @@ components:
           type: string
           description: Заголовок репорта.
         status:
-          type: integer
-          description: Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test.
+          $ref: '#/components/schemas/ReportStatus'
         responsible_user_id:
           type: string
           description: Текущий ответственный.
@@ -1906,8 +1946,7 @@ components:
           format: date-time
           description: Момент последнего изменения.
         creator_type:
-          type: integer
-          description: Тип автора — человек или бот.
+          $ref: '#/components/schemas/CreatorType'
         is_excluded_from_analytics:
           type: boolean
           description: Исключён ли репорт из агрегатов аналитики.
@@ -1956,8 +1995,7 @@ components:
           type: string
           description: Заголовок репорта.
         status:
-          type: integer
-          description: Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test.
+          $ref: '#/components/schemas/ReportStatus'
         responsible_user_id:
           type: string
           description: Текущий ответственный.
@@ -1980,8 +2018,7 @@ components:
           format: date-time
           description: Момент последнего изменения.
         creator_type:
-          type: integer
-          description: Тип автора — человек или бот.
+          $ref: '#/components/schemas/CreatorType'
         is_excluded_from_analytics:
           type: boolean
           description: Исключён ли репорт из агрегатов аналитики.

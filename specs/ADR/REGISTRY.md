@@ -19,6 +19,7 @@
 | [0009](0009-wire-ui-case-boundary.md) | Единая граница регистров wire↔UI на фронте | Accepted | 2026-07-30 |
 | [0010](0010-contract-tests-without-snapshots.md) | Поведенческие contract-тесты с явными assertions, полное описание провода — только OpenAPI | Accepted | 2026-07-31 |
 | [0011](0011-created-report-location.md) | Создание репорта возвращает 201, тело и внешний origin-relative Location | Accepted | 2026-08-01 |
+| [0012](0012-string-enum-wire-contract.md) | Enum-like значения публичного HTTP API — строки `snake_case`, домен и БД остаются числовыми | Accepted | 2026-08-01 |
 
 Идентификатор `ADR-20260518`, который встречается в описаниях контрактов и в
 сгенерированных `.g.cs`, — из старой схемы нумерации по дате. Он относится к решению

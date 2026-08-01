@@ -17,7 +17,7 @@ import type {
   CommentSummaryResponse,
   Attachment,
 } from "@/entities/report";
-import { AttachmentTypes } from "@/shared/config";
+import { AttachmentTypes, type CommentAudiences } from "@/shared/config";
 import { notificationMessages, notifyErrorRequested } from "@/shared/model";
 import type {
   AttachmentSocketResponse,
@@ -76,7 +76,7 @@ export const createCommentFx = createEffect<
     reportId: string;
     bugId: number;
     text: string;
-    audience?: number;
+    audience?: CommentAudiences;
   },
   Comment,
   Error
@@ -433,9 +433,9 @@ $commentsByBugId
       }))
   )
   .on(commentAttachmentChangedSocketEvent, (state, payload) => {
-    if (payload.attachType !== AttachmentTypes.COMMENT) return state;
-
     const attachment = attachmentFromSocket(payload);
+
+    if (attachment.attachType !== AttachmentTypes.COMMENT) return state;
 
     return patchCommentById(state, payload.entityId, (comment) => ({
       ...comment,

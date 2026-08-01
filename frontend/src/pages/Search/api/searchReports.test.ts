@@ -44,11 +44,11 @@ describe("searchReports", () => {
       teamId: "t-1",
       skip: 10,
       take: 10,
-      reportStatuses: [0, 4],
+      reportStatuses: ["backlog", "test"],
     });
 
     expect(captured?.url).toBe(
-      `${contextPrefix}/v1/reports/search?query=%D0%BF%D0%B0%D0%B4%D0%B0%D0%B5%D1%82&sort=created&userId=u-1&teamId=t-1&skip=10&take=10&reportStatuses=0&reportStatuses=4`
+      `${contextPrefix}/v1/reports/search?query=%D0%BF%D0%B0%D0%B4%D0%B0%D0%B5%D1%82&sort=created&userId=u-1&teamId=t-1&skip=10&take=10&reportStatuses=backlog&reportStatuses=test`
     );
   });
 

@@ -6,7 +6,6 @@ using Bugget.Api.Mappers;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Attachments;
 using Bugget.Contracts.Reports.Generated;
-using Bugget.Domain;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Constants;
 using Microsoft.AspNetCore.Mvc;
@@ -29,8 +28,9 @@ public sealed class BugAttachmentsController(
         string aliasId,
         int bugId,
         // Обязательность query-параметра генератор в атрибут не переносит, а без неё
-        // пропущенный attachType связался бы нулём и вложение легло бы «в факт».
-        [Required] int attachType,
+        // пропущенный attachType связался бы первым значением enum'а и вложение
+        // легло бы «в факт».
+        [Required] AttachType attachType,
         [FromForm] FileParameter file,
         CancellationToken cancellationToken = default)
     {
@@ -41,7 +41,7 @@ public sealed class BugAttachmentsController(
             aliasId,
             bugId,
             content,
-            (AttachType)attachType,
+            attachType.ToDomain(),
             meta,
             cancellationToken)
             .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract(), 201);

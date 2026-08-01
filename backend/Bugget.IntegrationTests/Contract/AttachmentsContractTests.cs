@@ -20,12 +20,12 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
         var (reportId, bugId) = await CreateBugAsync(scenario);
 
         var response = await scenario.Client.PostAsync(
-            $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=0",
+            $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=fact",
             ContractScenario.FileContent("shot.png"));
 
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.Created);
         Assert.Equal("shot.png", body.GetProperty("file_name").GetString());
-        Assert.Equal(0, body.GetProperty("attach_type").GetInt32());
+        Assert.Equal("fact", body.GetProperty("attach_type").GetString());
         Assert.Equal(bugId, body.GetProperty("entity_id").GetInt32());
     }
 
@@ -47,19 +47,16 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
     }
 
     /// <summary>
-    /// `attachType` у баговой ручки приходит из query, и на проводе это просто `integer`.
-    /// Вложения всех контекстов лежат в одной таблице и разводятся по владельцам только
-    /// значением `attach_type`, поэтому чужое значение (2 — комментарий, 3 — шаг) или
-    /// значение вне 0..3 не должно доезжать до хранилища: иначе вложение бага всплыло бы
-    /// у комментария или шага с тем же идентификатором. Тест фиксирует, что это уже
-    /// закрыто доменной ошибкой, а не только описанием в контракте.
+    /// Вложения всех контекстов лежат в одной таблице и разводятся по владельцам
+    /// только значением `attach_type`, поэтому чужой тип не должен доезжать до
+    /// хранилища: иначе вложение бага всплыло бы у комментария или шага с тем же
+    /// идентификатором. `comment` и `bug_step` контракт знает, но у баговой ручки
+    /// они запрещены — это доменный отказ, а не ошибка разбора.
     /// </summary>
-    [Theory(DisplayName = "POST .../bugs/{bugId}/attachments с чужим или неизвестным attachType: 400")]
-    [InlineData(2)]
-    [InlineData(3)]
-    [InlineData(99)]
-    [InlineData(-1)]
-    public async Task UploadBugAttachmentWithForeignType(int attachType)
+    [Theory(DisplayName = "POST .../bugs/{bugId}/attachments с чужим attachType: 400 attachment_type_not_allowed")]
+    [InlineData("comment")]
+    [InlineData("bug_step")]
+    public async Task UploadBugAttachmentWithForeignType(string attachType)
     {
         var scenario = ContractScenario.Create(fixture);
         var (reportId, bugId) = await CreateBugAsync(scenario);
@@ -74,12 +71,35 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
             HttpStatusCode.BadRequest);
     }
 
+    /// <summary>
+    /// Значение вне контракта до домена не доходит вовсе: разбор строгий, поэтому
+    /// и число старого провода, и другой регистр, и незнакомое слово одинаково
+    /// отвергаются связыванием.
+    /// </summary>
+    [Theory(DisplayName = "POST .../bugs/{bugId}/attachments с недопустимым attachType: 400 validation_error")]
+    [InlineData("0")]
+    [InlineData("Fact")]
+    [InlineData("FACT")]
+    [InlineData("unknown")]
+    [InlineData("")]
+    public async Task UploadBugAttachmentWithInvalidType(string attachType)
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var (reportId, bugId) = await CreateBugAsync(scenario);
+
+        var response = await scenario.Client.PostAsync(
+            $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType={attachType}",
+            ContractScenario.FileContent("shot.png"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact(DisplayName = "GET .../attachments/{id}/content: содержимое вложения")]
     public async Task DownloadBugAttachment()
     {
         var scenario = ContractScenario.Create(fixture);
         var (reportId, bugId) = await CreateBugAsync(scenario);
-        var attachmentId = await UploadAsync(scenario, $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=0");
+        var attachmentId = await UploadAsync(scenario, $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=fact");
 
         var response = await scenario.Client.GetAsync(
             $"/v2/reports/{reportId}/bugs/{bugId}/attachments/{attachmentId}/content");
@@ -96,7 +116,7 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
     {
         var scenario = ContractScenario.Create(fixture);
         var (reportId, bugId) = await CreateBugAsync(scenario);
-        var attachmentId = await UploadAsync(scenario, $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=0");
+        var attachmentId = await UploadAsync(scenario, $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=fact");
 
         var response = await scenario.Client.GetAsync(
             $"/v2/reports/{reportId}/bugs/{bugId}/attachments/{attachmentId}/content/preview");
@@ -110,7 +130,7 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
     {
         var scenario = ContractScenario.Create(fixture);
         var (reportId, bugId) = await CreateBugAsync(scenario);
-        var attachmentId = await UploadAsync(scenario, $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=0");
+        var attachmentId = await UploadAsync(scenario, $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=fact");
 
         var response = await scenario.Client.PatchAsJsonAsync(
             $"/v2/reports/{reportId}/bugs/{bugId}/attachments/{attachmentId}",
@@ -126,7 +146,7 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
     {
         var scenario = ContractScenario.Create(fixture);
         var (reportId, bugId) = await CreateBugAsync(scenario);
-        var attachmentId = await UploadAsync(scenario, $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=0");
+        var attachmentId = await UploadAsync(scenario, $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType=fact");
 
         var response = await scenario.Client.DeleteAsync(
             $"/v2/reports/{reportId}/bugs/{bugId}/attachments/{attachmentId}");
@@ -146,7 +166,7 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
         var createdBody = await ContractResponse.JsonAsync(created, HttpStatusCode.Created);
 
         // Тип вложения комментария ставит сервер, а владелец — сам комментарий.
-        Assert.Equal(2, createdBody.GetProperty("attach_type").GetInt32());
+        Assert.Equal("comment", createdBody.GetProperty("attach_type").GetString());
         Assert.Equal(commentId, createdBody.GetProperty("entity_id").GetInt32());
 
         var attachmentId = createdBody.GetProperty("id").GetInt32();
@@ -179,7 +199,7 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
         var createdBody = await ContractResponse.JsonAsync(created, HttpStatusCode.Created);
 
         // Тип вложения шага ставит сервер, а владелец — сам шаг.
-        Assert.Equal(3, createdBody.GetProperty("attach_type").GetInt32());
+        Assert.Equal("bug_step", createdBody.GetProperty("attach_type").GetString());
         Assert.Equal(stepId, createdBody.GetProperty("entity_id").GetInt32());
 
         var attachmentId = createdBody.GetProperty("id").GetInt32();

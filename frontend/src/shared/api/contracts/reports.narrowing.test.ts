@@ -38,14 +38,14 @@ const wireListResponse: components["schemas"]["ReportList"] = {
     {
       id: "42",
       title: "Не открывается карточка",
-      status: 0,
+      status: "backlog",
       responsible_user_id: "u-1",
       past_responsible_user_id: "u-2",
       creator_user_id: "u-3",
       creator_team_id: "t-1",
       created_at: "2026-07-01T10:00:00Z",
       updated_at: "2026-07-02T10:00:00Z",
-      creator_type: 0,
+      creator_type: "user",
       is_excluded_from_analytics: false,
       participants_user_ids: ["u-1"],
       bugs: [
@@ -58,16 +58,16 @@ const wireListResponse: components["schemas"]["ReportList"] = {
           created_at: "2026-07-01T10:00:00Z",
           updated_at: "2026-07-01T10:00:00Z",
           creator_user_id: "u-3",
-          status: 0,
-          creator_type: 0,
+          status: "open",
+          creator_type: "user",
           comments: [
             {
               id: 7,
               bug_id: 1,
               text: "воспроизвёл",
               creator_user_id: "u-1",
-              creator_type: 0,
-              audience: 0,
+              creator_type: "user",
+              audience: "internal",
               created_at: "2026-07-01T11:00:00Z",
               updated_at: "2026-07-01T11:00:00Z",
               attachments: null,
@@ -98,7 +98,7 @@ describe("сужение контракта reports на фронте", () => {
 
     expect(comment?.bugId).toBe(1);
     expect(comment?.creatorUserId).toBe("u-1");
-    expect(comment?.creatorType).toBe(0);
+    expect(comment?.creatorType).toBe("user");
     // Комментарии список грузит, а их вложения — нет: ключ остаётся, значение null.
     expect(comment?.attachments).toBeNull();
   });

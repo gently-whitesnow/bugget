@@ -24,7 +24,7 @@ public sealed class SearchController(
 {
     public override async Task<ActionResult<ReportList>> SearchReports(
         string? query = null,
-        IEnumerable<int>? reportStatuses = null,
+        IEnumerable<ReportStatus>? reportStatuses = null,
         string? userId = null,
         string? teamId = null,
         string? sort = null,
@@ -33,21 +33,21 @@ public sealed class SearchController(
         // связыванием.
         [Range(0, int.MaxValue)] int? skip = 0,
         [Range(0, int.MaxValue)] int? take = 10,
-        IEnumerable<int>? creatorTypes = null,
+        IEnumerable<CreatorType>? creatorTypes = null,
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
         var (total, reports) = await reportsService.SearchReportsAsync(
             ReportMapper.ToSearchReports(
                 query,
-                reportStatuses?.ToArray(),
+                reportStatuses?.Select(status => status.ToDomainValue()).ToArray(),
                 userId,
                 teamId,
                 user.OrganizationId,
                 sort,
                 (uint)(skip ?? 0),
                 (uint)(take ?? 10),
-                creatorTypes?.Select(type => (short)type).ToArray()
+                creatorTypes?.Select(type => (short)type.ToDomainValue()).ToArray()
                 ));
 
         return new ReportViews

@@ -12,6 +12,12 @@ import type {
   Comment,
   ReportLink,
 } from "../model/types";
+import {
+  attachTypeFromSocket,
+  bugStatusFromSocket,
+  commentAudienceFromSocket,
+  creatorTypeFromSocket,
+} from "./socketEnums";
 
 /**
  * Адаптеры realtime-payload → сущность стора.
@@ -23,7 +29,9 @@ import type {
  * и разъезжается компиляцией, а не в рантайме у заказчика.
  *
  * Адаптеры перечисляют поля по именам намеренно: пропавшее у payload'а поле —
- * ошибка компиляции здесь, а не `undefined` в сторе.
+ * ошибка компиляции здесь, а не `undefined` в сторе. Enum'ы realtime остались
+ * числовыми, поэтому те же адаптеры переводят их в значения провода
+ * (`./socketEnums`) — второго представления статуса в сторе нет.
  */
 
 export const attachmentFromSocket = (
@@ -31,7 +39,7 @@ export const attachmentFromSocket = (
 ): Attachment => ({
   id: payload.id,
   entityId: payload.entityId,
-  attachType: payload.attachType,
+  attachType: attachTypeFromSocket(payload.attachType),
   createdAt: payload.createdAt,
   creatorUserId: payload.creatorUserId,
   fileName: payload.fileName,
@@ -61,8 +69,8 @@ export const commentFromSocket = (payload: CommentSocketResponse): Comment => ({
   bugId: payload.bugId,
   text: payload.text,
   creatorUserId: payload.creatorUserId,
-  creatorType: payload.creatorType,
-  audience: payload.audience,
+  creatorType: creatorTypeFromSocket(payload.creatorType),
+  audience: commentAudienceFromSocket(payload.audience),
   createdAt: payload.createdAt,
   updatedAt: payload.updatedAt,
   attachments: null,
@@ -80,6 +88,15 @@ export const commentUpdateFromSocket = (
   ...commentFromSocket(payload),
   attachments: existing.attachments,
 });
+
+/**
+ * Патч бага: статус приходит числом и может отсутствовать — «не менять».
+ */
+export const bugStatusPatchFromSocket = (
+  value: number | null | undefined,
+  current: BugClientEntity["status"]
+): BugClientEntity["status"] =>
+  value === null || value === undefined ? current : bugStatusFromSocket(value);
 
 export const reportLinkFromSocket = (
   payload: ReportLinkSocketResponse
@@ -107,10 +124,10 @@ export const bugFromSocket = (
   receive: payload.receive,
   expect: payload.expect,
   creatorUserId: payload.creatorUserId,
-  creatorType: payload.creatorType,
+  creatorType: creatorTypeFromSocket(payload.creatorType),
   createdAt: payload.createdAt,
   updatedAt: payload.updatedAt,
-  status: payload.status,
+  status: bugStatusFromSocket(payload.status),
   attachments: null,
   comments: null,
   clientId: payload.id,

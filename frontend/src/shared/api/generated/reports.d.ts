@@ -522,6 +522,37 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description Статус репорта. Числа домена: `backlog` 0, `resolved` 1, `fix` 2,
+         *     `rejected` 3, `test` 4.
+         * @enum {string}
+         */
+        ReportStatus: "backlog" | "resolved" | "fix" | "rejected" | "test";
+        /**
+         * @description Статус бага. Числа домена: `open` 0, `verified` 1, `rejected` 2,
+         *     `fixed` 3.
+         * @enum {string}
+         */
+        BugStatus: "open" | "verified" | "rejected" | "fixed";
+        /**
+         * @description Тип автора. Числа домена: `user` 0, `system` 1 (журнал действий),
+         *     `tg_beta_tester` 2 (внешний автор через beta-test bot).
+         * @enum {string}
+         */
+        CreatorType: "user" | "system" | "tg_beta_tester";
+        /**
+         * @description Кому виден комментарий: `internal` — команде, `external` — уходит
+         *     внешнему автору. Числа домена: `internal` 0, `external` 1.
+         * @enum {string}
+         */
+        CommentAudience: "internal" | "external";
+        /**
+         * @description К чему прикреплён файл: `fact` — фактический результат, `expected` —
+         *     ожидаемый, `comment` — комментарий, `bug_step` — шаг воспроизведения.
+         *     Числа домена: 0, 1, 2, 3 в том же порядке.
+         * @enum {string}
+         */
+        AttachType: "fact" | "expected" | "comment" | "bug_step";
         /** @description Тело создания репорта. */
         ReportCreateRequest: {
             /** @description Заголовок репорта. */
@@ -534,11 +565,8 @@ export interface components {
         ReportPatchRequest: {
             /** @description Новый заголовок репорта. */
             title?: string | null;
-            /**
-             * @description Новый статус репорта: 0 — backlog, 1 — resolved, 2 — fix,
-             *     3 — rejected, 4 — test.
-             */
-            status?: number | null;
+            /** @description Новый статус репорта. */
+            status?: components["schemas"]["ReportStatus"] | null;
             /** @description Новый ответственный за репорт. */
             responsible_user_id?: string | null;
             /**
@@ -576,8 +604,8 @@ export interface components {
             receive?: string | null;
             /** @description Ожидаемый результат. */
             expect?: string | null;
-            /** @description Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected. */
-            status?: number | null;
+            /** @description Новый статус бага. */
+            status?: components["schemas"]["BugStatus"] | null;
         };
         /** @description Тело создания и обновления шага воспроизведения. */
         BugStepRequest: {
@@ -607,10 +635,10 @@ export interface components {
             /** @description Текст комментария. */
             text: string;
             /**
-             * @description 0 — внутренний (для команды, по умолчанию), 1 — внешний (пересылается
-             *     тестеру). Пропущенное поле трактуется как внутренний.
+             * @description `internal` — для команды (по умолчанию), `external` — пересылается
+             *     тестеру. Пропущенное поле трактуется как `internal`.
              */
-            audience?: number | null;
+            audience?: components["schemas"]["CommentAudience"] | null;
         };
         /** @description Один срез для счётчика: ключ и фильтры, совпадающие с фильтрами LIST. */
         ReportCountsScope: {
@@ -620,11 +648,11 @@ export interface components {
              */
             key: string;
             /** @description Фильтр по статусам репорта. */
-            statuses?: number[] | null;
+            statuses?: components["schemas"]["ReportStatus"][] | null;
             /** @description Фильтр по команде-создателю. */
             team_id?: string | null;
             /** @description Фильтр по типу создателя. */
-            creator_types?: number[] | null;
+            creator_types?: components["schemas"]["CreatorType"][] | null;
         };
         /**
          * @description Набор срезов. Ключи обязаны быть уникальными, срезов не больше 50 —
@@ -705,10 +733,8 @@ export interface components {
             text: string;
             /** @description Автор комментария. */
             creator_user_id: string;
-            /** @description Тип автора — человек или бот. */
-            creator_type: number;
-            /** @description 0 — внутренний (для команды), 1 — внешний (уходит тестеру). */
-            audience: number;
+            creator_type: components["schemas"]["CreatorType"];
+            audience: components["schemas"]["CommentAudience"];
             /**
              * Format: date-time
              * @description Момент создания.
@@ -754,10 +780,8 @@ export interface components {
             updated_at: string;
             /** @description Автор бага. */
             creator_user_id: string;
-            /** @description Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected. */
-            status: number;
-            /** @description Тип автора — человек или бот. */
-            creator_type: number;
+            status: components["schemas"]["BugStatus"];
+            creator_type: components["schemas"]["CreatorType"];
             /** @description Вложения бага. `null` — не запрашивались. */
             attachments: components["schemas"]["AttachmentSummary"][] | null;
             /** @description Комментарии бага. `null` — не запрашивались. */
@@ -796,10 +820,8 @@ export interface components {
             updated_at: string;
             /** @description Автор бага. */
             creator_user_id: string;
-            /** @description Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected. */
-            status: number;
-            /** @description Тип автора — человек или бот. */
-            creator_type: number;
+            status: components["schemas"]["BugStatus"];
+            creator_type: components["schemas"]["CreatorType"];
             /** @description Комментарии бага. `null` — не запрашивались. */
             comments: components["schemas"]["Comment"][] | null;
         };
@@ -831,10 +853,8 @@ export interface components {
             updated_at: string;
             /** @description Автор бага. */
             creator_user_id: string;
-            /** @description Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected. */
-            status: number;
-            /** @description Тип автора — человек или бот. */
-            creator_type: number;
+            status: components["schemas"]["BugStatus"];
+            creator_type: components["schemas"]["CreatorType"];
         };
         /**
          * @description Что изменилось в баге после PATCH.
@@ -857,8 +877,7 @@ export interface components {
              * @description Момент последнего изменения.
              */
             updated_at: string;
-            /** @description Статус бага — 0 open, 1 fixed, 2 verified, 3 rejected. */
-            status: number;
+            status: components["schemas"]["BugStatus"];
         };
         /**
          * @description Комментарий без вложений — ответ на создание и обновление. Отличается от
@@ -873,10 +892,8 @@ export interface components {
             text: string;
             /** @description Автор комментария. */
             creator_user_id: string;
-            /** @description Тип автора — человек или бот. */
-            creator_type: number;
-            /** @description 0 — внутренний (для команды), 1 — внешний (уходит тестеру). */
-            audience: number;
+            creator_type: components["schemas"]["CreatorType"];
+            audience: components["schemas"]["CommentAudience"];
             /**
              * Format: date-time
              * @description Момент создания.
@@ -901,11 +918,7 @@ export interface components {
             id: number;
             /** @description Идентификатор сущности, к которой прикреплён файл. */
             entity_id: number;
-            /**
-             * @description Тип сущности: 0 — факт (`receive`), 1 — ожидаемый результат (`expect`),
-             *     2 — комментарий, 3 — шаг воспроизведения.
-             */
-            attach_type: number;
+            attach_type: components["schemas"]["AttachType"];
             /**
              * Format: date-time
              * @description Момент загрузки.
@@ -945,8 +958,7 @@ export interface components {
             id: string;
             /** @description Заголовок репорта. */
             title: string;
-            /** @description Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test. */
-            status: number;
+            status: components["schemas"]["ReportStatus"];
             /** @description Текущий ответственный. */
             responsible_user_id: string;
             /** @description Предыдущий ответственный. */
@@ -965,8 +977,7 @@ export interface components {
              * @description Момент последнего изменения.
              */
             updated_at: string;
-            /** @description Тип автора — человек или бот. */
-            creator_type: number;
+            creator_type: components["schemas"]["CreatorType"];
         };
         /** @description Что изменилось в репорте после PATCH. */
         ReportPatchResult: {
@@ -974,8 +985,7 @@ export interface components {
             id: string;
             /** @description Заголовок репорта. */
             title: string;
-            /** @description Статус репорта. */
-            status: number;
+            status: components["schemas"]["ReportStatus"];
             /** @description Текущий ответственный. */
             responsible_user_id: string;
             /** @description Предыдущий ответственный. */
@@ -992,8 +1002,7 @@ export interface components {
             id: string;
             /** @description Заголовок репорта. */
             title: string;
-            /** @description Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test. */
-            status: number;
+            status: components["schemas"]["ReportStatus"];
             /** @description Текущий ответственный. */
             responsible_user_id: string;
             /** @description Предыдущий ответственный. */
@@ -1012,8 +1021,7 @@ export interface components {
              * @description Момент последнего изменения.
              */
             updated_at: string;
-            /** @description Тип автора — человек или бот. */
-            creator_type: number;
+            creator_type: components["schemas"]["CreatorType"];
             /** @description Исключён ли репорт из агрегатов аналитики. */
             is_excluded_from_analytics: boolean;
             /** @description Все, кто участвовал в репорте. */
@@ -1032,8 +1040,7 @@ export interface components {
             id: string;
             /** @description Заголовок репорта. */
             title: string;
-            /** @description Статус репорта — 0 backlog, 1 resolved, 2 fix, 3 rejected, 4 test. */
-            status: number;
+            status: components["schemas"]["ReportStatus"];
             /** @description Текущий ответственный. */
             responsible_user_id: string;
             /** @description Предыдущий ответственный. */
@@ -1052,8 +1059,7 @@ export interface components {
              * @description Момент последнего изменения.
              */
             updated_at: string;
-            /** @description Тип автора — человек или бот. */
-            creator_type: number;
+            creator_type: components["schemas"]["CreatorType"];
             /** @description Исключён ли репорт из агрегатов аналитики. */
             is_excluded_from_analytics: boolean;
             /** @description Все, кто участвовал в репорте. */
@@ -1245,10 +1251,10 @@ export interface operations {
                 userId?: string | null;
                 /** @description Фильтр по команде-создателю. */
                 teamId?: string | null;
-                /** @description Фильтр по статусам репорта (числовые значения `ReportStatus`). */
-                reportStatuses?: number[] | null;
-                /** @description Фильтр по типу создателя (числовые значения `CreatorType`). */
-                creatorTypes?: number[] | null;
+                /** @description Фильтр по статусам репорта. */
+                reportStatuses?: components["schemas"]["ReportStatus"][] | null;
+                /** @description Фильтр по типу создателя. */
+                creatorTypes?: components["schemas"]["CreatorType"][] | null;
                 /** @description Сколько записей пропустить. */
                 skip?: number;
                 /** @description Размер страницы. */
@@ -1554,7 +1560,7 @@ export interface operations {
                 /** @description Поисковая строка. Пустая — фильтрация без текстового поиска. */
                 query?: string | null;
                 /** @description Фильтр по статусам репорта. */
-                reportStatuses?: number[] | null;
+                reportStatuses?: components["schemas"]["ReportStatus"][] | null;
                 /** @description Фильтр по ответственному или участнику. */
                 userId?: string | null;
                 /** @description Фильтр по команде-создателю. */
@@ -1566,7 +1572,7 @@ export interface operations {
                 /** @description Размер страницы. */
                 take?: number;
                 /** @description Фильтр по типу создателя. */
-                creatorTypes?: number[] | null;
+                creatorTypes?: components["schemas"]["CreatorType"][] | null;
             };
             header?: never;
             path?: never;
@@ -1900,8 +1906,12 @@ export interface operations {
     BugAttachments_CreateBugAttachment: {
         parameters: {
             query: {
-                /** @description К чему относится вложение — 0 факт, 1 ожидание. */
-                attachType: number;
+                /**
+                 * @description К чему относится вложение. Ручка бага принимает только `fact` и
+                 *     `expected`; `comment` и `bug_step` сервер выводит из маршрута и
+                 *     здесь отклоняет.
+                 */
+                attachType: components["schemas"]["AttachType"];
             };
             header?: never;
             path: {

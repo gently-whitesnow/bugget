@@ -17,7 +17,11 @@ import {
   getHighlightClasses,
   useUserDisplayName,
 } from "@/pages/Report/ui/components/Bug/utils";
-import { commentMaxLength, CreatorTypes } from "@/shared/config";
+import {
+  AttachmentTypes,
+  commentMaxLength,
+  CreatorTypes,
+} from "@/shared/config";
 import {
   getCommentAnchorHref,
   getCommentElementId,
@@ -30,7 +34,7 @@ type Props = {
   id: number;
   text: string;
   creatorUserId: string;
-  creatorType: number;
+  creatorType: CreatorTypes;
   createdAt: string;
   attachments?: Attachment[] | null;
   isHighlighted?: boolean;
@@ -207,7 +211,7 @@ const Comment = memo((props: Props) => {
             attachments={attachments || []}
             reportId={reportId}
             bugId={bugId}
-            attachType={2}
+            attachType={AttachmentTypes.COMMENT}
             onAttachmentUpload={handleUploadAttachment}
             onAttachmentDelete={handleRemoveAttachment}
             onAttachmentRename={handleRenameAttachment}

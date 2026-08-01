@@ -87,10 +87,10 @@ describe("пути репортов", () => {
   });
 
   it("список: имена query из контракта, статусы повторяющимся ключом", async () => {
-    await fetchReportsList("u-1", "t-1", [0, 2], 20, 10);
+    await fetchReportsList("u-1", "t-1", ["backlog", "fix"], 20, 10);
 
     expect(sent().url).toBe(
-      `${contextPrefix}/v2/reports?userId=u-1&teamId=t-1&reportStatuses=0&reportStatuses=2&skip=20&take=10`
+      `${contextPrefix}/v2/reports?userId=u-1&teamId=t-1&reportStatuses=backlog&reportStatuses=fix&skip=20&take=10`
     );
   });
 
@@ -137,17 +137,17 @@ describe("пути репортов", () => {
   it("поиск сохраняет все query-параметры, массивы и пустые значения", async () => {
     await reportsApi.searchReports({
       query: "",
-      reportStatuses: [0, 4],
+      reportStatuses: ["backlog", "test"],
       userId: "u-1",
       teamId: "t-1",
       sort: "created_at",
       skip: 0,
       take: 0,
-      creatorTypes: [0, 1],
+      creatorTypes: ["user", "system"],
     });
 
     expect(sent().url).toBe(
-      `${contextPrefix}/v1/reports/search?query=&reportStatuses=0&reportStatuses=4&userId=u-1&teamId=t-1&sort=created_at&skip=0&take=0&creatorTypes=0&creatorTypes=1`
+      `${contextPrefix}/v1/reports/search?query=&reportStatuses=backlog&reportStatuses=test&userId=u-1&teamId=t-1&sort=created_at&skip=0&take=0&creatorTypes=user&creatorTypes=system`
     );
   });
 });
@@ -201,10 +201,16 @@ describe("тела запросов уходят в snake_case контракт�
   });
 
   it("PATCH бага: статус и текстовые поля", async () => {
-    await updateBug("team-42", 7, { status: 1, expect: "не падает" });
+    await updateBug("team-42", 7, {
+      status: "verified",
+      expect: "не падает",
+    });
 
     expect(sent().url).toBe(`${contextPrefix}/v2/reports/team-42/bugs/7`);
-    expect(sentJsonBody()).toEqual({ status: 1, expect: "не падает" });
+    expect(sentJsonBody()).toEqual({
+      status: "verified",
+      expect: "не падает",
+    });
   });
 
   it("порядок шагов: stepIds в коде — step_ids на проводе", async () => {
@@ -218,12 +224,18 @@ describe("тела запросов уходят в snake_case контракт�
   });
 
   it("комментарий: text и audience", async () => {
-    await createComment("team-42", 7, { text: "воспроизвёл", audience: 1 });
+    await createComment("team-42", 7, {
+      text: "воспроизвёл",
+      audience: "external",
+    });
 
     expect(sent().url).toBe(
       `${contextPrefix}/v2/reports/team-42/bugs/7/comments`
     );
-    expect(sentJsonBody()).toEqual({ text: "воспроизвёл", audience: 1 });
+    expect(sentJsonBody()).toEqual({
+      text: "воспроизвёл",
+      audience: "external",
+    });
   });
 
   it("ссылка репорта: link и name", async () => {
@@ -281,7 +293,7 @@ describe("тела запросов уходят в snake_case контракт�
           key: "My_Scope",
           statuses: [],
           teamId: null,
-          creatorTypes: [0, 1],
+          creatorTypes: ["user", "system"],
         },
       ],
     });
@@ -294,7 +306,7 @@ describe("тела запросов уходят в snake_case контракт�
           key: "My_Scope",
           statuses: [],
           team_id: null,
-          creator_types: [0, 1],
+          creator_types: ["user", "system"],
         },
       ],
     });
@@ -345,8 +357,8 @@ describe("тела запросов уходят в snake_case контракт�
 });
 
 describe("загрузка вложения — multipart, а не JSON", () => {
-  it.each([0, 1, 2, 3])(
-    "attachType=%i уходит query-параметром, файл — полем file",
+  it.each(["fact", "expected", "comment", "bug_step"] as const)(
+    "attachType=%s уходит query-параметром, файл — полем file",
     async (attachType) => {
       const file = new File(["данные"], "скрин.png", { type: "image/png" });
 

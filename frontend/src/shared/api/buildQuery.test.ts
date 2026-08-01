@@ -14,10 +14,12 @@ type ListReportsQuery = NonNullable<
 
 describe("buildQueryString", () => {
   it("массив кладёт повторяющимся ключом, без скобок и без запятых", () => {
-    const query: ListReportsQuery = { reportStatuses: [0, 2, 4] };
+    const query: ListReportsQuery = {
+      reportStatuses: ["backlog", "fix", "test"],
+    };
 
     expect(buildQueryString(query)).toBe(
-      "reportStatuses=0&reportStatuses=2&reportStatuses=4"
+      "reportStatuses=backlog&reportStatuses=fix&reportStatuses=test"
     );
   });
 
@@ -37,14 +39,14 @@ describe("buildQueryString", () => {
     const query: ListReportsQuery = {
       userId: "u-1",
       teamId: "t-1",
-      reportStatuses: [1],
-      creatorTypes: [0],
+      reportStatuses: ["resolved"],
+      creatorTypes: ["user"],
       skip: 20,
       take: 10,
     };
 
     expect(buildQueryString(query)).toBe(
-      "userId=u-1&teamId=t-1&reportStatuses=1&creatorTypes=0&skip=20&take=10"
+      "userId=u-1&teamId=t-1&reportStatuses=resolved&creatorTypes=user&skip=20&take=10"
     );
   });
 

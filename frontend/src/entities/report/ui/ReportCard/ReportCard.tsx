@@ -1,4 +1,8 @@
-import { BugStatuses, reportStatusMap } from "@/shared/config";
+import {
+  BugStatuses,
+  reportStatusMap,
+  type ReportStatuses,
+} from "@/shared/config";
 import { useNavigate } from "react-router";
 import { buildFullAppUrl } from "@/shared/lib/buildFullUrl";
 import { Bug, MessageCircle } from "lucide-react";
@@ -7,13 +11,13 @@ import { Bug, MessageCircle } from "lucide-react";
 type ReportData = {
   id: string;
   title: string;
-  status: number;
+  status: ReportStatuses;
   createdAt: string;
   responsibleUserId: string;
   creatorTeamId?: string | null;
   participantsUserIds?: string[] | null;
   bugs?: Array<{
-    status: number;
+    status: BugStatuses;
     comments?: Array<{ id: number }> | null;
   }> | null;
 };
@@ -28,7 +32,7 @@ const maxParticipantsDisplayCount = 3;
 
 const ReportCard = ({ report, usersStore = {}, className = "" }: Props) => {
   const navigate = useNavigate();
-  const statusMeta = reportStatusMap[Number(report.status)];
+  const statusMeta = reportStatusMap[report.status];
 
   // Обработчик клика с поддержкой открытия в новой вкладке
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {

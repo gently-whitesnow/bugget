@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { convertObjectToCamel } from "@/shared/lib/convertCases";
 import type { components } from "@/shared/api/generated/reports";
+import type { BugStatuses } from "@/shared/config";
 import type {
   BugListItem,
   ListReportsResponse,
@@ -19,14 +20,14 @@ const wireListResponse: components["schemas"]["ReportList"] = {
     {
       id: "42",
       title: "Не открывается карточка",
-      status: 0,
+      status: "backlog",
       responsible_user_id: "u-1",
       past_responsible_user_id: "u-2",
       creator_user_id: "u-3",
       creator_team_id: "t-1",
       created_at: "2026-07-01T10:00:00Z",
       updated_at: "2026-07-02T10:00:00Z",
-      creator_type: 0,
+      creator_type: "user",
       is_excluded_from_analytics: false,
       participants_user_ids: ["u-1", "u-3"],
       bugs: [
@@ -39,16 +40,16 @@ const wireListResponse: components["schemas"]["ReportList"] = {
           created_at: "2026-07-01T10:00:00Z",
           updated_at: "2026-07-01T10:00:00Z",
           creator_user_id: "u-3",
-          status: 0,
-          creator_type: 0,
+          status: "open",
+          creator_type: "user",
           comments: [
             {
               id: 7,
               bug_id: 1,
               text: "воспроизвёл",
               creator_user_id: "u-1",
-              creator_type: 0,
-              audience: 0,
+              creator_type: "user",
+              audience: "internal",
               created_at: "2026-07-01T11:00:00Z",
               updated_at: "2026-07-01T11:00:00Z",
               attachments: null,
@@ -61,14 +62,14 @@ const wireListResponse: components["schemas"]["ReportList"] = {
       // Репорт без багов — пустая коллекция и `null` в creator_team_id.
       id: "43",
       title: "Пустой репорт",
-      status: 4,
+      status: "test",
       responsible_user_id: "u-1",
       past_responsible_user_id: "",
       creator_user_id: "u-1",
       creator_team_id: null,
       created_at: "2026-07-03T10:00:00Z",
       updated_at: "2026-07-03T10:00:00Z",
-      creator_type: 0,
+      creator_type: "user",
       is_excluded_from_analytics: true,
       participants_user_ids: [],
       bugs: [],
@@ -134,7 +135,7 @@ const readBugAttachments = (bug: BugListItem) => bug.attachments;
 const readBugSteps = (bug: BugListItem) => bug.steps;
 
 // То, что список действительно отдаёт, читается без ошибок.
-const readBugStatuses = (report: ReportListItem): number[] =>
+const readBugStatuses = (report: ReportListItem): BugStatuses[] =>
   report.bugs?.map((bug) => bug.status) ?? [];
 
 const countComments = (bug: BugListItem): number => bug.comments?.length ?? 0;
@@ -145,7 +146,7 @@ describe("тип элемента списка", () => {
       convertObjectToCamel(wireListResponse) as ListReportsResponse
     ).reports[0];
 
-    expect(readBugStatuses(report)).toEqual([0]);
+    expect(readBugStatuses(report)).toEqual(["open"]);
     expect(countComments(report.bugs![0])).toBe(1);
     // Обращения выше существуют только ради @ts-expect-error — в рантайме undefined.
     expect(readLinks(report)).toBeUndefined();

@@ -91,14 +91,15 @@ internal sealed class ContractScenario
 
     /// <summary>
     /// Вложение бага. <c>attachType</c> здесь — параметр запроса, и он же уходит
-    /// на провод: 0 — факт (<c>receive</c>), 1 — ожидаемый результат (<c>expect</c>).
-    /// Оба значения законны и попадают в один и тот же <c>bugs[].attachments</c>.
+    /// на провод: <c>fact</c> — факт (<c>receive</c>), <c>expected</c> — ожидаемый
+    /// результат. Оба значения законны и попадают в один и тот же
+    /// <c>bugs[].attachments</c>.
     /// </summary>
     public async Task<int> UploadBugAttachmentAsync(
         string reportId,
         int bugId,
         string fileName = "shot.png",
-        int attachType = 0)
+        string attachType = "fact")
     {
         var response = await Client.PostAsync(
             $"/v2/reports/{reportId}/bugs/{bugId}/attachments?attachType={attachType}",

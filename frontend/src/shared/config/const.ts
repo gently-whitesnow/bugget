@@ -1,4 +1,5 @@
 import { StatusMeta } from "@/shared/lib/types";
+import type { components } from "@/shared/api/generated/reports";
 import {
   CircleDashed,
   Clock,
@@ -10,20 +11,33 @@ import {
   FlaskConical,
 } from "lucide-react";
 
-export enum BugStatuses {
-  OPEN = 0,
-  VERIFIED = 1,
-  REJECTED = 2,
-  FIXED = 3,
-}
+/**
+ * Значения enum-полей провода — строки `snake_case` из
+ * `specs/contracts/reports/openapi.yaml` (ADR-0012). Числовое представление
+ * осталось только в БД бекенда и в payload'ах SignalR; перевод числа в значение
+ * провода живёт на своих границах, а не размазан по компонентам.
+ *
+ * Это `as const`-объекты, а не `enum`: тип берётся из контракта, поэтому
+ * пропавшее или переименованное в yaml значение ломает сборку здесь, а не
+ * молча расходится с сервером. У `enum` такой связи нет — литерал провода в
+ * него не подставить.
+ */
+export const BugStatuses = {
+  OPEN: "open",
+  VERIFIED: "verified",
+  REJECTED: "rejected",
+  FIXED: "fixed",
+} as const satisfies Record<string, BugStatuses>;
+export type BugStatuses = components["schemas"]["BugStatus"];
 
-export enum ReportStatuses {
-  BACKLOG = 0,
-  RESOLVED = 1,
-  FIX = 2,
-  REJECTED = 3,
-  TEST = 4,
-}
+export const ReportStatuses = {
+  BACKLOG: "backlog",
+  RESOLVED: "resolved",
+  FIX: "fix",
+  REJECTED: "rejected",
+  TEST: "test",
+} as const satisfies Record<string, ReportStatuses>;
+export type ReportStatuses = components["schemas"]["ReportStatus"];
 
 export enum RequestStates {
   IDLE = 0,
@@ -32,14 +46,15 @@ export enum RequestStates {
   ERROR = 3,
 }
 
-export enum AttachmentTypes {
-  FACT = 0,
-  EXPECT = 1,
-  COMMENT = 2,
-  BUG_STEP = 3,
-}
+export const AttachmentTypes = {
+  FACT: "fact",
+  EXPECT: "expected",
+  COMMENT: "comment",
+  BUG_STEP: "bug_step",
+} as const satisfies Record<string, AttachmentTypes>;
+export type AttachmentTypes = components["schemas"]["AttachType"];
 
-export const reportStatusMap: Record<number, StatusMeta> = {
+export const reportStatusMap: Record<ReportStatuses, StatusMeta> = {
   [ReportStatuses.FIX]: {
     title: "Фикс",
     borderColor: "border-error",
@@ -72,7 +87,7 @@ export const reportStatusMap: Record<number, StatusMeta> = {
   },
 };
 
-export const bugStatusMap: Record<number, StatusMeta> = {
+export const bugStatusMap: Record<BugStatuses, StatusMeta> = {
   [BugStatuses.OPEN]: {
     title: "Открыт",
     borderColor: "",
@@ -99,6 +114,19 @@ export const bugStatusMap: Record<number, StatusMeta> = {
   },
 };
 
+/**
+ * Порядок статусов репорта для сортировок — тот же, что задавало числовое
+ * представление до перехода на строки. Раньше он был неявным следствием типа,
+ * теперь объявлен явно.
+ */
+export const reportStatusOrder: Record<ReportStatuses, number> = {
+  [ReportStatuses.BACKLOG]: 0,
+  [ReportStatuses.RESOLVED]: 1,
+  [ReportStatuses.FIX]: 2,
+  [ReportStatuses.REJECTED]: 3,
+  [ReportStatuses.TEST]: 4,
+};
+
 export enum BugResultTypes {
   RECEIVE = "receive",
   EXPECT = "expect",
@@ -110,15 +138,19 @@ export enum SettingTypes {
   USER = "user",
 }
 
-export enum CreatorTypes {
-  USER = 0,
-  SYSTEM = 1,
-}
+export const CreatorTypes = {
+  USER: "user",
+  SYSTEM: "system",
+  /** Внешний автор через beta-test bot — на проводе был и раньше, в константах нет. */
+  TG_BETA_TESTER: "tg_beta_tester",
+} as const satisfies Record<string, CreatorTypes>;
+export type CreatorTypes = components["schemas"]["CreatorType"];
 
-export enum CommentAudiences {
-  INTERNAL = 0,
-  EXTERNAL = 1,
-}
+export const CommentAudiences = {
+  INTERNAL: "internal",
+  EXTERNAL: "external",
+} as const satisfies Record<string, CommentAudiences>;
+export type CommentAudiences = components["schemas"]["CommentAudience"];
 
 export enum BootstrapStatus {
   NO_WORKSPACE = "no-workspace",

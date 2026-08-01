@@ -1,4 +1,5 @@
 import { reportsApi } from "@/shared/api";
+import type { ReportStatuses } from "@/shared/config";
 import type {
   CreateReportRequest,
   CreateReportResponse,
@@ -55,7 +56,7 @@ export const patchReport = async (
 export const fetchReportsList = async (
   userId: string | null = null,
   teamId: string | null = null,
-  reportStatuses: number[] | null = null,
+  reportStatuses: ReportStatuses[] | null = null,
   skip: number = 0,
   take: number = 10
 ): Promise<ListReportsResponse> => {

@@ -66,7 +66,12 @@ describe("батч-счётчики репортов", () => {
 
   it("срез уходит на провод в snake_case, значение ключа — дословно", async () => {
     await fetchReportCountsFx([
-      { key: "beta-active", teamId: "t1", creatorTypes: [1], statuses: [0, 2] },
+      {
+        key: "beta-active",
+        teamId: "t1",
+        creatorTypes: ["system"],
+        statuses: ["backlog", "fix"],
+      },
     ]);
 
     expect(captured?.url).toBe(
@@ -77,8 +82,8 @@ describe("батч-счётчики репортов", () => {
         {
           key: "beta-active",
           team_id: "t1",
-          creator_types: [1],
-          statuses: [0, 2],
+          creator_types: ["system"],
+          statuses: ["backlog", "fix"],
         },
       ],
     });

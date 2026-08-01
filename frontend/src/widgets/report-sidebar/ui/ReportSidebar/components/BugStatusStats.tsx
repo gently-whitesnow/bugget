@@ -18,8 +18,8 @@ const BugStatusStats = () => {
       acc[bug.status] = (acc[bug.status] || 0) + 1;
       return acc;
     },
-    // Ключ — числовой статус из контракта; значения перечислены в `BugStatuses`.
-    {} as Record<number, number>
+    // Ключ — значение статуса с провода; перечислены в `BugStatuses`.
+    {} as Partial<Record<BugStatuses, number>>
   );
 
   const statuses = [

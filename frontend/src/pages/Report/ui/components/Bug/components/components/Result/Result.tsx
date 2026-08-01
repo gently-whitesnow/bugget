@@ -5,6 +5,7 @@ import { useUnit } from "effector-react";
 import { $authUserStore } from "@/entities/user";
 
 import { AttachmentChip, FilePreview } from "@/shared/ui";
+import type { AttachmentTypes } from "@/shared/config";
 import { createCurlAttachmentFile, getClipboardFiles } from "@/shared/lib";
 import { PendingAttachment } from "@/shared/ui";
 import Title from "./components/Title/Title";
@@ -17,7 +18,7 @@ type Props = {
   value: string;
   colorType: "success" | "error";
   attachments: Attachment[];
-  attachType: number;
+  attachType: AttachmentTypes;
   autoFocus: boolean;
   onBlur: (value: string) => void;
   onAttachmentUpload: (file: File) => void | Promise<unknown>;
@@ -176,7 +177,7 @@ const Result = forwardRef<HTMLDivElement, Props>(
             attachments={attachments}
             reportId={reportId}
             bugId={bugId}
-            attachType={attachType || 0}
+            attachType={attachType}
             onAttachmentUpload={handleAttachmentUpload}
             onAttachmentDelete={onAttachmentDelete}
             onAttachmentRename={onAttachmentRename}

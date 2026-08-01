@@ -1,5 +1,10 @@
 import { request } from "./client";
-import type { Body, Result } from "./client";
+import type { Body, Query, Result } from "./client";
+
+/** Значение `attachType` — из контракта операции, а не число рядом с вызовом. */
+type AttachType = NonNullable<
+  Query<"/v2/reports/{aliasId}/bugs/{bugId}/attachments", "post">
+>["attachType"];
 
 /* ── Вложения ──────────────────────────────────────────────────────────────── */
 
@@ -16,7 +21,7 @@ export type AttachmentRenameBody = Body<
 export const createBugAttachment = (
   aliasId: string,
   bugId: number,
-  attachType: number,
+  attachType: AttachType,
   file: File
 ) =>
   request("/v2/reports/{aliasId}/bugs/{bugId}/attachments", "post", {

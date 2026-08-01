@@ -49,13 +49,13 @@ namespace Bugget.Api.Generated.Reports
         /// </remarks>
         /// <param name="userId">Фильтр по ответственному или участнику.</param>
         /// <param name="teamId">Фильтр по команде-создателю.</param>
-        /// <param name="reportStatuses">Фильтр по статусам репорта (числовые значения `ReportStatus`).</param>
-        /// <param name="creatorTypes">Фильтр по типу создателя (числовые значения `CreatorType`).</param>
+        /// <param name="reportStatuses">Фильтр по статусам репорта.</param>
+        /// <param name="creatorTypes">Фильтр по типу создателя.</param>
         /// <param name="skip">Сколько записей пропустить.</param>
         /// <param name="take">Размер страницы.</param>
         /// <returns>Страница репортов и общее количество.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ReportList>> ListReports([Microsoft.AspNetCore.Mvc.FromQuery] string userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string teamId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<int> reportStatuses = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<int> creatorTypes = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? skip = 0, [Microsoft.AspNetCore.Mvc.FromQuery] int? take = 10, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ReportList>> ListReports([Microsoft.AspNetCore.Mvc.FromQuery] string userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string teamId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<ReportStatus> reportStatuses = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<CreatorType> creatorTypes = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? skip = 0, [Microsoft.AspNetCore.Mvc.FromQuery] int? take = 10, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Получить репорт со всем содержимым.
@@ -182,7 +182,7 @@ namespace Bugget.Api.Generated.Reports
         /// <param name="creatorTypes">Фильтр по типу создателя.</param>
         /// <returns>Страница найденных репортов.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/reports/search")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ReportList>> SearchReports([Microsoft.AspNetCore.Mvc.FromQuery] string query = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<int> reportStatuses = null, [Microsoft.AspNetCore.Mvc.FromQuery] string userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string teamId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string sort = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? skip = 0, [Microsoft.AspNetCore.Mvc.FromQuery] int? take = 10, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<int> creatorTypes = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ReportList>> SearchReports([Microsoft.AspNetCore.Mvc.FromQuery] string query = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<ReportStatus> reportStatuses = null, [Microsoft.AspNetCore.Mvc.FromQuery] string userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string teamId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string sort = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? skip = 0, [Microsoft.AspNetCore.Mvc.FromQuery] int? take = 10, [Microsoft.AspNetCore.Mvc.FromQuery] System.Collections.Generic.IEnumerable<CreatorType> creatorTypes = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -315,11 +315,13 @@ namespace Bugget.Api.Generated.Reports
         /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
         /// <br/>по которому фронт строит ссылки.</param>
         /// <param name="bugId">Идентификатор бага внутри репорта.</param>
-        /// <param name="attachType">К чему относится вложение — 0 факт, 1 ожидание.</param>
+        /// <param name="attachType">К чему относится вложение. Ручка бага принимает только `fact` и
+        /// <br/>`expected`; `comment` и `bug_step` сервер выводит из маршрута и
+        /// <br/>здесь отклоняет.</param>
         /// <param name="file">Содержимое файла.</param>
         /// <returns>Вложение сохранено.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/attachments")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AttachmentSummary>> CreateBugAttachment(string aliasId, int bugId, [Microsoft.AspNetCore.Mvc.FromQuery] int attachType, FileParameter file = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AttachmentSummary>> CreateBugAttachment(string aliasId, int bugId, [Microsoft.AspNetCore.Mvc.FromQuery] AttachType attachType, FileParameter file = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Переименовать вложение бага.

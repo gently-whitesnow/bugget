@@ -58,7 +58,7 @@ public static class ModulesExtensions
     {
         services.AddSingleton<Bugget.Application.Ports.IUsersClient, UsersClientAdapter>();
         services.AddSingleton<Bugget.Api.Authorization.Interfaces.IUsersClient, AuthorizationUsersClientAdapter>();
-        services.AddSingleton<Bugget.Application.Users.Ports.IAuthorizationRepository, AuthorizationCacheAdapter>();
+        services.AddSingleton<Bugget.Application.Users.Ports.IUserCacheInvalidator, AuthorizationCacheAdapter>();
 
         return services;
     }

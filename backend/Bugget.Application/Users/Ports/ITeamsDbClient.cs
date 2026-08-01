@@ -3,7 +3,7 @@ using Bugget.Domain.Users;
 
 namespace Bugget.Application.Users.Ports;
 
-public interface ITeamsRepository
+public interface ITeamsDbClient
 {
     Task<Team[]> ListTeamsAsync(int[] workspaceIds);
     Task<Team[]> ListTeamsAsync(int workspaceId, int[] teamIds);

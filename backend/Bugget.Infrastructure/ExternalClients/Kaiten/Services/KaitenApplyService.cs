@@ -19,7 +19,7 @@ namespace Bugget.Infrastructure.ExternalClients.Kaiten;
 public sealed class KaitenApplyService(
     KaitenClientFactory clientFactory,
     ILogger<KaitenApplyService> logger,
-    IReportLinksService reportLinksService,
+    IReportLinkCreator reportLinkCreator,
     KaitenConfigService kaitenConfigService,
     KaitenBoardsProvider boardsProvider,
     IOptions<ReportAliasOptions> reportAliasOptions) : IExternalApplyRepository
@@ -78,7 +78,7 @@ public sealed class KaitenApplyService(
         }
 
         var kaitenLink = $"{config.Domain}/space/{space.SpaceId}/boards/card/{cardId}";
-        await reportLinksService.CreateReportLinkInternalAsync(user, searchApply.reportIdContext, new ReportLinkDto { Link = kaitenLink, Name = $"Задача" });
+        await reportLinkCreator.CreateReportLinkInternalAsync(user, searchApply.reportIdContext, new ReportLinkDto { Link = kaitenLink, Name = $"Задача" });
     }
 
     private async Task SafeAddExternalLinkAsync(KaitenClient client, string cardId, string url, string description)

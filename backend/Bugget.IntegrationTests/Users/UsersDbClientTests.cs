@@ -10,20 +10,20 @@ namespace Bugget.IntegrationTests.Users;
 [Collection("PostgresCollection")]
 public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 {
-    private readonly IUsersRepository _usersDbClient;
-    private readonly ITeamsRepository _teamsDbClient;
-    private readonly IWorkspacesRepository _workspacesRepository;
-    private readonly ITeamMembersRepository _teamMembersRepository;
-    private readonly IWorkspaceMembersRepository _workspaceMembersRepository;
+    private readonly IUsersDbClient _usersDbClient;
+    private readonly ITeamsDbClient _teamsDbClient;
+    private readonly IWorkspacesDbClient _workspacesDbClient;
+    private readonly ITeamMembersDbClient _teamMembersDbClient;
+    private readonly IWorkspaceMembersDbClient _workspaceMembersDbClient;
 
     public UsersDbClientTests(AppWithPostgresFixture fixture)
     {
         using var scope = fixture.Services.CreateScope();
-        _usersDbClient = scope.ServiceProvider.GetRequiredService<IUsersRepository>();
-        _teamsDbClient = scope.ServiceProvider.GetRequiredService<ITeamsRepository>();
-        _workspacesRepository = scope.ServiceProvider.GetRequiredService<IWorkspacesRepository>();
-        _teamMembersRepository = scope.ServiceProvider.GetRequiredService<ITeamMembersRepository>();
-        _workspaceMembersRepository = scope.ServiceProvider.GetRequiredService<IWorkspaceMembersRepository>();
+        _usersDbClient = scope.ServiceProvider.GetRequiredService<IUsersDbClient>();
+        _teamsDbClient = scope.ServiceProvider.GetRequiredService<ITeamsDbClient>();
+        _workspacesDbClient = scope.ServiceProvider.GetRequiredService<IWorkspacesDbClient>();
+        _teamMembersDbClient = scope.ServiceProvider.GetRequiredService<ITeamMembersDbClient>();
+        _workspaceMembersDbClient = scope.ServiceProvider.GetRequiredService<IWorkspaceMembersDbClient>();
     }
 
     [Fact(DisplayName = "Успешное создание пользователя")]
@@ -99,7 +99,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         };
 
         var ownerUser = await _usersDbClient.TryInsertUserAsync(ownerCreateDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
         // Act
@@ -123,7 +123,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         };
 
         var ownerUser = await _usersDbClient.TryInsertUserAsync(ownerCreateDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
         // Act - ищем пользователей с именем, которого нет
@@ -144,7 +144,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/owner1.jpg"
         };
         var owner1 = await _usersDbClient.TryInsertUserAsync(owner1Dto);
-        var workspace1 = await _workspacesRepository.CreateWorkspaceAsync(owner1.Id, "Workspace 1");
+        var workspace1 = await _workspacesDbClient.CreateWorkspaceAsync(owner1.Id, "Workspace 1");
         var team1 = await _teamsDbClient.CreateTeamAsync(workspace1.Id, "Team 1");
 
         var owner2Dto = new CreateUserDto
@@ -154,7 +154,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/owner2.jpg"
         };
         var owner2 = await _usersDbClient.TryInsertUserAsync(owner2Dto);
-        var workspace2 = await _workspacesRepository.CreateWorkspaceAsync(owner2.Id, "Workspace 2");
+        var workspace2 = await _workspacesDbClient.CreateWorkspaceAsync(owner2.Id, "Workspace 2");
         var team2 = await _teamsDbClient.CreateTeamAsync(workspace2.Id, "Team 2");
 
         // Act - Запрашиваем первую страницу с лимитом 1
@@ -180,7 +180,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         };
 
         var ownerUser = await _usersDbClient.TryInsertUserAsync(ownerCreateDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
         // Act
@@ -203,7 +203,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         };
 
         var ownerUser = await _usersDbClient.TryInsertUserAsync(ownerCreateDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
         // Act - поиск в разных регистрах
@@ -239,7 +239,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         };
 
         var ownerUser = await _usersDbClient.TryInsertUserAsync(ownerDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
         // Act - тестируем различные потенциально опасные строки
@@ -277,7 +277,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/owner.jpg"
         };
         var owner = await _usersDbClient.TryInsertUserAsync(ownerDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(owner.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(owner.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
         // Создаём второго пользователя в том же workspace, но НЕ в команде
@@ -288,10 +288,10 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/outsider.jpg"
         };
         var outsider = await _usersDbClient.TryInsertUserAsync(outsiderDto);
-        await _workspaceMembersRepository.CreateWorkspaceMemberAsync(outsider.Id, workspace.Id, WorkspaceRole.Member);
+        await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(outsider.Id, workspace.Id, WorkspaceRole.Member);
 
         // Добавляем owner в команду
-        await _teamMembersRepository.CreateTeamMemberAsync(owner.Id, team.Id);
+        await _teamMembersDbClient.CreateTeamMemberAsync(owner.Id, team.Id);
 
         // Act — поиск с teamId
         var result = await _usersDbClient.AutocompleteUsersAsync(workspace.Id, "", 0, 10, team.Id);
@@ -314,7 +314,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/owner.jpg"
         };
         var owner = await _usersDbClient.TryInsertUserAsync(ownerDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(owner.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(owner.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
         var memberDto = new CreateUserDto
@@ -324,7 +324,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/member.jpg"
         };
         var member = await _usersDbClient.TryInsertUserAsync(memberDto);
-        await _workspaceMembersRepository.CreateWorkspaceMemberAsync(member.Id, workspace.Id, WorkspaceRole.Member);
+        await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(member.Id, workspace.Id, WorkspaceRole.Member);
 
         // Act — без teamId
         var result = await _usersDbClient.AutocompleteUsersAsync(workspace.Id, "", 0, 10);
@@ -347,9 +347,9 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/owner.jpg"
         };
         var owner = await _usersDbClient.TryInsertUserAsync(ownerDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(owner.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(owner.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
-        await _teamMembersRepository.CreateTeamMemberAsync(owner.Id, team.Id);
+        await _teamMembersDbClient.CreateTeamMemberAsync(owner.Id, team.Id);
 
         // Два члена команды
         var memberADto = new CreateUserDto
@@ -359,8 +359,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/alice.jpg"
         };
         var memberA = await _usersDbClient.TryInsertUserAsync(memberADto);
-        await _workspaceMembersRepository.CreateWorkspaceMemberAsync(memberA.Id, workspace.Id, WorkspaceRole.Member);
-        await _teamMembersRepository.CreateTeamMemberAsync(memberA.Id, team.Id);
+        await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(memberA.Id, workspace.Id, WorkspaceRole.Member);
+        await _teamMembersDbClient.CreateTeamMemberAsync(memberA.Id, team.Id);
 
         var memberBDto = new CreateUserDto
         {
@@ -369,8 +369,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/bob.jpg"
         };
         var memberB = await _usersDbClient.TryInsertUserAsync(memberBDto);
-        await _workspaceMembersRepository.CreateWorkspaceMemberAsync(memberB.Id, workspace.Id, WorkspaceRole.Member);
-        await _teamMembersRepository.CreateTeamMemberAsync(memberB.Id, team.Id);
+        await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(memberB.Id, workspace.Id, WorkspaceRole.Member);
+        await _teamMembersDbClient.CreateTeamMemberAsync(memberB.Id, team.Id);
 
         // Не-член команды с именем раньше по алфавиту
         var outsiderDto = new CreateUserDto
@@ -380,7 +380,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/aaron.jpg"
         };
         var outsider = await _usersDbClient.TryInsertUserAsync(outsiderDto);
-        await _workspaceMembersRepository.CreateWorkspaceMemberAsync(outsider.Id, workspace.Id, WorkspaceRole.Member);
+        await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(outsider.Id, workspace.Id, WorkspaceRole.Member);
 
         // Act
         var result = await _usersDbClient.AutocompleteUsersAsync(workspace.Id, "", 0, 10, team.Id);
@@ -409,7 +409,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/owner.jpg"
         };
         var owner = await _usersDbClient.TryInsertUserAsync(ownerDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(owner.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(owner.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
         var memberDto = new CreateUserDto
@@ -419,8 +419,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/member.jpg"
         };
         var member = await _usersDbClient.TryInsertUserAsync(memberDto);
-        await _workspaceMembersRepository.CreateWorkspaceMemberAsync(member.Id, workspace.Id, WorkspaceRole.Member);
-        await _teamMembersRepository.CreateTeamMemberAsync(member.Id, team.Id);
+        await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(member.Id, workspace.Id, WorkspaceRole.Member);
+        await _teamMembersDbClient.CreateTeamMemberAsync(member.Id, team.Id);
 
         var unrelatedDto = new CreateUserDto
         {
@@ -429,7 +429,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/unrelated.jpg"
         };
         var unrelated = await _usersDbClient.TryInsertUserAsync(unrelatedDto);
-        await _workspaceMembersRepository.CreateWorkspaceMemberAsync(unrelated.Id, workspace.Id, WorkspaceRole.Member);
+        await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(unrelated.Id, workspace.Id, WorkspaceRole.Member);
 
         // Act — поиск "RankTest" с teamId
         var result = await _usersDbClient.AutocompleteUsersAsync(workspace.Id, "RankTest", 0, 10, team.Id);
@@ -453,7 +453,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/user1.jpg"
         };
         var user1 = await _usersDbClient.TryInsertUserAsync(user1Dto);
-        var workspace1 = await _workspacesRepository.CreateWorkspaceAsync(user1.Id, "Workspace 1");
+        var workspace1 = await _workspacesDbClient.CreateWorkspaceAsync(user1.Id, "Workspace 1");
 
         var user2Dto = new CreateUserDto
         {
@@ -462,7 +462,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/user2.jpg"
         };
         var user2 = await _usersDbClient.TryInsertUserAsync(user2Dto);
-        var workspace2 = await _workspacesRepository.CreateWorkspaceAsync(user2.Id, "Workspace 2");
+        var workspace2 = await _workspacesDbClient.CreateWorkspaceAsync(user2.Id, "Workspace 2");
 
         var userIds = new List<long> { user1.Id, user2.Id };
 
@@ -494,7 +494,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         };
 
         var ownerUser = await _usersDbClient.TryInsertUserAsync(ownerDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
         var nonExistentUserIds = new List<long> { 999999, 999998 };
@@ -518,7 +518,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         };
 
         var ownerUser = await _usersDbClient.TryInsertUserAsync(ownerDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
         var emptyUserIds = new List<long>();
@@ -563,7 +563,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/user1.jpg"
         };
         var user1 = await _usersDbClient.TryInsertUserAsync(user1Dto);
-        var workspace1 = await _workspacesRepository.CreateWorkspaceAsync(user1.Id, "Workspace 1");
+        var workspace1 = await _workspacesDbClient.CreateWorkspaceAsync(user1.Id, "Workspace 1");
         var team1 = await _teamsDbClient.CreateTeamAsync(workspace1.Id, "Team 1");
 
         var mixedUserIds = new List<long> { user1.Id, 999999, 999998 };
@@ -589,7 +589,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         };
 
         var user = await _usersDbClient.TryInsertUserAsync(userDto);
-        var workspace = await _workspacesRepository.CreateWorkspaceAsync(user.Id, "Test Workspace");
+        var workspace = await _workspacesDbClient.CreateWorkspaceAsync(user.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
         var duplicateUserIds = new List<long> { user.Id, user.Id, user.Id };

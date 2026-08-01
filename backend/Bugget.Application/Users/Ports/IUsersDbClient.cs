@@ -3,7 +3,7 @@ using Bugget.Domain.Users;
 
 namespace Bugget.Application.Users.Ports;
 
-public interface IUsersRepository
+public interface IUsersDbClient
 {
     Task<User> TryInsertUserAsync(CreateUserDto createUserDto);
     Task<User?> GetUserAsync(long userId);

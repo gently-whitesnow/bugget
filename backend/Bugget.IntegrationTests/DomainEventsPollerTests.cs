@@ -23,7 +23,7 @@ namespace Bugget.IntegrationTests;
 public sealed class DomainEventsPollerTests : IClassFixture<AppWithPostgresFixture>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IDomainEventsCursorClient _cursorClient;
+    private readonly IDomainEventsCursorDbClient _cursorClient;
     private readonly IDomainEventsDbClient _eventsClient;
     private readonly IUnitOfWork _uow;
     private readonly string _connectionString;
@@ -32,7 +32,7 @@ public sealed class DomainEventsPollerTests : IClassFixture<AppWithPostgresFixtu
     {
         using var scope = fixture.Services.CreateScope();
         _unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        _cursorClient = scope.ServiceProvider.GetRequiredService<IDomainEventsCursorClient>();
+        _cursorClient = scope.ServiceProvider.GetRequiredService<IDomainEventsCursorDbClient>();
         _eventsClient = scope.ServiceProvider.GetRequiredService<IDomainEventsDbClient>();
         _uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         _connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING")!;

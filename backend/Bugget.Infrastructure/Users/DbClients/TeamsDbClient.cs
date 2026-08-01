@@ -1,12 +1,13 @@
 using Bugget.Application.Users.Ports;
 using Bugget.Domain.Errors;
 using Bugget.Domain.Users;
+using Bugget.Infrastructure.Postgres;
 using Dapper;
 using Npgsql;
 
 namespace Bugget.Infrastructure.Users.DbClients;
 
-public class TeamsDbClient : PostgresClient, ITeamsRepository
+public class TeamsDbClient() : PostgresClient(Constants.PostgresConnectionStringEnv), ITeamsDbClient
 {
     public async Task<Team[]> ListTeamsAsync(int[] workspaceIds)
     {

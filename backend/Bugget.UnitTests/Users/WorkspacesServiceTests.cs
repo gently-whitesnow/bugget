@@ -10,25 +10,25 @@ namespace Bugget.UnitTests.Users;
 
 public class WorkspacesServiceTests
 {
-    private readonly Mock<IWorkspacesRepository> _workspacesRepo;
-    private readonly Mock<ITeamsRepository> _teamsRepo;
-    private readonly Mock<IAuthorizationRepository> _authorizationRepo;
-    private readonly Mock<IMembersRepository> _membersRepo;
+    private readonly Mock<IWorkspacesDbClient> _workspacesDbClient;
+    private readonly Mock<ITeamsDbClient> _teamsDbClient;
+    private readonly Mock<IUserCacheInvalidator> _userCacheInvalidator;
+    private readonly Mock<IMembersDbClient> _membersDbClient;
     private readonly WorkspacesService _sut;
     private readonly Mock<IOptions<SelfHostedOptions>> _hostingOptions;
     public WorkspacesServiceTests()
     {
-        _workspacesRepo = new Mock<IWorkspacesRepository>(MockBehavior.Strict);
-        _teamsRepo = new Mock<ITeamsRepository>(MockBehavior.Strict);
-        _authorizationRepo = new Mock<IAuthorizationRepository>(MockBehavior.Strict);
-        _membersRepo = new Mock<IMembersRepository>(MockBehavior.Strict);
+        _workspacesDbClient = new Mock<IWorkspacesDbClient>(MockBehavior.Strict);
+        _teamsDbClient = new Mock<ITeamsDbClient>(MockBehavior.Strict);
+        _userCacheInvalidator = new Mock<IUserCacheInvalidator>(MockBehavior.Strict);
+        _membersDbClient = new Mock<IMembersDbClient>(MockBehavior.Strict);
         _hostingOptions = new Mock<IOptions<SelfHostedOptions>>(MockBehavior.Strict);
         _hostingOptions.Setup(o => o.Value).Returns(new SelfHostedOptions { Enabled = false });
         _sut = new WorkspacesService(
-            _workspacesRepo.Object,
-            _teamsRepo.Object,
-            _membersRepo.Object,
-            _authorizationRepo.Object,
+            _workspacesDbClient.Object,
+            _teamsDbClient.Object,
+            _membersDbClient.Object,
+            _userCacheInvalidator.Object,
             _hostingOptions.Object
         );
     }
@@ -38,7 +38,7 @@ public class WorkspacesServiceTests
     {
         var userId = 42L;
 
-        _workspacesRepo
+        _workspacesDbClient
             .Setup(r => r.ListWorkspacesAsync(userId))
             .ReturnsAsync(Array.Empty<Workspace>());
 
@@ -46,8 +46,8 @@ public class WorkspacesServiceTests
 
         Assert.Empty(result.Workspaces);
 
-        _workspacesRepo.Verify(r => r.ListWorkspacesAsync(userId), Times.Once);
-        _teamsRepo.VerifyNoOtherCalls();
+        _workspacesDbClient.Verify(r => r.ListWorkspacesAsync(userId), Times.Once);
+        _teamsDbClient.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -69,15 +69,15 @@ public class WorkspacesServiceTests
             new Team { Id = 20, WorkspaceId = 2, Name = "X", CreatedAt = now, UpdatedAt = now },
         };
 
-        _workspacesRepo
+        _workspacesDbClient
             .Setup(r => r.ListWorkspacesAsync(userId))
             .ReturnsAsync(workspaces);
 
-        _teamsRepo
+        _teamsDbClient
             .Setup(r => r.ListTeamsAsync(It.Is<int[]>(ids => ids.SequenceEqual(new[] { 1, 2 }))))
             .ReturnsAsync(teams);
 
-        _membersRepo
+        _membersDbClient
             .Setup(r => r.ListMembersAsync(userId))
             .ReturnsAsync((Array.Empty<WorkspaceMember>(), Array.Empty<TeamMember>()));
 
@@ -93,9 +93,9 @@ public class WorkspacesServiceTests
         Assert.Equal(10, ws1.Teams![0].Id);
         Assert.Equal(11, ws1.Teams![1].Id);
 
-        _workspacesRepo.VerifyAll();
-        _teamsRepo.VerifyAll();
-        _membersRepo.Verify(r => r.ListMembersAsync(userId), Times.Once);
+        _workspacesDbClient.VerifyAll();
+        _teamsDbClient.VerifyAll();
+        _membersDbClient.Verify(r => r.ListMembersAsync(userId), Times.Once);
     }
 
     [Fact]
@@ -113,11 +113,11 @@ public class WorkspacesServiceTests
             UpdatedAt = now
         };
 
-        _workspacesRepo
+        _workspacesDbClient
             .Setup(r => r.CreateWorkspaceAsync(userId, workspaceName))
             .ReturnsAsync(expectedWorkspace);
 
-        _authorizationRepo
+        _userCacheInvalidator
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask);
 
@@ -128,10 +128,10 @@ public class WorkspacesServiceTests
         Assert.Null(result.Error);
         Assert.Equal(expectedWorkspace, result.Value);
 
-        _workspacesRepo.Verify(r => r.CreateWorkspaceAsync(userId, workspaceName), Times.Once);
-        _authorizationRepo.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
+        _workspacesDbClient.Verify(r => r.CreateWorkspaceAsync(userId, workspaceName), Times.Once);
+        _userCacheInvalidator.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
 
-        _teamsRepo.VerifyNoOtherCalls();
+        _teamsDbClient.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -151,11 +151,11 @@ public class WorkspacesServiceTests
             UpdatedAt = now
         };
 
-        _workspacesRepo
+        _workspacesDbClient
             .Setup(r => r.UpdateWorkspaceAsync(workspaceId, newName))
             .ReturnsAsync(expectedWorkspace);
 
-        _authorizationRepo
+        _userCacheInvalidator
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask);
 
@@ -166,9 +166,9 @@ public class WorkspacesServiceTests
         Assert.Null(result.Error);
         Assert.Equal(newName, result.Value!.Name);
 
-        _workspacesRepo.Verify(r => r.UpdateWorkspaceAsync(workspaceId, newName), Times.Once);
-        _authorizationRepo.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
-        _teamsRepo.VerifyNoOtherCalls();
+        _workspacesDbClient.Verify(r => r.UpdateWorkspaceAsync(workspaceId, newName), Times.Once);
+        _userCacheInvalidator.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
+        _teamsDbClient.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -179,10 +179,10 @@ public class WorkspacesServiceTests
         selfHostedOptions.Setup(o => o.Value).Returns(new SelfHostedOptions { Enabled = true });
 
         var sut = new WorkspacesService(
-            _workspacesRepo.Object,
-            _teamsRepo.Object,
-            _membersRepo.Object,
-            _authorizationRepo.Object,
+            _workspacesDbClient.Object,
+            _teamsDbClient.Object,
+            _membersDbClient.Object,
+            _userCacheInvalidator.Object,
             selfHostedOptions.Object
         );
 
@@ -192,8 +192,8 @@ public class WorkspacesServiceTests
         // Assert
         Assert.NotNull(result.Error);
 
-        _workspacesRepo.VerifyNoOtherCalls();
-        _authorizationRepo.VerifyNoOtherCalls();
+        _workspacesDbClient.VerifyNoOtherCalls();
+        _userCacheInvalidator.VerifyNoOtherCalls();
     }
 }
 

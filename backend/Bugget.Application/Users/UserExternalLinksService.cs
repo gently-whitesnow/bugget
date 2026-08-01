@@ -5,25 +5,25 @@ using Bugget.Domain.Users;
 namespace Bugget.Application.Users;
 
 public sealed class UserExternalLinksService(
-    IUserExternalLinksRepository externalLinksRepository) : IUserExternalLinksService
+    IUserExternalLinksDbClient externalLinksDbClient) : IUserExternalLinksService
 {
     public Task<long?> FindUserByProviderAndExternalIdAsync(string provider, string externalId)
     {
-        return externalLinksRepository.FindUserByProviderAsync(provider, externalId);
+        return externalLinksDbClient.FindUserByProviderAsync(provider, externalId);
     }
 
     public Task<UserExternalLink> AddLinkAsync(long userId, string provider, string externalId, string? email)
     {
-        return externalLinksRepository.AddLinkAsync(userId, provider, externalId, email);
+        return externalLinksDbClient.AddLinkAsync(userId, provider, externalId, email);
     }
 
     public Task RemoveLinkAsync(long userId, string provider)
     {
-        return externalLinksRepository.RemoveLinkAsync(userId, provider);
+        return externalLinksDbClient.RemoveLinkAsync(userId, provider);
     }
 
     public Task<UserExternalLink[]> GetLinksAsync(long userId)
     {
-        return externalLinksRepository.GetLinksAsync(userId);
+        return externalLinksDbClient.GetLinksAsync(userId);
     }
 }

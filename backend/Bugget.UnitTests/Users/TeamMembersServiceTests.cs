@@ -11,9 +11,9 @@ namespace Bugget.UnitTests.Users;
 
 public class TeamMembersServiceTests
 {
-    private readonly Mock<ITeamMembersRepository> _teamMembersRepo;
-    private readonly Mock<IWorkspaceMembersRepository> _workspaceMembersRepo;
-    private readonly Mock<IAuthorizationRepository> _authorizationRepo;
+    private readonly Mock<ITeamMembersDbClient> _teamMembersDbClient;
+    private readonly Mock<IWorkspaceMembersDbClient> _workspaceMembersDbClient;
+    private readonly Mock<IUserCacheInvalidator> _userCacheInvalidator;
     private readonly Mock<IOptions<TeamsOptions>> _options;
     private readonly Mock<IOptions<SelfHostedOptions>> _selfHostedOptions;
     private readonly TeamMembersService _sut;
@@ -21,9 +21,9 @@ public class TeamMembersServiceTests
 
     public TeamMembersServiceTests()
     {
-        _teamMembersRepo = new Mock<ITeamMembersRepository>(MockBehavior.Strict);
-        _workspaceMembersRepo = new Mock<IWorkspaceMembersRepository>(MockBehavior.Strict);
-        _authorizationRepo = new Mock<IAuthorizationRepository>(MockBehavior.Strict);
+        _teamMembersDbClient = new Mock<ITeamMembersDbClient>(MockBehavior.Strict);
+        _workspaceMembersDbClient = new Mock<IWorkspaceMembersDbClient>(MockBehavior.Strict);
+        _userCacheInvalidator = new Mock<IUserCacheInvalidator>(MockBehavior.Strict);
         _options = new Mock<IOptions<TeamsOptions>>(MockBehavior.Strict);
         _selfHostedOptions = new Mock<IOptions<SelfHostedOptions>>(MockBehavior.Strict);
         _selfHostedOptions.Setup(o => o.Value).Returns(new SelfHostedOptions { Enabled = false });
@@ -32,7 +32,7 @@ public class TeamMembersServiceTests
             DefaultSizeLimit = _defaultSizeLimit,
             DefaultTeamsCountLimit = 5,
         });
-        _sut = new TeamMembersService(_teamMembersRepo.Object, _options.Object, _workspaceMembersRepo.Object, _authorizationRepo.Object, _selfHostedOptions.Object);
+        _sut = new TeamMembersService(_teamMembersDbClient.Object, _options.Object, _workspaceMembersDbClient.Object, _userCacheInvalidator.Object, _selfHostedOptions.Object);
     }
 
     [Fact(DisplayName = "CreateTeamMemberAsync успешно создает участника команды")]
@@ -50,11 +50,11 @@ public class TeamMembersServiceTests
             CreatedAt = now
         };
 
-        _teamMembersRepo
+        _teamMembersDbClient
             .Setup(r => r.CreateTeamMemberAsync(userId, teamId, _defaultSizeLimit))
             .ReturnsAsync((expectedMember, null));
 
-        _authorizationRepo
+        _userCacheInvalidator
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask);
 
@@ -67,8 +67,8 @@ public class TeamMembersServiceTests
         Assert.Equal(teamId, result.Value.TeamId);
         Assert.Equal(userId, result.Value.UserId);
 
-        _teamMembersRepo.Verify(r => r.CreateTeamMemberAsync(userId, teamId, _defaultSizeLimit), Times.Once);
-        _authorizationRepo.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
+        _teamMembersDbClient.Verify(r => r.CreateTeamMemberAsync(userId, teamId, _defaultSizeLimit), Times.Once);
+        _userCacheInvalidator.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
     }
 
     [Fact(DisplayName = "CreateTeamMemberAsync возвращает ошибку при превышении лимита команды")]
@@ -78,7 +78,7 @@ public class TeamMembersServiceTests
         var teamId = 10;
         var userId = 42L;
 
-        _teamMembersRepo
+        _teamMembersDbClient
             .Setup(r => r.CreateTeamMemberAsync(userId, teamId, _defaultSizeLimit))
             .ReturnsAsync((null, TeamMembersErrors.TeamLimitExceededError));
 
@@ -89,8 +89,8 @@ public class TeamMembersServiceTests
         Assert.NotNull(result.Error);
         Assert.Equal(TeamMembersErrors.TeamLimitExceededError, result.Error);
 
-        _teamMembersRepo.Verify(r => r.CreateTeamMemberAsync(userId, teamId, _defaultSizeLimit), Times.Once);
-        _authorizationRepo.Verify(r => r.InvalidateUserCacheAsync(It.IsAny<long>()), Times.Never);
+        _teamMembersDbClient.Verify(r => r.CreateTeamMemberAsync(userId, teamId, _defaultSizeLimit), Times.Once);
+        _userCacheInvalidator.Verify(r => r.InvalidateUserCacheAsync(It.IsAny<long>()), Times.Never);
     }
 
     [Fact(DisplayName = "CreateTeamMemberAsync вызывает InvalidateUserCacheAsync только при успешном создании")]
@@ -108,11 +108,11 @@ public class TeamMembersServiceTests
             CreatedAt = now
         };
 
-        _teamMembersRepo
+        _teamMembersDbClient
             .Setup(r => r.CreateTeamMemberAsync(userId, teamId, _defaultSizeLimit))
             .ReturnsAsync((member, null));
 
-        _authorizationRepo
+        _userCacheInvalidator
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask)
             .Verifiable();
@@ -121,7 +121,7 @@ public class TeamMembersServiceTests
         await _sut.CreateTeamMemberAsync(teamId, userId);
 
         // Assert
-        _authorizationRepo.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
+        _userCacheInvalidator.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
     }
 
     [Fact(DisplayName = "CreateTeamMemberAsync использует DefaultSizeLimit из конфигурации")]
@@ -139,7 +139,7 @@ public class TeamMembersServiceTests
             DefaultTeamsCountLimit = 5,
         });
 
-        var customSut = new TeamMembersService(_teamMembersRepo.Object, customOptions.Object, _workspaceMembersRepo.Object, _authorizationRepo.Object, _selfHostedOptions.Object);
+        var customSut = new TeamMembersService(_teamMembersDbClient.Object, customOptions.Object, _workspaceMembersDbClient.Object, _userCacheInvalidator.Object, _selfHostedOptions.Object);
 
         var member = new TeamMember
         {
@@ -148,11 +148,11 @@ public class TeamMembersServiceTests
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        _teamMembersRepo
+        _teamMembersDbClient
             .Setup(r => r.CreateTeamMemberAsync(userId, teamId, customLimit))
             .ReturnsAsync((member, null));
 
-        _authorizationRepo
+        _userCacheInvalidator
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask);
 
@@ -160,7 +160,7 @@ public class TeamMembersServiceTests
         await customSut.CreateTeamMemberAsync(teamId, userId);
 
         // Assert
-        _teamMembersRepo.Verify(r => r.CreateTeamMemberAsync(userId, teamId, customLimit), Times.Once);
+        _teamMembersDbClient.Verify(r => r.CreateTeamMemberAsync(userId, teamId, customLimit), Times.Once);
     }
 
     [Fact(DisplayName = "ListTeamMembersAsync возвращает список участников команды")]
@@ -177,7 +177,7 @@ public class TeamMembersServiceTests
             new TeamMember { TeamId = teamId, UserId = 3L, CreatedAt = now }
         };
 
-        _teamMembersRepo
+        _teamMembersDbClient
             .Setup(r => r.ListTeamMembersAsync(teamId))
             .ReturnsAsync(expectedMembers);
 
@@ -191,7 +191,7 @@ public class TeamMembersServiceTests
         Assert.Contains(result, m => m.UserId == 2L);
         Assert.Contains(result, m => m.UserId == 3L);
 
-        _teamMembersRepo.Verify(r => r.ListTeamMembersAsync(teamId), Times.Once);
+        _teamMembersDbClient.Verify(r => r.ListTeamMembersAsync(teamId), Times.Once);
     }
 
     [Fact(DisplayName = "ListTeamMembersAsync возвращает пустой массив для команды без участников")]
@@ -200,7 +200,7 @@ public class TeamMembersServiceTests
         // Arrange
         var teamId = 10;
 
-        _teamMembersRepo
+        _teamMembersDbClient
             .Setup(r => r.ListTeamMembersAsync(teamId))
             .ReturnsAsync(Array.Empty<TeamMember>());
 
@@ -210,7 +210,7 @@ public class TeamMembersServiceTests
         // Assert
         Assert.Empty(result);
 
-        _teamMembersRepo.Verify(r => r.ListTeamMembersAsync(teamId), Times.Once);
+        _teamMembersDbClient.Verify(r => r.ListTeamMembersAsync(teamId), Times.Once);
     }
 
     [Fact(DisplayName = "DeleteTeamMemberAsync удаляет участника из команды и воркспейса")]
@@ -220,15 +220,15 @@ public class TeamMembersServiceTests
         var teamId = 10;
         var userId = 42L;
 
-        _teamMembersRepo
+        _teamMembersDbClient
             .Setup(r => r.DeleteTeamMemberAsync(userId, teamId))
             .Returns(Task.CompletedTask);
 
-        _workspaceMembersRepo
+        _workspaceMembersDbClient
             .Setup(r => r.DeleteWorkspaceMemberAsync(userId, teamId))
             .Returns(Task.CompletedTask);
 
-        _authorizationRepo
+        _userCacheInvalidator
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask);
 
@@ -236,9 +236,9 @@ public class TeamMembersServiceTests
         await _sut.DeleteTeamMemberAsync(userId, teamId);
 
         // Assert
-        _teamMembersRepo.Verify(r => r.DeleteTeamMemberAsync(userId, teamId), Times.Once);
-        _workspaceMembersRepo.Verify(r => r.DeleteWorkspaceMemberAsync(userId, teamId), Times.Once);
-        _authorizationRepo.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
+        _teamMembersDbClient.Verify(r => r.DeleteTeamMemberAsync(userId, teamId), Times.Once);
+        _workspaceMembersDbClient.Verify(r => r.DeleteWorkspaceMemberAsync(userId, teamId), Times.Once);
+        _userCacheInvalidator.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
     }
 
     [Fact(DisplayName = "DeleteTeamMemberAsync инвалидирует кэш пользователя")]
@@ -248,15 +248,15 @@ public class TeamMembersServiceTests
         var teamId = 5;
         var userId = 100L;
 
-        _teamMembersRepo
+        _teamMembersDbClient
             .Setup(r => r.DeleteTeamMemberAsync(userId, teamId))
             .Returns(Task.CompletedTask);
 
-        _workspaceMembersRepo
+        _workspaceMembersDbClient
             .Setup(r => r.DeleteWorkspaceMemberAsync(userId, teamId))
             .Returns(Task.CompletedTask);
 
-        _authorizationRepo
+        _userCacheInvalidator
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask)
             .Verifiable();
@@ -265,7 +265,7 @@ public class TeamMembersServiceTests
         await _sut.DeleteTeamMemberAsync(userId, teamId);
 
         // Assert
-        _authorizationRepo.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
+        _userCacheInvalidator.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
     }
 
     [Fact(DisplayName = "DeleteTeamMemberAsync вызывает все операции в правильном порядке")]
@@ -276,17 +276,17 @@ public class TeamMembersServiceTests
         var userId = 42L;
         var callOrder = new List<string>();
 
-        _teamMembersRepo
+        _teamMembersDbClient
             .Setup(r => r.DeleteTeamMemberAsync(userId, teamId))
             .Returns(Task.CompletedTask)
             .Callback(() => callOrder.Add("DeleteTeamMember"));
 
-        _workspaceMembersRepo
+        _workspaceMembersDbClient
             .Setup(r => r.DeleteWorkspaceMemberAsync(userId, teamId))
             .Returns(Task.CompletedTask)
             .Callback(() => callOrder.Add("DeleteWorkspaceMember"));
 
-        _authorizationRepo
+        _userCacheInvalidator
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask)
             .Callback(() => callOrder.Add("InvalidateCache"));

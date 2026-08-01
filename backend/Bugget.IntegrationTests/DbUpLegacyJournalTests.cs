@@ -31,6 +31,9 @@ namespace Bugget.IntegrationTests;
 /// Сценарий разыгрывается на отдельных базах в том же контейнере, схема накатывается
 /// напрямую скриптами и после этого не портится: проверяется обновление валидной старой
 /// базы, а не восстановление после удаления таблицы.
+///
+/// Снимок — это baseline, а не список миграций: он совпадает с началом текущего набора,
+/// а всё добавленное после него обязано выбираться обновлением и в снимок не дописывается.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
@@ -38,13 +41,17 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
     private static readonly Assembly InfrastructureAssembly =
         typeof(Bugget.Infrastructure.AssemblyMarker).Assembly;
 
+    private const string ReportsScriptsNamespace = "Bugget.Infrastructure.DbUp.sql.migrations";
+    private const string UsersScriptsNamespace = "Bugget.Infrastructure.Users.DbUp.sql";
+    private const string UsersLegacyJournalNamespace = "Users.DbUp.sql";
+
     [Fact(DisplayName = "Обновление reports с боевым журналом не выбирает ни одной миграции")]
     public async Task Reports_upgrade_over_legacy_journal_selects_no_scripts()
     {
         var target = await PrepareLegacyDatabaseAsync(
             databaseName: "dbup_legacy_reports",
             snapshotFile: "reports.txt",
-            scriptsNamespace: "Bugget.Infrastructure.DbUp.sql.migrations");
+            scriptsNamespace: ReportsScriptsNamespace);
 
         AssertNothingToUpgrade(
             Bugget.Infrastructure.DbUp.DbUpService.BuildMigrationsRunner(target),
@@ -56,24 +63,95 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
         Assert.True(functions.Successful, Describe(functions));
     }
 
-    [Fact(DisplayName = "Обновление users с боевым журналом не выбирает ни одной миграции")]
-    public async Task Users_upgrade_over_legacy_journal_selects_no_scripts()
+    /// <summary>
+    /// База заказчика стоит на baseline из снимка, поэтому обновление обязано выбрать ровно
+    /// миграции, добавленные после снимка, — не больше (иначе переименование в легаси-имя
+    /// сломано и legacy накатится повторно) и не меньше.
+    /// </summary>
+    [Fact(DisplayName = "Обновление users с боевым журналом выбирает ровно миграции после baseline")]
+    public async Task Users_upgrade_over_legacy_journal_selects_only_post_baseline_scripts()
     {
         var target = await PrepareLegacyDatabaseAsync(
             databaseName: "dbup_legacy_users",
             snapshotFile: "users.txt",
-            scriptsNamespace: "Bugget.Infrastructure.Users.DbUp.sql");
+            scriptsNamespace: UsersScriptsNamespace);
 
+        // Существующая база живёт с данными: TTL-инвайты удаляются вместе со строками.
+        await SeedTeamInviteAsync(target);
+        Assert.True(await TeamInvitesTableExistsAsync(target));
+        Assert.Equal(TeamInviteFunctions.Length, await TeamInviteFunctionCountAsync(target));
+
+        var runner = Bugget.Infrastructure.Users.DbUp.DbUpService.BuildRunner(target);
+
+        var pending = runner.GetScriptsToExecute().Select(script => script.Name).ToArray();
+        Assert.Equal(UsersPostBaselineJournalNames(), pending);
+
+        var result = runner.PerformUpgrade();
+        Assert.True(result.Successful, Describe(result));
+
+        await AssertNoTeamInviteObjectsAsync(target);
+
+        // Второй проход по уже обновлённой базе не выбирает ничего: миграция forward-only.
         AssertNothingToUpgrade(
             Bugget.Infrastructure.Users.DbUp.DbUpService.BuildRunner(target),
             "миграции users");
     }
 
-    [Fact(DisplayName = "Снимок боевого журнала покрывает ровно текущий набор миграций")]
-    public void Snapshots_cover_exactly_the_current_migration_set()
+    [Fact(DisplayName = "Неизвестная зависимость останавливает 022 и откатывает удаление TTL-инвайтов")]
+    public async Task Users_upgrade_with_unknown_dependency_rolls_back_drop_migration()
     {
-        AssertSnapshotCoversScripts("reports.txt", "Bugget.Infrastructure.DbUp.sql.migrations");
-        AssertSnapshotCoversScripts("users.txt", "Bugget.Infrastructure.Users.DbUp.sql");
+        var target = await PrepareLegacyDatabaseAsync(
+            databaseName: "dbup_legacy_users_dependency",
+            snapshotFile: "users.txt",
+            scriptsNamespace: UsersScriptsNamespace);
+
+        await SeedTeamInviteAsync(target);
+        await ExecuteAsync(target, "CREATE VIEW unexpected_team_invites AS SELECT id FROM team_invites;");
+
+        Assert.True(await TeamInvitesTableExistsAsync(target));
+        Assert.Equal(1, await TeamInviteRowCountAsync(target));
+        Assert.Equal(ExpectedTeamInviteFunctionSignatures, await TeamInviteFunctionSignaturesAsync(target));
+
+        var runner = Bugget.Infrastructure.Users.DbUp.DbUpService.BuildRunner(target);
+        Assert.Equal(UsersPostBaselineJournalNames(), runner.GetScriptsToExecute().Select(script => script.Name));
+
+        var result = runner.PerformUpgrade();
+
+        Assert.False(result.Successful, "022 должна fail-closed остановиться на неизвестной зависимости");
+        Assert.Equal(UsersPostBaselineJournalNames().Single(), result.ErrorScript?.Name);
+        var postgresError = Assert.IsType<PostgresException>(result.Error);
+        Assert.Equal(PostgresErrorCodes.DependentObjectsStillExist, postgresError.SqlState);
+        Assert.True(await UnexpectedTeamInvitesViewExistsAsync(target));
+        Assert.True(await TeamInvitesTableExistsAsync(target));
+        Assert.Equal(1, await TeamInviteRowCountAsync(target));
+        Assert.Equal(ExpectedTeamInviteFunctionSignatures, await TeamInviteFunctionSignaturesAsync(target));
+        Assert.False(await JournalContainsAsync(target, UsersPostBaselineJournalNames().Single()));
+
+        var retry = Bugget.Infrastructure.Users.DbUp.DbUpService.BuildRunner(target);
+        Assert.Equal(UsersPostBaselineJournalNames(), retry.GetScriptsToExecute().Select(script => script.Name));
+    }
+
+    [Fact(DisplayName = "Чистая установка users не оставляет объектов TTL-инвайтов")]
+    public async Task Users_clean_install_leaves_no_team_invite_objects()
+    {
+        var target = await CreateEmptyDatabaseAsync("dbup_clean_users");
+
+        var result = Bugget.Infrastructure.Users.DbUp.DbUpService.BuildRunner(target).PerformUpgrade();
+        Assert.True(result.Successful, Describe(result));
+
+        await AssertNoTeamInviteObjectsAsync(target);
+    }
+
+    /// <summary>
+    /// Снимок боевого журнала — неизменяемый baseline, а не список миграций: он обязан
+    /// совпадать с началом текущего набора, а всё новое живёт после него и в снимок
+    /// не дописывается. Для reports снимок пока совпадает с набором целиком.
+    /// </summary>
+    [Fact(DisplayName = "Снимок боевого журнала совпадает с началом текущего набора миграций")]
+    public void Snapshots_are_the_baseline_prefix_of_the_current_migration_set()
+    {
+        AssertSnapshotCoversScripts("reports.txt", ReportsScriptsNamespace);
+        AssertSnapshotIsBaselinePrefix("users.txt", UsersScriptsNamespace);
     }
 
     /// <summary>
@@ -110,11 +188,7 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
         string snapshotFile,
         string scriptsNamespace)
     {
-        var admin = postgres.Container.GetConnectionString();
-        await ExecuteAsync(admin, $"DROP DATABASE IF EXISTS {databaseName} WITH (FORCE);");
-        await ExecuteAsync(admin, $"CREATE DATABASE {databaseName};");
-
-        var target = new NpgsqlConnectionStringBuilder(admin) { Database = databaseName }.ConnectionString;
+        var target = await CreateEmptyDatabaseAsync(databaseName);
 
         var legacyNames = ReadSnapshot(snapshotFile);
 
@@ -128,6 +202,15 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
         SeedLegacyJournal(target, legacyNames);
 
         return target;
+    }
+
+    private async Task<string> CreateEmptyDatabaseAsync(string databaseName)
+    {
+        var admin = postgres.Container.GetConnectionString();
+        await ExecuteAsync(admin, $"DROP DATABASE IF EXISTS {databaseName} WITH (FORCE);");
+        await ExecuteAsync(admin, $"CREATE DATABASE {databaseName};");
+
+        return new NpgsqlConnectionStringBuilder(admin) { Database = databaseName }.ConnectionString;
     }
 
     /// <summary>
@@ -159,6 +242,30 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
 
         Assert.Equal(scripts, snapshot);
     }
+
+    /// <summary>
+    /// Снимок обязан совпадать с началом текущего набора скриптов. Это ловит и правку самого
+    /// снимка, и вставку новой миграции внутрь baseline — на базе заказчика такая миграция
+    /// уже числилась бы применённой и молча не накатилась бы.
+    /// </summary>
+    private static void AssertSnapshotIsBaselinePrefix(string snapshotFile, string scriptsNamespace)
+    {
+        var snapshot = ReadSnapshot(snapshotFile).Select(FileNameOf).ToArray();
+        var scripts = ScriptFileNames(scriptsNamespace);
+
+        Assert.Equal(snapshot, scripts.Take(snapshot.Length));
+    }
+
+    /// <summary>
+    /// Легаси-имена миграций, добавленных после снимка: ровно их обязано выбрать обновление
+    /// базы заказчика.
+    /// </summary>
+    private static string[] UsersPostBaselineJournalNames() =>
+    [
+        .. ScriptFileNames(UsersScriptsNamespace)
+            .Skip(ReadSnapshot("users.txt").Count)
+            .Select(fileName => $"{UsersLegacyJournalNamespace}.{fileName}")
+    ];
 
     /// <summary>
     /// Читает снимок боевого журнала. Сверяется только состав файлов; сами имена в снимке
@@ -198,6 +305,96 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
                 $"В снимке боевого журнала есть {fileName}, а скрипта {resource} в сборке нет.");
         using var reader = new StreamReader(stream, Encoding.UTF8);
         return reader.ReadToEnd();
+    }
+
+    private static readonly string[] TeamInviteFunctions =
+        ["create_team_invite", "update_team_invite", "get_team_invite", "delete_team_invite", "accept_team_invite"];
+
+    private static readonly string[] ExpectedTeamInviteFunctionSignatures =
+    [
+        "accept_team_invite(bytea)",
+        "create_team_invite(integer, integer, bytea, timestamp with time zone)",
+        "delete_team_invite(integer, integer)",
+        "get_team_invite(integer)",
+        "update_team_invite(integer, integer, bytea, timestamp with time zone)"
+    ];
+
+    /// <summary>Строка инвайта на валидных внешних ключах: база заказчика удаляется с данными.</summary>
+    private static Task SeedTeamInviteAsync(string connectionString) => ExecuteAsync(
+        connectionString,
+        """
+        WITH w AS (
+            INSERT INTO workspaces(name) VALUES ('legacy-ws') RETURNING id
+        ), t AS (
+            INSERT INTO teams(workspace_id, name) SELECT id, 'legacy-team' FROM w RETURNING id, workspace_id
+        )
+        INSERT INTO team_invites(team_id, workspace_id, token_hash, expires_at)
+        SELECT id, workspace_id, '\x00ff'::bytea, now() + interval '1 day' FROM t;
+        """);
+
+    private static async Task AssertNoTeamInviteObjectsAsync(string connectionString)
+    {
+        Assert.False(
+            await TeamInvitesTableExistsAsync(connectionString),
+            "после миграции таблица team_invites всё ещё существует");
+
+        Assert.Equal(0, await TeamInviteFunctionCountAsync(connectionString));
+    }
+
+    private static async Task<bool> TeamInvitesTableExistsAsync(string connectionString)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        return await connection.ExecuteScalarAsync<bool>(
+            "SELECT to_regclass('public.team_invites') IS NOT NULL;");
+    }
+
+    private static async Task<bool> UnexpectedTeamInvitesViewExistsAsync(string connectionString)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        return await connection.ExecuteScalarAsync<bool>(
+            "SELECT to_regclass('public.unexpected_team_invites') IS NOT NULL;");
+    }
+
+    private static async Task<int> TeamInviteRowCountAsync(string connectionString)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        return await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM team_invites;");
+    }
+
+    private static async Task<string[]> TeamInviteFunctionSignaturesAsync(string connectionString)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        var signatures = await connection.QueryAsync<string>(
+            """
+            SELECT p.proname || '(' || pg_catalog.oidvectortypes(p.proargtypes) || ')'
+            FROM pg_proc p
+            JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname = 'public' AND p.proname = ANY(@names)
+            ORDER BY p.proname;
+            """,
+            new { names = TeamInviteFunctions });
+        return signatures.ToArray();
+    }
+
+    private static async Task<bool> JournalContainsAsync(string connectionString, string scriptName)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        return await connection.ExecuteScalarAsync<bool>(
+            "SELECT EXISTS (SELECT 1 FROM schemaversions WHERE scriptname = @scriptName);",
+            new { scriptName });
+    }
+
+    private static async Task<int> TeamInviteFunctionCountAsync(string connectionString)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        return await connection.ExecuteScalarAsync<int>(
+            """
+            SELECT count(*)::int
+            FROM pg_proc p
+            JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname = 'public' AND p.proname = ANY(@names);
+            """,
+            new { names = TeamInviteFunctions });
     }
 
     private static async Task ExecuteAsync(string connectionString, string sql)

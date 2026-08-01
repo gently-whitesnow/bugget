@@ -21,6 +21,8 @@ import type { QueryValue } from "./buildQuery";
 
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
+export type ResponseValidator = (data: unknown) => void;
+
 /** `never` и `undefined` в сгенерированных типах значат «этого у операции нет». */
 type Present<T> = [NonNullable<T>] extends [never] ? never : NonNullable<T>;
 
@@ -215,7 +217,7 @@ type RuntimeArgs = {
  * axios-инстанса: `request("/v2/reports/{aliasId}", "get", { path: { aliasId } })`.
  */
 export const createOperationRequest =
-  <TPaths>(instance: AxiosInstance) =>
+  <TPaths>(instance: AxiosInstance, validateResponse?: ResponseValidator) =>
   async <P extends keyof TPaths & string, M extends MethodsOf<TPaths[P]>>(
     path: P,
     method: M,
@@ -243,5 +245,6 @@ export const createOperationRequest =
         : {}),
     });
 
+    validateResponse?.(response.data);
     return response.data;
   };

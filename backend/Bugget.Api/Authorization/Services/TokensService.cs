@@ -140,6 +140,8 @@ public sealed class TokensService(
             ValidAudience = _opts.Audience,
             IssuerSigningKey = rsaKey,
             ClockSkew = RefreshTokenRevocation.ClockSkew,
+            // В IdentityModel 8.8.0 TimeProvider остаётся internal. Публичный delegate —
+            // поддерживаемая точка внедрения часов; его семантику держат boundary-тесты сервиса.
             LifetimeValidator = (notBefore, expires, _, parameters) =>
                 ValidateLifetime(notBefore, expires, parameters, timeProvider),
             ValidateIssuer = true,

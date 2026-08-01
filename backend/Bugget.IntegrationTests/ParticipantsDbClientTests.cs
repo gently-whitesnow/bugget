@@ -1,5 +1,5 @@
-using Bugget.BO.Ports;
-using Bugget.Entities.DTO.Report;
+using Bugget.Application.Commands.Report;
+using Bugget.Application.Ports;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -140,7 +140,7 @@ public class ParticipantsDbClientTests : IClassFixture<AppWithPostgresFixture>
 
     #region Helper Methods
 
-    private async Task<Bugget.Entities.BO.ReportBo.ReportSummary> CreateTestReportAsync(
+    private async Task<Bugget.Domain.Reports.ReportSummary> CreateTestReportAsync(
         string userId,
         string? organizationId = null)
     {

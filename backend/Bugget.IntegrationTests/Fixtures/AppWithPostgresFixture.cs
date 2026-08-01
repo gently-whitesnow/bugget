@@ -1,12 +1,11 @@
 using System;
-using Bugget.BO.Ports;
+using Bugget.Application.Ports;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using TaskQueue;
 using Testcontainers.PostgreSql;
 
 namespace Bugget.IntegrationTests.Fixtures;

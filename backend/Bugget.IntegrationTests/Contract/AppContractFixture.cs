@@ -1,4 +1,5 @@
-using Bugget.BO.Ports;
+using Bugget.Application.Ports;
+using Bugget.Application.Users.Workspaces;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -6,8 +7,6 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using TaskQueue;
-using Users.BO.Workspaces;
 
 namespace Bugget.IntegrationTests.Contract;
 

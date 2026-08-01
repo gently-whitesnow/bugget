@@ -3,8 +3,8 @@ namespace Bugget.Architecture.Tests;
 /// <summary>
 /// Известное отступление от целевой архитектуры: зафиксировано явно, а не замолчано.
 /// </summary>
-/// <param name="From">Проект, который отступает.</param>
-/// <param name="To">Проект или сборка, на которую он ссылается вопреки целевому правилу.</param>
+/// <param name="From">Проект или пространство имён, которое отступает.</param>
+/// <param name="To">Проект, сборка или пространство имён, на которое оно ссылается вопреки целевому правилу.</param>
 /// <param name="What">Что именно нарушено.</param>
 /// <param name="Why">Почему это ещё живо и чем снимается.</param>
 /// <param name="Adr">ADR, в котором записано целевое состояние.</param>
@@ -14,62 +14,42 @@ public sealed record Deviation(string From, string To, string What, string Why, 
 }
 
 /// <summary>
-/// Реестр отступлений текущего графа проектов от целевой раскладки ADR-0001.
+/// Реестр отступлений текущего кода от целевой раскладки ADR-0001. Сейчас пуст: граф
+/// проектов совпадает с целевым, а <c>Bugget.Api</c> видит инфраструктуру только из
+/// поимённого композиционного корня (<see cref="Quartet.CompositionRoot"/>).
 ///
 /// Правило чтения: это долг, а не разрешение. Пополнять список — значит осознанно
 /// увеличивать долг, и такой коммит нужно обосновывать так же, как отключение гейта
 /// (ADR-0002). Нормальное движение — только вычёркивание строк.
 ///
-/// Каждая запись проверяется тестом «Известные отступления не протухли»: как только
-/// отступление снято в коде, строка обязана исчезнуть отсюда, иначе гейт краснеет.
-/// Так список не превращается в кладбище неактуальных исключений.
+/// Каждая запись проверяется тестом на протухание: как только отступление снято в коде,
+/// строка обязана исчезнуть отсюда, иначе гейт краснеет. Так список не превращается
+/// в кладбище неактуальных исключений.
 /// </summary>
 public static class KnownDeviations
 {
-    /// <summary>Рёбра «бизнес-логика → инфраструктура», которые сейчас есть в графе проектов.</summary>
+    /// <summary>Рёбра «прикладной слой → инфраструктура», которые сейчас есть в графе проектов.</summary>
     /// <remarks>
-    /// Пусто: рёбра <c>*.BO → *.DA</c> развёрнуты, порты живут в <c>*.BO/Ports</c>,
-    /// инфраструктура ссылается на бизнес-логику. Строку сюда возвращает только новый
-    /// осознанный долг — с обоснованием в теле коммита (ADR-0002).
+    /// Пусто: <c>Bugget.Application</c> объявляет только <c>Bugget.Domain</c> и
+    /// <c>Bugget.Contracts</c>; порты живут в <c>Bugget.Application/Ports</c>, а
+    /// <c>Bugget.Infrastructure</c> ссылается на прикладной слой, а не наоборот.
     /// </remarks>
-    public static readonly IReadOnlyList<Deviation> BoProjectReferences = [];
+    public static readonly IReadOnlyList<Deviation> ApplicationProjectReferences = [];
 
-    /// <summary>Сборки, которые бизнес-логика тянет напрямую в обход целевого правила.</summary>
-    public static readonly IReadOnlyList<Deviation> BoAssemblyReferences =
-    [
-        new("Users.BO", "Microsoft.Extensions.Http",
-            "Users.BO.Avatars.AvatarDownloadService инжектит IHttpClientFactory и сам ходит в сеть",
-            "поход наружу должен уехать за порт в Infrastructure, переносится при переезде Users.*",
-            "ADR-0001"),
-
-        new("Users.BO", "System.Net.Http",
-            "тот же AvatarDownloadService использует HttpClient напрямую",
-            "снимается вместе с предыдущей строкой",
-            "ADR-0001"),
-
-        new("Users.BO", "System.Net.Primitives",
-            "и читает HttpStatusCode ответа",
-            "снимается вместе с предыдущей строкой",
-            "ADR-0001"),
-    ];
-
-    /// <summary>Проекты <c>*.Entities</c>, которые сейчас не являются листьями графа.</summary>
-    public static readonly IReadOnlyList<Deviation> EntitiesProjectReferences =
-    [
-        new("Users.Entities", "Authentication",
-            "нижний слой ссылается на проект аутентификации, собранный как Microsoft.NET.Sdk.Web",
-            "сам код Users.Entities этой ссылкой не пользуется: через неё Authentication доезжает " +
-            "транзитивно до Users.BO и Users.Api, которые её действительно используют. Снимается " +
-            "прямыми ссылками при переезде Users.*",
-            "ADR-0001"),
-    ];
+    /// <summary>Сборки, которые прикладной слой тянет напрямую в обход целевого правила.</summary>
+    /// <remarks>
+    /// Пусто: поход в сеть за аватаром уехал в <c>Bugget.Infrastructure/Users/Avatars</c>,
+    /// а обработка медиа — за порты <c>IAttachmentOptimizer</c> и <c>IMimeTypeDetector</c>
+    /// в <c>Bugget.Infrastructure/Attachments</c>. Ни HTTP-клиента, ни ImageSharp, ни ffmpeg,
+    /// ни libmagic в прикладном слое не осталось.
+    /// </remarks>
+    public static readonly IReadOnlyList<Deviation> ApplicationAssemblyReferences = [];
 
     /// <summary>Все отступления одним списком — для сообщений и проверки на протухание.</summary>
     public static IReadOnlyList<Deviation> All =>
     [
-        .. BoProjectReferences,
-        .. BoAssemblyReferences,
-        .. EntitiesProjectReferences,
+        .. ApplicationProjectReferences,
+        .. ApplicationAssemblyReferences,
     ];
 
     /// <summary>Разрешённые цели отступлений для проекта — то, что правило обязано пропустить.</summary>

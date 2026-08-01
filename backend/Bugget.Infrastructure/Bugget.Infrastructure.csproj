@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\Bugget.Application\Bugget.Application.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Dapper" />
+        <PackageReference Include="dbup-postgresql" />
+        <PackageReference Include="JetBrains.Annotations" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
+        <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Configuration" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+        <PackageReference Include="Mime" />
+        <PackageReference Include="Npgsql" />
+        <PackageReference Include="Serilog" />
+        <PackageReference Include="Serilog.Extensions.Logging" />
+        <PackageReference Include="Serilog.Settings.Configuration" />
+        <PackageReference Include="Serilog.Sinks.Console" />
+        <PackageReference Include="Serilog.Sinks.Network" />
+        <PackageReference Include="SixLabors.ImageSharp" />
+        <PackageReference Include="StackExchange.Redis" />
+        <PackageReference Include="Xabe.FFmpeg" />
+        <PackageReference Include="Xabe.FFmpeg.Downloader" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Characterization обновления собирает боевые движки DbUp, а не свою копию:
+             иначе проверка инварианта журнала проверяла бы сама себя. Границу это не
+             ослабляет — правило «internal только тестам» держит Bugget.Architecture.Tests. -->
+        <InternalsVisibleTo Include="Bugget.IntegrationTests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="DbUp/sql/migrations/*.sql" />
+        <EmbeddedResource Include="DbUp/sql/functions/*.sql" />
+        <EmbeddedResource Include="Users/DbUp/sql/*.sql" />
+    </ItemGroup>
+
+</Project>

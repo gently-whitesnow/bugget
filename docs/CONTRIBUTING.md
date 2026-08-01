@@ -60,6 +60,6 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml \
 Перед пул-реквестом прогоните то же, что проверяет CI:
 
 ```sh
-cd backend  && dotnet build Bugget.sln && dotnet test Bugget.Tests/Bugget.Tests.csproj
+cd backend  && dotnet build Bugget.sln && dotnet test Bugget.UnitTests/Bugget.UnitTests.csproj
 cd frontend && npx tsc --noEmit && npm run lint && npm run test
 ```

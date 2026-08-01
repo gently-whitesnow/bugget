@@ -28,9 +28,9 @@ hubs:
     # Путь виден фронту как /api/app/workspaces/{workspaceId}/teams/{teamId}/v1/report-page-hub —
     # префикс навешивает nginx, в приложении хаб смонтирован по короткому пути.
     path: "/v1/report-page-hub"
-    server: backend/Bugget/Hubs/ReportPageHub.cs
-    publisherInterface: backend/Bugget.BO/Ports/IReportPageHubClient.cs
-    publisher: backend/Bugget/Hubs/ReportPageHubClient.cs
+    server: backend/Bugget.Api/Hubs/ReportPageHub.cs
+    publisherInterface: backend/Bugget.Application/Ports/IReportPageHubClient.cs
+    publisher: backend/Bugget.Api/Hubs/ReportPageHubClient.cs
     subscriber: frontend/src/shared/model/socket/contracts.ts
     subscriberEnum: SocketEvent
     description: "Живое обновление страницы репорта. Клиент вступает в группу репорта, сервер рассылает в неё изменения."
@@ -76,14 +76,14 @@ hubs:
     # тип в C#, поменяли текст рамки здесь, поправили ожидание в тесте, ослабили фильтр
     # до базового HubException — красный.
     methodError:
-      source: backend/Bugget.Http/RealtimeErrorPayload.cs
+      source: backend/Bugget.Api/Http/RealtimeErrorPayload.cs
       type: RealtimeError
       description: "Ошибка вызова метода хаба. Наружу уходит только payload из каталога: любое другое исключение фильтр сводит к internal_server_error."
       envelope: "An unexpected error occurred invoking '<method>' on the server. <trustedException>: <payload>"
       trustedException:
-        source: backend/Bugget/Hubs/RealtimeProblemException.cs
+        source: backend/Bugget.Api/Hubs/RealtimeProblemException.cs
         type: RealtimeProblemException
-        filter: backend/Bugget/Middlewares/HubExceptionHandlerFilter.cs
+        filter: backend/Bugget.Api/Middlewares/HubExceptionHandlerFilter.cs
       characterization:
         source: backend/Bugget.IntegrationTests/Contract/ReportPageHubContractTests.cs
         method: JoinReportGroupAsync

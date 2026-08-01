@@ -1,0 +1,10 @@
+using Bugget.Domain;
+
+namespace Bugget.Application.Interfaces;
+
+public interface IAttachmentKeyGenerator
+{
+    string GetOriginalKey(string? organizationId, int reportId, int entityId, string extension);
+    string GetTempKey(string? organizationId, int reportId, int entityId, string extension);
+    string GetPreviewKey(string originalKey);
+}

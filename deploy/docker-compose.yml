@@ -40,7 +40,7 @@ services:
   app-api:
     build:
       context: ../backend
-      dockerfile: Bugget/Dockerfile
+      dockerfile: Bugget.Api/Dockerfile
     environment:
       HTTP_PORTS: 7777
       HTTPS_PORTS: ""

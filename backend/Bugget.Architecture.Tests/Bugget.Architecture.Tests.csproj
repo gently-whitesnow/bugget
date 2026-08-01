@@ -30,14 +30,11 @@
         с диска и в этих ссылках не нуждаются.
     -->
     <ItemGroup>
-        <ProjectReference Include="..\Bugget\Bugget.csproj" />
-        <ProjectReference Include="..\Bugget.BO\Bugget.BO.csproj" />
-        <ProjectReference Include="..\Bugget.DA\Bugget.DA.csproj" />
-        <ProjectReference Include="..\Bugget.DbUp\Bugget.DbUp.csproj" />
-        <ProjectReference Include="..\Bugget.Entities\Bugget.Entities.csproj" />
-        <ProjectReference Include="..\Bugget.ExternalClients\Bugget.ExternalClients.csproj" />
-        <ProjectReference Include="..\TaskQueue\TaskQueue.csproj" />
-        <ProjectReference Include="..\Users.BO\Users.BO.csproj" />
+        <ProjectReference Include="..\Bugget.Api\Bugget.Api.csproj" />
+        <ProjectReference Include="..\Bugget.Application\Bugget.Application.csproj" />
+        <ProjectReference Include="..\Bugget.Contracts\Bugget.Contracts.csproj" />
+        <ProjectReference Include="..\Bugget.Domain\Bugget.Domain.csproj" />
+        <ProjectReference Include="..\Bugget.Infrastructure\Bugget.Infrastructure.csproj" />
     </ItemGroup>
 
 </Project>

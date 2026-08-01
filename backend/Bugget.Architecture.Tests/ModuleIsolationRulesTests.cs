@@ -4,18 +4,14 @@ using FluentAssertions;
 namespace Bugget.Architecture.Tests;
 
 /// <summary>
-/// Изоляция модулей: Bugget.*, Users.*, Authorization.* разговаривают друг с другом только
-/// через public-типы.
-///
-/// Единственный способ дотянуться до internal соседнего модуля — атрибут InternalsVisibleTo.
-/// Поэтому правило проверяет именно его: если атрибута нет, доступа к internal нет и на
-/// уровне компилятора. Разрешён ровно один сценарий — модуль открывает свои internal
-/// собственным тестам.
+/// Границы проектов квартета держит компилятор, а не договорённость: единственный способ
+/// дотянуться до internal соседнего проекта — атрибут InternalsVisibleTo. Правило проверяет
+/// именно его и разрешает ровно один сценарий — проект открывает свои internal тестам.
 /// </summary>
 public partial class ModuleIsolationRulesTests
 {
-    [Fact(DisplayName = "InternalsVisibleTo — только на тестовые проекты своего же модуля")]
-    public void InternalsVisibleTo_targets_own_module_tests_only()
+    [Fact(DisplayName = "InternalsVisibleTo — только на тестовые проекты решения")]
+    public void InternalsVisibleTo_targets_test_projects_only()
     {
         var violations = new List<string>();
 
@@ -32,19 +28,13 @@ public partial class ModuleIsolationRulesTests
                 violations.Add($"{source}: {declaringProject} открывает internal не тестовому проекту {target}");
                 continue;
             }
-
-            if (SolutionGraph.ModuleOf(target) != SolutionGraph.ModuleOf(declaringProject))
-            {
-                violations.Add($"{source}: {declaringProject} открывает internal тестам чужого модуля {target}");
-            }
         }
 
         violations.Should().BeEmpty(
-            "InternalsVisibleTo разрешён только на тестовый проект своего модуля: тест модуля " +
-            "Users не должен видеть internal модуля Bugget, иначе граница модуля держится на " +
-            "договорённости, а не на компиляторе. Нарушения: {0}. " +
-            "Если тесту нужен доступ — либо тест лежит не в своём модуле (перенеси его), " +
-            "либо проверяемое поведение должно быть частью public-контракта модуля.",
+            "InternalsVisibleTo разрешён только на тестовый проект решения: продуктовый проект, " +
+            "которому открыли internal соседа, обходит границу слоя мимо компилятора. " +
+            "Нарушения: {0}. Если доступ нужен продуктовому коду — проверяемое поведение " +
+            "должно быть частью public-контракта проекта.",
             string.Join("; ", violations));
     }
 

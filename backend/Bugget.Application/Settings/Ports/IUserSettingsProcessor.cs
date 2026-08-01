@@ -2,7 +2,7 @@ using Bugget.Application.Results.Settings;
 using Bugget.Domain.Errors;
 using Bugget.Domain.Settings;
 
-namespace Bugget.Application.Services.Settings;
+namespace Bugget.Application.Settings.Ports;
 
 public interface IUserSettingsProcessor
 {

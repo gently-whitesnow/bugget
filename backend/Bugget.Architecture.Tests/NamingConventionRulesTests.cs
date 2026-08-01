@@ -1,3 +1,4 @@
+using System.Reflection;
 using FluentAssertions;
 using NetArchTest.Rules;
 
@@ -12,7 +13,11 @@ namespace Bugget.Architecture.Tests;
 public class NamingConventionRulesTests
 {
     private const string ServicesNamespace = "Bugget.Application.Services";
-    private const string PostgresNamespace = "Bugget.Infrastructure.Postgres";
+    private static readonly string[] PostgresBaseTypeNames =
+    [
+        "Bugget.Infrastructure.Postgres.PostgresClient",
+        "Bugget.Infrastructure.Users.DbClients.PostgresClient",
+    ];
 
     [Fact(DisplayName = "*Service прикладного слоя живёт в Bugget.Application.Services.* или .Users.*")]
     public void Services_reside_in_application_services_namespace()
@@ -71,9 +76,13 @@ public class NamingConventionRulesTests
     public void Postgres_adapters_follow_DbClient_naming()
     {
         // Предыдущее правило начинается с имени *DbClient. Эта обратная проверка гарантирует,
-        // что конкретный наследник общей Postgres-базы не сможет обойти правило и порт,
-        // назвавшись просто *Client или *Repository.
-        var violations = FindPostgresAdaptersWithoutDbClientSuffix(Quartet.InfrastructureAsm.GetTypes());
+        // что конкретный наследник одной из двух общих Postgres-баз не сможет обойти правило
+        // и порт, назвавшись просто *Client или *Repository. NpgsqlTransactionScope и
+        // NpgsqlUnitOfWork реализуют отдельные транзакционные порты и в этот naming-rule не входят.
+        var postgresBaseTypes = ResolveRequiredTypes(Quartet.InfrastructureAsm, PostgresBaseTypeNames);
+        var violations = FindPostgresAdaptersWithoutDbClientSuffix(
+            Quartet.InfrastructureAsm.GetTypes(),
+            postgresBaseTypes);
 
         violations.Should().BeEmpty(
             "каждый конкретный наследник PostgresClient — persistence-адаптер и обязан называться " +
@@ -92,9 +101,22 @@ public class NamingConventionRulesTests
     [Fact(DisplayName = "Правило Postgres-адаптеров краснеет на суффиксе вне *DbClient")]
     public void Postgres_adapter_rule_is_provably_red_for_an_unchecked_suffix()
     {
-        FindPostgresAdaptersWithoutDbClientSuffix([typeof(EscapingPersistenceClient)])
+        FindPostgresAdaptersWithoutDbClientSuffix(
+                [typeof(EscapingPersistenceClient)],
+                [typeof(FixturePostgresClient)])
             .Should().ContainSingle()
             .Which.Should().EndWith(nameof(EscapingPersistenceClient));
+    }
+
+    [Fact(DisplayName = "Правило Postgres-адаптеров краснеет, если обязательная база исчезла")]
+    public void Postgres_adapter_rule_is_provably_red_for_a_missing_base_type()
+    {
+        Action act = () => ResolveRequiredTypes(
+            Quartet.InfrastructureAsm,
+            ["Bugget.Infrastructure.Missing.PostgresClient"]);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Bugget.Infrastructure.Missing.PostgresClient*");
     }
 
     [Fact(DisplayName = "*Controller в Bugget.Api наследует ApiController или сгенерированную базу")]
@@ -161,34 +183,35 @@ public class NamingConventionRulesTests
             .OrderBy(name => name, StringComparer.Ordinal)
     ];
 
-    private static string[] FindPostgresAdaptersWithoutDbClientSuffix(IEnumerable<Type> types) =>
-    [
-        .. types
-            .Where(type => type.IsClass && !type.IsAbstract)
-            .Where(InheritsPostgresClient)
-            .Where(type => !type.Name.EndsWith("DbClient", StringComparison.Ordinal))
-            .Select(type => type.FullName ?? type.Name)
-            .OrderBy(name => name, StringComparer.Ordinal)
-    ];
-
-    private static bool InheritsPostgresClient(Type type)
+    private static string[] FindPostgresAdaptersWithoutDbClientSuffix(
+        IEnumerable<Type> types,
+        IEnumerable<Type> postgresBaseTypes)
     {
-        for (var current = type.BaseType; current is not null; current = current.BaseType)
-        {
-            if (current.Name.Equals("PostgresClient", StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
+        var bases = postgresBaseTypes.ToArray();
 
-        return false;
+        return
+        [
+            .. types
+                .Where(type => type.IsClass && !type.IsAbstract)
+                .Where(type => bases.Any(baseType => baseType.IsAssignableFrom(type)))
+                .Where(type => !type.Name.EndsWith("DbClient", StringComparison.Ordinal))
+                .Select(type => type.FullName ?? type.Name)
+                .OrderBy(name => name, StringComparer.Ordinal)
+        ];
     }
+
+    private static Type[] ResolveRequiredTypes(Assembly assembly, IEnumerable<string> typeNames) =>
+    [
+        .. typeNames.Select(typeName => assembly.GetType(typeName, throwOnError: false)
+            ?? throw new InvalidOperationException(
+                $"Обязательная Postgres-база {typeName} не найдена в {assembly.GetName().Name}"))
+    ];
 
     private interface ILegacyContract;
 
     private sealed class LegacyDbClient : ILegacyContract;
 
-    private abstract class PostgresClient;
+    private abstract class FixturePostgresClient;
 
-    private sealed class EscapingPersistenceClient : PostgresClient;
+    private sealed class EscapingPersistenceClient : FixturePostgresClient;
 }

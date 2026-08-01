@@ -1,6 +1,6 @@
 using Bugget.Application.ExternalSearch.Ports;
 using Bugget.Application.Ports;
-using Bugget.Application.Services.Settings;
+using Bugget.Application.Settings.Ports;
 using Bugget.Infrastructure.ExternalClients.Kaiten.Services;
 using Microsoft.Extensions.DependencyInjection;
 

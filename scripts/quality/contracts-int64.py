@@ -23,6 +23,11 @@
 Сравнение с pattern повторяет семантику .NET RegularExpressionAttribute: совпадение
 обязано покрыть строку целиком, иначе `123\\n` прошёл бы за счёт `$`.
 
+Первый инвариант проверяется по записям документа, а не по виду строки: `format: int64`
+одинаково запрещён в блочном стиле, в flow-стиле (`total: { type: integer, format:
+int64 }`), в кавычках (`"format": "int64"`) и со значением на следующей строке. Гейт,
+который ловит одну форму записи из четырёх, обходится случайно, без злого умысла.
+
   contracts-int64.py              проверить
   contracts-int64.py --self-test  проверить, что гейт краснеет там, где обязан
 """
@@ -41,14 +46,32 @@ CONTRACTS = "specs/contracts"
 SHARED = "shared.yaml"
 SCHEMA = "Int64String"
 
-# Ключ `format: int64` именно как узел документа: те же слова внутри description —
-# это объяснение, а не объявление типа, и краснеть на нём нечему.
-FORMAT_INT64 = re.compile(r"^\s*format:\s*['\"]?int64['\"]?\s*(#.*)?$")
+# Запись `ключ: значение`. Две формы, потому что YAML разводит их по правилам: после
+# ключа в кавычках двоеточие может стоять вплотную, после простого ключа обязателен
+# пробел или конец строки — иначе `format:int64` это один скаляр, а не отображение.
+QUOTED_ENTRY = re.compile(r"^\s*(?:-\s+)*(?P<quote>['\"])(?P<key>.*)(?P=quote)\s*:\s*(?P<value>.*?)\s*$")
+PLAIN_ENTRY = re.compile(r"^\s*(?:-\s+)*(?P<key>[^\s#'\"-][^:]*?)\s*:(?:\s+(?P<value>.*?))?\s*$")
+
+# Индикатор блочного скаляра в значении: дальше идёт текст, а не узлы документа.
+BLOCK_SCALAR = re.compile(r"^[|>](?:[+-]?\d*|\d*[+-]?)$")
+
+# Якорь и тег перед значением на разбор типа не влияют: `format: !!str int64` — это
+# всё тот же int64.
+DECORATION = re.compile(r"^(?:[!&]\S*\s+)+")
+
+# Явный ключ (`? format`) в контрактах не встречается, и разбирать его гейт не умеет.
+# Молча пропускать неразобранное нельзя: ровно так гейт и обходится.
+EXPLICIT_KEY = re.compile(r"^\s*(?:-\s+)*\?(\s|$)")
 
 # Схема shared.yaml: заголовок по отступу, тело — до следующего заголовка того же уровня.
 SCHEMA_HEADER = re.compile(rf"^(?P<indent>\s+){SCHEMA}:\s*$")
 
 MAX_INT64 = "9223372036854775807"
+
+FOUND = (
+    f"`format: int64` в публичном контракте — "
+    f"замените схему на $ref '../{SHARED}#/components/schemas/{SCHEMA}'"
+)
 
 # Вектор канона. Значения подобраны по границам, а не по вкусу: 2^53±1 — там, где
 # ломается double у клиента; 9223372036854775807/…808 — верхняя граница Int64 и первое
@@ -138,17 +161,139 @@ def read_pattern(shared: str) -> tuple[str | None, list[str]]:
     return pattern.group("value"), problems
 
 
+def entries(text: str) -> list[tuple[int, int, str]]:
+    """Документ → плоский список записей `(строка, отступ, текст)`.
+
+    Свой разбор, а не PyYAML: гейт обязан одинаково работать на машине разработчика и
+    на раннере CI, где ставится только dotnet и node (та же причина, что у
+    realtime-contract.py). Разбирается не «строка похожа на объявление», а документ:
+
+      * flow-стиль разворачивается в те же записи, что и блочный: `{ type: integer,
+        format: int64 }` даёт две записи, а не одну строку без совпадения;
+      * тело блочного скаляра (`|`, `>`) — текст, а не узлы, и пропускается целиком:
+        `format: int64` внутри description объясняет, а не объявляет;
+      * кавычка живёт между строками, поэтому многострочный скаляр не рассыпается на
+        куски, в которых видно мнимое объявление;
+      * `#` вне кавычек начинает комментарий: закомментированное — не объявление.
+    """
+    lines = text.splitlines()
+    result: list[tuple[int, int, str]] = []
+
+    buffer = ""
+    start = 0
+    indent = 0
+    quote: str | None = None
+    skip_indent: int | None = None
+
+    def flush() -> None:
+        nonlocal buffer
+        if buffer.strip():
+            result.append((start, indent, buffer.strip()))
+        buffer = ""
+
+    for number, line in enumerate(lines, 1):
+        if skip_indent is not None:
+            if not line.strip() or len(line) - len(line.lstrip()) > skip_indent:
+                continue
+            skip_indent = None
+
+        position = 0
+        while position < len(line):
+            char = line[position]
+            if quote:
+                buffer += char
+                if char == "\\" and quote == '"' and position + 1 < len(line):
+                    buffer += line[position + 1]
+                    position += 2
+                    continue
+                if char == quote:
+                    if quote == "'" and line[position + 1 : position + 2] == "'":
+                        buffer += "'"
+                        position += 2
+                        continue
+                    quote = None
+                position += 1
+                continue
+
+            if char == "#" and (position == 0 or line[position - 1] in " \t"):
+                break
+            if not buffer.strip():
+                start, indent = number, len(line) - len(line.lstrip())
+            if char in "'\"":
+                quote = char
+                buffer += char
+                position += 1
+                continue
+            if char in "{}[],":
+                flush()
+                position += 1
+                continue
+            buffer += char
+            position += 1
+
+        if quote:
+            buffer += "\n"
+            continue
+
+        count = len(result)
+        flush()
+        if len(result) > count:
+            entry = parse_entry(result[-1][2])
+            if entry and BLOCK_SCALAR.match(entry[1]):
+                skip_indent = result[-1][1]
+
+    flush()
+    return result
+
+
+def parse_entry(segment: str) -> tuple[str, str] | None:
+    """Запись `ключ: значение` → нормализованная пара; иначе None."""
+    match = QUOTED_ENTRY.match(segment) or PLAIN_ENTRY.match(segment)
+    if not match:
+        return None
+    value = DECORATION.sub("", match.group("value") or "")
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        value = value[1:-1]
+    return match.group("key"), value
+
+
+def scan(text: str) -> list[tuple[int, str]]:
+    """Строки документа, где объявлен `format: int64`, плюс неразобранные записи."""
+    found: list[tuple[int, str]] = []
+    pending: tuple[int, int] | None = None
+
+    for number, indent, segment in entries(text):
+        if EXPLICIT_KEY.match(segment):
+            found.append((number, "запись с явным ключом `?` — гейт её не разбирает"))
+            pending = None
+            continue
+
+        entry = parse_entry(segment)
+        if entry is None:
+            # Значение простого ключа, перенесённое на следующую строку: `format:` и
+            # ниже с большим отступом `int64` — то же объявление, другой перенос.
+            if pending and indent > pending[1] and segment.strip("'\"") == "int64":
+                found.append((pending[0], FOUND))
+            pending = None
+            continue
+
+        key, value = entry
+        if key == "format" and value == "int64":
+            found.append((number, FOUND))
+            pending = None
+            continue
+        pending = (number, indent) if key == "format" and not value else None
+
+    return found
+
+
 def check(contracts: pathlib.Path) -> list[str]:
     problems: list[str] = []
 
     for spec in sorted(contracts.rglob("*.yaml")):
         relative = spec.relative_to(contracts.parent.parent)
-        for number, line in enumerate(spec.read_text(encoding="utf-8").splitlines(), 1):
-            if FORMAT_INT64.match(line):
-                problems.append(
-                    f"{relative}:{number}: `format: int64` в публичном контракте — "
-                    f"замените схему на $ref '../{SHARED}#/components/schemas/{SCHEMA}'"
-                )
+        for number, note in scan(spec.read_text(encoding="utf-8")):
+            problems.append(f"{relative}:{number}: {note}")
 
     shared = contracts / SHARED
     if not shared.is_file():
@@ -207,6 +352,60 @@ def self_test() -> int:
                 once=True,
             ),
             True,
+        ),
+        (
+            "ключ и значение в кавычках тоже запрещены",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                '        total: { "type": "integer", "format": "int64" }',
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "значение на следующей строке тоже запрещено",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          type: integer\n          format:\n            int64",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "`format: int64` в блочном описании — объяснение, а не объявление",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref:",
+                "        total:\n          description: |-\n"
+                "            Раньше поле объявлялось как\n"
+                "            format: int64\n"
+                "          $ref:",
+                once=True,
+            ),
+            False,
+        ),
+        (
+            "`format: int64` внутри многострочной строки в кавычках — тоже не объявление",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref:",
+                '        total:\n          description: "Раньше поле объявлялось как\n'
+                '            format: int64"\n          $ref:',
+                once=True,
+            ),
+            False,
+        ),
+        (
+            "закомментированный `format: int64` ничего не объявляет",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref:",
+                "        total:\n          # format: int64\n          $ref:",
+                once=True,
+            ),
+            False,
         ),
         (
             "pattern ослаблен до любых цифр — пускает значение за Int64",

@@ -154,11 +154,29 @@ describe("пути репортов", () => {
 
 describe("тела запросов уходят в snake_case контракта", () => {
   it("создание репорта: POST и title", async () => {
-    await createReport({ title: "Новый репорт" });
+    let requestCount = 0;
+    appApi.defaults.adapter = (async (config) => {
+      requestCount += 1;
+      captured = config;
+      return {
+        data: { id: "team-42", title: "Новый репорт" },
+        status: 201,
+        statusText: "Created",
+        headers: {
+          "content-type": "application/json",
+          location: `${contextPrefix}/v2/reports/team-42`,
+        },
+        config,
+      };
+    }) as AxiosAdapter;
+
+    const report = await createReport({ title: "Новый репорт" });
 
     expect(sent().method).toBe("post");
     expect(sent().url).toBe(`${contextPrefix}/v2/reports`);
     expect(sentJsonBody()).toEqual({ title: "Новый репорт" });
+    expect(report).toEqual({ id: "team-42", title: "Новый репорт" });
+    expect(requestCount).toBe(1);
   });
 
   it("PATCH репорта: responsible_user_id и is_excluded_from_analytics", async () => {

@@ -13,22 +13,22 @@ namespace Bugget.IntegrationTests.Contract;
 [Collection("PostgresCollection")]
 public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
-    /// <summary>
-    /// Статус 200, а не 201: контроллер объявляет ProducesResponseType(201), но возвращает
-    /// модель напрямую. Проверяется то, что реально уходит фронту.
-    /// </summary>
-    [Fact(DisplayName = "POST /v2/reports: 200 и созданный ReportSummary")]
+    [Fact(DisplayName = "POST /v2/reports: 201, Location и созданный ReportSummary")]
     public async Task CreateReport()
     {
         var scenario = ContractScenario.Create(fixture);
 
         var response = await scenario.Client.PostAsJsonAsync("/v2/reports", new { title = "contract-report" });
 
-        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
+        var body = await ContractResponse.JsonAsync(response, HttpStatusCode.Created);
         Assert.Equal("contract-report", body.GetProperty("title").GetString());
-        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("id").GetString()));
+        var aliasId = body.GetProperty("id").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(aliasId));
         Assert.Equal(scenario.UserId, body.GetProperty("creator_user_id").GetString());
         Assert.Equal(scenario.TeamId, body.GetProperty("creator_team_id").GetString());
+        Assert.Equal(
+            $"/api/app/workspaces/{scenario.WorkspaceId}/teams/{scenario.TeamId}/v2/reports/{aliasId}",
+            response.Headers.Location?.OriginalString);
     }
 
     [Fact(DisplayName = "POST /v2/reports без title: 400 model_state_validation_error")]

@@ -21,7 +21,7 @@ export interface paths {
         /**
          * Создать репорт.
          * @description Автор и команда берутся из identity, в теле — только заголовок.
-         *     Отвечает 200, а не 201: контроллер возвращает модель напрямую.
+         *     Возвращает созданный репорт и внешний origin-relative путь к нему.
          */
         post: operations["Reports_CreateReport"];
         delete?: never;
@@ -1288,8 +1288,10 @@ export interface operations {
         };
         responses: {
             /** @description Репорт создан. */
-            200: {
+            201: {
                 headers: {
+                    /** @description Внешний origin-relative API-путь созданного репорта. */
+                    Location: string;
                     [name: string]: unknown;
                 };
                 content: {

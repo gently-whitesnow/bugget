@@ -31,7 +31,7 @@ paths:
       summary: Создать репорт.
       description: |-
         Автор и команда берутся из identity, в теле — только заголовок.
-        Отвечает 200, а не 201: контроллер возвращает модель напрямую.
+        Возвращает созданный репорт и внешний origin-relative путь к нему.
       requestBody:
         required: true
         content:
@@ -39,8 +39,15 @@ paths:
             schema:
               $ref: '#/components/schemas/ReportCreateRequest'
       responses:
-        '200':
+        '201':
           description: Репорт создан.
+          headers:
+            Location:
+              required: true
+              description: Внешний origin-relative API-путь созданного репорта.
+              schema:
+                type: string
+                example: /api/app/workspaces/1/teams/2/v2/reports/team-42
           content:
             application/json:
               schema:

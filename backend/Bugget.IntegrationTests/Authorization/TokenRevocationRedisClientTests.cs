@@ -59,4 +59,20 @@ public class TokenRevocationRedisClientTests
         var ttl = await _mux.GetDatabase().KeyTimeToLiveAsync("jwt:revoked:" + jti);
         Assert.True(ttl is null || ttl.Value <= TimeSpan.FromMilliseconds(1));
     }
+
+    [Fact(DisplayName = "Redis снимает ревокацию по границе внедрённого TimeProvider")]
+    public async Task IsRevokedAsync_UsesInjectedTimeProvider_AtAcceptanceBoundary()
+    {
+        var sut = new TokenRevocationRedisClient(_mux, _timeProvider);
+        var jti = $"jti_{Guid.NewGuid():N}";
+        var revokedUntil = _timeProvider.GetUtcNow().AddMinutes(5);
+
+        await sut.RevokeAsync(jti, revokedUntil);
+
+        _timeProvider.Advance(TimeSpan.FromMinutes(5));
+        Assert.True(await sut.IsRevokedAsync(jti));
+
+        _timeProvider.Advance(TimeSpan.FromTicks(1));
+        Assert.False(await sut.IsRevokedAsync(jti));
+    }
 }

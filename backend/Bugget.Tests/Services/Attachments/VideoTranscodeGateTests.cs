@@ -11,6 +11,7 @@ namespace Bugget.Tests.Services.Attachments;
 /// (MAIN-188). Здесь он проверяется характеризацией: сколько бы задач ни пришло разом,
 /// одновременно работает ровно столько, сколько разрешено, а остальные ждут и доезжают.
 /// </summary>
+[Collection(VideoOptimizationCollection.Name)]
 public sealed class VideoTranscodeGateTests
 {
     private static readonly string[] ExpectedMetricNames =

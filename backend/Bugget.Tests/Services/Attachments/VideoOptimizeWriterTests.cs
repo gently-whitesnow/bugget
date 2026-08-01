@@ -14,6 +14,7 @@ namespace Bugget.Tests.Services.Attachments;
 /// с какими потолками потоков зовёт ffmpeg и что происходит при выключенной оптимизации.
 /// Настоящий ffmpeg здесь не нужен — до запуска процесса дело не доходит.
 /// </summary>
+[Collection(VideoOptimizationCollection.Name)]
 public sealed class VideoOptimizeWriterTests
 {
     private static readonly Attachment VideoAttachment = new()

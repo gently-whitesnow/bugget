@@ -57,8 +57,8 @@ public sealed class TextOptimizeWriter(
         }
         compressedMs.Position = 0;
 
-        // 4) Пишем в файловое хранилище
-        await fileStorage.WriteAsync(storageKey, compressedMs, ct);
+        // 4) Пишем в файловое хранилище — точка невозврата, дальше отмены нет
+        await fileStorage.WriteAsync(storageKey, compressedMs, AttachmentPersistence.BeginPersisting(ct));
 
         // 5) Возвращаем информацию о результате
         return new OptimizationResult(

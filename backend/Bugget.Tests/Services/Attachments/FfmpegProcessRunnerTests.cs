@@ -12,6 +12,7 @@ namespace Bugget.Tests.Services.Attachments;
 /// оставленный жить, продолжает есть память уже без надзора (MAIN-188). Проверяется на
 /// /bin/sh с внуком — настоящий ffmpeg для этого не нужен и в юнит-прогоне его нет.
 /// </summary>
+[Collection(VideoOptimizationCollection.Name)]
 public sealed class FfmpegProcessRunnerTests
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(1);

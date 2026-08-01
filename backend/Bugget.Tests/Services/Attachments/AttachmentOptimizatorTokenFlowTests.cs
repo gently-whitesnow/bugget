@@ -14,6 +14,7 @@ namespace Bugget.Tests.Services.Attachments;
 /// токен очереди обязан доехать до портов и до видеозаписи, иначе остановка приложения
 /// не останавливает фоновую оптимизацию (MAIN-240).
 /// </summary>
+[Collection(VideoOptimizationCollection.Name)]
 public sealed class AttachmentOptimizatorTokenFlowTests
 {
     private static readonly Attachment TempVideo = new()

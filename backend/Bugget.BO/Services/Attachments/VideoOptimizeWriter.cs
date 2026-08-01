@@ -93,9 +93,12 @@ public sealed class VideoOptimizeWriter(
 
             await using var outputStream = new FileStream(outputPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             await using var previewStream = new FileStream(previewPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+            // Точка невозврата: перекодирование прервать можно, запись результата — уже нет.
+            var persist = AttachmentPersistence.BeginPersisting(ct);
             await Task.WhenAll(
-                fileStorageClient.WriteAsync(storageKey, outputStream, ct),
-                fileStorageClient.WriteAsync(previewKey, previewStream, ct));
+                fileStorageClient.WriteAsync(storageKey, outputStream, persist),
+                fileStorageClient.WriteAsync(previewKey, previewStream, persist));
 
             return new OptimizationResult(
                 FileName: Path.ChangeExtension(attachment.FileName, ".mp4"),
@@ -133,7 +136,8 @@ public sealed class VideoOptimizeWriter(
             attachment.EntityId,
             Path.GetExtension(attachment.FileName).ToLowerInvariant());
 
-        await fileStorageClient.WriteAsync(storageKey, originalStream, ct);
+        // Выключенная оптимизация — тот же шов: прерваться можно только до начала записи.
+        await fileStorageClient.WriteAsync(storageKey, originalStream, AttachmentPersistence.BeginPersisting(ct));
 
         return new OptimizationResult(
             FileName: attachment.FileName,

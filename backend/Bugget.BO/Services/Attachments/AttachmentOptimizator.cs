@@ -42,6 +42,11 @@ public sealed class AttachmentOptimizator(
 
         LogOptimizationResult(fromAttachment, fileStream, optimizationResult);
 
+        // Писатель уже перешёл точку невозврата: результат лежит под постоянным ключом.
+        // Остаток цепочки — только изменяющие вызовы, и они обязаны довыполниться, иначе
+        // вложение останется с записанным файлом и строкой в БД на удалённый temp-ключ.
+        var persist = AttachmentPersistence.Persisting;
+
         // Обновляем модель в БД
         var toAttachment = await attachmentDbClient.UpdateAttachmentAsync(new AttachmentUpdate
         {
@@ -59,7 +64,7 @@ public sealed class AttachmentOptimizator(
         await reportPageHubClient.SendAttachmentChangedAsync(reportIdContext.GroupKey, toAttachment.ToSocketView());
 
         // Удаляем старый файл
-        await fileStorage.DeleteAsync(fromAttachment.StorageKey, ct);
+        await fileStorage.DeleteAsync(fromAttachment.StorageKey, persist);
     }
 
     /// <summary>Выбор писателя по mime-типу: у всех троих один контракт и один токен отмены.</summary>

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace Bugget.Tests.Services.Attachments;
 
+[Collection(VideoOptimizationCollection.Name)]
 public sealed class VideoOptimizationLinuxLoadTests
 {
     [Fact(DisplayName = "Linux: два 4K job держат полный cgroup ниже 800 MB")]

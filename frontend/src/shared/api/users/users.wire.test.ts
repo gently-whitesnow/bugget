@@ -105,7 +105,7 @@ describe("короткая форма адреса: контекст прихо�
 
   it("пользователи по списку: идентификаторы строками в теле", async () => {
     payload = [];
-    await listUsers(1, 2, [3, "4"]);
+    await listUsers(1, 2, ["3", "4"]);
 
     expect(sent().url).toBe(`${contextPrefix}/users/batch/list`);
     expect(sent().method).toBe("post");
@@ -116,7 +116,7 @@ describe("короткая форма адреса: контекст прихо�
     await listTeamMembers(1, 2);
     expect(sent().url).toBe(`${contextPrefix}/members`);
 
-    await deleteTeamMember(1, 2, 7);
+    await deleteTeamMember(1, 2, "7");
     expect(sent().url).toBe(`${contextPrefix}/members/7`);
     expect(sent().method).toBe("delete");
 

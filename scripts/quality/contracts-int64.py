@@ -29,9 +29,8 @@
 следующей строке — это всё один и тот же `format: int64`. Гейт, который ловит одну
 форму записи из десяти, обходится случайно, без злого умысла.
 
-Что разобрать не удалось, значением не считается и краснеет отдельно: неразрешённый
-алиас, тег на значении `format`, узел с явным ключом `?`. Гейт fail-closed по
-построению — молчаливый пропуск неразобранного и есть механизм обхода.
+Документы разбирает закреплённый `js-yaml`, которым уже пользуется OpenAPI-toolchain.
+Гейт рекурсивно обходит полученный AST, а ошибка YAML краснит проверку целиком.
 
   contracts-int64.py              проверить
   contracts-int64.py --self-test  проверить, что гейт краснеет там, где обязан
@@ -40,9 +39,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import pathlib
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -51,40 +52,11 @@ CONTRACTS = "specs/contracts"
 SHARED = "shared.yaml"
 SCHEMA = "Int64String"
 
-# Индикатор блочного скаляра (`|`, `>-`, `|+2`): дальше идёт текст узла, а не узлы.
-BLOCK_SCALAR = re.compile(r"^[|>](?:[+-]?\d*|\d*[+-]?)$")
-
-# Якорь (`&fmt`) и тег (`!!str`) перед значением.
-DECORATION = re.compile(r"^([&!])(\S*)(?:\s+|$)")
-
-# Элемент блочного списка перед ключом: `- format: int64`.
-SEQUENCE_ITEM = re.compile(r"^-(?:\s+|$)")
-
-# Простой ключ отделяется от значения двоеточием с пробелом или концом строки: иначе
-# `format:int64` — это один скаляр, а не отображение.
-PLAIN_SEPARATOR = re.compile(r":(?=\s|$)")
-
-# Явный ключ (`? format`) в контрактах не встречается, и разбирать его гейт не умеет.
-# Молча пропускать неразобранное нельзя: ровно так гейт и обходится.
-EXPLICIT_KEY = re.compile(r"^\s*(?:-\s+)*\?(\s|$)")
-
-# Экранирование внутри двойных кавычек: `"int\x36\x34"` — это тот же int64.
-ESCAPES = {
-    "0": "\0", "a": "\a", "b": "\b", "t": "\t", "\t": "\t", "n": "\n", "v": "\v",
-    "f": "\f", "r": "\r", "e": "\x1b", " ": " ", '"': '"', "/": "/", "\\": "\\",
-    "N": "\x85", "_": "\xa0", "L": " ", "P": " ",
-}
-NUMERIC_ESCAPES = {"x": 2, "u": 4, "U": 8}
-
 # Схема shared.yaml: заголовок по отступу, тело — до следующего заголовка того же уровня.
 SCHEMA_HEADER = re.compile(rf"^(?P<indent>\s+){SCHEMA}:\s*$")
+AST_SCANNER = ROOT / "scripts/quality/contracts-int64-ast.mjs"
 
 MAX_INT64 = "9223372036854775807"
-
-FOUND = (
-    f"`format: int64` в публичном контракте — "
-    f"замените схему на $ref '../{SHARED}#/components/schemas/{SCHEMA}'"
-)
 
 # Вектор канона. Значения подобраны по границам, а не по вкусу: 2^53±1 — там, где
 # ломается double у клиента; 9223372036854775807/…808 — верхняя граница Int64 и первое
@@ -132,370 +104,48 @@ def matches(pattern: re.Pattern[str], value: str) -> bool:
     return match is not None and match.start() == 0 and match.end() == len(value)
 
 
-def read_pattern(shared: str) -> tuple[str | None, list[str]]:
-    """Достаёт `pattern` схемы Int64String из текста shared.yaml."""
-    problems: list[str] = []
-    lines = shared.splitlines()
-
-    start = None
-    indent = ""
-    for index, line in enumerate(lines):
-        header = SCHEMA_HEADER.match(line)
-        if header:
-            start = index + 1
-            indent = header.group("indent")
-            break
-
-    if start is None:
-        problems.append(
-            f"{CONTRACTS}/{SHARED}: схема {SCHEMA} не найдена — публичному Int64 нечем "
-            f"быть, а модулям не на что ссылаться"
+def parse_contracts(contracts: pathlib.Path) -> dict[str, object]:
+    """Разобрать все YAML настоящим parser toolchain и вернуть результат AST-обхода."""
+    try:
+        result = subprocess.run(
+            ["node", str(AST_SCANNER), str(contracts)],
+            check=False,
+            capture_output=True,
+            text=True,
         )
-        return None, problems
+    except OSError as error:
+        return {"problems": [f"AST-парсер не запущен: {error}"]}
 
-    body = []
-    for line in lines[start:]:
-        if line.strip() and not line.startswith(indent + " "):
-            break
-        body.append(line)
+    if result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip() or f"exit {result.returncode}"
+        return {"problems": [f"AST-парсер завершился с ошибкой: {detail}"]}
 
-    text = "\n".join(body)
-    if not re.search(r"^\s*type:\s*string\s*$", text, re.MULTILINE):
-        problems.append(f"{CONTRACTS}/{SHARED}: {SCHEMA} обязана быть `type: string`")
-
-    pattern = re.search(r"^\s*pattern:\s*'(?P<value>.+)'\s*$", text, re.MULTILINE)
-    if not pattern:
-        problems.append(
-            f"{CONTRACTS}/{SHARED}: у {SCHEMA} нет `pattern` — без него схема описывает "
-            f"любую строку, а не канон Int64"
-        )
-        return None, problems
-
-    return pattern.group("value"), problems
-
-
-def entries(text: str) -> list[tuple[int, int, str, str | None]]:
-    """Документ → плоский список узлов `(строка, отступ, текст, тело блочного скаляра)`.
-
-    Свой разбор, а не PyYAML: гейт обязан одинаково работать на машине разработчика и
-    на раннере CI, где ставится только dotnet и node (та же причина, что у
-    realtime-contract.py). Разбирается не «строка похожа на объявление», а документ:
-
-      * flow-стиль разворачивается в те же записи, что и блочный: `{ type: integer,
-        format: int64 }` даёт две записи, а не одну строку без совпадения;
-      * тело блочного скаляра (`|`, `>`) — это текст своего узла, а не узлы документа:
-        оно возвращается значением этого узла и внутри не разбирается. Поэтому
-        `format: |-` со значением ниже разрешается, а `format: int64` внутри
-        description по-прежнему объясняет, а не объявляет;
-      * кавычка живёт между строками, поэтому многострочный скаляр не рассыпается на
-        куски, в которых видно мнимое объявление;
-      * `#` вне кавычек начинает комментарий: закомментированное — не объявление.
-    """
-    lines = text.splitlines()
-    result: list[tuple[int, int, str, str | None]] = []
-
-    buffer = ""
-    start = 0
-    indent = 0
-    quote: str | None = None
-    index = 0
-
-    def flush() -> None:
-        nonlocal buffer
-        if buffer.strip():
-            result.append((start, indent, buffer.strip(), None))
-        buffer = ""
-
-    while index < len(lines):
-        line = lines[index]
-        number = index + 1
-        index += 1
-
-        position = 0
-        while position < len(line):
-            char = line[position]
-            if quote:
-                buffer += char
-                if char == "\\" and quote == '"' and position + 1 < len(line):
-                    buffer += line[position + 1]
-                    position += 2
-                    continue
-                if char == quote:
-                    if quote == "'" and line[position + 1 : position + 2] == "'":
-                        buffer += "'"
-                        position += 2
-                        continue
-                    quote = None
-                position += 1
-                continue
-
-            if char == "#" and (position == 0 or line[position - 1] in " \t"):
-                break
-            if not buffer.strip():
-                start, indent = number, len(line) - len(line.lstrip())
-            if char in "'\"":
-                quote = char
-                buffer += char
-                position += 1
-                continue
-            if char in "{}[],":
-                flush()
-                position += 1
-                continue
-            buffer += char
-            position += 1
-
-        if quote:
-            buffer += "\n"
-            continue
-
-        count = len(result)
-        flush()
-        if len(result) == count:
-            continue
-
-        node_line, node_indent, segment, _ = result[-1]
-        if not is_block_scalar(segment):
-            continue
-        # Тело отбивается от того, к чему индикатор относится: у `format: |-` это сам
-        # ключ (в элементе списка — ключ после дефиса, а не дефис), у отдельной строки
-        # `|-` — ключ уровнем выше, поэтому тело вправе стоять с тем же отступом, что и
-        # индикатор.
-        outer = node_indent + len(segment) - len(strip_sequence(segment))
-        if not split_entry(segment):
-            outer -= 1
-        body: list[str] = []
-        while index < len(lines):
-            following = lines[index]
-            if following.strip() and len(following) - len(following.lstrip()) <= outer:
-                break
-            body.append(following)
-            index += 1
-        result[-1] = (node_line, node_indent, segment, "\n".join(body))
-
-    flush()
-    return result
-
-
-def is_block_scalar(segment: str) -> bool:
-    """Узел, значение которого записано блочным скаляром (`|`, `>-`, `format: |+`)."""
-    entry = split_entry(segment)
-    _, _, value = decorated(entry[1] if entry else strip_sequence(segment))
-    return bool(BLOCK_SCALAR.match(value))
-
-
-def strip_sequence(segment: str) -> str:
-    """Снимает дефисы элементов блочного списка: `- - format: int64`."""
-    while True:
-        match = SEQUENCE_ITEM.match(segment)
-        if not match:
-            return segment
-        segment = segment[match.end() :]
-
-
-def split_entry(segment: str) -> tuple[str, str] | None:
-    """Узел `ключ: значение` → сырые ключ и значение как записаны; иначе None."""
-    text = strip_sequence(segment)
-    if not text:
-        return None
-
-    if text[0] in "'\"":
-        end = closing_quote(text)
-        if end is None or not text[end + 1 :].lstrip().startswith(":"):
-            return None
-        # После ключа в кавычках двоеточие может стоять вплотную: `{"format":"int64"}`.
-        return text[: end + 1], text[end + 1 :].lstrip()[1:].strip()
-
-    separator = PLAIN_SEPARATOR.search(text)
-    if not separator or not text[: separator.start()].strip():
-        return None
-    return text[: separator.start()].strip(), text[separator.end() :].strip()
-
-
-def closing_quote(text: str) -> int | None:
-    """Позиция закрывающей кавычки скаляра, начинающегося с `text[0]`."""
-    quote = text[0]
-    position = 1
-    while position < len(text):
-        char = text[position]
-        if char == "\\" and quote == '"':
-            position += 2
-            continue
-        if char == quote:
-            if quote == "'" and text[position + 1 : position + 2] == "'":
-                position += 2
-                continue
-            return position
-        position += 1
-    return None
-
-
-def decorated(raw: str) -> tuple[str | None, bool, str]:
-    """Снимает якорь и тег: `&fmt !!str int64` → (`fmt`, True, `int64`)."""
-    anchor, tagged = None, False
-    raw = raw.strip()
-    while raw[:1] in ("&", "!"):
-        match = DECORATION.match(raw)
-        if not match:
-            break
-        if match.group(1) == "&":
-            anchor = match.group(2)
-        else:
-            tagged = True
-        raw = raw[match.end() :].strip()
-    return anchor, tagged, raw
-
-
-def resolve(raw: str, body: str | None, anchors: dict[str, str]) -> tuple[str | None, str]:
-    """Запись значения → само значение; `(None, причина)`, если разобрать не удалось.
-
-    Гейт сравнивает значения, а не их запись: `int64`, `'int64'`, `"int\\x36\\x34"`,
-    блочный скаляр и алиас на якорь с тем же значением — одно и то же объявление.
-    Что разобрать не удалось, значением не считается и краснеет отдельно: молчаливый
-    пропуск неразобранного — это и есть обход гейта.
-    """
-    if body is not None:
-        return normalize(body), ""
-    if not raw:
-        return "", ""
-    if raw.startswith("*"):
-        alias = raw[1:].strip()
-        if alias in anchors:
-            return anchors[alias], ""
-        return None, f"алиас `*{alias}` не разрешён"
-    if raw[0] in "'\"":
-        end = closing_quote(raw)
-        if end is None or raw[end + 1 :].strip():
-            return None, "скаляр в кавычках разобрать не удалось"
-        inner = raw[1:end]
-        if raw[0] == "'":
-            return normalize(inner.replace("''", "'")), ""
-        return normalize(unescape(inner)), ""
-    return normalize(raw), ""
-
-
-def unescape(text: str) -> str:
-    """Экранирование двойных кавычек: `int\\x36\\x34` → `int64`.
-
-    Обратный слеш перед физическим переносом удаляет и перенос, и отступ строки
-    продолжения: YAML разбирает ``"int\\\n  64"`` как ``int64``.
-    """
-    result = ""
-    position = 0
-    while position < len(text):
-        char = text[position]
-        if char != "\\" or position + 1 >= len(text):
-            result += char
-            position += 1
-            continue
-        code = text[position + 1]
-        if code == "\n":
-            position += 2
-            while position < len(text) and text[position] in " \t":
-                position += 1
-            continue
-        size = NUMERIC_ESCAPES.get(code)
-        if size:
-            digits = text[position + 2 : position + 2 + size]
-            if len(digits) == size:
-                try:
-                    result += chr(int(digits, 16))
-                    position += 2 + size
-                    continue
-                except ValueError:
-                    pass
-        result += ESCAPES.get(code, code)
-        position += 2
-    return result
-
-
-def normalize(value: str) -> str:
-    """Значение по существу: перенос строки и отступ продолжения — это пробел.
-
-    Свёртка строк, обрезка блочного скаляра и отступ продолжения на смысл значения
-    не влияют, поэтому `|-`, `|`, `>` и перенос внутри кавычек сводятся к одному
-    виду: гейт краснеет на объявлении, а не на способе его записать.
-    """
-    return " ".join(value.split())
-
-
-def scan(text: str) -> list[tuple[int, str]]:
-    """Строки, где объявлен `format: int64`, и записи, которые разобрать не удалось."""
-    found: list[tuple[int, str]] = []
-    anchors: dict[str, str] = {}
-    pending: tuple[int, int] | None = None
-
-    def judge(number: int, value: str | None, reason: str) -> None:
-        if value is None:
-            found.append((number, f"значение `format` не разобрано: {reason}"))
-        elif value == "int64":
-            found.append((number, FOUND))
-
-    for number, indent, segment, body in entries(text):
-        if EXPLICIT_KEY.match(segment):
-            found.append((number, "узел с явным ключом `?` — гейт его не разбирает"))
-            pending = None
-            continue
-
-        entry = split_entry(segment)
-        key = None
-        if entry is not None:
-            key_anchor, key_tagged, key_raw = decorated(entry[0])
-            key, key_reason = resolve(key_raw, None, anchors)
-            if key_tagged:
-                found.append((number, "тег на ключе гейт не разбирает"))
-                pending = None
-                continue
-            if key is None:
-                found.append((number, f"ключ не разобран: {key_reason}"))
-                pending = None
-                continue
-            if key_anchor:
-                anchors[key_anchor] = key
-
-        raw = entry[1] if entry else strip_sequence(segment)
-        anchor, tagged, raw = decorated(raw)
-        value, reason = resolve(raw, body, anchors)
-        if tagged:
-            value, reason = None, "тег на значении гейт не разбирает"
-        if anchor and value is not None:
-            anchors[anchor] = value
-
-        if entry is None:
-            # Значение ключа, перенесённое на следующую строку: `format:`, ниже с
-            # большим отступом `int64` — то же объявление, другой перенос.
-            if pending and indent > pending[1]:
-                judge(pending[0], value, reason)
-            pending = None
-            continue
-
-        pending = None
-        if key != "format":
-            continue
-        if not raw and body is None:
-            pending = (number, indent)
-            continue
-        judge(number, value, reason)
-
-    return found
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        return {"problems": [f"AST-парсер вернул невалидный JSON: {error}"]}
 
 
 def check(contracts: pathlib.Path) -> list[str]:
-    problems: list[str] = []
-
-    for spec in sorted(contracts.rglob("*.yaml")):
-        relative = spec.relative_to(contracts.parent.parent)
-        for number, note in scan(spec.read_text(encoding="utf-8")):
-            problems.append(f"{relative}:{number}: {note}")
-
-    shared = contracts / SHARED
-    if not shared.is_file():
-        problems.append(f"{CONTRACTS}/{SHARED} не найден")
+    parsed = parse_contracts(contracts)
+    problems = [str(problem) for problem in parsed.get("problems", [])]
+    schema = parsed.get("schema")
+    if not isinstance(schema, dict):
+        problems.append(
+            f"{CONTRACTS}/{SHARED}: схема {SCHEMA} не найдена — публичному Int64 нечем "
+            "быть, а модулям не на что ссылаться"
+        )
         return problems
 
-    pattern_text, pattern_problems = read_pattern(shared.read_text(encoding="utf-8"))
-    problems.extend(pattern_problems)
-    if pattern_text is None:
+    if schema.get("type") != "string":
+        problems.append(f"{CONTRACTS}/{SHARED}: {SCHEMA} обязана быть `type: string`")
+
+    pattern_text = schema.get("pattern")
+    if not isinstance(pattern_text, str):
+        problems.append(
+            f"{CONTRACTS}/{SHARED}: у {SCHEMA} нет `pattern` — без него схема описывает "
+            "любую строку, а не канон Int64"
+        )
         return problems
 
     try:
@@ -622,7 +272,7 @@ def self_test() -> int:
                 box / "reports" / "openapi.yaml",
                 "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
                 "        total:\n          x-seed:\n            &fmt format: date-time\n"
-                "          *fmt: int64",
+                "          ? *fmt\n          : int64",
                 once=True,
             ),
             True,
@@ -633,7 +283,7 @@ def self_test() -> int:
                 box / "reports" / "openapi.yaml",
                 "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
                 "        total:\n          x-seed:\n            &kind type: string\n"
-                "          *kind: int64",
+                "          ? *kind\n          : int64",
                 once=True,
             ),
             False,
@@ -643,7 +293,7 @@ def self_test() -> int:
             lambda box: _patch(
                 box / "reports" / "openapi.yaml",
                 "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
-                "        total:\n          *fmt: int64",
+                "        total:\n          ? *fmt\n          : int64",
                 once=True,
             ),
             True,

@@ -34,7 +34,11 @@ public static class WireInt64
     /// Внутреннее значение → канон провода. Культура инвариантная явно: у
     /// культуры потока свои цифры и свой знак, а канон один на всех клиентов.
     /// </summary>
-    public static string ToWire(long value) => value.ToString(CultureInfo.InvariantCulture);
+    public static string ToWire(long value)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(value);
+        return value.ToString(CultureInfo.InvariantCulture);
+    }
 
     /// <summary>
     /// Канон провода → внутреннее значение. Канон уже: <c>long.TryParse</c> с

@@ -1,10 +1,11 @@
 using Bugget.Application.Users.Ports;
 using Bugget.Domain.Users;
+using Bugget.Infrastructure.Postgres;
 using Dapper;
 
 namespace Bugget.Infrastructure.Users.DbClients;
 
-public sealed class WorkspacesDbClient : PostgresClient, IWorkspacesRepository
+public sealed class WorkspacesDbClient() : PostgresClient(Constants.PostgresConnectionStringEnv), IWorkspacesDbClient
 {
     public async Task<Workspace> CreateWorkspaceAsync(long userId, string name)
     {

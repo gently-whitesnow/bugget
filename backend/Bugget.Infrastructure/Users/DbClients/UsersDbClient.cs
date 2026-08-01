@@ -1,11 +1,12 @@
 using Bugget.Application.Users.Commands.Users;
 using Bugget.Application.Users.Ports;
 using Bugget.Domain.Users;
+using Bugget.Infrastructure.Postgres;
 using Dapper;
 
 namespace Bugget.Infrastructure.Users.DbClients;
 
-public class UsersDbClient : PostgresClient, IUsersRepository
+public class UsersDbClient() : PostgresClient(Constants.PostgresConnectionStringEnv), IUsersDbClient
 {
     public async Task<User> TryInsertUserAsync(CreateUserDto createUserDto)
     {

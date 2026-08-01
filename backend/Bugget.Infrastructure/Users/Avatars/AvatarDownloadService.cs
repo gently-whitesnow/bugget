@@ -1,3 +1,4 @@
+using Bugget.Application.Ports;
 using Bugget.Application.Users.Ports;
 using Microsoft.Extensions.Logging;
 namespace Bugget.Infrastructure.Users.Avatars;
@@ -5,7 +6,7 @@ namespace Bugget.Infrastructure.Users.Avatars;
 public class AvatarDownloadService(
     IHttpClientFactory httpClientFactory,
     IFileStorageClient fileStorageClient,
-    IUsersRepository usersRepository,
+    IUsersDbClient usersDbClient,
     ILogger<AvatarDownloadService> logger) : IAvatarDownloadService
 {
     private static readonly Dictionary<string, string> ContentTypeToExtension = new(StringComparer.OrdinalIgnoreCase)
@@ -38,7 +39,7 @@ public class AvatarDownloadService(
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             await fileStorageClient.WriteAsync(storageKey, stream, ct);
 
-            await usersRepository.UpdateUserImageUrlAsync(userId, storageKey);
+            await usersDbClient.UpdateUserImageUrlAsync(userId, storageKey);
 
             logger.LogInformation("Аватар пользователя {UserId} успешно сохранён: {StorageKey}", userId, storageKey);
         }
@@ -51,7 +52,7 @@ public class AvatarDownloadService(
 
     public async Task DeleteAvatarAsync(long userId, CancellationToken ct = default)
     {
-        var user = await usersRepository.GetUserAsync(userId);
+        var user = await usersDbClient.GetUserAsync(userId);
         if (user?.ImageUrl is null)
         {
             return;
@@ -60,7 +61,7 @@ public class AvatarDownloadService(
         try
         {
             var deleteFileTask = fileStorageClient.DeleteAsync(user.ImageUrl, ct);
-            var updateUserTask = usersRepository.UpdateUserImageUrlAsync(userId, null);
+            var updateUserTask = usersDbClient.UpdateUserImageUrlAsync(userId, null);
             await Task.WhenAll(deleteFileTask, updateUserTask);
             logger.LogInformation("Аватар пользователя {UserId} успешно удалён", userId);
         }
@@ -78,12 +79,12 @@ public class AvatarDownloadService(
 
         try
         {
-            var currentUserTask = usersRepository.GetUserAsync(userId);
+            var currentUserTask = usersDbClient.GetUserAsync(userId);
             var writeFileTask = fileStorageClient.WriteAsync(storageKey, content, ct);
             await Task.WhenAll(currentUserTask, writeFileTask);
             var oldImageUrl = currentUserTask.Result?.ImageUrl;
 
-            await usersRepository.UpdateUserImageUrlAsync(userId, storageKey);
+            await usersDbClient.UpdateUserImageUrlAsync(userId, storageKey);
             if (oldImageUrl is not null)
             {
                 try

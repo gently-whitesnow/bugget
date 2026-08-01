@@ -2,7 +2,7 @@ using Bugget.Domain.Users;
 
 namespace Bugget.Application.Users.Ports;
 
-public interface IMembersRepository
+public interface IMembersDbClient
 {
     Task<(WorkspaceMember[], TeamMember[])> ListMembersAsync(long userId);
 }

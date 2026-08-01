@@ -9,8 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Bugget.Application.Users;
 
 public sealed class UsersService(
-    IUsersRepository usersDbClient,
-    IMembersRepository membersDbClient,
+    IUsersDbClient usersDbClient,
+    IMembersDbClient membersDbClient,
     ITeamsService teamsService,
     ITaskQueue taskQueue,
     IAvatarDownloadService avatarService) : IUsersService

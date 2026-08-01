@@ -3,7 +3,7 @@ using Bugget.Domain.Users;
 
 namespace Bugget.Application.Users.Ports;
 
-public interface IWorkspaceMembersRepository
+public interface IWorkspaceMembersDbClient
 {
     Task<(WorkspaceMember? Value, Error? Error)> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role, int sizeLimit);
     Task<WorkspaceMember> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role);

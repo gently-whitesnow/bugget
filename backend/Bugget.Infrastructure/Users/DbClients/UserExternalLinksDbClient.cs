@@ -1,10 +1,11 @@
 using Bugget.Application.Users.Ports;
 using Bugget.Domain.Users;
+using Bugget.Infrastructure.Postgres;
 using Dapper;
 
 namespace Bugget.Infrastructure.Users.DbClients;
 
-public sealed class UserExternalLinksDbClient : PostgresClient, IUserExternalLinksRepository
+public sealed class UserExternalLinksDbClient() : PostgresClient(Constants.PostgresConnectionStringEnv), IUserExternalLinksDbClient
 {
     public async Task<long?> FindUserByProviderAsync(string provider, string externalId)
     {

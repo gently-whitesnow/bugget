@@ -1,12 +1,13 @@
 using Bugget.Application.Users.Ports;
 using Bugget.Domain.Errors;
 using Bugget.Domain.Users;
+using Bugget.Infrastructure.Postgres;
 using Dapper;
 using Npgsql;
 
 namespace Bugget.Infrastructure.Users.DbClients;
 
-public class WorkspaceMembersDbClient : PostgresClient, IWorkspaceMembersRepository
+public class WorkspaceMembersDbClient() : PostgresClient(Constants.PostgresConnectionStringEnv), IWorkspaceMembersDbClient
 {
     public async Task<(WorkspaceMember? Value, Error? Error)> CreateWorkspaceMemberAsync(long userId, int workspaceId, string role, int sizeLimit)
     {

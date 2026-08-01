@@ -16,7 +16,6 @@ public class NamingConventionRulesTests
     private static readonly string[] PostgresBaseTypeNames =
     [
         "Bugget.Infrastructure.Postgres.PostgresClient",
-        "Bugget.Infrastructure.Users.DbClients.PostgresClient",
     ];
 
     [Fact(DisplayName = "*Service прикладного слоя живёт в Bugget.Application.Services.* или .Users.*")]
@@ -76,7 +75,7 @@ public class NamingConventionRulesTests
     public void Postgres_adapters_follow_DbClient_naming()
     {
         // Предыдущее правило начинается с имени *DbClient. Эта обратная проверка гарантирует,
-        // что конкретный наследник одной из двух общих Postgres-баз не сможет обойти правило
+        // что конкретный наследник общей Postgres-базы не сможет обойти правило
         // и порт, назвавшись просто *Client или *Repository. NpgsqlTransactionScope и
         // NpgsqlUnitOfWork реализуют отдельные транзакционные порты и в этот naming-rule не входят.
         var postgresBaseTypes = ResolveRequiredTypes(Quartet.InfrastructureAsm, PostgresBaseTypeNames);
@@ -117,6 +116,54 @@ public class NamingConventionRulesTests
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*Bugget.Infrastructure.Missing.PostgresClient*");
+    }
+
+    [Fact(DisplayName = "Вызываемая внешняя зависимость Application объявлена портом в **/Ports")]
+    public void Callable_application_contracts_reside_in_ports()
+    {
+        // Признак порта — не суффикс имени, а направление реализации плюс наличие операции:
+        // интерфейс прикладного слоя, который реализует конкретный тип инфраструктуры или
+        // транспорта и у которого есть хотя бы один обычный метод, — это вызываемая внешняя
+        // зависимость (ADR-0001). Интерфейс, описывающий только форму данных (одни
+        // property-getters, как IExternalSearchItem), портом не является и в **/Ports не едет.
+        var violations = FindCallableContractsOutsidePorts(
+            [.. Quartet.InfrastructureAsm.GetTypes(), .. Quartet.ApiAsm.GetTypes()],
+            Quartet.ApplicationAsm);
+
+        violations.Should().BeEmpty(
+            "интерфейс прикладного слоя с вызываемой операцией, который реализует адаптер " +
+            "инфраструктуры или транспорта, обязан жить в Bugget.Application/**/Ports: именно " +
+            "туда смотрит направление зависимости. Перенеси контракт в *.Ports рядом с " +
+            "вызывающим кодом. Нарушители: {0}",
+            string.Join(", ", violations));
+    }
+
+    [Fact(DisplayName = "Портовый гейт краснеет на вызываемом контракте вне *.Ports")]
+    public void Callable_contract_rule_is_provably_red_for_a_method_contract()
+    {
+        FindCallableContractsOutsidePorts(
+                [typeof(FixtureTransportAdapter)],
+                typeof(NamingConventionRulesTests).Assembly)
+            .Should().ContainSingle()
+            .Which.Should().EndWith(nameof(IFixtureCallableContract));
+    }
+
+    [Fact(DisplayName = "Портовый гейт разрешает model/result-интерфейс вне *.Ports")]
+    public void Callable_contract_rule_allows_a_property_only_contract()
+    {
+        FindCallableContractsOutsidePorts(
+                [typeof(FixtureResultItem)],
+                typeof(NamingConventionRulesTests).Assembly)
+            .Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Портовый гейт не трогает продуктовую пару KaitenSearchItem → IExternalSearchItem")]
+    public void Callable_contract_rule_allows_the_external_search_item_pair()
+    {
+        FindCallableContractsOutsidePorts(
+                [typeof(global::Bugget.Infrastructure.ExternalClients.Kaiten.Models.KaitenSearchItem)],
+                Quartet.ApplicationAsm)
+            .Should().BeEmpty();
     }
 
     [Fact(DisplayName = "*Controller в Bugget.Api наследует ApiController или сгенерированную базу")]
@@ -200,6 +247,34 @@ public class NamingConventionRulesTests
         ];
     }
 
+    /// <summary>
+    /// Пары «адаптер → контракт», где адаптер реализует вызываемый интерфейс прикладного слоя,
+    /// объявленный вне <c>**/Ports</c>. Отдельная функция, а не тело теста: тем же алгоритмом
+    /// прогоняются красная и разрешённая фикстуры.
+    /// </summary>
+    private static string[] FindCallableContractsOutsidePorts(
+        IEnumerable<Type> adapters,
+        Assembly contractAssembly) =>
+    [
+        .. adapters
+            .Where(type => type.IsClass && !type.IsAbstract)
+            .SelectMany(adapter => adapter.GetInterfaces()
+                .Where(contract => contract.Assembly == contractAssembly)
+                .Where(IsCallableContract)
+                .Where(contract => !IsApplicationPort(contract))
+                .Select(contract => $"{adapter.FullName ?? adapter.Name} → {contract.FullName ?? contract.Name}"))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.Ordinal)
+    ];
+
+    /// <summary>
+    /// Вызываемый контракт — тот, у которого есть хотя бы одна собственная операция.
+    /// Аксессоры свойств и событий (<c>IsSpecialName</c>) операциями не считаются: интерфейс
+    /// только со свойствами описывает форму данных, а не зависимость.
+    /// </summary>
+    private static bool IsCallableContract(Type contract) =>
+        contract.GetMethods().Any(method => !method.IsSpecialName);
+
     private static Type[] ResolveRequiredTypes(Assembly assembly, IEnumerable<string> typeNames) =>
     [
         .. typeNames.Select(typeName => assembly.GetType(typeName, throwOnError: false)
@@ -214,4 +289,26 @@ public class NamingConventionRulesTests
     private abstract class FixturePostgresClient;
 
     private sealed class EscapingPersistenceClient : FixturePostgresClient;
+
+    /// <summary>Красная фикстура портового гейта: вызываемый контракт вне <c>*.Ports</c>.</summary>
+    private interface IFixtureCallableContract
+    {
+        Task ExecuteAsync();
+    }
+
+    private sealed class FixtureTransportAdapter : IFixtureCallableContract
+    {
+        public Task ExecuteAsync() => Task.CompletedTask;
+    }
+
+    /// <summary>Разрешённая фикстура: интерфейс результата — только форма данных.</summary>
+    private interface IFixtureResultItem
+    {
+        string Id { get; }
+    }
+
+    private sealed class FixtureResultItem : IFixtureResultItem
+    {
+        public required string Id { get; init; }
+    }
 }

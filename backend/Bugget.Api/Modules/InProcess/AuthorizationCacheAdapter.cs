@@ -12,7 +12,7 @@ namespace Bugget.Api.Modules.InProcess;
 /// Повторяет логику <c>CacheController</c>: в OIDC-режиме контекст лежит ещё и под ключом
 /// externalId, поэтому чистим обе записи.
 /// </remarks>
-public sealed class AuthorizationCacheAdapter(IUserCache userCache) : IAuthorizationRepository
+public sealed class AuthorizationCacheAdapter(IUserCache userCache) : IUserCacheInvalidator
 {
     public async Task InvalidateUserCacheAsync(long userId)
     {

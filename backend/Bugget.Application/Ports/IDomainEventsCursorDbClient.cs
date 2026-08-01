@@ -3,7 +3,7 @@ namespace Bugget.Application.Ports;
 /// <summary>
 /// Доступ к таблице <c>domain_events_cursor</c> для локального outbox-консьюмера.
 /// </summary>
-public interface IDomainEventsCursorClient
+public interface IDomainEventsCursorDbClient
 {
     /// <summary>Текущая позиция консьюмера. <c>null</c> если строки нет.</summary>
     Task<long?> GetAsync(string consumerName, CancellationToken ct);

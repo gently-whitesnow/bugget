@@ -11,7 +11,7 @@ public class WorkspaceInitializationService(
     IOptions<SelfHostedOptions> options,
     ILogger<WorkspaceInitializationService> logger,
     IWorkspacesService workspacesService,
-    ITeamsRepository teamsRepository) : IHostedService
+    ITeamsDbClient teamsDbClient) : IHostedService
 {
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -37,14 +37,14 @@ public class WorkspaceInitializationService(
 
     private async Task EnsureDefaultTeamAsync(int workspaceId)
     {
-        var teams = await teamsRepository.ListTeamsAsync([workspaceId]);
+        var teams = await teamsDbClient.ListTeamsAsync([workspaceId]);
         if (teams.Length > 0)
         {
             logger.LogInformation("Teams already exist in workspace {WorkspaceId}", workspaceId);
             return;
         }
 
-        await teamsRepository.CreateTeamAsync(workspaceId, options.Value.DefaultTeamName);
+        await teamsDbClient.CreateTeamAsync(workspaceId, options.Value.DefaultTeamName);
         logger.LogInformation("Default team created: {TeamName}", options.Value.DefaultTeamName);
     }
 

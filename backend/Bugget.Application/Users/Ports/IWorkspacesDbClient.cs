@@ -2,7 +2,7 @@ using Bugget.Domain.Users;
 
 namespace Bugget.Application.Users.Ports;
 
-public interface IWorkspacesRepository
+public interface IWorkspacesDbClient
 {
     Task<Workspace> CreateWorkspaceAsync(long userId, string name);
     Task<Workspace> CreateWorkspaceAsync(string name);

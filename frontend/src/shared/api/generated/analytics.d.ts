@@ -87,13 +87,12 @@ export interface components {
             /** @description Доля времени в фазе Fix (0..1). */
             fix_pct: number;
         };
-        /** @description Один элемент top-10 регрессионных репортов. */
+        /**
+         * @description Один элемент top-10 регрессионных репортов. `report_id` —
+         *     канонический Int64 строкой (см. shared.yaml `Int64String`).
+         */
         TopRegressionReport: {
-            /**
-             * Format: int64
-             * @description ID репорта.
-             */
-            report_id: number;
+            report_id: components["schemas"]["Int64String"];
             /** @description Заголовок репорта. */
             title: string;
             /** @description Кол-во regression-циклов (Test → Fix → Test). */
@@ -137,17 +136,21 @@ export interface components {
             /** @description Понедельный тренд по фазам в окне периода. */
             phase_trends_weekly: components["schemas"]["PhaseTrendWeekly"][];
         };
-        /** @description Репорт, в котором пользователь сейчас участвует. */
+        /**
+         * @description Репорт, в котором пользователь сейчас участвует. `report_id` —
+         *     канонический Int64 строкой (см. shared.yaml `Int64String`).
+         */
         AnalyticsResponsibleParticipatedReport: {
-            /** Format: int64 */
-            report_id: number;
+            report_id: components["schemas"]["Int64String"];
             title: string;
             current_phase: components["schemas"]["PhaseName"];
         };
-        /** @description Завершённый репорт пользователя. */
+        /**
+         * @description Завершённый репорт пользователя. `report_id` — канонический Int64
+         *     строкой (см. shared.yaml `Int64String`).
+         */
         AnalyticsResponsibleCompletedReport: {
-            /** Format: int64 */
-            report_id: number;
+            report_id: components["schemas"]["Int64String"];
             title: string;
             /** Format: date-time */
             closed_at: string;
@@ -181,6 +184,21 @@ export interface components {
             /** @description Человекочитаемый ярлык периода. */
             label: string;
         };
+        /**
+         * @description Неотрицательное 64-битное целое на проводе — строкой, а не числом.
+         *
+         *     Причина: у API ровно один клиент, и в нём JSON-число это IEEE-754
+         *     double. Всё, что больше 2^53−1, теряет точность молча:
+         *     `9007199254740993` доезжает как `9007199254740992`, и ссылка,
+         *     ключ списка и запрос уходят на соседнюю запись. `format: int64`
+         *     в публичном контракте описывал ровно эту дыру.
+         *
+         *     Канон провода: `0` либо `[1-9][0-9]*` — без знака, ведущих нулей,
+         *     экспоненты, разделителей и пробелов, в диапазоне
+         *     `0..9223372036854775807`. `pattern` описывает и форму записи, и
+         *     верхнюю границу целиком: значение вне диапазона ему не удовлетворяет.
+         */
+        Int64String: string;
         /**
          * @description RFC 9457 Problem Details. `type` и машинный `code` всегда выводятся из
          *     одного дескриптора: `urn:bugget:error:<code>`.

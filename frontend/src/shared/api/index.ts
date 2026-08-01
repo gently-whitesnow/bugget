@@ -25,6 +25,11 @@ export type {
 // Операции модуля reports — единственная транспортная граница этого модуля
 export * as reportsApi from "./reports";
 
+// Канон `Int64String` с провода: неотрицательный 64-битный идентификатор и
+// счётчик ходят строкой, потому что число здесь — double (shared.yaml).
+export { isWireInt64, wireInt64ToBigInt, compareWireInt64 } from "./wireInt64";
+export type { WireInt64 } from "./wireInt64";
+
 // Разбор ошибок API
 export { parseApiError } from "./parseApiError";
 export type { ApiError } from "./parseApiError";

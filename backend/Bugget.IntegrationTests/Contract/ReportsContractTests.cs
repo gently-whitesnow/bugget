@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -258,7 +259,8 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
 
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
         var reports = body.GetProperty("reports").EnumerateArray().ToArray();
-        Assert.Equal(reports.Length, body.GetProperty("total").GetInt32());
+        // `total` — канон Int64String: строка, а не число (shared.yaml).
+        Assert.Equal(reports.Length.ToString(CultureInfo.InvariantCulture), body.GetProperty("total").GetString());
 
         Assert.NotEmpty(FindReport(reports, reportId).GetProperty("bugs").EnumerateArray().ToArray());
         Assert.Empty(FindReport(reports, emptyReportId).GetProperty("bugs").EnumerateArray().ToArray());
@@ -380,7 +382,7 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
         var count = Single(body.GetProperty("counts"));
         Assert.Equal("all", count.GetProperty("key").GetString());
-        Assert.Equal(1, count.GetProperty("count").GetInt32());
+        Assert.Equal("1", count.GetProperty("count").GetString());
     }
 
     [Fact(DisplayName = "POST /v2/reports/counts:batch с дублем ключа: 400 duplicate_scope_key")]

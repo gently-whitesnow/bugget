@@ -1,6 +1,8 @@
 import { useUnit } from "effector-react";
 import { ChevronDown } from "lucide-react";
 
+import { compareWireInt64 } from "@/shared/api";
+
 import { $searchResult, $usersStore, loadMore } from "../../../model";
 import { ReportCard } from "@/entities/report";
 
@@ -13,7 +15,8 @@ const SearchResults = () => {
       {searchResult?.reports?.map((report) => (
         <ReportCard key={report.id} report={report} usersStore={usersStore} />
       ))}
-      {searchResult?.total > (searchResult?.reports?.length || 0) && (
+      {compareWireInt64(searchResult.total, searchResult.reports?.length ?? 0) >
+        0 && (
         <button
           onClick={loadMoreHandler}
           className="btn btn-outline btn-secondary"

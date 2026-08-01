@@ -209,15 +209,16 @@ components:
 
     ExternalSearchResult:
       type: object
-      description: Страница результатов поиска по внешним источникам.
+      description: |-
+        Страница результатов поиска по внешним источникам. `total` —
+        канонический Int64 строкой (см. shared.yaml `Int64String`):
+        сколько всего элементов нашлось.
       required:
         - total
         - items
       properties:
         total:
-          type: integer
-          format: int64
-          description: Сколько всего элементов нашлось.
+          $ref: '../shared.yaml#/components/schemas/Int64String'
         items:
           type: array
           description: Элементы текущей страницы.

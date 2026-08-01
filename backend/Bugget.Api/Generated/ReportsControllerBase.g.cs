@@ -104,10 +104,11 @@ namespace Bugget.Api.Generated.Reports
         /// <br/>Sub-resource на репорте: семантически аналитика принадлежит
         /// <br/>конкретному репорту, потому живёт под `/v2/reports/{id}/`.
         /// </remarks>
-        /// <param name="id">Идентификатор репорта.</param>
+        /// <param name="id">Идентификатор репорта. Строка канонического Int64
+        /// <br/>(см. shared.yaml `Int64String`).</param>
         /// <returns>Аналитика по репорту собрана.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v2/reports/{id}/analytics")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AnalyticsReport>> GetReportAnalytics(long id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AnalyticsReport>> GetReportAnalytics(string id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 

@@ -634,18 +634,17 @@ export interface components {
             /** @description Срезы, по которым считаются репорты. */
             scopes: components["schemas"]["ReportCountsScope"][];
         };
-        /** @description Счётчик одного среза. */
+        /**
+         * @description Счётчик одного среза. `count` — канонический Int64 строкой
+         *     (см. shared.yaml `Int64String`).
+         */
         ReportCountsItem: {
             /**
              * @description Ключ среза из запроса. Значение переносится дословно: это данные, а не
              *     имя поля, и конверсия регистра к нему не применяется.
              */
             key: string;
-            /**
-             * Format: int64
-             * @description Количество репортов в срезе.
-             */
-            count: number;
+            count: components["schemas"]["Int64String"];
         };
         /**
          * @description Счётчики по срезам запроса — массив, а не карта со свободными ключами:
@@ -1061,13 +1060,13 @@ export interface components {
             /** @description Баги репорта. `null` — не запрашивались. */
             bugs: components["schemas"]["BugListItem"][] | null;
         };
-        /** @description Страница списка репортов. */
+        /**
+         * @description Страница списка репортов. `total` — канонический Int64 строкой
+         *     (см. shared.yaml `Int64String`): сколько всего репортов подходит
+         *     под фильтры.
+         */
         ReportList: {
-            /**
-             * Format: int64
-             * @description Сколько всего репортов подходит под фильтры.
-             */
-            total: number;
+            total: components["schemas"]["Int64String"];
             /** @description Репорты текущей страницы. */
             reports: components["schemas"]["ReportListItem"][];
         };
@@ -1108,13 +1107,12 @@ export interface components {
             /** @description Багов в статусе `rejected`. */
             rejected: number;
         };
-        /** @description Детальная фазовая аналитика одного репорта. */
+        /**
+         * @description Детальная фазовая аналитика одного репорта. `report_id` —
+         *     канонический Int64 строкой (см. shared.yaml `Int64String`).
+         */
         AnalyticsReport: {
-            /**
-             * Format: int64
-             * @description ID репорта.
-             */
-            report_id: number;
+            report_id: components["schemas"]["Int64String"];
             /** @description Полный таймлайн фаз в порядке возрастания `entered_at`. */
             phase_timeline: components["schemas"]["AnalyticsReportPhaseEntry"][];
             /**
@@ -1129,6 +1127,21 @@ export interface components {
              */
             bugs_added_during_regression: number;
         };
+        /**
+         * @description Неотрицательное 64-битное целое на проводе — строкой, а не числом.
+         *
+         *     Причина: у API ровно один клиент, и в нём JSON-число это IEEE-754
+         *     double. Всё, что больше 2^53−1, теряет точность молча:
+         *     `9007199254740993` доезжает как `9007199254740992`, и ссылка,
+         *     ключ списка и запрос уходят на соседнюю запись. `format: int64`
+         *     в публичном контракте описывал ровно эту дыру.
+         *
+         *     Канон провода: `0` либо `[1-9][0-9]*` — без знака, ведущих нулей,
+         *     экспоненты, разделителей и пробелов, в диапазоне
+         *     `0..9223372036854775807`. `pattern` описывает и форму записи, и
+         *     верхнюю границу целиком: значение вне диапазона ему не удовлетворяет.
+         */
+        Int64String: string;
         /**
          * @description RFC 9457 Problem Details. `type` и машинный `code` всегда выводятся из
          *     одного дескриптора: `urn:bugget:error:<code>`.
@@ -1403,8 +1416,11 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description Идентификатор репорта. */
-                id: number;
+                /**
+                 * @description Идентификатор репорта. Строка канонического Int64
+                 *     (см. shared.yaml `Int64String`).
+                 */
+                id: components["schemas"]["Int64String"];
             };
             cookie?: never;
         };

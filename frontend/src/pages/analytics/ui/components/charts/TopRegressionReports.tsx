@@ -1,5 +1,5 @@
 import { useSearchParams } from "react-router";
-import type { TopRegressionReport } from "@/shared/api";
+import type { TopRegressionReport, WireInt64 } from "@/shared/api";
 
 type Props = {
   reports: TopRegressionReport[];
@@ -8,16 +8,13 @@ type Props = {
 const TopRegressionReports = ({ reports }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Контракт analytics помечает обязательным только `title`, поэтому `report_id` (провод)
-  // приходит как `number | undefined`. Бекенд его всегда отдаёт; пока `required`
-  // в specs/contracts/analytics/openapi.yaml не восстановлен, без id просто
-  // не навигируем — открывать репорт №0 хуже, чем не открывать никакой.
-  const openReport = (reportId: number | undefined) => {
-    if (reportId === undefined) return;
-
+  // `report_id` обязателен по контракту analytics и приходит строкой канона
+  // `Int64String`: в адрес он уходит дословно, `Number(...)` к нему не применяется —
+  // идентификатор за 2^53−1 округлился бы и открыл соседний репорт.
+  const openReport = (reportId: WireInt64) => {
     const next = new URLSearchParams(searchParams);
     next.set("section", "report");
-    next.set("report", String(reportId));
+    next.set("report", reportId);
     setSearchParams(next);
   };
 

@@ -32,7 +32,9 @@ export const $externalSearchResultsStore = createStore<ExternalSearchItem[]>([])
   .on(searchExternalFx.doneData, (_, data) => data.items)
   .reset(clearReport, clearExternalSearchResultsEvent);
 
-export const $externalSearchTotalStore = createStore<number>(0)
+// `total` внешнего поиска — канон Int64String: хранится строкой, сравнивается
+// точно (`shared/lib/wireInt64`), `Number(...)` к нему не применяется.
+export const $externalSearchTotalStore = createStore<string>("0")
   .on(searchExternalFx.doneData, (_, data) => data.total)
   .reset(clearReport, clearExternalSearchResultsEvent);
 

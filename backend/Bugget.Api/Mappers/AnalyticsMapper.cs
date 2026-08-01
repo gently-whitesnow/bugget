@@ -1,3 +1,4 @@
+using Bugget.Api.Http;
 using Bugget.Contracts.Analytics.Generated;
 using Bugget.Domain.Analytics;
 using Bugget.Domain.Reports;
@@ -15,6 +16,10 @@ namespace Bugget.Api.Mappers;
 /// <see cref="ReportContracts"/> (модуль reports), а summary/responsible-DTO
 /// остались в <c>Bugget.Contracts.Analytics.Generated</c>. Алиасим оба
 /// namespaces, чтобы не вводить ambiguity.
+///
+/// `report_id` во всех четырёх формах уходит каноническим Int64 строкой
+/// (shared.yaml <c>Int64String</c>): внутри он остаётся <c>long</c>,
+/// конверсия живёт только здесь, на HTTP-границе.
 /// </summary>
 internal static class AnalyticsMapper
 {
@@ -54,7 +59,7 @@ internal static class AnalyticsMapper
         {
             topList.Add(new TopRegressionReport
             {
-                Report_id = top.ReportId,
+                Report_id = WireInt64.ToWire(top.ReportId),
                 Title = top.Title,
                 Regression_cycles = top.RegressionCycles,
             });
@@ -79,7 +84,7 @@ internal static class AnalyticsMapper
     {
         var dto = new ReportContracts.AnalyticsReport
         {
-            Report_id = bo.ReportId,
+            Report_id = WireInt64.ToWire(bo.ReportId),
             Regression_cycles = bo.RegressionCycles,
             Bugs_by_status = new ReportContracts.AnalyticsReportBugsByStatus
             {
@@ -138,7 +143,7 @@ internal static class AnalyticsMapper
         {
             participatedList.Add(new AnalyticsResponsibleParticipatedReport
             {
-                Report_id = r.ReportId,
+                Report_id = WireInt64.ToWire(r.ReportId),
                 Title = r.Title,
                 Current_phase = MapAnalyticsPhase(r.CurrentPhase),
             });
@@ -149,7 +154,7 @@ internal static class AnalyticsMapper
         {
             completedList.Add(new AnalyticsResponsibleCompletedReport
             {
-                Report_id = r.ReportId,
+                Report_id = WireInt64.ToWire(r.ReportId),
                 Title = r.Title,
                 Closed_at = r.ClosedAt,
                 Outcome = MapOutcome(r.Outcome),

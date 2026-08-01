@@ -28,7 +28,7 @@ const sent = () => {
 };
 
 const wireSearch: components["schemas"]["ExternalSearchResult"] = {
-  total: 1,
+  total: "1",
   items: [{ id: "42", text: "Карточка", source: "kaiten" }],
 };
 

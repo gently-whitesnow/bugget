@@ -30,8 +30,8 @@ public static class KnownDeviations
 {
     /// <summary>Рёбра «прикладной слой → инфраструктура», которые сейчас есть в графе проектов.</summary>
     /// <remarks>
-    /// Пусто: <c>Bugget.Application</c> объявляет только <c>Bugget.Domain</c> и
-    /// <c>Bugget.Contracts</c>; порты живут в <c>Bugget.Application/Ports</c>, а
+    /// Пусто: <c>Bugget.Application</c> объявляет только <c>Bugget.Domain</c>;
+    /// порты живут в <c>Bugget.Application/Ports</c>, а
     /// <c>Bugget.Infrastructure</c> ссылается на прикладной слой, а не наоборот.
     /// </remarks>
     public static readonly IReadOnlyList<Deviation> ApplicationProjectReferences = [];

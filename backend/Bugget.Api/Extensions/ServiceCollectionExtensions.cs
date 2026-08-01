@@ -107,7 +107,11 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IAttachmentKeyGenerator, LocalAttachmentKeyGenerator>()
             .AddSingleton<ICommentsService, CommentsService>()
             .AddSingleton<CommentEventsService>()
-            .AddSingleton<IReportLinksService, ReportLinksService>()
+            // Один экземпляр на два контракта: широкий HTTP-сценарий и узкая внутренняя
+            // запись ссылки — это одна реализация, а не два singleton'а.
+            .AddSingleton<ReportLinksService>()
+            .AddSingleton<IReportLinksService>(sp => sp.GetRequiredService<ReportLinksService>())
+            .AddSingleton<IReportLinkCreator>(sp => sp.GetRequiredService<ReportLinksService>())
             .AddSingleton<ReportLinkEventsService>()
             .AddSingleton<LimitsService>()
             .AddSingleton<IBugStepsService, BugStepsService>()

@@ -14,6 +14,7 @@ public sealed class TokensServiceTests
     // Публичные ключи нужны в Validate()
     private readonly JsonWebKey _accessPub;
     private readonly JsonWebKey _refreshPub;
+    private readonly RsaSecurityKey _refreshPrivateKey;
 
     // С-префикс: System Under Test
     private readonly TokensService _sut;
@@ -33,6 +34,7 @@ public sealed class TokensServiceTests
         var (refPriv, refPub) = RsaKeysMock.Create("kid-refresh");
         _accessPub = accPub;
         _refreshPub = refPub;
+        _refreshPrivateKey = refPriv;
 
         _sut = new TokensService(
             Options.Create(_opts),
@@ -87,6 +89,55 @@ public sealed class TokensServiceTests
     }
 
     [Fact]
+    public async Task RefreshToken_Is_Valid_At_Expiration_Plus_ClockSkew_And_Expires_After_Boundary()
+    {
+        var (_, refresh) = await _sut.GenerateTokensAsync(3);
+
+        _timeProvider.Advance(_opts.RefreshLifetime + TimeSpan.FromSeconds(10));
+
+        var principal = await _sut.ValidateRefreshTokenAsync(refresh);
+        Assert.Equal("3", principal.FindFirstValue(ClaimTypes.NameIdentifier));
+
+        _timeProvider.Advance(TimeSpan.FromTicks(1));
+
+        await Assert.ThrowsAsync<SecurityTokenExpiredException>(
+            () => _sut.ValidateRefreshTokenAsync(refresh));
+    }
+
+    [Fact]
+    public async Task RefreshToken_With_Future_NotBefore_Throws_NotYetValid()
+    {
+        var refresh = CreateRefreshToken(
+            notBefore: _timeProvider.GetUtcNow().AddSeconds(11),
+            expires: _timeProvider.GetUtcNow().AddMinutes(1));
+
+        await Assert.ThrowsAsync<SecurityTokenNotYetValidException>(
+            () => _sut.ValidateRefreshTokenAsync(refresh));
+    }
+
+    [Fact]
+    public async Task RefreshToken_Without_Expiration_Throws_NoExpiration()
+    {
+        var refresh = CreateRefreshToken(
+            notBefore: _timeProvider.GetUtcNow(),
+            expires: null);
+
+        await Assert.ThrowsAsync<SecurityTokenNoExpirationException>(
+            () => _sut.ValidateRefreshTokenAsync(refresh));
+    }
+
+    [Fact]
+    public async Task RefreshToken_With_NotBefore_After_Expiration_Throws_InvalidLifetime()
+    {
+        var refresh = CreateRefreshToken(
+            notBefore: _timeProvider.GetUtcNow().AddMinutes(1),
+            expires: _timeProvider.GetUtcNow().AddSeconds(30));
+
+        await Assert.ThrowsAsync<SecurityTokenInvalidLifetimeException>(
+            () => _sut.ValidateRefreshTokenAsync(refresh));
+    }
+
+    [Fact]
     public async Task Old_RefreshToken_Revoked_After_Rotation()
     {
         var (_, refresh1) = await _sut.GenerateTokensAsync(9);
@@ -118,6 +169,19 @@ public sealed class TokensServiceTests
         Assert.Equal(refresh1, refresh2);
     }
 
+    [Fact]
+    public async Task Repeated_Rotation_During_ClockSkew_Returns_Cached_Tokens()
+    {
+        var (_, refresh) = await _sut.GenerateTokensAsync(7);
+        var firstRotation = await _sut.GenerateTokensAsync(7, refresh);
+
+        _timeProvider.Advance(_opts.RefreshLifetime);
+
+        var repeatedRotation = await _sut.GenerateTokensAsync(7, refresh);
+
+        Assert.Equal(firstRotation, repeatedRotation);
+    }
+
     /* ---------- helper ---------- */
 
     private ClaimsPrincipal Validate(string jwt, JsonWebKey pubKey)
@@ -138,5 +202,36 @@ public sealed class TokensServiceTests
                 && expires >= _timeProvider.GetUtcNow().UtcDateTime
         };
         return h.ValidateToken(jwt, prm, out _);
+    }
+
+    private string CreateRefreshToken(DateTimeOffset? notBefore, DateTimeOffset? expires)
+    {
+        var payload = new JwtPayload
+        {
+            { JwtRegisteredClaimNames.Iss, _opts.Issuer },
+            { JwtRegisteredClaimNames.Aud, _opts.Audience },
+            { ClaimTypes.NameIdentifier, "3" },
+            { JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N") }
+        };
+
+        if (notBefore.HasValue)
+        {
+            payload.Add(
+                JwtRegisteredClaimNames.Nbf,
+                EpochTime.GetIntDate(notBefore.Value.UtcDateTime));
+        }
+
+        if (expires.HasValue)
+        {
+            payload.Add(
+                JwtRegisteredClaimNames.Exp,
+                EpochTime.GetIntDate(expires.Value.UtcDateTime));
+        }
+
+        var token = new JwtSecurityToken(
+            new JwtHeader(new SigningCredentials(_refreshPrivateKey, SecurityAlgorithms.RsaSha512)),
+            payload);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

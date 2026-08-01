@@ -77,6 +77,17 @@
       ]
     },
     {
+      "id": "quality-runner-selftest",
+      "scope": "backend",
+      "enabled": true,
+      "slow": false,
+      "workdir": ".",
+      "description": "Самопроверка failure-path verify.sh: opt-in продолжает команды внутри гейта с итоговой ошибкой, режим по умолчанию остаётся fail-fast, а подготовка области не продолжает зависимое выполнение.",
+      "commands": [
+        "scripts/quality/verify-self-test.sh"
+      ]
+    },
+    {
       "id": "backend-test-architecture",
       "scope": "backend",
       "enabled": true,

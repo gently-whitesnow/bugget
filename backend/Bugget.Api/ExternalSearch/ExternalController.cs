@@ -17,7 +17,7 @@ namespace Bugget.Api.Controllers;
 /// </summary>
 [ApiController]
 public sealed class ExternalController(
-    ExternalSearchService externalSearchService,
+    IExternalSearchService externalSearchService,
     IExternalBoardsClient externalBoardsClient) : ExternalControllerBase
 {
     public override async Task<ActionResult<ExternalSearchResult>> SearchExternal(

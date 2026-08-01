@@ -6,6 +6,7 @@ using Bugget.Application.DomainEvents;
 using Bugget.Application.DomainEvents.Consumer;
 using Bugget.Application.DomainEvents.Handlers;
 using Bugget.Application.Ports;
+using Bugget.Application.Services.Reports;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.DomainEvents;
 using Bugget.Domain.Reports;
@@ -260,7 +261,7 @@ public sealed class ReportPhaseProjectionHandlerTests : IClassFixture<AppWithPos
 
         // PATCH через ReportsService — у репорта responsibleUserId=null и status=Backlog,
         // PATCH с ResponsibleUserId меняет на Test и эмитит событие.
-        var reportsService = _fixture.Services.GetRequiredService<Bugget.Application.Services.Reports.ReportsService>();
+        var reportsService = _fixture.Services.GetRequiredService<IReportsService>();
         var user = CreateUser(userId, orgId);
         // Manual override на Test (создаём событие Backlog→Test). Используем явный Status,
         // чтобы не зависеть от внутренностей auto-driver'а: CreateReportAsync проставляет

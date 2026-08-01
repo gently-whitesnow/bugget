@@ -19,7 +19,7 @@ public sealed class ReportsService(
     ReportEventsService reportEventsService,
     IDomainEventPublisher domainEventPublisher,
     IUnitOfWork unitOfWork,
-    IOptions<ReportAliasOptions> aliasOptions)
+    IOptions<ReportAliasOptions> aliasOptions) : IReportsService
 {
 
     public Task<ReportSummary> CreateReportAsync(string userId, string? teamId, string? organizationId, ReportCreateDto createDto)

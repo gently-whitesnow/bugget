@@ -9,7 +9,7 @@ namespace Bugget.Application.Services.Comments;
 
 public class CommentEventsService(
         IReportPageHubClient reportPageHubClient,
-        AttachmentService attachmentService,
+        IAttachmentService attachmentService,
         ParticipantsService participantsService
             )
 {
@@ -36,4 +36,3 @@ public class CommentEventsService(
         );
     }
 }
-

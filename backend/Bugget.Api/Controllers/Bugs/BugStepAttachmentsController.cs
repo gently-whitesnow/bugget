@@ -21,7 +21,7 @@ namespace Bugget.Api.Controllers;
 /// </summary>
 [ApiController]
 public sealed class BugStepAttachmentsController(
-    AttachmentService attachmentService,
+    IAttachmentService attachmentService,
     IMimeTypeDetector mimeTypeDetector) : BugStepAttachmentsControllerBase
 {
     public override async Task<ActionResult<AttachmentSummary>> CreateBugStepAttachment(

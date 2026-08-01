@@ -13,7 +13,7 @@ namespace Bugget.Api.Controllers;
 /// <summary>
 /// v2 API для аналитики. Наследует <see cref="AnalyticsControllerBase"/> —
 /// маршруты/HTTP-методы и <c>[Authorize]</c> приходят оттуда. Тонкий маппер
-/// UserIdentity → <see cref="AnalyticsService"/> → Contracts.
+/// UserIdentity → <see cref="IAnalyticsService"/> → Contracts.
 ///
 /// Контракт после R6:
 ///   * <c>GET /v2/analytics/summary?period=...&amp;teamId=...</c> — единый summary;
@@ -24,7 +24,7 @@ namespace Bugget.Api.Controllers;
 /// <c>/v2/reports/{id}/analytics</c> (см. ReportsController).
 /// </summary>
 [ApiController]
-public sealed class AnalyticsController(AnalyticsService analyticsService) : AnalyticsControllerBase
+public sealed class AnalyticsController(IAnalyticsService analyticsService) : AnalyticsControllerBase
 {
     public override async Task<ActionResult<AnalyticsSummary>> GetAnalyticsSummary(
         [FromQuery] string period,

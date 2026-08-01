@@ -21,7 +21,7 @@ namespace Bugget.Api.Controllers;
 /// </summary>
 [ApiController]
 public sealed class CommentAttachmentsController(
-    AttachmentService attachmentService,
+    IAttachmentService attachmentService,
     IMimeTypeDetector mimeTypeDetector) : CommentAttachmentsControllerBase
 {
     public override async Task<ActionResult<AttachmentSummary>> CreateCommentAttachment(

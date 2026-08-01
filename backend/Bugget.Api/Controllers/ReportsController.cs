@@ -24,8 +24,8 @@ namespace Bugget.Api.Controllers;
 /// </summary>
 [ApiController]
 public sealed class ReportsController(
-    ReportsService reportsService,
-    AnalyticsService analyticsService,
+    IReportsService reportsService,
+    IAnalyticsService analyticsService,
     IOptions<ReportAliasOptions> reportAliasOptions) : ReportsControllerBase
 {
     public override async Task<ActionResult<ReportSummary>> CreateReport(

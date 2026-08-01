@@ -14,7 +14,7 @@ namespace Bugget.Api.Controllers.Reports;
 /// <c>specs/contracts/reports/openapi.yaml</c> через <see cref="ReportLinksControllerBase"/>.
 /// </summary>
 [ApiController]
-public sealed class ReportLinksController(ReportLinksService reportLinksService) : ReportLinksControllerBase
+public sealed class ReportLinksController(IReportLinksService reportLinksService) : ReportLinksControllerBase
 {
     public override Task<ActionResult<ReportLink>> CreateReportLink(
         string aliasId,

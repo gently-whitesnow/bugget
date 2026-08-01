@@ -19,7 +19,7 @@ namespace Bugget.Infrastructure.ExternalClients.Kaiten;
 public sealed class KaitenApplyService(
     KaitenClientFactory clientFactory,
     ILogger<KaitenApplyService> logger,
-    ReportLinksService reportLinksService,
+    IReportLinksService reportLinksService,
     KaitenConfigService kaitenConfigService,
     KaitenBoardsProvider boardsProvider,
     IOptions<ReportAliasOptions> reportAliasOptions) : IExternalApplyRepository

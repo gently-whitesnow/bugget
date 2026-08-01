@@ -14,7 +14,7 @@ namespace Bugget.Api.Controllers.Bugs;
 /// <c>specs/contracts/reports/openapi.yaml</c> через <see cref="BugStepsControllerBase"/>.
 /// </summary>
 [ApiController]
-public sealed class BugStepsController(BugStepsService bugStepsService) : BugStepsControllerBase
+public sealed class BugStepsController(IBugStepsService bugStepsService) : BugStepsControllerBase
 {
     public override Task<ActionResult<BugStep>> CreateBugStep(
         string aliasId,

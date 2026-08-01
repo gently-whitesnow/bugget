@@ -17,8 +17,8 @@ public sealed class ExternalSearchService(
     IEnumerable<IExternalApplyRepository> externalApplyRepositories,
     ILogger<ExternalSearchService> logger,
     ITaskQueue taskQueue,
-    ReportsService reportsService,
-    IOptions<ReportAliasOptions> aliasOptions)
+    IReportsService reportsService,
+    IOptions<ReportAliasOptions> aliasOptions) : IExternalSearchService
 {
     private static readonly ExternalSearchResult EmptyExternalSearchResult = new() { Total = 0, Items = [] };
 

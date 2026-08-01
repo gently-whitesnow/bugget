@@ -39,11 +39,47 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         var response = await scenario.Client.PostAsJsonAsync("/v2/reports", new { title = "" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Null(response.Headers.Location);
         await ValidationProblemDetailsContract.AssertSingleErrorAsync(
             response,
             "title",
             "The title field is required.",
             "The field title must be a string with a minimum length of 1 and a maximum length of 128.");
+    }
+
+    [Fact(DisplayName = "POST /v2/reports с title длиннее 128: 400 без Location")]
+    public async Task CreateReportWithTooLongTitle()
+    {
+        var scenario = ContractScenario.Create(fixture);
+
+        var response = await scenario.Client.PostAsJsonAsync("/v2/reports", new { title = new string('x', 129) });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Null(response.Headers.Location);
+        await ValidationProblemDetailsContract.AssertSingleErrorAsync(
+            response,
+            "title",
+            "The field title must be a string with a minimum length of 1 and a maximum length of 128.");
+    }
+
+    [Theory(DisplayName = "POST /v2/reports без обязательного workspace/team identity: 401 без Location")]
+    [InlineData(ContractHeaders.WorkspaceId, null)]
+    [InlineData(ContractHeaders.WorkspaceId, " ")]
+    [InlineData(ContractHeaders.TeamId, null)]
+    [InlineData(ContractHeaders.TeamId, " ")]
+    public async Task CreateReportWithoutRequiredContextIdentity(string headerName, string? headerValue)
+    {
+        using var client = fixture.CreateAuthorizedClient("101", "202", $"user-{Guid.NewGuid():N}");
+        client.DefaultRequestHeaders.Remove(headerName);
+        if (headerValue is not null)
+        {
+            Assert.True(client.DefaultRequestHeaders.TryAddWithoutValidation(headerName, headerValue));
+        }
+
+        var response = await client.PostAsJsonAsync("/v2/reports", new { title = "contract-report" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Null(response.Headers.Location);
     }
 
     /// <summary>

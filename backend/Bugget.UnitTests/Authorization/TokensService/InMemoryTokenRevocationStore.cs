@@ -8,14 +8,17 @@ public sealed class InMemoryTokenRevocationStore(TimeProvider? timeProvider = nu
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
-    // jti -> expiry
+    // jti -> момент, до которого включительно токен считается отозванным
     private readonly ConcurrentDictionary<string, DateTimeOffset> _store = new();
-    public Task<bool> IsRevokedAsync(string jti)
-        => Task.FromResult(_store.TryGetValue(jti, out var exp) && exp > _timeProvider.GetUtcNow());
 
-    public Task RevokeAsync(string jti, DateTimeOffset expires)
+    // Граница включительная: пока валидатор ещё принимает токен, он остаётся отозванным.
+    public Task<bool> IsRevokedAsync(string jti)
+        => Task.FromResult(_store.TryGetValue(jti, out var revokedUntil)
+                           && revokedUntil >= _timeProvider.GetUtcNow());
+
+    public Task RevokeAsync(string jti, DateTimeOffset revokedUntil)
     {
-        _store[jti] = expires;
+        _store[jti] = revokedUntil;
         return Task.CompletedTask;
     }
 }

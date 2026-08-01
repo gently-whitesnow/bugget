@@ -182,6 +182,24 @@ public sealed class TokensServiceTests
         Assert.Equal(firstRotation, repeatedRotation);
     }
 
+    [Fact]
+    public async Task Repeated_Rotation_At_ClockSkew_Boundary_Returns_Cached_Tokens()
+    {
+        var (_, refresh) = await _sut.GenerateTokensAsync(7);
+        var firstRotation = await _sut.GenerateTokensAsync(7, refresh);
+
+        // Последний момент, который lifetime-валидатор ещё принимает.
+        _timeProvider.Advance(_opts.RefreshLifetime + RefreshTokenRevocation.ClockSkew);
+
+        Assert.Equal(firstRotation, await _sut.GenerateTokensAsync(7, refresh));
+
+        // За границей окна токен отклоняется по времени жизни, а не выпускает вторую пару.
+        _timeProvider.Advance(TimeSpan.FromTicks(1));
+
+        await Assert.ThrowsAsync<SecurityTokenExpiredException>(
+            () => _sut.GenerateTokensAsync(7, refresh));
+    }
+
     /* ---------- helper ---------- */
 
     private ClaimsPrincipal Validate(string jwt, JsonWebKey pubKey)

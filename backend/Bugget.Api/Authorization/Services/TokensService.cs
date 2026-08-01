@@ -53,8 +53,10 @@ public sealed class TokensService(
             throw new SecurityTokenException("token revoked");
         }
 
-        // 3) Ревокация старого
-        await revocation.RevokeAsync(oldJti, exp);
+        // 3) Ревокация старого — ровно до той границы, до которой его ещё принимает
+        //    lifetime-валидатор (exp + ClockSkew), иначе повторная ротация внутри skew
+        //    обошла бы и revocation, и idempotency-кэш.
+        await revocation.RevokeAsync(oldJti, RefreshTokenRevocation.RevokedUntil(exp));
 
         // 4) Выпуск новой пары
         var (access, newRefresh) = await IssuePairAsync(userId);
@@ -137,7 +139,7 @@ public sealed class TokensService(
             ValidIssuer = _opts.Issuer,
             ValidAudience = _opts.Audience,
             IssuerSigningKey = rsaKey,
-            ClockSkew = TimeSpan.FromSeconds(10),
+            ClockSkew = RefreshTokenRevocation.ClockSkew,
             LifetimeValidator = (notBefore, expires, _, parameters) =>
                 ValidateLifetime(notBefore, expires, parameters, timeProvider),
             ValidateIssuer = true,

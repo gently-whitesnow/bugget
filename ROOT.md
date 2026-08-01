@@ -42,6 +42,18 @@ Bugget — инструмент для баг-репортов: тестиров
 Флаги и поведение раннера — `verify.sh --help`. Набор гейтов правится в
 `.quality/quality.config.json`, не в скрипте и не в workflow.
 
+`apps/landing` сознательно не входит в `verify.sh` и основной CI. Его сборку и публикацию
+проверяет отдельный [deploy workflow](.github/workflows/deploy-landing.yml).
+
+## Карта известного долга
+
+| Долг | Текущее состояние и источник |
+| --- | --- |
+| DDD-миграция легаси | Новый код следует DDD, существующие модели мигрируют только при касании — [ADR-0003](specs/ADR/0003-ddd-for-new-features.md). |
+| Strict-профиль бюджетов | Основной гейт пока использует legacy-профиль; strict остаётся целевым справочным профилем — [.quality/backend-maintainability.json](.quality/backend-maintainability.json). |
+| Mutation testing | Отложен до появления достаточного rich-домена — [ADR-0003](specs/ADR/0003-ddd-for-new-features.md). |
+| Поиск дубликатов | `backend-duplicates` работает в advisory-режиме и пока не блокирует сдачу — [.quality/backend-duplicates.json](.quality/backend-duplicates.json). |
+
 ## Правила, которые нельзя нарушать молча
 
 **Падает гейт — чини причину, а не гейт.** `enabled: false`, задранный baseline,

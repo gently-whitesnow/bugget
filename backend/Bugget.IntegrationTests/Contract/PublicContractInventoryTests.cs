@@ -88,6 +88,11 @@ public sealed class PublicContractInventoryTests(AppContractFixture fixture) : I
         document.AppendLine("`/api/app/workspaces/{id}/teams/{id}`, `/api/users` и `/api/authorization`, которые");
         document.AppendLine("срезаются при проксировании (deploy/nginx/snippets/locations).");
         document.AppendLine();
+        document.AppendLine("Исторически пять legacy TTL-invite маршрутов были сознательно сняты вместе с их");
+        document.AppendLine("единственным клиентом в [PR #33](https://github.com/gently-whitesnow/bugget/pull/33).");
+        document.AppendLine("Совместимость не восстанавливается и ADR не создаётся по явному решению владельца");
+        document.AppendLine("в MAIN-263: этот контур признан забытым SaaS-атавизмом.");
+        document.AppendLine();
         document.AppendLine("| Путь | Зовёт | Покрыт | Комментарий |");
         document.AppendLine("| --- | --- | --- | --- |");
 

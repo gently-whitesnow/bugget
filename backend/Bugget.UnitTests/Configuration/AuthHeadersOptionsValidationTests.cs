@@ -1,6 +1,10 @@
 using Bugget.Api.Extensions;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -36,22 +40,54 @@ public sealed class AuthHeadersOptionsValidationTests
         Assert.Contains(invalidOption, exception.Failures.Single(), StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task HostStartsWhenWorkspaceAndTeamIdentityHeaderNamesAreConfigured()
+    [Theory]
+    [InlineData(null, "X-Team-Id")]
+    [InlineData("", "X-Team-Id")]
+    [InlineData(" ", "X-Team-Id")]
+    [InlineData("X-Workspace-Id", null)]
+    [InlineData("X-Workspace-Id", "")]
+    [InlineData("X-Workspace-Id", " ")]
+    public void WebApplicationDoesNotStartWhenRequiredIdentityHeaderNameIsEmpty(
+        string? organizationHeader,
+        string? teamHeader)
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
+        using var app = new AuthHeadersApplicationFactory(organizationHeader, teamHeader);
+
+        // Program логирует и поглощает ошибку старта, поэтому WebApplicationFactory видит
+        // уже закрытый provider. Парный HostStart-тест выше проверяет точную причину.
+        Assert.Throws<ObjectDisposedException>(() => app.CreateClient());
+    }
+
+    [Fact]
+    public async Task ApplicationStartsWhenDifferentWorkspaceAndTeamIdentityHeaderNamesAreConfigured()
+    {
+        using var app = new AuthHeadersApplicationFactory("X-Workspace-Id", "X-Team-Id");
+        using var client = app.CreateClient();
+
+        var response = await client.GetAsync("/_internal/ping");
+
+        response.EnsureSuccessStatusCode();
+    }
+
+    private sealed class AuthHeadersApplicationFactory(string? organizationHeader, string? teamHeader)
+        : WebApplicationFactory<Program>
+    {
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            builder.UseEnvironment("development");
+            if (organizationHeader is not null)
             {
-                ["ExternalSettings:Authentication:OrganizationIdHeaderName"] = "X-Workspace-Id",
-                ["ExternalSettings:Authentication:TeamIdHeaderName"] = "X-Team-Id"
-            })
-            .Build();
+                builder.UseSetting(
+                    "ExternalSettings:Authentication:OrganizationIdHeaderName",
+                    organizationHeader);
+            }
 
-        using var host = Host.CreateDefaultBuilder()
-            .ConfigureServices(services => services.AddConfiguration(configuration))
-            .Build();
+            if (teamHeader is not null)
+            {
+                builder.UseSetting("ExternalSettings:Authentication:TeamIdHeaderName", teamHeader);
+            }
 
-        await host.StartAsync();
-        await host.StopAsync();
+            builder.ConfigureTestServices(services => services.RemoveAll<IHostedService>());
+        }
     }
 }

@@ -344,7 +344,7 @@ public sealed class AnalyticsControllerT16Tests : IClassFixture<AnalyticsControl
             builder.UseSetting("FileStorageOptions:BaseDirectory", fileStorageDir);
 
             builder.UseSetting("ExternalSettings:Authentication:UserIdHeaderName", UserHeader);
-            builder.UseSetting("ExternalSettings:Authentication:OrganizationIdHeaderName", OrganizationHeader).UseSetting("ExternalSettings:Authentication:TeamIdHeaderName", OrganizationHeader);
+            builder.UseSetting("ExternalSettings:Authentication:OrganizationIdHeaderName", OrganizationHeader).UseSetting("ExternalSettings:Authentication:TeamIdHeaderName", UserHeader);
 
             builder.ConfigureTestServices(services =>
             {

@@ -522,7 +522,8 @@ namespace Bugget.Contracts.Reports.Generated
     }
 
     /// <summary>
-    /// Счётчик одного среза.
+    /// Счётчик одного среза. `count` — канонический Int64 строкой
+    /// <br/>(см. shared.yaml `Int64String`).
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ReportCountsItem
@@ -536,11 +537,11 @@ namespace Bugget.Contracts.Reports.Generated
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Key { get; set; }
 
-        /// <summary>
-        /// Количество репортов в срезе.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("count")]
-        public long Count { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(19)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(0|[1-9][0-9]*)$")]
+        public string Count { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -1656,17 +1657,19 @@ namespace Bugget.Contracts.Reports.Generated
     }
 
     /// <summary>
-    /// Страница списка репортов.
+    /// Страница списка репортов. `total` — канонический Int64 строкой
+    /// <br/>(см. shared.yaml `Int64String`): сколько всего репортов подходит
+    /// <br/>под фильтры.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ReportList
     {
 
-        /// <summary>
-        /// Сколько всего репортов подходит под фильтры.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("total")]
-        public long Total { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(19)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(0|[1-9][0-9]*)$")]
+        public string Total { get; set; }
 
         /// <summary>
         /// Репорты текущей страницы.
@@ -1795,17 +1798,18 @@ namespace Bugget.Contracts.Reports.Generated
     }
 
     /// <summary>
-    /// Детальная фазовая аналитика одного репорта.
+    /// Детальная фазовая аналитика одного репорта. `report_id` —
+    /// <br/>канонический Int64 строкой (см. shared.yaml `Int64String`).
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class AnalyticsReport
     {
 
-        /// <summary>
-        /// ID репорта.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("report_id")]
-        public long Report_id { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(19)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(0|[1-9][0-9]*)$")]
+        public string Report_id { get; set; }
 
         /// <summary>
         /// Полный таймлайн фаз в порядке возрастания `entered_at`.

@@ -32,7 +32,9 @@ export const searchFx = createEffect<SearchRequestQueryParams, SearchResponse>(
       take: params.take,
       reportStatuses: params.reportStatuses,
     });
-    return result || { reports: [], total: 0 };
+    // `total` приходит каноном Int64String (строкой) — пустая выдача повторяет
+    // ту же форму, а не подменяет её числом.
+    return result || { reports: [], total: "0" };
   }
 );
 
@@ -87,7 +89,7 @@ const itemsPerPage = 10;
 
 export const $searchResult = createStore<SearchResponse>({
   reports: [],
-  total: 0,
+  total: "0",
 })
   .on(searchFx.doneData, (state, newData) => {
     // Проверяем, является ли это загрузкой дополнительных результатов

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -102,7 +103,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         // У r1 — 2 Test-интервала, значит 1 цикл регрессии → попадает в top.
         var top = root.GetProperty("top_regression_reports");
         Assert.Equal(1, top.GetArrayLength());
-        Assert.Equal((long)r1, top[0].GetProperty("report_id").GetInt64());
+        Assert.Equal(r1.ToString(CultureInfo.InvariantCulture), top[0].GetProperty("report_id").GetString());
         Assert.Equal(1, top[0].GetProperty("regression_cycles").GetInt32());
         Assert.Equal("regression-r1", top[0].GetProperty("title").GetString());
 
@@ -156,7 +157,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
         var root = doc.RootElement;
 
-        Assert.Equal((long)reportId, root.GetProperty("report_id").GetInt64());
+        Assert.Equal(reportId.ToString(CultureInfo.InvariantCulture), root.GetProperty("report_id").GetString());
 
         // 2 Test-интервала → regression_cycles = 1.
         Assert.Equal(1, root.GetProperty("regression_cycles").GetInt32());
@@ -252,7 +253,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         Assert.Equal(1, root.GetProperty("reports_closed").GetInt32());
         var top = root.GetProperty("top_regression_reports");
         Assert.Equal(1, top.GetArrayLength());
-        Assert.Equal((long)r1, top[0].GetProperty("report_id").GetInt64());
+        Assert.Equal(r1.ToString(CultureInfo.InvariantCulture), top[0].GetProperty("report_id").GetString());
         Assert.True(r2 > 0 && r3 > 0);
     }
 
@@ -322,11 +323,11 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
 
         var participated = root.GetProperty("reports_participated");
         Assert.Equal(1, participated.GetArrayLength());
-        Assert.Equal((long)r1, participated[0].GetProperty("report_id").GetInt64());
+        Assert.Equal(r1.ToString(CultureInfo.InvariantCulture), participated[0].GetProperty("report_id").GetString());
 
         var completed = root.GetProperty("reports_completed");
         Assert.Equal(1, completed.GetArrayLength());
-        Assert.Equal((long)r3, completed[0].GetProperty("report_id").GetInt64());
+        Assert.Equal(r3.ToString(CultureInfo.InvariantCulture), completed[0].GetProperty("report_id").GetString());
         Assert.Equal("Resolved", completed[0].GetProperty("outcome").GetString());
 
         // avg_fix_phase_days = 1 day (r3.Fix-интервал длиной 1 день).

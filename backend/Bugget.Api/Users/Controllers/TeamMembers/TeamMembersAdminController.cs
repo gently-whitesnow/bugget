@@ -1,4 +1,5 @@
 using Bugget.Api.Generated.Users;
+using Bugget.Api.Http;
 using Bugget.Api.Users.Authentication;
 using Bugget.Application.Users.TeamMembers;
 using Microsoft.AspNetCore.Mvc;
@@ -18,13 +19,26 @@ public sealed class TeamMembersAdminController(ITeamMembersService teamMembersSe
     /// <summary>
     /// Удалить участника команды
     /// </summary>
+    /// <remarks>
+    /// Сегмент объявлен строкой канонического Int64 (shared.yaml
+    /// <c>Int64String</c>), внутрь уходит <c>long</c>. Ограничения маршрута
+    /// у этого пути не было и нет: несвязываемый сегмент и раньше отбивало
+    /// связывание модели как 400, и <see cref="WireInt64"/> отвечает тем же
+    /// классом ошибки — удаление на «соседнего» участника не уезжает.
+    /// </remarks>
     public override async Task<IActionResult> DeleteTeamMember(
         string workspaceId,
         int teamId,
-        long userId,
+        string userId,
         CancellationToken cancellationToken = default)
     {
-        await teamMembersService.DeleteTeamMemberAsync(userId, teamId);
+        var invalidUserId = WireInt64.TryBindRouteValue(HttpContext, "userId", userId, out var id);
+        if (invalidUserId is not null)
+        {
+            return invalidUserId;
+        }
+
+        await teamMembersService.DeleteTeamMemberAsync(id, teamId);
         return Ok();
     }
 }

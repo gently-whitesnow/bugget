@@ -81,7 +81,10 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
         var response = await client.PostAsync($"/v1/workspaces/{scenario.WorkspaceId}/members/join", null);
 
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
-        Assert.Equal(otherUser, body.GetProperty("user_id").GetInt64());
+        // `user_id` — канонический Int64 строкой (shared.yaml `Int64String`).
+        Assert.Equal(
+            otherUser.ToString(CultureInfo.InvariantCulture),
+            body.GetProperty("user_id").GetString());
         Assert.Equal(scenario.WorkspaceId, body.GetProperty("workspace_id").GetInt32());
 
         // Вступивший вторым — уже не владелец: роль назначает сервер, а не клиент.

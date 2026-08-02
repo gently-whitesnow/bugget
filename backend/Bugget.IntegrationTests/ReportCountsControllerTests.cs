@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -59,8 +60,10 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
         Assert.NotNull(body);
         Assert.Equal(["beta-active", "team-active"], body!.Counts.Select(item => item.Key));
 
-        var beta = body.Counts.Single(item => item.Key == "beta-active").Count;
-        var teamActive = body.Counts.Single(item => item.Key == "team-active").Count;
+        // `count` приходит каноническим Int64 строкой (shared.yaml `Int64String`),
+        // сравниваем числа — за форму строки отвечает отдельный contract-тест.
+        var beta = long.Parse(body.Counts.Single(item => item.Key == "beta-active").Count, CultureInfo.InvariantCulture);
+        var teamActive = long.Parse(body.Counts.Single(item => item.Key == "team-active").Count, CultureInfo.InvariantCulture);
         Assert.True(beta >= 1, "beta-active должен включать созданный нами beta-tester report");
         Assert.True(teamActive >= beta, "team-active без creator_types должен быть супермножеством beta-active");
     }

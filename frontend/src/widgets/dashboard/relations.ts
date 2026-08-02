@@ -36,8 +36,9 @@ export const loadRecentlyResolvedFx = createEffect(async (userId: string) => {
 });
 
 // Стор для недавно решённых репортов
+// `total` — канон Int64String с провода: пустое состояние держит ту же строку.
 export const $recentlyResolvedReports = createStore<ListReportsResponse>({
-  total: 0,
+  total: "0",
   reports: [],
 }).on(loadRecentlyResolvedFx.doneData, (_, data) => data);
 

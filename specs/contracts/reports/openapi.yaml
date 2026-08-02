@@ -221,10 +221,11 @@ paths:
         - name: id
           in: path
           required: true
-          description: Идентификатор репорта.
+          description: |-
+            Идентификатор репорта. Строка канонического Int64
+            (см. shared.yaml `Int64String`).
           schema:
-            type: integer
-            format: int64
+            $ref: '../shared.yaml#/components/schemas/Int64String'
       responses:
         '200':
           description: Аналитика по репорту собрана.
@@ -1050,7 +1051,7 @@ components:
 
     # Enum-like значения провода — закрытые множества строк `snake_case`.
     # Внутри домена и в Postgres те же значения остаются числами: перевод
-    # числа в строку и обратно живёт ровно на HTTP-границе (ADR-0012).
+    # числа в строку и обратно живёт ровно на HTTP-границе (ADR-0013).
     # Порядок значений совпадает с числовым представлением домена, но
     # опираться на него нельзя: соответствие задаёт явный маппер.
 
@@ -1336,7 +1337,9 @@ components:
 
     ReportCountsItem:
       type: object
-      description: Счётчик одного среза.
+      description: |-
+        Счётчик одного среза. `count` — канонический Int64 строкой
+        (см. shared.yaml `Int64String`).
       required:
         - key
         - count
@@ -1347,9 +1350,7 @@ components:
             Ключ среза из запроса. Значение переносится дословно: это данные, а не
             имя поля, и конверсия регистра к нему не применяется.
         count:
-          type: integer
-          format: int64
-          description: Количество репортов в срезе.
+          $ref: '../shared.yaml#/components/schemas/Int64String'
 
     ReportCountsBatchResponse:
       type: object
@@ -2036,15 +2037,16 @@ components:
 
     ReportList:
       type: object
-      description: Страница списка репортов.
+      description: |-
+        Страница списка репортов. `total` — канонический Int64 строкой
+        (см. shared.yaml `Int64String`): сколько всего репортов подходит
+        под фильтры.
       required:
         - total
         - reports
       properties:
         total:
-          type: integer
-          format: int64
-          description: Сколько всего репортов подходит под фильтры.
+          $ref: '../shared.yaml#/components/schemas/Int64String'
         reports:
           type: array
           description: Репорты текущей страницы.
@@ -2114,7 +2116,9 @@ components:
 
     AnalyticsReport:
       type: object
-      description: Детальная фазовая аналитика одного репорта.
+      description: |-
+        Детальная фазовая аналитика одного репорта. `report_id` —
+        канонический Int64 строкой (см. shared.yaml `Int64String`).
       required:
         - report_id
         - phase_timeline
@@ -2123,9 +2127,7 @@ components:
         - bugs_added_during_regression
       properties:
         report_id:
-          type: integer
-          format: int64
-          description: ID репорта.
+          $ref: '../shared.yaml#/components/schemas/Int64String'
         phase_timeline:
           type: array
           description: Полный таймлайн фаз в порядке возрастания `entered_at`.

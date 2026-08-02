@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using Xunit;
@@ -48,7 +49,8 @@ public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassF
         var response = await scenario.Client.GetAsync($"/v2/reports/{reportId}/analytics");
 
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
-        Assert.True(body.GetProperty("report_id").GetInt32() > 0);
+        // `report_id` — канонический Int64 строкой (shared.yaml `Int64String`).
+        Assert.Equal(reportId.ToString(CultureInfo.InvariantCulture), body.GetProperty("report_id").GetString());
 
         // Разбивка приходит всеми четырьмя ключами, даже когда багов нет: фронт
         // рисует по ним фиксированные колонки и на отсутствие ключа не рассчитывает.

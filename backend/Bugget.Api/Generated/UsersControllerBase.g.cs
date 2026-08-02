@@ -230,10 +230,12 @@ namespace Bugget.Api.Generated.Users
         /// <br/>доезжал до действия, а не отбивался как 400.</param>
         /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
         /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
-        /// <param name="userId">Идентификатор пользователя.</param>
+        /// <param name="userId">Идентификатор пользователя. Строка канонического Int64
+        /// <br/>(см. shared.yaml `Int64String`): числом сегмент терял бы точность
+        /// <br/>у единственного клиента API.</param>
         /// <returns>Содержимое аватара. Content-Type — по расширению файла.</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/{userId}/avatar/content")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetUserAvatarContentInContext(string workspaceId, string teamId, long userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetUserAvatarContentInContext(string workspaceId, string teamId, string userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -411,10 +413,12 @@ namespace Bugget.Api.Generated.Users
         /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
         /// <br/>доезжал до действия, а не отбивался как 400.</param>
         /// <param name="teamId">Идентификатор команды.</param>
-        /// <param name="userId">Идентификатор пользователя.</param>
+        /// <param name="userId">Идентификатор пользователя. Строка канонического Int64
+        /// <br/>(см. shared.yaml `Int64String`): числом сегмент терял бы точность
+        /// <br/>у единственного клиента API.</param>
         /// <returns>Участник удалён. Тело пустое.</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/members/{userId}")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteTeamMember(string workspaceId, int teamId, long userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteTeamMember(string workspaceId, int teamId, string userId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 

@@ -47,7 +47,7 @@ public static class MvcServiceCollectionExtensions
 
             // Enum'ы контракта уходят на провод строкой из `enum` OpenAPI. Фабрика
             // накрывает элементы массивов, модификатор — скалярные свойства, на
-            // которых генератор уже поставил свой конвертер (ADR-0012).
+            // которых генератор уже поставил свой конвертер (ADR-0013).
             options.JsonSerializerOptions.Converters.Add(new WireEnumJsonConverterFactory());
             options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver
             {

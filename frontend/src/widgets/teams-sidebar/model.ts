@@ -30,7 +30,7 @@ export const fetchTeamMembersFx = createEffect<
 });
 
 export const fetchMemberDetailsFx = createEffect<
-  TeamContext & { userIds: (string | number)[] },
+  TeamContext & { userIds: string[] },
   CurrentUserResponse[]
 >(async ({ workspaceId, teamId, userIds }) => {
   if (userIds.length === 0) return [];
@@ -40,7 +40,7 @@ export const fetchMemberDetailsFx = createEffect<
 });
 
 export const deleteTeamMemberFx = createEffect<
-  TeamContext & { userId: string | number },
+  TeamContext & { userId: string },
   void
 >(async ({ workspaceId, teamId, userId }) => {
   await usersApi.deleteTeamMember(workspaceId, teamId, userId);
@@ -58,7 +58,7 @@ export const leaveTeamFx = createEffect<TeamContext, void>(
 export const setTeamContext = createEvent<TeamContext>();
 export const clearTeamContext = createEvent<void>();
 export const deleteMember = createEvent<{
-  userId: string | number;
+  userId: string;
   userName: string;
 }>();
 export const leaveTeamEvent = createEvent<void>();
@@ -99,7 +99,7 @@ export const $isLoading = combine(
   (membersLoading, detailsLoading) => membersLoading || detailsLoading
 );
 
-export const $deletingUserId = createStore<string | number | null>(null)
+export const $deletingUserId = createStore<string | null>(null)
   .on(deleteTeamMemberFx, (_, { userId }) => userId)
   .on(deleteTeamMemberFx.finally, () => null);
 
@@ -141,7 +141,7 @@ sample({
   fn: (context: TeamContext, members: TeamMembersResponse) => ({
     workspaceId: context.workspaceId,
     teamId: context.teamId,
-    userIds: members.members.map((m: { userId: string | number }) => m.userId),
+    userIds: members.members.map((member) => member.userId),
   }),
   target: fetchMemberDetailsFx,
 });

@@ -86,7 +86,8 @@ public class UsersContractMapperTests
             UpdatedAt = Moment,
         }.ToContract();
 
-        Assert.Equal(42, contract.Id);
+        // Идентификатор уходит каноническим Int64 строкой (shared.yaml `Int64String`).
+        Assert.Equal("42", contract.Id);
         Assert.Equal("keycloak|42", contract.External_id);
         Assert.Equal("avatars/42.webp", contract.Image_url);
         Assert.Equal("mm-42", contract.Mattermost_user_id);
@@ -156,7 +157,7 @@ public class UsersContractMapperTests
         }.ToContract();
 
         Assert.Equal(1, contract.Workspace_id);
-        Assert.Equal(42, contract.User_id);
+        Assert.Equal("42", contract.User_id);
         Assert.Equal("admin", contract.Role);
     }
 

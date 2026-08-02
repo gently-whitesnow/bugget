@@ -12,7 +12,7 @@ namespace Bugget.Api.Http;
 /// правилам (<c>tg_beta_tester</c> → <c>Tg_beta_tester</c>). Ни
 /// <c>JsonStringEnumConverter</c>, ни стандартное связывание query этот атрибут
 /// не читают, поэтому источником имени служит эта карта — одна на весь ввод и
-/// вывод HTTP-границы (ADR-0012).
+/// вывод HTTP-границы (ADR-0013).
 /// </summary>
 internal static class WireEnum
 {

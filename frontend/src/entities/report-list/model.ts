@@ -60,8 +60,10 @@ export const fetchReportsUsersFx = createEffect<string[], UserResponse[]>(
 );
 
 // Стор для репортов
+// `total` — канон Int64String с провода (`shared/lib/wireInt64`), поэтому и
+// пустое состояние держит строку: смешивать формы в одном сторе нечем.
 export const $reportsStore = createStore<ListReportsResponse>({
-  total: 0,
+  total: "0",
   reports: [],
 }).on(loadReportsFx.doneData, (_, reports) => reports);
 

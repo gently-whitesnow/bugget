@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -76,7 +77,7 @@ public sealed class AnalyticsControllerT16Tests : IClassFixture<AnalyticsControl
 
         var top = root.GetProperty("top_regression_reports");
         Assert.Equal(1, top.GetArrayLength());
-        Assert.Equal((long)r1, top[0].GetProperty("report_id").GetInt64());
+        Assert.Equal(r1.ToString(CultureInfo.InvariantCulture), top[0].GetProperty("report_id").GetString());
         Assert.Equal(2, top[0].GetProperty("regression_cycles").GetInt32());
 
         var dist = root.GetProperty("phase_time_distribution");

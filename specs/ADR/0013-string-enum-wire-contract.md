@@ -1,4 +1,4 @@
-# ADR-0012: Enum-like значения публичного HTTP API — строки `snake_case`
+# ADR-0013: Enum-like значения публичного HTTP API — строки `snake_case`
 
 - **Статус:** Accepted
 - **Дата:** 2026-08-01

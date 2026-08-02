@@ -128,17 +128,18 @@ namespace Bugget.Contracts.Analytics.Generated
     }
 
     /// <summary>
-    /// Один элемент top-10 регрессионных репортов.
+    /// Один элемент top-10 регрессионных репортов. `report_id` —
+    /// <br/>канонический Int64 строкой (см. shared.yaml `Int64String`).
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TopRegressionReport
     {
 
-        /// <summary>
-        /// ID репорта.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("report_id")]
-        public long Report_id { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(19)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(0|[1-9][0-9]*)$")]
+        public string Report_id { get; set; }
 
         /// <summary>
         /// Заголовок репорта.
@@ -284,14 +285,18 @@ namespace Bugget.Contracts.Analytics.Generated
     }
 
     /// <summary>
-    /// Репорт, в котором пользователь сейчас участвует.
+    /// Репорт, в котором пользователь сейчас участвует. `report_id` —
+    /// <br/>канонический Int64 строкой (см. shared.yaml `Int64String`).
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class AnalyticsResponsibleParticipatedReport
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("report_id")]
-        public long Report_id { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(19)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(0|[1-9][0-9]*)$")]
+        public string Report_id { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -314,14 +319,18 @@ namespace Bugget.Contracts.Analytics.Generated
     }
 
     /// <summary>
-    /// Завершённый репорт пользователя.
+    /// Завершённый репорт пользователя. `report_id` — канонический Int64
+    /// <br/>строкой (см. shared.yaml `Int64String`).
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class AnalyticsResponsibleCompletedReport
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("report_id")]
-        public long Report_id { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(19)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(0|[1-9][0-9]*)$")]
+        public string Report_id { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]

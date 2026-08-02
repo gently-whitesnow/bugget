@@ -120,7 +120,7 @@ describe("пути репортов", () => {
   });
 
   it("аналитика репорта остаётся sub-resource репорта", async () => {
-    await analyticsApi.getReportAnalytics(7);
+    await analyticsApi.getReportAnalytics("7");
 
     expect(sent().url).toBe(`${contextPrefix}/v2/reports/7/analytics`);
     expect(sent().method).toBe("get");

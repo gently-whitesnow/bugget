@@ -132,17 +132,19 @@ namespace Bugget.Contracts.External.Generated
     }
 
     /// <summary>
-    /// Страница результатов поиска по внешним источникам.
+    /// Страница результатов поиска по внешним источникам. `total` —
+    /// <br/>канонический Int64 строкой (см. shared.yaml `Int64String`):
+    /// <br/>сколько всего элементов нашлось.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ExternalSearchResult
     {
 
-        /// <summary>
-        /// Сколько всего элементов нашлось.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("total")]
-        public long Total { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(19)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(0|[1-9][0-9]*)$")]
+        public string Total { get; set; }
 
         /// <summary>
         /// Элементы текущей страницы.

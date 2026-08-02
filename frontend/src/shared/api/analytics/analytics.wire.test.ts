@@ -30,11 +30,11 @@ const sent = () => {
 const wireResponsible: components["schemas"]["AnalyticsResponsible"] = {
   period: { from: "2026-07-01", to: "2026-07-30", label: "Июль" },
   reports_participated: [
-    { report_id: 1, title: "Первый", current_phase: "Test" },
+    { report_id: "1", title: "Первый", current_phase: "Test" },
   ],
   reports_completed: [
     {
-      report_id: 2,
+      report_id: "2",
       title: "Второй",
       closed_at: "2026-07-20T10:00:00Z",
       outcome: "Resolved",
@@ -101,7 +101,7 @@ describe("адреса аналитики", () => {
       `${contextPrefix}/v2/analytics/responsible/user-1?period=180d`
     );
     // Ответ доезжает в camelCase, nullable-значение сохраняется.
-    expect(responsible.reportsParticipated[0].reportId).toBe(1);
+    expect(responsible.reportsParticipated[0].reportId).toBe("1");
     expect(responsible.reportsParticipated[0].currentPhase).toBe("Test");
     expect(responsible.reportsCompleted[0].closedAt).toBe(
       "2026-07-20T10:00:00Z"
@@ -112,8 +112,20 @@ describe("адреса аналитики", () => {
   });
 
   it("detail по репорту остаётся sub-resource модуля reports", async () => {
-    await getReportAnalytics(12);
+    await getReportAnalytics("12");
 
     expect(sent().url).toBe(`${contextPrefix}/v2/reports/12/analytics`);
+  });
+
+  it("идентификатор за пределом точности double уходит в адрес цифра в цифру", async () => {
+    // `Number("9007199254740993")` даёт ...992 — адрес уехал бы на соседний репорт.
+    const reportId = "9007199254740993";
+
+    await getReportAnalytics(reportId);
+
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports/${reportId}/analytics`
+    );
+    expect(sent().url).not.toContain("9007199254740992");
   });
 });

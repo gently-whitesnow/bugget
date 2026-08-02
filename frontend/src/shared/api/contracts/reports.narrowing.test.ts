@@ -33,7 +33,7 @@ const collectKeys = (value: unknown, acc: string[] = []): string[] => {
 };
 
 const wireListResponse: components["schemas"]["ReportList"] = {
-  total: 1,
+  total: "1",
   reports: [
     {
       id: "42",

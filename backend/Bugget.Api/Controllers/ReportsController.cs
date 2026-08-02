@@ -107,9 +107,18 @@ public sealed class ReportsController(
     /// <summary>
     /// Детальная фазовая аналитика по конкретному репорту (sub-resource).
     /// </summary>
+    /// <remarks>
+    /// Сегмент объявлен строкой канонического Int64 (shared.yaml
+    /// <c>Int64String</c>), внутрь уходит <c>long</c>: конверсия живёт здесь, на
+    /// границе. Ограничение маршрута <c>:long</c> оставлено — оно и раньше
+    /// отбивало нечисловой и вылезающий за Int64 сегмент как 404, и менять этот
+    /// ответ незачем. Всё, что через него проходит, но каноном не является
+    /// (<c>-5</c>, <c>007</c>), до сервиса не доезжает: <see cref="WireInt64"/>
+    /// отвечает тем же 400, каким такой сегмент отбивало связывание модели.
+    /// </remarks>
     [RouteParameterConstraint("id", "long")]
     public override async Task<ActionResult<AnalyticsReport>> GetReportAnalytics(
-        long id,
+        string id,
         CancellationToken cancellationToken = default)
     {
         var user = User.GetIdentity();
@@ -118,7 +127,13 @@ public sealed class ReportsController(
             return Unauthorized();
         }
 
-        var bo = await analyticsService.GetReportAsync(user.OrganizationId, id, cancellationToken);
+        var invalidId = WireInt64.TryBindRouteValue(HttpContext, "id", id, out var reportId);
+        if (invalidId is not null)
+        {
+            return invalidId;
+        }
+
+        var bo = await analyticsService.GetReportAsync(user.OrganizationId, reportId, cancellationToken);
         if (bo is null)
         {
             return NotFound();

@@ -160,16 +160,16 @@ components:
 
     TopRegressionReport:
       type: object
-      description: Один элемент top-10 регрессионных репортов.
+      description: |-
+        Один элемент top-10 регрессионных репортов. `report_id` —
+        канонический Int64 строкой (см. shared.yaml `Int64String`).
       required:
         - report_id
         - title
         - regression_cycles
       properties:
         report_id:
-          type: integer
-          format: int64
-          description: ID репорта.
+          $ref: '../shared.yaml#/components/schemas/Int64String'
         title:
           type: string
           description: Заголовок репорта.
@@ -254,15 +254,16 @@ components:
 
     AnalyticsResponsibleParticipatedReport:
       type: object
-      description: Репорт, в котором пользователь сейчас участвует.
+      description: |-
+        Репорт, в котором пользователь сейчас участвует. `report_id` —
+        канонический Int64 строкой (см. shared.yaml `Int64String`).
       required:
         - report_id
         - title
         - current_phase
       properties:
         report_id:
-          type: integer
-          format: int64
+          $ref: '../shared.yaml#/components/schemas/Int64String'
         title:
           type: string
         current_phase:
@@ -270,7 +271,9 @@ components:
 
     AnalyticsResponsibleCompletedReport:
       type: object
-      description: Завершённый репорт пользователя.
+      description: |-
+        Завершённый репорт пользователя. `report_id` — канонический Int64
+        строкой (см. shared.yaml `Int64String`).
       required:
         - report_id
         - title
@@ -278,8 +281,7 @@ components:
         - outcome
       properties:
         report_id:
-          type: integer
-          format: int64
+          $ref: '../shared.yaml#/components/schemas/Int64String'
         title:
           type: string
         closed_at:

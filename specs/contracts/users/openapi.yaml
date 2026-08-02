@@ -718,10 +718,12 @@ components:
       name: userId
       in: path
       required: true
-      description: Идентификатор пользователя.
+      description: |-
+        Идентификатор пользователя. Строка канонического Int64
+        (см. shared.yaml `Int64String`): числом сегмент терял бы точность
+        у единственного клиента API.
       schema:
-        type: integer
-        format: int64
+        $ref: '../shared.yaml#/components/schemas/Int64String'
 
     Provider:
       name: provider
@@ -945,9 +947,7 @@ components:
           type: integer
           description: Рабочее пространство.
         user_id:
-          type: integer
-          format: int64
-          description: Пользователь.
+          $ref: '../shared.yaml#/components/schemas/Int64String'
         role:
           type: string
           description: Роль в пространстве.
@@ -1103,8 +1103,9 @@ components:
     UserProfile:
       type: object
       description: |
-        Профиль так, как его отдаёт обновление: с внутренним числовым
-        идентификатором и внешним идентификатором провайдера.
+        Профиль так, как его отдаёт обновление: с внутренним
+        идентификатором (`id`, канонический Int64 строкой) и внешним
+        идентификатором провайдера (`external_id`).
       required:
         - id
         - external_id
@@ -1115,9 +1116,7 @@ components:
         - updated_at
       properties:
         id:
-          type: integer
-          format: int64
-          description: Внутренний идентификатор.
+          $ref: '../shared.yaml#/components/schemas/Int64String'
         external_id:
           type: string
           description: Идентификатор у провайдера входа.

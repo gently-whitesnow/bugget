@@ -1,3 +1,4 @@
+using Bugget.Api.Http;
 using Bugget.Application.ExternalSearch.Models;
 using Bugget.Contracts.External.Generated;
 // Одноимённые типы: контрактная схема и BO-модель. Берём по алиасу, чтобы
@@ -15,7 +16,8 @@ internal static class ExternalMapper
 {
     public static ContractSearchResult ToContract(this BoSearchResult result) => new()
     {
-        Total = result.Total,
+        // `total` — канонический Int64 строкой (shared.yaml `Int64String`).
+        Total = WireInt64.ToWire(result.Total),
         Items = [.. result.Items.Select(item => new ExternalSearchItem
         {
             Id = item.Id,

@@ -32,11 +32,11 @@ export const updateUserInContext = (body: UpdateUserBody) =>
 export const listUsers = (
   workspaceId: string | number,
   teamId: string | number,
-  userIds: (string | number)[]
+  userIds: string[]
 ) =>
   request(USERS_BATCH_LIST, "post", {
     path: { workspaceId: String(workspaceId), teamId: String(teamId) },
-    body: userIds.map(String),
+    body: userIds,
   });
 
 export const listUsersInContext = (userIds: string[]) =>

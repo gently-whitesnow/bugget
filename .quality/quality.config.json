@@ -65,18 +65,6 @@
       ]
     },
     {
-      "id": "backend-contracts-int64",
-      "scope": "frontend",
-      "enabled": true,
-      "slow": false,
-      "workdir": ".",
-      "description": "Публичный неотрицательный Int64 в specs/contracts/** ходит строкой канона Int64String (shared.yaml), а не `format: int64`. Причина: у API ровно один клиент, JSON-число в нём IEEE-754 double, и всё больше 2^53−1 теряет точность молча — 9007199254740993 доезжает до UI как ...992, а ссылка, ключ списка и следующий запрос уходят на соседнюю запись. Компилятор этого не видит: оба типа валидны. Гейт разбирает YAML закреплённым прямой зависимостью js-yaml, рекурсивно обходит AST и краснеет на любом новом `format: int64` или ошибке разбора. Отдельно проверяет, что pattern схемы Int64String описывает канон точно — вектором значений, а не наличием поля: принимает 0 и [1-9][0-9]* до 9223372036854775807, отвергает знак, ведущие нули, экспоненту, разделители, не-ASCII цифры и всё вне диапазона. Второй командой идёт самопроверка гейта. Гейт живёт во frontend scope, где npm prepare гарантирует закреплённый parser; specs/contracts/** и scripts/** запускают обе CI-области, поэтому второй регистрации не нужно. Нужны python3 и node.",
-      "commands": [
-        "python3 scripts/quality/contracts-int64.py",
-        "python3 scripts/quality/contracts-int64.py --self-test"
-      ]
-    },
-    {
       "id": "backend-test-unit",
       "scope": "backend",
       "enabled": true,

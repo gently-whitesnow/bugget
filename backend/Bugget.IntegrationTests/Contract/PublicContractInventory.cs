@@ -110,7 +110,7 @@ internal static class PublicContractInventory
         ["GET /_internal/auth"] = new(Nginx, "AuthorizationContractTests"),
         ["POST /v1/logout"] = new(Frontend, "AuthorizationContractTests"),
         ["GET /v1/external/token/callback"] = new(Frontend, Uncovered, "OIDC-callback: нужен внешний провайдер, в тестовом хосте не поднимается"),
-        ["GET /v1/fake/login"] = new(Frontend, Uncovered, "провайдер входа для локальной разработки; в тестовом хосте контроллер FakeAuth не попадает в application parts — см. итог MAIN-13"),
+        ["GET /v1/fake/login"] = new(Frontend, "AuthorizationContractTests"),
         ["GET /v1/users/mattermost/connect"] = new(Frontend, Uncovered, "OAuth Mattermost: нужен внешний провайдер"),
         ["GET /v1/users/mattermost/callback"] = new(Frontend, Uncovered, "OAuth Mattermost: нужен внешний провайдер"),
 

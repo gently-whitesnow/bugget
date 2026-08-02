@@ -38,7 +38,7 @@
 | `GET /v1/external/kaiten/boards` | фронт | да — `SettingsAndSearchContractTests` |  |
 | `GET /v1/external/search` | фронт | да — `SettingsAndSearchContractTests` |  |
 | `GET /v1/external/token/callback` | фронт | нет | OIDC-callback: нужен внешний провайдер, в тестовом хосте не поднимается |
-| `GET /v1/fake/login` | фронт | нет | провайдер входа для локальной разработки; в тестовом хосте контроллер FakeAuth не попадает в application parts — см. итог MAIN-13 |
+| `GET /v1/fake/login` | фронт | да — `AuthorizationContractTests` |  |
 | `GET /v1/reports/search` | фронт | да — `SettingsAndSearchContractTests` |  |
 | `GET /v1/settings-sections` | фронт | да — `SettingsAndSearchContractTests` |  |
 | `GET /v1/users/mattermost/callback` | фронт | нет | OAuth Mattermost: нужен внешний провайдер |

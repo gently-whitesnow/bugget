@@ -1,5 +1,6 @@
 using Bugget.Api.Authorization.Abstractions;
 using Bugget.Api.Authorization.Fake.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,6 +11,7 @@ namespace Bugget.Api.Authorization.Fake;
 public sealed class FakeController(
     IExternalAuthService externalAuth,
     IOptions<FakeAuthOptions> options,
+    IWebHostEnvironment environment,
     ILogger<FakeController> logger) : ControllerBase
 {
     private readonly FakeAuthOptions _options = options.Value;
@@ -24,13 +26,18 @@ public sealed class FakeController(
     /// <param name="name">User display name (optional)</param>
     /// <param name="imageUrl">User avatar URL (optional)</param>
     /// <param name="next">Redirect path after authorization (optional)</param>
-    [HttpGet("login")]
+    [AllowAnonymous, HttpGet("login")]
     public async Task<IActionResult> LoginAsync(
         [FromQuery] string externalId,
         [FromQuery] string? name = null,
         [FromQuery] string? imageUrl = null,
         [FromQuery] string? next = null)
     {
+        if (!environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
         if (string.IsNullOrWhiteSpace(externalId))
         {
             return BadRequest();

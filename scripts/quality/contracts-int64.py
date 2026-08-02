@@ -23,6 +23,15 @@
 Сравнение с pattern повторяет семантику .NET RegularExpressionAttribute: совпадение
 обязано покрыть строку целиком, иначе `123\\n` прошёл бы за счёт `$`.
 
+Первый инвариант проверяется по значению узла, а не по виду строки. Запрещено само
+объявление, а не одна его запись: блочный и flow-стиль, кавычки и экранирование
+(`"int\\x36\\x34"`), блочный скаляр, алиас на якорь с тем же значением, значение на
+следующей строке — это всё один и тот же `format: int64`. Гейт, который ловит одну
+форму записи из десяти, обходится случайно, без злого умысла.
+
+Документы разбирает закреплённый `js-yaml`, которым уже пользуется OpenAPI-toolchain.
+Гейт рекурсивно обходит полученный AST, а ошибка YAML краснит проверку целиком.
+
   contracts-int64.py              проверить
   contracts-int64.py --self-test  проверить, что гейт краснеет там, где обязан
 """
@@ -30,9 +39,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import pathlib
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -41,12 +52,9 @@ CONTRACTS = "specs/contracts"
 SHARED = "shared.yaml"
 SCHEMA = "Int64String"
 
-# Ключ `format: int64` именно как узел документа: те же слова внутри description —
-# это объяснение, а не объявление типа, и краснеть на нём нечему.
-FORMAT_INT64 = re.compile(r"^\s*format:\s*['\"]?int64['\"]?\s*(#.*)?$")
-
 # Схема shared.yaml: заголовок по отступу, тело — до следующего заголовка того же уровня.
 SCHEMA_HEADER = re.compile(rf"^(?P<indent>\s+){SCHEMA}:\s*$")
+AST_SCANNER = ROOT / "scripts/quality/contracts-int64-ast.mjs"
 
 MAX_INT64 = "9223372036854775807"
 
@@ -96,68 +104,48 @@ def matches(pattern: re.Pattern[str], value: str) -> bool:
     return match is not None and match.start() == 0 and match.end() == len(value)
 
 
-def read_pattern(shared: str) -> tuple[str | None, list[str]]:
-    """Достаёт `pattern` схемы Int64String из текста shared.yaml."""
-    problems: list[str] = []
-    lines = shared.splitlines()
-
-    start = None
-    indent = ""
-    for index, line in enumerate(lines):
-        header = SCHEMA_HEADER.match(line)
-        if header:
-            start = index + 1
-            indent = header.group("indent")
-            break
-
-    if start is None:
-        problems.append(
-            f"{CONTRACTS}/{SHARED}: схема {SCHEMA} не найдена — публичному Int64 нечем "
-            f"быть, а модулям не на что ссылаться"
+def parse_contracts(contracts: pathlib.Path) -> dict[str, object]:
+    """Разобрать все YAML настоящим parser toolchain и вернуть результат AST-обхода."""
+    try:
+        result = subprocess.run(
+            ["node", str(AST_SCANNER), str(contracts)],
+            check=False,
+            capture_output=True,
+            text=True,
         )
-        return None, problems
+    except OSError as error:
+        return {"problems": [f"AST-парсер не запущен: {error}"]}
 
-    body = []
-    for line in lines[start:]:
-        if line.strip() and not line.startswith(indent + " "):
-            break
-        body.append(line)
+    if result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip() or f"exit {result.returncode}"
+        return {"problems": [f"AST-парсер завершился с ошибкой: {detail}"]}
 
-    text = "\n".join(body)
-    if not re.search(r"^\s*type:\s*string\s*$", text, re.MULTILINE):
-        problems.append(f"{CONTRACTS}/{SHARED}: {SCHEMA} обязана быть `type: string`")
-
-    pattern = re.search(r"^\s*pattern:\s*'(?P<value>.+)'\s*$", text, re.MULTILINE)
-    if not pattern:
-        problems.append(
-            f"{CONTRACTS}/{SHARED}: у {SCHEMA} нет `pattern` — без него схема описывает "
-            f"любую строку, а не канон Int64"
-        )
-        return None, problems
-
-    return pattern.group("value"), problems
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        return {"problems": [f"AST-парсер вернул невалидный JSON: {error}"]}
 
 
 def check(contracts: pathlib.Path) -> list[str]:
-    problems: list[str] = []
-
-    for spec in sorted(contracts.rglob("*.yaml")):
-        relative = spec.relative_to(contracts.parent.parent)
-        for number, line in enumerate(spec.read_text(encoding="utf-8").splitlines(), 1):
-            if FORMAT_INT64.match(line):
-                problems.append(
-                    f"{relative}:{number}: `format: int64` в публичном контракте — "
-                    f"замените схему на $ref '../{SHARED}#/components/schemas/{SCHEMA}'"
-                )
-
-    shared = contracts / SHARED
-    if not shared.is_file():
-        problems.append(f"{CONTRACTS}/{SHARED} не найден")
+    parsed = parse_contracts(contracts)
+    problems = [str(problem) for problem in parsed.get("problems", [])]
+    schema = parsed.get("schema")
+    if not isinstance(schema, dict):
+        problems.append(
+            f"{CONTRACTS}/{SHARED}: схема {SCHEMA} не найдена — публичному Int64 нечем "
+            "быть, а модулям не на что ссылаться"
+        )
         return problems
 
-    pattern_text, pattern_problems = read_pattern(shared.read_text(encoding="utf-8"))
-    problems.extend(pattern_problems)
-    if pattern_text is None:
+    if schema.get("type") != "string":
+        problems.append(f"{CONTRACTS}/{SHARED}: {SCHEMA} обязана быть `type: string`")
+
+    pattern_text = schema.get("pattern")
+    if not isinstance(pattern_text, str):
+        problems.append(
+            f"{CONTRACTS}/{SHARED}: у {SCHEMA} нет `pattern` — без него схема описывает "
+            "любую строку, а не канон Int64"
+        )
         return problems
 
     try:
@@ -197,6 +185,182 @@ def self_test() -> int:
                 once=True,
             ),
             True,
+        ),
+        (
+            "flow-style `format: int64` тоже запрещён",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total: { type: integer, format: int64 }",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "ключ и значение в кавычках тоже запрещены",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                '        total: { "type": "integer", "format": "int64" }',
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "значение на следующей строке тоже запрещено",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          type: integer\n          format:\n            int64",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "блочный скаляр в значении тоже запрещён",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          type: integer\n          format: |-\n            int64",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "экранированное значение тоже запрещено",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                '        total: { type: integer, format: "int\\x36\\x34" }',
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "экранированный перенос в двойных кавычках тоже запрещён",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                '        total:\n          type: integer\n          format: "int\\\n            64"',
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "алиас на якорь с тем же значением тоже запрещён",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          x-format: &fmt int64\n          format: *fmt",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "алиас на другое значение объявлением не становится",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          x-format: &fmt date-time\n          format: *fmt",
+                once=True,
+            ),
+            False,
+        ),
+        (
+            "алиас на ключ `format` тоже запрещён",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          x-seed:\n            &fmt format: date-time\n"
+                "          ? *fmt\n          : int64",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "алиас на другой ключ объявлением не становится",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          x-seed:\n            &kind type: string\n"
+                "          ? *kind\n          : int64",
+                once=True,
+            ),
+            False,
+        ),
+        (
+            "неразрешённый алиас в ключе — красный, а не пропуск",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          ? *fmt\n          : int64",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "тег на ключе — красный, а не пропуск",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          !!str format: int64",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "неразрешённый алиас в значении `format` — красный, а не пропуск",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          format: *fmt",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "тег в значении `format` — красный, а не пропуск",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref: '../shared.yaml#/components/schemas/Int64String'",
+                "        total:\n          format: !!str int64",
+                once=True,
+            ),
+            True,
+        ),
+        (
+            "`format: int64` в блочном описании — объяснение, а не объявление",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref:",
+                "        total:\n          description: |-\n"
+                "            Раньше поле объявлялось как\n"
+                "            format: int64\n"
+                "          $ref:",
+                once=True,
+            ),
+            False,
+        ),
+        (
+            "`format: int64` внутри многострочной строки в кавычках — тоже не объявление",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref:",
+                '        total:\n          description: "Раньше поле объявлялось как\n'
+                '            format: int64"\n          $ref:',
+                once=True,
+            ),
+            False,
+        ),
+        (
+            "закомментированный `format: int64` ничего не объявляет",
+            lambda box: _patch(
+                box / "reports" / "openapi.yaml",
+                "        total:\n          $ref:",
+                "        total:\n          # format: int64\n          $ref:",
+                once=True,
+            ),
+            False,
         ),
         (
             "pattern ослаблен до любых цифр — пускает значение за Int64",

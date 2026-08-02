@@ -26,6 +26,14 @@ public class WireInt64Tests
         WireInt64.ToWire(long.MaxValue).Should().Be("9223372036854775807");
     }
 
+    [Fact(DisplayName = "ToWire: отрицательное внутреннее значение нарушает wire-инвариант и падает сразу")]
+    public void ToWire_rejects_negative_value()
+    {
+        var act = () => WireInt64.ToWire(-1);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
     /// <remarks>
     /// Культура потока подменяется намеренно: у неё свой разделитель групп, и
     /// форматирование «по умолчанию» отдало бы наружу что угодно, кроме канона.

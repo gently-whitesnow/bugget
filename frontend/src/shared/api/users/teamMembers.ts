@@ -26,13 +26,13 @@ export const listTeamMembers = (
 export const deleteTeamMember = (
   workspaceId: string | number,
   teamId: string | number,
-  userId: string | number
+  userId: string
 ) =>
   request(TEAM_MEMBER, "delete", {
     path: {
       workspaceId: String(workspaceId),
       teamId: Number(teamId),
-      userId: String(userId),
+      userId,
     },
   });
 

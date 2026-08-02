@@ -21,7 +21,10 @@ public class PostgresContainerFixture : IAsyncLifetime
             // проектов в один они делят один контейнер, и умолчание max_connections=100
             // упиралось в «sorry, too many clients already». Лимит поднят только в тестах;
             // deploy/docker-compose.yml не менялся.
-            .WithCommand("-c", "max_connections=500")
+            .WithCommand(
+                "-c", "max_connections=500",
+                "-c", "idle_in_transaction_session_timeout=60s",
+                "-c", "idle_session_timeout=15min")
             .Build();
 
     public async Task InitializeAsync()
@@ -47,4 +50,3 @@ public class PostgresContainerFixture : IAsyncLifetime
 
     public Task DisposeAsync() => Container.DisposeAsync().AsTask();
 }
-

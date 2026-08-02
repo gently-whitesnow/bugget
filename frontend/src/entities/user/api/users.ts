@@ -48,7 +48,7 @@ export const fetchCurrentUser = async (
 export const getUsersByIds = async (
   workspaceId: string | number,
   teamId: string | number,
-  userIds: (string | number)[]
+  userIds: string[]
 ): Promise<CurrentUserResponse[]> => {
   const users = await usersApi.listUsers(workspaceId, teamId, userIds);
   return users.map(usersApi.mapUserResponse);

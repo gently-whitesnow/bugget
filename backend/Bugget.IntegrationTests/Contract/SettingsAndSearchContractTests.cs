@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -109,7 +110,8 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
         var response = await scenario.Client.GetAsync("/v1/reports/search?query=репорт&skip=0&take=10");
 
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
-        Assert.Equal(1, body.GetProperty("total").GetInt32());
+        // `total` — канонический Int64 строкой (shared.yaml `Int64String`).
+        Assert.Equal("1", body.GetProperty("total").GetString());
         var report = Assert.Single(body.GetProperty("reports").EnumerateArray().ToArray());
         Assert.Equal("ищем именно этот репорт", report.GetProperty("title").GetString());
     }
@@ -162,7 +164,7 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
         // Внешние источники в тестовом контуре не настроены: путь живой и отдаёт
         // пустую выдачу, а не ошибку, — фронт рисует по ней «ничего не найдено».
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
-        Assert.Equal(0, body.GetProperty("total").GetInt32());
+        Assert.Equal("0", body.GetProperty("total").GetString());
         Assert.Empty(body.GetProperty("items").EnumerateArray().ToArray());
     }
 

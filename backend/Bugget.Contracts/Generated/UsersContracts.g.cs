@@ -432,11 +432,11 @@ namespace Bugget.Contracts.Users.Generated
         [System.Text.Json.Serialization.JsonPropertyName("workspace_id")]
         public int Workspace_id { get; set; }
 
-        /// <summary>
-        /// Пользователь.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("user_id")]
-        public long User_id { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(19)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(0|[1-9][0-9]*)$")]
+        public string User_id { get; set; }
 
         /// <summary>
         /// Роль в пространстве.
@@ -719,19 +719,20 @@ namespace Bugget.Contracts.Users.Generated
     }
 
     /// <summary>
-    /// Профиль так, как его отдаёт обновление: с внутренним числовым
-    /// <br/>идентификатором и внешним идентификатором провайдера.
+    /// Профиль так, как его отдаёт обновление: с внутренним
+    /// <br/>идентификатором (`id`, канонический Int64 строкой) и внешним
+    /// <br/>идентификатором провайдера (`external_id`).
     /// <br/>
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class UserProfile
     {
 
-        /// <summary>
-        /// Внутренний идентификатор.
-        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public long Id { get; set; }
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(19)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(0|[1-9][0-9]*)$")]
+        public string Id { get; set; }
 
         /// <summary>
         /// Идентификатор у провайдера входа.

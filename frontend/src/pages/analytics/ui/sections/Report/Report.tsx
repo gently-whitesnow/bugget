@@ -9,11 +9,12 @@ import {
   reportUnmounted,
   reportIdChanged,
 } from "../../../model/report";
+import type { WireInt64 } from "@/shared/api";
 import PhaseTimeline from "./components/PhaseTimeline";
 import BugsByStatusGrid from "./components/BugsByStatusGrid";
 
 type Props = {
-  reportId: number | undefined;
+  reportId: WireInt64 | undefined;
 };
 
 const AnalyticsReport = ({ reportId }: Props) => {
@@ -29,7 +30,7 @@ const AnalyticsReport = ({ reportId }: Props) => {
 
   // Sync props → model.
   useEffect(() => {
-    onReportIdChanged(typeof reportId === "number" ? reportId : null);
+    onReportIdChanged(reportId ?? null);
   }, [reportId, onReportIdChanged]);
 
   useEffect(() => {
@@ -39,7 +40,7 @@ const AnalyticsReport = ({ reportId }: Props) => {
     };
   }, [onMounted, onUnmounted]);
 
-  if (typeof reportId !== "number") {
+  if (reportId === undefined) {
     return (
       <div className="rounded-md border border-base-300 bg-base-100 p-6 text-sm text-base-content/60">
         Выберите репорт из списка «Топ репортов с регрессиями» в разделе

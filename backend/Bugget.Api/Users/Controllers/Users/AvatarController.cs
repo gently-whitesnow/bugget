@@ -101,12 +101,19 @@ public sealed class AvatarController(
     /// <summary>
     /// Получить аватар пользователя из текущего workspace
     /// </summary>
+    /// <remarks>
+    /// Сегмент объявлен строкой канонического Int64 (shared.yaml
+    /// <c>Int64String</c>), внутрь уходит <c>long</c>. Ограничение маршрута
+    /// <c>:long</c> оставлено: нечисловой и вылезающий за Int64 сегмент, как и
+    /// раньше, отбивается как 404, а неканоничный (<c>-5</c>, <c>007</c>) до
+    /// сервиса не доезжает — <see cref="WireInt64"/> отвечает 400.
+    /// </remarks>
     [WorkspaceRequired]
     [RouteParameterConstraint("userId", "long")]
     public override async Task<IActionResult> GetUserAvatarContentInContext(
         string workspaceId,
         string teamId,
-        long userId,
+        string userId,
         CancellationToken cancellationToken = default)
     {
         var identity = User.GetIdentity();
@@ -115,7 +122,13 @@ public sealed class AvatarController(
             return NotFound();
         }
 
-        var users = await userService.ListUsersAsync([userId], identity.WorkspaceId);
+        var invalidUserId = WireInt64.TryBindRouteValue(HttpContext, "userId", userId, out var id);
+        if (invalidUserId is not null)
+        {
+            return invalidUserId;
+        }
+
+        var users = await userService.ListUsersAsync([id], identity.WorkspaceId);
         var user = users.FirstOrDefault();
         if (user?.ImageUrl is null)
         {

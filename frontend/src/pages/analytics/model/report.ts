@@ -1,12 +1,19 @@
 import { createEffect, createEvent, createStore, sample } from "effector";
 
-import { analyticsApi, type AnalyticsReport } from "@/shared/api";
+import {
+  analyticsApi,
+  isWireInt64,
+  type AnalyticsReport,
+  type WireInt64,
+} from "@/shared/api";
 
 /**
  * Effector-модель Разреза 2 (детализация по конкретному репорту).
  *
  * - `$reportIdStore` — выбранный reportId (источник истины — URL ?report=...).
- *   `null` означает «репорт не выбран».
+ *   `null` означает «репорт не выбран». Хранится строкой канона `Int64String`:
+ *   числом идентификатор терял бы точность за 2^53−1, и запрос уходил бы на
+ *   соседний репорт.
  * - `$reportStore` — последний успешный ответ /v2/reports/{id}/analytics
  *   (sub-resource на репорте, после R6).
  * - `fetchReportFx` — запрос детальной аналитики.
@@ -15,15 +22,15 @@ import { analyticsApi, type AnalyticsReport } from "@/shared/api";
  * перезапускает fetch. При сбросе reportId в null — стор обнуляется.
  */
 
-export const reportIdChanged = createEvent<number | null>();
+export const reportIdChanged = createEvent<WireInt64 | null>();
 export const reportMounted = createEvent();
 export const reportUnmounted = createEvent();
 
-export const fetchReportFx = createEffect<number, AnalyticsReport>(
+export const fetchReportFx = createEffect<WireInt64, AnalyticsReport>(
   async (reportId) => analyticsApi.getReportAnalytics(reportId)
 );
 
-export const $reportIdStore = createStore<number | null>(null).on(
+export const $reportIdStore = createStore<WireInt64 | null>(null).on(
   reportIdChanged,
   (_, id) => id
 );
@@ -45,8 +52,7 @@ const $isMounted = createStore(false)
 sample({
   clock: [reportMounted, reportIdChanged],
   source: { reportId: $reportIdStore, mounted: $isMounted },
-  filter: ({ reportId, mounted }) =>
-    typeof reportId === "number" && Number.isFinite(reportId) && mounted,
-  fn: ({ reportId }) => reportId as number,
+  filter: ({ reportId, mounted }) => isWireInt64(reportId) && mounted,
+  fn: ({ reportId }) => reportId as WireInt64,
   target: fetchReportFx,
 });

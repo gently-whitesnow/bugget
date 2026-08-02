@@ -6,6 +6,7 @@ import Team from "./sections/Team/Team";
 import Responsible from "./sections/Responsible/Responsible";
 import Report from "./sections/Report/Report";
 import { parsePeriod, type AnalyticsPeriod } from "@/shared/lib/time";
+import { isWireInt64 } from "@/shared/api";
 
 import {
   parseSection,
@@ -29,11 +30,13 @@ const Analytics = () => {
   const teamIdParam = searchParams.get("team");
   const userIdParam = searchParams.get("user");
   const reportIdParam = searchParams.get("report");
-  const reportIdFromQuery = useMemo(() => {
-    if (!reportIdParam) return undefined;
-    const parsed = parseInt(reportIdParam, 10);
-    return Number.isNaN(parsed) ? undefined : parsed;
-  }, [reportIdParam]);
+  // `?report=` приходит из адреса, а не с провода, поэтому канон проверяется
+  // здесь: неканоничный сегмент к ручке не уходит. Разбирать его в число нельзя —
+  // идентификатор за 2^53−1 округлился бы и открыл соседний репорт.
+  const reportIdFromQuery = useMemo(
+    () => (isWireInt64(reportIdParam) ? reportIdParam : undefined),
+    [reportIdParam]
+  );
 
   const updateQuery = useCallback(
     (mutate: (next: URLSearchParams) => void) => {

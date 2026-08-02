@@ -45,7 +45,7 @@ const wireSummary: analyticsComponents["schemas"]["AnalyticsSummary"] = {
   reports_closed: 4,
   phase_time_distribution: { test_pct: 0.6, fix_pct: 0.4 },
   top_regression_reports: [
-    { report_id: 12, title: "Падает карточка", regression_cycles: 2 },
+    { report_id: "12", title: "Падает карточка", regression_cycles: 2 },
   ],
   phase_trends_weekly: [
     { iso_week: "2026-W30", test_days: 1.5, fix_days: 0.5, reports_closed: 2 },
@@ -53,7 +53,7 @@ const wireSummary: analyticsComponents["schemas"]["AnalyticsSummary"] = {
 };
 
 const wireReport: reportsComponents["schemas"]["AnalyticsReport"] = {
-  report_id: 12,
+  report_id: "12",
   phase_timeline: [
     {
       phase: "Test",
@@ -81,7 +81,7 @@ const expectedSummary: AnalyticsSummary = {
   reportsClosed: 4,
   phaseTimeDistribution: { testPct: 0.6, fixPct: 0.4 },
   topRegressionReports: [
-    { reportId: 12, title: "Падает карточка", regressionCycles: 2 },
+    { reportId: "12", title: "Падает карточка", regressionCycles: 2 },
   ],
   phaseTrendsWeekly: [
     { isoWeek: "2026-W30", testDays: 1.5, fixDays: 0.5, reportsClosed: 2 },
@@ -89,7 +89,7 @@ const expectedSummary: AnalyticsSummary = {
 };
 
 const expectedReport: AnalyticsReport = {
-  reportId: 12,
+  reportId: "12",
   phaseTimeline: [
     {
       phase: "Test",

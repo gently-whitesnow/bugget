@@ -14,7 +14,7 @@ import type {
  * в LIST больше нет.
  */
 const wireListResponse: components["schemas"]["ReportList"] = {
-  total: 2,
+  total: "2",
   reports: [
     {
       id: "42",
@@ -81,7 +81,8 @@ describe("формы списка репортов выведены из кон�
     // Ровно то, что делает case-conversion интерсептор в shared/api/instances/base.ts.
     const list = convertObjectToCamel(wireListResponse) as ListReportsResponse;
 
-    expect(list.total).toBe(2);
+    // `total` — канон Int64String: строка с провода строкой и остаётся.
+    expect(list.total).toBe("2");
 
     const [report] = list.reports;
     expect(report.responsibleUserId).toBe("u-1");

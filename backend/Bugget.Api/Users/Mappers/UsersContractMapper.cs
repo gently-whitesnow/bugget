@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Bugget.Api.Http;
 using Bugget.Api.Users.Controllers.TeamMembers;
 using Bugget.Api.Users.Controllers.Teams;
 using Bugget.Api.Users.Controllers.Users;
@@ -31,7 +32,10 @@ internal static class UsersContractMapper
 
     public static UserProfile ToContract(this DomainModel.User model) => new()
     {
-        Id = model.Id,
+        // Внутренний `long` наружу уходит каноническим Int64 строкой
+        // (shared.yaml `Int64String`): у единственного клиента JSON-число —
+        // double, и идентификатор больше 2^53−1 округлился бы молча.
+        Id = WireInt64.ToWire(model.Id),
         External_id = model.ExternalId,
         Name = model.Name,
         Image_url = model.ImageUrl,
@@ -70,7 +74,7 @@ internal static class UsersContractMapper
     public static WorkspaceMember ToContract(this DomainModel.WorkspaceMember model) => new()
     {
         Workspace_id = model.WorkspaceId,
-        User_id = model.UserId,
+        User_id = WireInt64.ToWire(model.UserId),
         Role = model.Role,
         Created_at = model.CreatedAt,
     };

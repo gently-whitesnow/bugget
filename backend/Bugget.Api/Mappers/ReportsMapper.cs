@@ -1,3 +1,4 @@
+using Bugget.Api.Http;
 using Bugget.Application.Results;
 using Bugget.Application.Results.Reports;
 using Bugget.Contracts.Reports.Generated;
@@ -111,7 +112,9 @@ internal static class ReportsMapper
 
     public static ReportList ToContract(this ReportViews views) => new()
     {
-        Total = views.Total,
+        // `total` и `count` уходят каноническим Int64 строкой (shared.yaml
+        // `Int64String`): у единственного клиента JSON-число — double.
+        Total = WireInt64.ToWire(views.Total),
         Reports = views.Reports.Select(ToListContract).ToArray(),
     };
 
@@ -122,7 +125,7 @@ internal static class ReportsMapper
     public static ReportCountsBatchResponse ToCountsContract(this IEnumerable<KeyValuePair<string, long>> counts) => new()
     {
         Counts = counts
-            .Select(pair => new ReportCountsItem { Key = pair.Key, Count = pair.Value })
+            .Select(pair => new ReportCountsItem { Key = pair.Key, Count = WireInt64.ToWire(pair.Value) })
             .ToArray(),
     };
 

@@ -7,6 +7,7 @@ import { $reportsUsersStore } from "@/entities/report-list";
 import { ReportCard } from "@/entities/report";
 import { lastReportsDashboardTake } from "@/shared/config";
 import { buildFullAppUrl } from "@/shared/lib/buildFullUrl";
+import { compareWireInt64 } from "@/shared/api";
 import type { ListReportsResponse } from "@/entities/report-list";
 
 type Props = {
@@ -63,7 +64,7 @@ const LastReportsSection = ({
               />
             ))}
           </div>
-          {data.total > lastReportsDashboardTake && (
+          {compareWireInt64(data.total, lastReportsDashboardTake) > 0 && (
             <div>
               <span className="text-xs text-base-content/50">
                 Больше репортов{" "}

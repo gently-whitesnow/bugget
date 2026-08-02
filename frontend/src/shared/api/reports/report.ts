@@ -45,7 +45,9 @@ export const resolveLegacyReport = (legacyId: string) =>
 
 export type ReportAnalyticsResult = Result<"/v2/reports/{id}/analytics", "get">;
 
-export const getReportAnalytics = (id: number) =>
+// Сегмент объявлен строкой канона `Int64String`: числом идентификатор терял бы
+// точность за 2^53−1 и адрес уезжал бы на соседний репорт.
+export const getReportAnalytics = (id: string) =>
   request("/v2/reports/{id}/analytics", "get", { path: { id } });
 
 export type ReportCountsBody = Body<"/v2/reports/counts:batch", "post">;

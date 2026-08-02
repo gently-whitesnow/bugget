@@ -1,6 +1,9 @@
 import { useSearchParams } from "react-router";
 
-import type { AnalyticsResponsibleCompletedReport } from "@/shared/api";
+import type {
+  AnalyticsResponsibleCompletedReport,
+  WireInt64,
+} from "@/shared/api";
 
 type Props = {
   reports: AnalyticsResponsibleCompletedReport[];
@@ -47,14 +50,12 @@ const formatDate = (iso: string): string => {
 const CompletedReports = ({ reports }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // `report_id` (провод) необязателен по контракту analytics (см. TopRegressionReports):
-  // без id не навигируем, вместо того чтобы открывать репорт №0.
-  const openReport = (reportId: number | undefined) => {
-    if (reportId === undefined) return;
-
+  // `report_id` обязателен по контракту analytics (см. TopRegressionReports) и
+  // приходит строкой канона `Int64String`: в адрес уходит дословно.
+  const openReport = (reportId: WireInt64) => {
     const next = new URLSearchParams(searchParams);
     next.set("section", "report");
-    next.set("report", String(reportId));
+    next.set("report", reportId);
     setSearchParams(next);
   };
 

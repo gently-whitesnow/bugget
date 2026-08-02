@@ -495,11 +495,7 @@ export interface components {
         WorkspaceMember: {
             /** @description Рабочее пространство. */
             workspace_id: number;
-            /**
-             * Format: int64
-             * @description Пользователь.
-             */
-            user_id: number;
+            user_id: components["schemas"]["Int64String"];
             /** @description Роль в пространстве. */
             role: string;
             /**
@@ -582,15 +578,12 @@ export interface components {
             mattermost_user_id: string | null;
         };
         /**
-         * @description Профиль так, как его отдаёт обновление: с внутренним числовым
-         *     идентификатором и внешним идентификатором провайдера.
+         * @description Профиль так, как его отдаёт обновление: с внутренним
+         *     идентификатором (`id`, канонический Int64 строкой) и внешним
+         *     идентификатором провайдера (`external_id`).
          */
         UserProfile: {
-            /**
-             * Format: int64
-             * @description Внутренний идентификатор.
-             */
-            id: number;
+            id: components["schemas"]["Int64String"];
             /** @description Идентификатор у провайдера входа. */
             external_id: string;
             /** @description Отображаемое имя. */
@@ -664,6 +657,21 @@ export interface components {
                 [key: string]: string[];
             };
         };
+        /**
+         * @description Неотрицательное 64-битное целое на проводе — строкой, а не числом.
+         *
+         *     Причина: у API ровно один клиент, и в нём JSON-число это IEEE-754
+         *     double. Всё, что больше 2^53−1, теряет точность молча:
+         *     `9007199254740993` доезжает как `9007199254740992`, и ссылка,
+         *     ключ списка и запрос уходят на соседнюю запись. `format: int64`
+         *     в публичном контракте описывал ровно эту дыру.
+         *
+         *     Канон провода: `0` либо `[1-9][0-9]*` — без знака, ведущих нулей,
+         *     экспоненты, разделителей и пробелов. OpenAPI ограничивает лексическую
+         *     форму и длину; точный диапазон `0..9223372036854775807` проверяет
+         *     HTTP-граница `WireInt64` при разборе path и построении response.
+         */
+        Int64String: string;
     };
     responses: {
         /** @description Содержимое аватара. Content-Type — по расширению файла. */
@@ -732,8 +740,12 @@ export interface components {
          *     из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.
          */
         TeamIdIgnored: string;
-        /** @description Идентификатор пользователя. */
-        UserId: number;
+        /**
+         * @description Идентификатор пользователя. Строка канонического Int64
+         *     (см. shared.yaml `Int64String`): числом сегмент терял бы точность
+         *     у единственного клиента API.
+         */
+        UserId: components["schemas"]["Int64String"];
         /** @description Провайдер входа, например `mattermost`. */
         Provider: string;
     };
@@ -1282,7 +1294,11 @@ export interface operations {
                  *     из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.
                  */
                 teamId: components["parameters"]["TeamIdIgnored"];
-                /** @description Идентификатор пользователя. */
+                /**
+                 * @description Идентификатор пользователя. Строка канонического Int64
+                 *     (см. shared.yaml `Int64String`): числом сегмент терял бы точность
+                 *     у единственного клиента API.
+                 */
                 userId: components["parameters"]["UserId"];
             };
             cookie?: never;
@@ -1697,7 +1713,11 @@ export interface operations {
                 workspaceId: components["parameters"]["WorkspaceIdIgnored"];
                 /** @description Идентификатор команды. */
                 teamId: components["parameters"]["TeamId"];
-                /** @description Идентификатор пользователя. */
+                /**
+                 * @description Идентификатор пользователя. Строка канонического Int64
+                 *     (см. shared.yaml `Int64String`): числом сегмент терял бы точность
+                 *     у единственного клиента API.
+                 */
                 userId: components["parameters"]["UserId"];
             };
             cookie?: never;

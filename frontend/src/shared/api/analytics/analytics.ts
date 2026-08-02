@@ -59,7 +59,7 @@ export const getAnalyticsByResponsible = (
  * путём: у каждого пути ровно одна транспортная граница.
  */
 export const getReportAnalytics = (
-  reportId: number
+  reportId: string
 ): Promise<AnalyticsReport> => reportsApi.getReportAnalytics(reportId);
 
 /* ── Формы ответов ─────────────────────────────────────────────────────────── */

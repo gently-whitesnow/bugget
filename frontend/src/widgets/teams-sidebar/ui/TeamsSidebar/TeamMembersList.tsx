@@ -17,7 +17,7 @@ export const TeamMembersList: FC = () => {
   const removeMember = useUnit(deleteMember);
   const { user, isAdmin } = useSidebarUser();
 
-  const handleDeleteMember = (userId: number, userName: string) => {
+  const handleDeleteMember = (userId: string, userName: string) => {
     const confirmed = confirm(
       `Вы уверены, что хотите удалить ${userName} из команды?`
     );
@@ -48,16 +48,14 @@ export const TeamMembersList: FC = () => {
             )}
             <span className="text-base-content/80">{member.name}</span>
           </div>
-          {isAdmin && String(member.id) !== String(user?.id) && (
+          {isAdmin && member.id !== user?.id && (
             <button
-              onClick={() => handleDeleteMember(Number(member.id), member.name)}
-              disabled={
-                deletingUserId !== null && deletingUserId === Number(member.id)
-              }
+              onClick={() => handleDeleteMember(member.id, member.name)}
+              disabled={deletingUserId !== null && deletingUserId === member.id}
               className="btn btn-xs btn-ghost text-error hover:bg-error/10 opacity-0 group-hover:opacity-100 transition-opacity"
               title="Удалить участника"
             >
-              {deletingUserId === Number(member.id) ? (
+              {deletingUserId === member.id ? (
                 <span className="loading loading-spinner loading-xs"></span>
               ) : (
                 <UserX className="w-3 h-3" />

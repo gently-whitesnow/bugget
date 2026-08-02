@@ -40,6 +40,33 @@ public sealed class AuthorizationContractTests(AppContractFixture fixture) : ICl
         Assert.Equal(HttpStatusCode.OK, sessionResponse.StatusCode);
     }
 
+    [Theory(DisplayName = "GET /v1/fake/login с пустым externalId: 400 без auth-cookie")]
+    [InlineData("")]
+    [InlineData("%20%20")]
+    public async Task FakeLoginRejectsEmptyExternalId(string externalId)
+    {
+        var client = fixture.CreateAnonymousClientWithoutRedirects();
+
+        var response = await client.GetAsync($"/v1/fake/login?externalId={externalId}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.False(response.Headers.Contains("Set-Cookie"));
+    }
+
+    [Theory(DisplayName = "GET /v1/fake/login принимает только безопасный локальный next")]
+    [InlineData("/reports/42?tab=activity", "http://localhost/reports/42?tab=activity")]
+    [InlineData("https://evil.example/steal", "http://localhost/")]
+    public async Task FakeLoginSanitizesNext(string next, string expectedLocation)
+    {
+        var client = fixture.CreateAnonymousClientWithoutRedirects();
+
+        var response = await client.GetAsync(
+            $"/v1/fake/login?externalId=next-{Guid.NewGuid():N}&next={Uri.EscapeDataString(next)}");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(expectedLocation, response.Headers.Location?.OriginalString);
+    }
+
     [Fact(DisplayName = "GET /_internal/auth без токена: 401 — nginx отдаст фронту 401/редирект")]
     public async Task InternalAuthWithoutToken()
     {

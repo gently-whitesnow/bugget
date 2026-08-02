@@ -11,6 +11,7 @@ namespace Bugget.Api.Authorization.Fake;
 public sealed class FakeController(
     IExternalAuthService externalAuth,
     IOptions<FakeAuthOptions> options,
+    IWebHostEnvironment environment,
     ILogger<FakeController> logger) : ControllerBase
 {
     private readonly FakeAuthOptions _options = options.Value;
@@ -32,6 +33,11 @@ public sealed class FakeController(
         [FromQuery] string? imageUrl = null,
         [FromQuery] string? next = null)
     {
+        if (!environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
         if (string.IsNullOrWhiteSpace(externalId))
         {
             return BadRequest();

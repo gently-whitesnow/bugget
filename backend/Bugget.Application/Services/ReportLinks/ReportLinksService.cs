@@ -15,7 +15,7 @@ public sealed class ReportLinksService(
     ReportLinkEventsService reportLinkEventsService,
     ITaskQueue taskQueue,
     IReportsService reportsService,
-    IOptions<ReportAliasOptions> aliasOptions) : IReportLinksService
+    IOptions<ReportAliasOptions> aliasOptions) : IReportLinksService, IReportLinkCreator
 {
     public async Task<(ReportLink? Value, Error? Error)> CreateReportLinkAsync(UserIdentity user, string aliasId, ReportLinkDto dto)
     {

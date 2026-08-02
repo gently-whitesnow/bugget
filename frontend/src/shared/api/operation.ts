@@ -21,7 +21,15 @@ import type { QueryValue } from "./buildQuery";
 
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
 
-export type ResponseValidator = (data: unknown) => void;
+export type ResponseValidatorContext = {
+  path: string;
+  method: HttpMethod;
+};
+
+export type ResponseValidator = (
+  data: unknown,
+  context: ResponseValidatorContext
+) => void;
 
 /** `never` и `undefined` в сгенерированных типах значат «этого у операции нет». */
 type Present<T> = [NonNullable<T>] extends [never] ? never : NonNullable<T>;
@@ -245,6 +253,6 @@ export const createOperationRequest =
         : {}),
     });
 
-    validateResponse?.(response.data);
+    validateResponse?.(response.data, { path, method: method as HttpMethod });
     return response.data;
   };

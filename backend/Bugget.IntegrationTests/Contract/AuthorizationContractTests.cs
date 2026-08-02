@@ -17,6 +17,29 @@ namespace Bugget.IntegrationTests.Contract;
 [Collection("PostgresCollection")]
 public sealed class AuthorizationContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
+    [Fact(DisplayName = "GET /v1/fake/login без identity: 302, auth-cookie и рабочая сессия")]
+    public async Task FakeLoginWithoutIdentity()
+    {
+        var client = fixture.CreateAnonymousClientWithoutRedirects();
+
+        var response = await client.GetAsync(
+            $"/v1/fake/login?externalId=contract-{Guid.NewGuid():N}&name=Contract%20User");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("http://localhost/", response.Headers.Location?.OriginalString);
+
+        var cookies = response.Headers.GetValues("Set-Cookie").ToArray();
+        var accessCookie = Assert.Single(
+            cookies,
+            cookie => cookie.StartsWith("access_token=", StringComparison.Ordinal));
+        Assert.Contains(cookies, cookie => cookie.StartsWith("refresh_token=", StringComparison.Ordinal));
+
+        var sessionClient = fixture.CreateAnonymousClient();
+        sessionClient.DefaultRequestHeaders.Add("Cookie", accessCookie.Split(';', 2)[0]);
+        var sessionResponse = await sessionClient.GetAsync("/_internal/auth");
+        Assert.Equal(HttpStatusCode.OK, sessionResponse.StatusCode);
+    }
+
     [Fact(DisplayName = "GET /_internal/auth без токена: 401 — nginx отдаст фронту 401/редирект")]
     public async Task InternalAuthWithoutToken()
     {

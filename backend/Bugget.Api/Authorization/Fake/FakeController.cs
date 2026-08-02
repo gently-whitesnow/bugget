@@ -1,5 +1,6 @@
 using Bugget.Api.Authorization.Abstractions;
 using Bugget.Api.Authorization.Fake.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,7 +25,7 @@ public sealed class FakeController(
     /// <param name="name">User display name (optional)</param>
     /// <param name="imageUrl">User avatar URL (optional)</param>
     /// <param name="next">Redirect path after authorization (optional)</param>
-    [HttpGet("login")]
+    [AllowAnonymous, HttpGet("login")]
     public async Task<IActionResult> LoginAsync(
         [FromQuery] string externalId,
         [FromQuery] string? name = null,

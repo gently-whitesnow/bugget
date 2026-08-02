@@ -62,6 +62,14 @@ public sealed class AppContractFixture
     /// </summary>
     public HttpClient CreateAnonymousClient() => SharedApp.Value.CreateClient();
 
+    /// <summary>
+    /// Клиент без identity-заголовков и автоматического перехода по redirect.
+    /// Нужен для проверки провайдеров входа: их redirect и auth-cookie являются
+    /// частью ответа, который браузер получает до перехода.
+    /// </summary>
+    public HttpClient CreateAnonymousClientWithoutRedirects() => SharedApp.Value.CreateClient(
+        new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
     /// <summary>Адрес тестового хоста — от него строится URL хаба.</summary>
     public Uri BaseAddress => SharedApp.Value.Server.BaseAddress;
 

@@ -7,6 +7,7 @@ import type {
   OperationQuery,
   OperationResponse,
 } from "@/shared/api/operation";
+import { validateReportsResponseEnums } from "./validateResponseEnums";
 
 /**
  * Ядро единственной транспортной границы модуля `reports`.
@@ -26,7 +27,10 @@ import type {
  * camelCase, на проводе snake_case; query и path — как в контракте; массив в
  * query уходит повторяющимся ключом; multipart не конвертируется.
  */
-export const request = createOperationRequest<paths>(appApi);
+export const request = createOperationRequest<paths>(
+  appApi,
+  validateReportsResponseEnums
+);
 
 /** Короткая запись для тела запроса операции. */
 export type Body<

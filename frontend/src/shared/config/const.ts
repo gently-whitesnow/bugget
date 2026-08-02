@@ -1,5 +1,18 @@
 import { StatusMeta } from "@/shared/lib/types";
-import type { components } from "@/shared/api/generated/reports";
+import {
+  AttachmentTypes,
+  BugStatuses,
+  CommentAudiences,
+  CreatorTypes,
+  ReportStatuses,
+} from "@/shared/api/reports/enumValues";
+export {
+  AttachmentTypes,
+  BugStatuses,
+  CommentAudiences,
+  CreatorTypes,
+  ReportStatuses,
+};
 import {
   CircleDashed,
   Clock,
@@ -11,48 +24,12 @@ import {
   FlaskConical,
 } from "lucide-react";
 
-/**
- * Значения enum-полей провода — строки `snake_case` из
- * `specs/contracts/reports/openapi.yaml` (ADR-0012). Числовое представление
- * осталось только в БД бекенда и в payload'ах SignalR; перевод числа в значение
- * провода живёт на своих границах, а не размазан по компонентам.
- *
- * Это `as const`-объекты, а не `enum`: тип берётся из контракта, поэтому
- * пропавшее или переименованное в yaml значение ломает сборку здесь, а не
- * молча расходится с сервером. У `enum` такой связи нет — литерал провода в
- * него не подставить.
- */
-export const BugStatuses = {
-  OPEN: "open",
-  VERIFIED: "verified",
-  REJECTED: "rejected",
-  FIXED: "fixed",
-} as const satisfies Record<string, BugStatuses>;
-export type BugStatuses = components["schemas"]["BugStatus"];
-
-export const ReportStatuses = {
-  BACKLOG: "backlog",
-  RESOLVED: "resolved",
-  FIX: "fix",
-  REJECTED: "rejected",
-  TEST: "test",
-} as const satisfies Record<string, ReportStatuses>;
-export type ReportStatuses = components["schemas"]["ReportStatus"];
-
 export enum RequestStates {
   IDLE = 0,
   PENDING = 1,
   DONE = 2,
   ERROR = 3,
 }
-
-export const AttachmentTypes = {
-  FACT: "fact",
-  EXPECT: "expected",
-  COMMENT: "comment",
-  BUG_STEP: "bug_step",
-} as const satisfies Record<string, AttachmentTypes>;
-export type AttachmentTypes = components["schemas"]["AttachType"];
 
 export const reportStatusMap: Record<ReportStatuses, StatusMeta> = {
   [ReportStatuses.FIX]: {
@@ -137,20 +114,6 @@ export enum SettingTypes {
   TEAM = "team",
   USER = "user",
 }
-
-export const CreatorTypes = {
-  USER: "user",
-  SYSTEM: "system",
-  /** Внешний автор через beta-test bot — на проводе был и раньше, в константах нет. */
-  TG_BETA_TESTER: "tg_beta_tester",
-} as const satisfies Record<string, CreatorTypes>;
-export type CreatorTypes = components["schemas"]["CreatorType"];
-
-export const CommentAudiences = {
-  INTERNAL: "internal",
-  EXTERNAL: "external",
-} as const satisfies Record<string, CommentAudiences>;
-export type CommentAudiences = components["schemas"]["CommentAudience"];
 
 export enum BootstrapStatus {
   NO_WORKSPACE = "no-workspace",

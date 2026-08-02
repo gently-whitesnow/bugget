@@ -99,4 +99,14 @@ describe("внешний автор через beta-test bot", () => {
 
     expect(name).toBe("Тестер");
   });
+
+  it("неизвестный HTTP creator_type не маскируется под внутреннего пользователя", () => {
+    const users = {
+      "u-1": { name: "Внутренний пользователь" },
+    } as unknown as Parameters<typeof resolveCreatorName>[2]["users"];
+
+    const name = resolveCreatorName("u-1", "unknown" as never, { users });
+
+    expect(name).not.toBe("Внутренний пользователь");
+  });
 });

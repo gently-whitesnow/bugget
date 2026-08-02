@@ -76,7 +76,7 @@ public sealed class UnauthorizedContractTests(AppContractFixture fixture) : ICla
         var client = fixture.CreateAnonymousClient();
 
         var response = await client.PostAsync(
-            "/v2/reports/1/bugs/1/attachments?attachType=0",
+            "/v2/reports/1/bugs/1/attachments?attachType=fact",
             ContractScenario.FileContent("shot.png"));
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

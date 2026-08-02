@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios";
 import { createApiInstance } from "./instances/base";
 import { createOperationRequest } from "./operation";
-import type { OperationCallArgs } from "./operation";
+import type { OperationCallArgs, ResponseValidator } from "./operation";
 import type { paths } from "@/shared/api/generated/reports";
 
 /**
@@ -49,7 +49,7 @@ const uploadQueryIsRequired: Equal<
 /** У списка фильтры необязательны — вызов без query остаётся законным. */
 const optionalQueryStaysOptional: object extends ListArgs ? true : false = true;
 
-const instanceCapturingRequest = () => {
+const instanceCapturingRequest = (validateResponse?: ResponseValidator) => {
   let captured: InternalAxiosRequestConfig | null = null;
   const instance = createApiInstance();
   instance.defaults.adapter = (async (config) => {
@@ -64,7 +64,7 @@ const instanceCapturingRequest = () => {
   }) as AxiosAdapter;
 
   return {
-    request: createOperationRequest<paths>(instance),
+    request: createOperationRequest<paths>(instance, validateResponse),
     sent: () => {
       if (!captured) throw new Error("Запрос не был отправлен");
       return captured;
@@ -81,6 +81,20 @@ describe("обязательность query выведена из контра�
 });
 
 describe("адрес на проводе", () => {
+  it("передаёт validator'у contract path и method, а не собранный URL", async () => {
+    const validateResponse = vi.fn<ResponseValidator>();
+    const { request } = instanceCapturingRequest(validateResponse);
+
+    await request("/v2/reports/{aliasId}", "get", {
+      path: { aliasId: "team-42" },
+    });
+
+    expect(validateResponse).toHaveBeenCalledWith(null, {
+      path: "/v2/reports/{aliasId}",
+      method: "get",
+    });
+  });
+
   it("переданный, но пустой query оставляет хвостовой «?» — как рукописный вызов", async () => {
     const { request, sent } = instanceCapturingRequest();
 

@@ -15,18 +15,18 @@ const internalUserResolver: CreatorResolver = (id, { users }) =>
 
 const systemResolver: CreatorResolver = () => "Система";
 
-const resolvers: Partial<Record<CreatorTypes, CreatorResolver>> = {
+const resolvers: Record<CreatorTypes, CreatorResolver> = {
   [CreatorTypes.USER]: internalUserResolver,
   [CreatorTypes.SYSTEM]: systemResolver,
+  [CreatorTypes.TG_BETA_TESTER]: internalUserResolver,
 };
 
 export const resolveCreatorName = (
   creatorUserId: string,
-  creatorType: number,
+  creatorType: CreatorTypes,
   ctx: CreatorResolverContext
 ): string | null => {
   if (!creatorUserId) return null;
-  const resolver =
-    resolvers[creatorType as CreatorTypes] ?? internalUserResolver;
-  return resolver(creatorUserId, ctx);
+  const resolver: CreatorResolver | undefined = resolvers[creatorType];
+  return resolver?.(creatorUserId, ctx) ?? null;
 };

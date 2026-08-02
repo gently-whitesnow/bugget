@@ -24,7 +24,7 @@ import type {
 } from "@/shared/model";
 import { notificationMessages, notifyErrorRequested } from "@/shared/model";
 import type { BugClientEntity } from "./model/types";
-import { bugFromSocket } from "./lib/fromSocket";
+import { bugFromSocket, bugStatusPatchFromSocket } from "./lib/fromSocket";
 
 /**
  * Эффекты
@@ -163,7 +163,7 @@ export const $creatorUserIdStore = createStore<string>("")
   .on(getReportFx.doneData, (_, report) => report.creatorUserId)
   .reset(clearReport);
 
-export const $creatorTypeStore = createStore<number>(CreatorTypes.USER)
+export const $creatorTypeStore = createStore<CreatorTypes>(CreatorTypes.USER)
   .on(getReportFx.doneData, (_, report) => report.creatorType)
   .on(createReportFx.doneData, (_, report) => report.creatorType)
   .reset(clearReport);
@@ -320,7 +320,7 @@ export const $bugsStore = createStore<Record<number, BugClientEntity>>({})
         title: updatedBug.title,
         receive: updatedBug.receive,
         expect: updatedBug.expect,
-        status: updatedBug.status as BugStatuses,
+        status: updatedBug.status,
         updatedAt: updatedBug.updatedAt,
       },
     };
@@ -336,7 +336,7 @@ export const $bugsStore = createStore<Record<number, BugClientEntity>>({})
         title: patch.title ?? existingBug.title,
         receive: patch.receive ?? existingBug.receive,
         expect: patch.expect ?? existingBug.expect,
-        status: patch.status ?? existingBug.status,
+        status: bugStatusPatchFromSocket(patch.status, existingBug.status),
       },
     };
   })

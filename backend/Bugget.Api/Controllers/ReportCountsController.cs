@@ -74,8 +74,8 @@ public sealed class ReportCountsController(IReportsService reportsService) : Rep
     private static ReportCountsScopeDto ToDto(ReportCountsScope scope) => new()
     {
         Key = scope.Key,
-        Statuses = scope.Statuses?.ToArray(),
+        Statuses = scope.Statuses?.Select(status => status.ToDomainValue()).ToArray(),
         TeamId = scope.Team_id,
-        CreatorTypes = scope.Creator_types?.Select(type => (short)type).ToArray()
+        CreatorTypes = scope.Creator_types?.Select(type => (short)type.ToDomainValue()).ToArray()
     };
 }

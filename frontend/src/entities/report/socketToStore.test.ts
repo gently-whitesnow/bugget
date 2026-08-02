@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { CreatorTypes } from "@/shared/config";
+import { AttachmentTypes, CreatorTypes } from "@/shared/config";
 import type { CreateBugSocketResponse } from "@/shared/model";
 import { $bugsStore, clearBugsEvent, createBugSocketEvent } from "./model";
 import {
@@ -30,6 +30,12 @@ const payloadCarriesCreatorType: Equal<
   number
 > = true;
 
+/**
+ * Числа realtime-контракта: SignalR остался числовым (ADR-0007), а стор держит
+ * значения провода — перевод делает адаптер, и именно он здесь проверяется.
+ */
+const socketCreatorType = { user: 0, system: 1 } as const;
+
 const socketBug = (creatorType: number): CreateBugSocketResponse => ({
   id: 7,
   title: "падает карточка",
@@ -52,7 +58,7 @@ describe("баг из события SignalR попадает в стор", () =
 
     createBugSocketEvent({
       reportId: "team-42",
-      bug: socketBug(CreatorTypes.SYSTEM),
+      bug: socketBug(socketCreatorType.system),
     });
 
     expect($bugsStore.getState()[7].creatorType).toBe(CreatorTypes.SYSTEM);
@@ -62,7 +68,7 @@ describe("баг из события SignalR попадает в стор", () =
   it("человеческий автор доезжает так же", () => {
     createBugSocketEvent({
       reportId: "team-42",
-      bug: socketBug(CreatorTypes.USER),
+      bug: socketBug(socketCreatorType.user),
     });
 
     expect($bugsStore.getState()[7].creatorType).toBe(CreatorTypes.USER);
@@ -71,7 +77,7 @@ describe("баг из события SignalR попадает в стор", () =
   it("reportId в сторе — alias открытого репорта, а не поле payload'а", () => {
     createBugSocketEvent({
       reportId: "team-42",
-      bug: socketBug(CreatorTypes.USER),
+      bug: socketBug(socketCreatorType.user),
     });
 
     expect($bugsStore.getState()[7].reportId).toBe("team-42");
@@ -80,7 +86,9 @@ describe("баг из события SignalR попадает в стор", () =
 
 describe("адаптеры payload → сущность стора", () => {
   it("баг переносится целиком: ни одно поле не теряется по дороге", () => {
-    expect(bugFromSocket(socketBug(CreatorTypes.SYSTEM), "team-42")).toEqual({
+    expect(
+      bugFromSocket(socketBug(socketCreatorType.system), "team-42")
+    ).toEqual({
       id: 7,
       reportId: "team-42",
       title: "падает карточка",
@@ -90,7 +98,7 @@ describe("адаптеры payload → сущность стора", () => {
       creatorType: CreatorTypes.SYSTEM,
       createdAt: "2026-07-30T10:00:00Z",
       updatedAt: "2026-07-30T10:00:00Z",
-      status: 0,
+      status: "open",
       // Вложения, комментарии и шаги это событие не приносит.
       attachments: null,
       comments: null,
@@ -104,7 +112,7 @@ describe("адаптеры payload → сущность стора", () => {
       id: 3,
       bugId: 7,
       text: "воспроизвёл",
-      creatorType: CreatorTypes.USER,
+      creatorType: socketCreatorType.user,
       audience: 0,
       creatorUserId: "u-2",
       createdAt: "2026-07-30T10:01:00Z",
@@ -121,7 +129,7 @@ describe("адаптеры payload → сущность стора", () => {
         id: 3,
         bugId: 7,
         text: "воспроизвёл",
-        creatorType: CreatorTypes.USER,
+        creatorType: socketCreatorType.user,
         audience: 0,
         creatorUserId: "u-2",
         createdAt: "2026-07-30T10:01:00Z",
@@ -131,7 +139,7 @@ describe("адаптеры payload → сущность стора", () => {
         {
           id: 11,
           entityId: 3,
-          attachType: 2,
+          attachType: AttachmentTypes.COMMENT,
           createdAt: "2026-07-30T10:02:00Z",
           creatorUserId: "u-2",
           fileName: "скрин.png",
@@ -144,7 +152,7 @@ describe("адаптеры payload → сущность стора", () => {
       id: 3,
       bugId: 7,
       text: "перепроверил",
-      creatorType: CreatorTypes.USER,
+      creatorType: socketCreatorType.user,
       audience: 0,
       creatorUserId: "u-2",
       createdAt: "2026-07-30T10:01:00Z",

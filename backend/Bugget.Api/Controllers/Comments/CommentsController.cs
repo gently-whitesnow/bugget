@@ -52,6 +52,6 @@ public sealed class CommentsController(ICommentsService commentsService) : Comme
     private static CommentDto ToDto(CommentRequest body) => new()
     {
         Text = body.Text,
-        Audience = (short?)body.Audience
+        Audience = (short?)body.Audience?.ToDomainValue()
     };
 }

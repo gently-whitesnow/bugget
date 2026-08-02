@@ -32,7 +32,7 @@ public sealed class ReportsNarrowingContractTests(AppContractFixture fixture) : 
         var reportId = await scenario.CreateReportAsync();
         var bugId = await scenario.CreateBugAsync(reportId);
         var factId = await scenario.UploadBugAttachmentAsync(reportId, bugId, "fact.png");
-        var expectedId = await scenario.UploadBugAttachmentAsync(reportId, bugId, "expected.png", attachType: 1);
+        var expectedId = await scenario.UploadBugAttachmentAsync(reportId, bugId, "expected.png", attachType: "expected");
 
         var response = await scenario.Client.GetAsync($"/v2/reports/{reportId}");
 
@@ -42,11 +42,11 @@ public sealed class ReportsNarrowingContractTests(AppContractFixture fixture) : 
         var attachments = bug.GetProperty("attachments").EnumerateArray().ToArray();
 
         var fact = Assert.Single(attachments, item => item.GetProperty("id").GetInt32() == factId);
-        AssertAttachment(fact, expectedType: 0, expectedEntityId: bugId);
+        AssertAttachment(fact, expectedType: "fact", expectedEntityId: bugId);
         AssertPublicAttachmentShape(fact);
 
         var expected = Assert.Single(attachments, item => item.GetProperty("id").GetInt32() == expectedId);
-        AssertAttachment(expected, expectedType: 1, expectedEntityId: bugId);
+        AssertAttachment(expected, expectedType: "expected", expectedEntityId: bugId);
         AssertPublicAttachmentShape(expected);
     }
 
@@ -160,9 +160,9 @@ public sealed class ReportsNarrowingContractTests(AppContractFixture fixture) : 
             expected.OrderBy(name => name, StringComparer.Ordinal),
             element.EnumerateObject().Select(property => property.Name).OrderBy(name => name, StringComparer.Ordinal));
 
-    private static void AssertAttachment(JsonElement attachment, int expectedType, int expectedEntityId)
+    private static void AssertAttachment(JsonElement attachment, string expectedType, int expectedEntityId)
     {
-        Assert.Equal(expectedType, attachment.GetProperty("attach_type").GetInt32());
+        Assert.Equal(expectedType, attachment.GetProperty("attach_type").GetString());
         Assert.Equal(expectedEntityId, attachment.GetProperty("entity_id").GetInt32());
     }
 

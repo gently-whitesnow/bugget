@@ -73,12 +73,12 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
 
         var response = await scenario.Client.PatchAsJsonAsync(
             $"/v2/reports/{reportId}/bugs/{bugId}",
-            new { title = "переименовали", status = 1 });
+            new { title = "переименовали", status = "verified" });
 
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
         Assert.Equal(bugId, body.GetProperty("id").GetInt32());
         Assert.Equal("переименовали", body.GetProperty("title").GetString());
-        Assert.Equal(1, body.GetProperty("status").GetInt32());
+        Assert.Equal("verified", body.GetProperty("status").GetString());
     }
 
     /// <summary>
@@ -96,7 +96,7 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
 
         var response = await scenario.Client.PatchAsJsonAsync(
             $"/v2/reports/{reportId}/bugs/{bugId}",
-            new { status = 1 });
+            new { status = "verified" });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -120,7 +120,7 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
 
         var patchedStatus = await scenario.Client.PatchAsJsonAsync(
             $"/v2/reports/{reportId}/bugs/{bugId}",
-            new { status = 1 });
+            new { status = "verified" });
 
         Assert.Equal(HttpStatusCode.OK, patchedStatus.StatusCode);
         var afterStatus = await ContractScenario.ReadJsonAsync(patchedStatus);

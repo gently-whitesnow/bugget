@@ -14,6 +14,7 @@ import {
 import type { AttachmentResponse } from "@/entities/report";
 import { Attachment, attachmentFromSocket } from "@/entities/report";
 import { notificationMessages, notifyErrorRequested } from "@/shared/model";
+import type { AttachmentTypes } from "@/shared/config";
 import type { AttachmentSocketResponse } from "@/shared/model";
 
 import { setBugsEvent } from "@/entities/report";
@@ -33,7 +34,7 @@ export const $bugAttachmentsStore = createStore<Record<number, number[]>>({});
  */
 
 export const uploadAttachmentFx = createEffect<
-  { reportId: string; bugId: number; attachType: number; file: File },
+  { reportId: string; bugId: number; attachType: AttachmentTypes; file: File },
   { attachment: AttachmentResponse; bugId: number }
 >(async ({ reportId, bugId, attachType, file }) => {
   try {
@@ -114,7 +115,7 @@ export const renameAttachmentFx = createEffect<
 export const uploadAttachmentEvent = createEvent<{
   reportId: string;
   bugId: number;
-  attachType: number;
+  attachType: AttachmentTypes;
   file: File;
 }>();
 

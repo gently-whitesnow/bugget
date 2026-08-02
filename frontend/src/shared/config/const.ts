@@ -1,5 +1,19 @@
 import { StatusMeta } from "@/shared/lib/types";
 import {
+  AttachmentTypes,
+  BugStatuses,
+  CommentAudiences,
+  CreatorTypes,
+  ReportStatuses,
+} from "@/shared/api/reports/enumValues";
+export {
+  AttachmentTypes,
+  BugStatuses,
+  CommentAudiences,
+  CreatorTypes,
+  ReportStatuses,
+};
+import {
   CircleDashed,
   Clock,
   CircleCheck,
@@ -10,21 +24,6 @@ import {
   FlaskConical,
 } from "lucide-react";
 
-export enum BugStatuses {
-  OPEN = 0,
-  VERIFIED = 1,
-  REJECTED = 2,
-  FIXED = 3,
-}
-
-export enum ReportStatuses {
-  BACKLOG = 0,
-  RESOLVED = 1,
-  FIX = 2,
-  REJECTED = 3,
-  TEST = 4,
-}
-
 export enum RequestStates {
   IDLE = 0,
   PENDING = 1,
@@ -32,14 +31,7 @@ export enum RequestStates {
   ERROR = 3,
 }
 
-export enum AttachmentTypes {
-  FACT = 0,
-  EXPECT = 1,
-  COMMENT = 2,
-  BUG_STEP = 3,
-}
-
-export const reportStatusMap: Record<number, StatusMeta> = {
+export const reportStatusMap: Record<ReportStatuses, StatusMeta> = {
   [ReportStatuses.FIX]: {
     title: "Фикс",
     borderColor: "border-error",
@@ -72,7 +64,7 @@ export const reportStatusMap: Record<number, StatusMeta> = {
   },
 };
 
-export const bugStatusMap: Record<number, StatusMeta> = {
+export const bugStatusMap: Record<BugStatuses, StatusMeta> = {
   [BugStatuses.OPEN]: {
     title: "Открыт",
     borderColor: "",
@@ -99,6 +91,19 @@ export const bugStatusMap: Record<number, StatusMeta> = {
   },
 };
 
+/**
+ * Порядок статусов репорта для сортировок — тот же, что задавало числовое
+ * представление до перехода на строки. Раньше он был неявным следствием типа,
+ * теперь объявлен явно.
+ */
+export const reportStatusOrder: Record<ReportStatuses, number> = {
+  [ReportStatuses.BACKLOG]: 0,
+  [ReportStatuses.RESOLVED]: 1,
+  [ReportStatuses.FIX]: 2,
+  [ReportStatuses.REJECTED]: 3,
+  [ReportStatuses.TEST]: 4,
+};
+
 export enum BugResultTypes {
   RECEIVE = "receive",
   EXPECT = "expect",
@@ -108,16 +113,6 @@ export enum SettingTypes {
   WORKSPACE = "workspace",
   TEAM = "team",
   USER = "user",
-}
-
-export enum CreatorTypes {
-  USER = 0,
-  SYSTEM = 1,
-}
-
-export enum CommentAudiences {
-  INTERNAL = 0,
-  EXTERNAL = 1,
 }
 
 export enum BootstrapStatus {

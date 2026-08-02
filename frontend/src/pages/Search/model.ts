@@ -8,6 +8,7 @@ import {
 import { searchReports } from "./api/searchReports";
 import type { SearchRequestQueryParams, SearchResponse } from "./api/contracts";
 import { UserResponse } from "@/shared/api";
+import type { ReportStatuses } from "@/shared/config";
 import { fetchUsers } from "@/entities/user";
 
 /**
@@ -45,7 +46,7 @@ export const loadMore = createEvent();
 export const updateQuery = createEvent<string>();
 export const updateSortField = createEvent<string>();
 export const updateSortDirection = createEvent<"asc" | "desc">();
-export const updateStatuses = createEvent<number[] | null>();
+export const updateStatuses = createEvent<ReportStatuses[] | null>();
 export const updateUserFilter = createEvent<string | null>();
 export const updateTeamFilter = createEvent<TeamFilter | null>();
 
@@ -58,7 +59,7 @@ export const $sortDirection = createStore<"asc" | "desc">("desc").on(
   updateSortDirection,
   (_, direction) => direction
 );
-export const $statuses = createStore<number[] | null>(null).on(
+export const $statuses = createStore<ReportStatuses[] | null>(null).on(
   updateStatuses,
   (_, s) => s
 );

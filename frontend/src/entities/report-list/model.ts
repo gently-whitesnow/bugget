@@ -1,6 +1,6 @@
 import { createEffect, createStore, sample } from "effector";
 import { reportsApi, usersApi } from "@/shared/api";
-import { ReportStatuses } from "@/shared/config";
+import { CreatorTypes, ReportStatuses } from "@/shared/config";
 import type {
   ListReportsResponse,
   ReportListItem,
@@ -10,17 +10,17 @@ import type {
 // Формы ответа списка выведены из контракта — см. shared/api/contracts/reports.ts
 export type { ListReportsResponse, ReportListItem };
 
-const defaultReportStatuses = [
-  Number(ReportStatuses.BACKLOG),
-  Number(ReportStatuses.FIX),
-  Number(ReportStatuses.TEST),
+const defaultReportStatuses: ReportStatuses[] = [
+  ReportStatuses.BACKLOG,
+  ReportStatuses.FIX,
+  ReportStatuses.TEST,
 ];
 
 type LoadReportsParams = {
   userId?: string | null;
   teamId?: string | null;
-  statuses?: number[];
-  creatorTypes?: number[];
+  statuses?: ReportStatuses[];
+  creatorTypes?: CreatorTypes[];
   offset?: number;
   take?: number;
 };

@@ -29,7 +29,7 @@ type Props = {
   attachments: Attachment[];
   reportId: string;
   bugId: number;
-  attachType: number;
+  attachType: AttachmentTypes;
   commentId?: number;
   stepId?: number;
   onAttachmentUpload?: (file: File) => void | Promise<unknown>;

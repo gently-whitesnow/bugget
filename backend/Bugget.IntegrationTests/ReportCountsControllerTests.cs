@@ -6,11 +6,11 @@ using System.Text.Json;
 using Bugget.Application.Commands.Report;
 using Bugget.Application.Ports;
 using Bugget.Contracts.Reports.Generated;
-using Bugget.Domain.Common;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Xunit;
+using DomainCreatorType = Bugget.Domain.Common.CreatorType;
 
 namespace Bugget.IntegrationTests;
 
@@ -42,14 +42,14 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
 
         var betaReport = await _reportsDbClient.CreateReportAsync(
             userId, team, organizationId: "test-workspace", new ReportCreateDto { Title = "Beta backlog" });
-        await SetReportCreatorTypeAsync(betaReport.Id, (short)CreatorType.TgBetaTester);
+        await SetReportCreatorTypeAsync(betaReport.Id, (short)DomainCreatorType.TgBetaTester);
 
         var request = new
         {
             scopes = new object[]
             {
-                new { key = "beta-active", team_id = team, statuses = new[] { 0, 2 }, creator_types = new short[] { (short)CreatorType.TgBetaTester } },
-                new { key = "team-active", team_id = team, statuses = new[] { 0, 2 } },
+                new { key = "beta-active", team_id = team, statuses = new[] { "backlog", "fix" }, creator_types = new[] { "tg_beta_tester" } },
+                new { key = "team-active", team_id = team, statuses = new[] { "backlog", "fix" } },
             }
         };
 
@@ -155,7 +155,7 @@ public class ReportCountsControllerTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "POST /v2/reports/counts:batch — отсутствует вложенный key → errors по wire-пути scopes[0].key")]
     public async Task Batch_MissingNestedKey_ReportsWireErrorPath()
     {
-        var resp = await PostAsync(new { scopes = new object[] { new { statuses = new[] { 0 } } } });
+        var resp = await PostAsync(new { scopes = new object[] { new { statuses = new[] { "backlog" } } } });
 
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
         Assert.Equal("application/problem+json", resp.Content.Headers.ContentType?.MediaType);

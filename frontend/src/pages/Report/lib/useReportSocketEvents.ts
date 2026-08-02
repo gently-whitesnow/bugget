@@ -1,12 +1,16 @@
 import { useUnit } from "effector-react";
 
-import { AttachmentTypes } from "@/shared/config";
 import {
   bugAttachmentCreatedSocketEvent,
   bugAttachmentDeletedSocketEvent,
   bugAttachmentChangedSocketEvent,
 } from "../model-attachment";
-import { createBugSocketEvent, patchBugSocketEvent } from "@/entities/report";
+import {
+  createBugSocketEvent,
+  isBugStepAttachment,
+  isCommentAttachment,
+  patchBugSocketEvent,
+} from "@/entities/report";
 import {
   addParticipantSocketEvent,
   patchReportSocketEvent,
@@ -105,7 +109,7 @@ export const useReportSocketEvents = () => {
   });
 
   useSocketEvent(SocketEvent.BugAttachmentCreate, (attachment) => {
-    if (attachment.attachType === AttachmentTypes.COMMENT) return;
+    if (isCommentAttachment(attachment.attachType)) return;
 
     socketEvents.bugAttachmentCreatedSocketEvent(attachment);
   });
@@ -118,13 +122,13 @@ export const useReportSocketEvents = () => {
   });
 
   useSocketEvent(SocketEvent.BugAttachmentChanged, (attachment) => {
-    if (attachment.attachType === AttachmentTypes.COMMENT) return;
+    if (isCommentAttachment(attachment.attachType)) return;
 
     socketEvents.bugAttachmentChangedSocketEvent(attachment);
   });
 
   useSocketEvent(SocketEvent.CommentAttachmentCreate, (attachment) => {
-    if (attachment.attachType !== AttachmentTypes.COMMENT) return;
+    if (!isCommentAttachment(attachment.attachType)) return;
 
     socketEvents.createCommentAttachmentSocketEvent(attachment);
   });
@@ -137,7 +141,7 @@ export const useReportSocketEvents = () => {
   });
 
   useSocketEvent(SocketEvent.CommentAttachmentChanged, (attachment) => {
-    if (attachment.attachType !== AttachmentTypes.COMMENT) return;
+    if (!isCommentAttachment(attachment.attachType)) return;
 
     socketEvents.commentAttachmentChangedSocketEvent(attachment);
   });
@@ -171,7 +175,7 @@ export const useReportSocketEvents = () => {
   });
 
   useSocketEvent(SocketEvent.BugStepAttachmentCreate, (attachment) => {
-    if (attachment.attachType !== AttachmentTypes.BUG_STEP) return;
+    if (!isBugStepAttachment(attachment.attachType)) return;
 
     socketEvents.createBugStepAttachmentSocketEvent(attachment);
   });
@@ -184,7 +188,7 @@ export const useReportSocketEvents = () => {
   });
 
   useSocketEvent(SocketEvent.BugStepAttachmentChanged, (attachment) => {
-    if (attachment.attachType !== AttachmentTypes.BUG_STEP) return;
+    if (!isBugStepAttachment(attachment.attachType)) return;
 
     socketEvents.bugStepAttachmentChangedSocketEvent(attachment);
   });

@@ -349,9 +349,9 @@ $bugStepsStore
     };
   })
   .on(createBugStepAttachmentSocketEvent, (state, payload) => {
-    if (payload.attachType !== AttachmentTypes.BUG_STEP) return state;
-
     const attachment = attachmentFromSocket(payload);
+
+    if (attachment.attachType !== AttachmentTypes.BUG_STEP) return state;
 
     return patchStepById(state, payload.entityId, (step) => {
       const currentAttachments = step.attachments || [];
@@ -361,9 +361,9 @@ $bugStepsStore
     });
   })
   .on(bugStepAttachmentChangedSocketEvent, (state, payload) => {
-    if (payload.attachType !== AttachmentTypes.BUG_STEP) return state;
-
     const attachment = attachmentFromSocket(payload);
+
+    if (attachment.attachType !== AttachmentTypes.BUG_STEP) return state;
 
     return patchStepById(state, payload.entityId, (step) => ({
       ...step,

@@ -63,7 +63,7 @@ public sealed class ReportsController(
         var patchDto = new ReportPatchDto
         {
             Title = body.Title,
-            Status = body.Status,
+            Status = body.Status?.ToDomainValue(),
             ResponsibleUserId = body.Responsible_user_id,
             IsExcludedFromAnalytics = body.Is_excluded_from_analytics
         };
@@ -80,8 +80,8 @@ public sealed class ReportsController(
     public override async Task<ActionResult<ReportList>> ListReports(
         string? userId = null,
         string? teamId = null,
-        IEnumerable<int>? reportStatuses = null,
-        IEnumerable<int>? creatorTypes = null,
+        IEnumerable<ReportStatus>? reportStatuses = null,
+        IEnumerable<CreatorType>? creatorTypes = null,
         [Range(0, int.MaxValue)] int? skip = 0,
         [Range(1, 100)] int? take = 10,
         CancellationToken cancellationToken = default)
@@ -92,8 +92,8 @@ public sealed class ReportsController(
             user.OrganizationId,
             userId,
             teamId,
-            reportStatuses?.ToArray(),
-            creatorTypes?.ToArray(),
+            reportStatuses?.Select(status => status.ToDomainValue()).ToArray(),
+            creatorTypes?.Select(type => type.ToDomainValue()).ToArray(),
             skip ?? 0,
             take ?? 10);
 

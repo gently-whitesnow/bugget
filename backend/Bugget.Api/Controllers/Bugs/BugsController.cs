@@ -45,7 +45,7 @@ public sealed class BugsController(IBugsService bugsService) : BugsControllerBas
             Title = body.Title,
             Receive = body.Receive,
             Expect = body.Expect,
-            Status = body.Status
+            Status = body.Status?.ToDomainValue()
         };
 
         return bugsService.PatchBugAsync(user, aliasId, bugId, patchDto)

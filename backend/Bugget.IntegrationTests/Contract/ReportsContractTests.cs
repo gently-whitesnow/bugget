@@ -174,15 +174,15 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         var body = await ContractScenario.ReadJsonAsync(response);
         var bug = FindBug(body.GetProperty("bugs").EnumerateArray().ToArray(), bugId);
 
-        AssertAttachment(Single(bug.GetProperty("attachments")), expectedType: 0, expectedEntityId: bugId);
+        AssertAttachment(Single(bug.GetProperty("attachments")), expectedType: "fact", expectedEntityId: bugId);
 
         var comment = Single(bug.GetProperty("comments"));
         Assert.Equal(commentId, comment.GetProperty("id").GetInt32());
-        AssertAttachment(Single(comment.GetProperty("attachments")), expectedType: 2, expectedEntityId: commentId);
+        AssertAttachment(Single(comment.GetProperty("attachments")), expectedType: "comment", expectedEntityId: commentId);
 
         var step = Single(bug.GetProperty("steps"));
         Assert.Equal(stepId, step.GetProperty("id").GetInt32());
-        AssertAttachment(Single(step.GetProperty("attachments")), expectedType: 3, expectedEntityId: stepId);
+        AssertAttachment(Single(step.GetProperty("attachments")), expectedType: "bug_step", expectedEntityId: stepId);
     }
 
 
@@ -323,7 +323,7 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
 
         var response = await scenario.Client.PostAsJsonAsync(
             "/v2/reports/counts:batch",
-            new { scopes = new[] { new { statuses = new[] { 0 } } } });
+            new { scopes = new[] { new { statuses = new[] { "backlog" } } } });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         await ValidationProblemDetailsContract.AssertSingleErrorAsync(
@@ -412,9 +412,9 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
     private static JsonElement Single(JsonElement array) =>
         Assert.Single(array.EnumerateArray().ToArray());
 
-    private static void AssertAttachment(JsonElement attachment, int expectedType, int expectedEntityId)
+    private static void AssertAttachment(JsonElement attachment, string expectedType, int expectedEntityId)
     {
-        Assert.Equal(expectedType, attachment.GetProperty("attach_type").GetInt32());
+        Assert.Equal(expectedType, attachment.GetProperty("attach_type").GetString());
         Assert.Equal(expectedEntityId, attachment.GetProperty("entity_id").GetInt32());
     }
 

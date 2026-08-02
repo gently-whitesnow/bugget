@@ -8,7 +8,7 @@ const unknownUserString = "Пользователь";
 
 export const useUserDisplayName = (
   commentUserId?: string,
-  creatorType?: number
+  creatorType?: CreatorTypes
 ) => {
   const users = useUnit($usersStore);
   const currentUser = useUnit($authUserStore);

@@ -26,21 +26,21 @@ internal static class ReportsMapper
     {
         Id = view.Id,
         Title = view.Title,
-        Status = view.Status,
+        Status = WireEnumMapper.ToReportStatusWire(view.Status),
         Responsible_user_id = view.ResponsibleUserId,
         Past_responsible_user_id = view.PastResponsibleUserId,
         Creator_user_id = view.CreatorUserId,
         Creator_team_id = view.CreatorTeamId,
         Created_at = view.CreatedAt,
         Updated_at = view.UpdatedAt,
-        Creator_type = view.CreatorType,
+        Creator_type = WireEnumMapper.ToCreatorTypeWire(view.CreatorType),
     };
 
     public static ReportPatchResult ToContract(this ReportPatchResultViewModel view) => new()
     {
         Id = view.Id,
         Title = view.Title,
-        Status = view.Status,
+        Status = WireEnumMapper.ToReportStatusWire(view.Status),
         Responsible_user_id = view.ResponsibleUserId,
         Past_responsible_user_id = view.PastResponsibleUserId,
         Updated_at = view.UpdatedAt,
@@ -56,14 +56,14 @@ internal static class ReportsMapper
     {
         Id = view.Id,
         Title = view.Title,
-        Status = view.Status,
+        Status = WireEnumMapper.ToReportStatusWire(view.Status),
         Responsible_user_id = view.ResponsibleUserId,
         Past_responsible_user_id = view.PastResponsibleUserId,
         Creator_user_id = view.CreatorUserId,
         Creator_team_id = view.CreatorTeamId,
         Created_at = view.CreatedAt,
         Updated_at = view.UpdatedAt,
-        Creator_type = view.CreatorType,
+        Creator_type = WireEnumMapper.ToCreatorTypeWire(view.CreatorType),
         Is_excluded_from_analytics = view.IsExcludedFromAnalytics,
         Participants_user_ids = view.ParticipantsUserIds,
         // null здесь — часть контракта: «не запрашивали», в отличие от пустого списка.
@@ -81,14 +81,14 @@ internal static class ReportsMapper
     {
         Id = view.Id,
         Title = view.Title,
-        Status = view.Status,
+        Status = WireEnumMapper.ToReportStatusWire(view.Status),
         Responsible_user_id = view.ResponsibleUserId,
         Past_responsible_user_id = view.PastResponsibleUserId,
         Creator_user_id = view.CreatorUserId,
         Creator_team_id = view.CreatorTeamId,
         Created_at = view.CreatedAt,
         Updated_at = view.UpdatedAt,
-        Creator_type = view.CreatorType,
+        Creator_type = WireEnumMapper.ToCreatorTypeWire(view.CreatorType),
         Is_excluded_from_analytics = view.IsExcludedFromAnalytics,
         Participants_user_ids = view.ParticipantsUserIds,
         // null здесь — часть контракта: «не запрашивали», в отличие от пустого списка.
@@ -105,8 +105,8 @@ internal static class ReportsMapper
         Created_at = model.CreatedAt,
         Updated_at = model.UpdatedAt,
         Creator_user_id = model.CreatorUserId,
-        Status = model.Status,
-        Creator_type = model.CreatorType,
+        Status = WireEnumMapper.ToBugStatusWire(model.Status),
+        Creator_type = WireEnumMapper.ToCreatorTypeWire(model.CreatorType),
         Comments = model.Comments?.Select(ToContract).ToArray(),
     };
 
@@ -149,8 +149,8 @@ internal static class ReportsMapper
         Created_at = model.CreatedAt,
         Updated_at = model.UpdatedAt,
         Creator_user_id = model.CreatorUserId,
-        Status = model.Status,
-        Creator_type = model.CreatorType,
+        Status = WireEnumMapper.ToBugStatusWire(model.Status),
+        Creator_type = WireEnumMapper.ToCreatorTypeWire(model.CreatorType),
         Attachments = model.Attachments?.Select(ToSummaryContract).ToArray(),
         Comments = model.Comments?.Select(ToContract).ToArray(),
         Steps = model.Steps?.Select(ToContract).ToArray(),
@@ -162,8 +162,8 @@ internal static class ReportsMapper
         Bug_id = model.BugId,
         Text = model.Text,
         Creator_user_id = model.CreatorUserId,
-        Creator_type = model.CreatorType,
-        Audience = model.Audience,
+        Creator_type = WireEnumMapper.ToCreatorTypeWire(model.CreatorType),
+        Audience = WireEnumMapper.ToCommentAudienceWire(model.Audience),
         Created_at = model.CreatedAt,
         Updated_at = model.UpdatedAt,
         Attachments = model.Attachments?.Select(ToSummaryContract).ToArray(),
@@ -178,8 +178,8 @@ internal static class ReportsMapper
         Created_at = model.CreatedAt,
         Updated_at = model.UpdatedAt,
         Creator_user_id = model.CreatorUserId,
-        Status = model.Status,
-        Creator_type = model.CreatorType,
+        Status = WireEnumMapper.ToBugStatusWire(model.Status),
+        Creator_type = WireEnumMapper.ToCreatorTypeWire(model.CreatorType),
     };
 
     public static BugPatchResult ToContract(this DomainModel.Bugs.BugPatchResult model) => new()
@@ -189,7 +189,7 @@ internal static class ReportsMapper
         Receive = model.Receive,
         Expect = model.Expect,
         Updated_at = model.UpdatedAt,
-        Status = model.Status,
+        Status = WireEnumMapper.ToBugStatusWire(model.Status),
     };
 
     public static CommentSummary ToSummaryContract(this DomainModel.Comments.CommentSummary model) => new()
@@ -198,8 +198,8 @@ internal static class ReportsMapper
         Bug_id = model.BugId,
         Text = model.Text,
         Creator_user_id = model.CreatorUserId,
-        Creator_type = model.CreatorType,
-        Audience = model.Audience,
+        Creator_type = WireEnumMapper.ToCreatorTypeWire(model.CreatorType),
+        Audience = WireEnumMapper.ToCommentAudienceWire(model.Audience),
         Created_at = model.CreatedAt,
         Updated_at = model.UpdatedAt,
     };
@@ -226,7 +226,7 @@ internal static class ReportsMapper
     {
         Id = model.Id,
         Entity_id = model.EntityId,
-        Attach_type = model.AttachType,
+        Attach_type = WireEnumMapper.ToAttachTypeWire(model.AttachType),
         Created_at = model.CreatedAt,
         Creator_user_id = model.CreatorUserId,
         File_name = model.FileName,

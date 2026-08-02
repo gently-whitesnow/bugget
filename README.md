@@ -195,8 +195,7 @@ Workflow'ы `publish-backend`, `publish-frontend`, `publish-nginx-self-hosted` �
 (`workflow_dispatch`) и принимают версию вида `v1.2.3`. Версия без суффикса собирается под
 amd64 + arm64 и получает тег `latest`, с суффиксом — только amd64.
 
-Frontend и backend для несовместимых изменений HTTP-контракта выбираются, выкладываются и
-откатываются только согласованной парой — см. [операционный runbook](docs/atomic-frontend-backend-rollout.md).
+Несовместимые frontend/backend образы выкладываются и откатываются согласованной парой.
 
 ## Лицензия
 

@@ -17,7 +17,8 @@ public sealed class TokensService(
     IRsaPrivateKeyStorage refreshKeys,
     IJwkSetStorage jwks,
     IRefreshRevocationStore revocation,
-    IRefreshRotationCache rotationCache) : ITokensService
+    IRefreshRotationCache rotationCache,
+    TimeProvider timeProvider) : ITokensService
 {
     private readonly JwtOptions _opts = opts.Value;
 
@@ -52,14 +53,16 @@ public sealed class TokensService(
             throw new SecurityTokenException("token revoked");
         }
 
-        // 3) Ревокация старого
-        await revocation.RevokeAsync(oldJti, exp);
+        // 3) Ревокация старого — ровно до той границы, до которой его ещё принимает
+        //    lifetime-валидатор (exp + ClockSkew), иначе повторная ротация внутри skew
+        //    обошла бы и revocation, и idempotency-кэш.
+        await revocation.RevokeAsync(oldJti, RefreshTokenRevocation.RevokedUntil(exp));
 
         // 4) Выпуск новой пары
         var (access, newRefresh) = await IssuePairAsync(userId);
 
         // 5) Кэшируем результат ротации под oldJti на короткое время
-        var ttl = (exp - DateTimeOffset.UtcNow) + TimeSpan.FromSeconds(30);
+        var ttl = (exp - timeProvider.GetUtcNow()) + TimeSpan.FromSeconds(30);
         if (ttl < TimeSpan.FromSeconds(30))
         {
             ttl = TimeSpan.FromSeconds(30);
@@ -95,12 +98,13 @@ public sealed class TokensService(
             new Claim(JwtRegisteredClaimNames.Jti, jti)
         };
 
+        var now = timeProvider.GetUtcNow().UtcDateTime;
         var token = handler.CreateJwtSecurityToken(
             issuer: _opts.Issuer,
             audience: _opts.Audience,
             subject: new ClaimsIdentity(claims),
-            notBefore: DateTime.UtcNow,
-            expires: DateTime.UtcNow.Add(life),
+            notBefore: now,
+            expires: now.Add(life),
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.RsaSha512));
 
         return (jti, handler.WriteToken(token));
@@ -135,7 +139,11 @@ public sealed class TokensService(
             ValidIssuer = _opts.Issuer,
             ValidAudience = _opts.Audience,
             IssuerSigningKey = rsaKey,
-            ClockSkew = TimeSpan.FromSeconds(10),
+            ClockSkew = RefreshTokenRevocation.ClockSkew,
+            // В IdentityModel 8.8.0 TimeProvider остаётся internal. Публичный delegate —
+            // поддерживаемая точка внедрения часов; его семантику держат boundary-тесты сервиса.
+            LifetimeValidator = (notBefore, expires, _, parameters) =>
+                ValidateLifetime(notBefore, expires, parameters, timeProvider),
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
@@ -144,5 +152,35 @@ public sealed class TokensService(
         };
 
         return handler.ValidateToken(token, prm, out _);
+    }
+
+    private static bool ValidateLifetime(
+        DateTime? notBefore,
+        DateTime? expires,
+        TokenValidationParameters parameters,
+        TimeProvider timeProvider)
+    {
+        if (!expires.HasValue && parameters.RequireExpirationTime)
+        {
+            throw new SecurityTokenNoExpirationException();
+        }
+
+        if (notBefore.HasValue && expires.HasValue && notBefore > expires)
+        {
+            throw new SecurityTokenInvalidLifetimeException();
+        }
+
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        if (notBefore > now.Add(parameters.ClockSkew))
+        {
+            throw new SecurityTokenNotYetValidException();
+        }
+
+        if (expires < now.Subtract(parameters.ClockSkew))
+        {
+            throw new SecurityTokenExpiredException();
+        }
+
+        return true;
     }
 }

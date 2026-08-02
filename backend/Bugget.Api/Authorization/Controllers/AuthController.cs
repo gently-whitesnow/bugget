@@ -37,7 +37,7 @@ public class AuthController(
             var jwt = new JwtSecurityTokenHandler().ReadJwtToken(refresh);
             var jti = jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
             var exp = jwt.ValidTo;
-            await revocation.RevokeAsync(jti, exp);
+            await revocation.RevokeAsync(jti, RefreshTokenRevocation.RevokedUntil(exp));
         }
 
         // чистим cookies

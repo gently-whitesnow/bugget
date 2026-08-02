@@ -57,6 +57,7 @@
       "scope": "backend",
       "enabled": true,
       "slow": false,
+      "continueOnFail": true,
       "workdir": ".",
       "description": "Дрейф realtime-контракта SignalR — бекендовая половина того же гейта, что frontend-realtime-contract. Сверяет четыре стороны: specs/contracts/events.yaml, объявление публикации в IReportPageHubClient, обработчик ReportPageHubClient и подписки фронта (enum SocketEvent + customParsers). Краснеет, когда событие описано, но не публикуется; публикуется мимо контракта; фронт подписан на несуществующее; разошлись число или типы аргументов; многоаргументному событию не соответствует разборщик на фронте. Отдельно запрещает публикацию вне объявленных обработчиков: в файле, который знает про SignalR, красный любой SendAsync, а не только с литеральным именем, — иначе вычисляемое имя события обходит контракт молча. Ничего не генерирует: форму сообщений менять нельзя, фронт в проде у заказчика (ADR-0007). Второй командой идёт самопроверка гейта. Нужен python3.",
       "commands": [
@@ -73,6 +74,17 @@
       "description": "Юнит-тесты без I/O — все тестовые проекты, кроме *.IntegrationTests. Список проектов не ведётся: они находятся поиском по IsTestProject, поэтому новый тестовый проект запускается сам. Ссылка на Testcontainers в этой категории валит гейт: Docker в быстром прогоне не нужен.",
       "commands": [
         "scripts/quality/dotnet-test.sh unit"
+      ]
+    },
+    {
+      "id": "quality-runner-selftest",
+      "scope": "backend",
+      "enabled": true,
+      "slow": false,
+      "workdir": ".",
+      "description": "Самопроверка failure-path verify.sh: opt-in продолжает команды внутри гейта с итоговой ошибкой, режим по умолчанию остаётся fail-fast, а подготовка области не продолжает зависимое выполнение.",
+      "commands": [
+        "scripts/quality/verify-self-test.sh"
       ]
     },
     {
@@ -168,6 +180,7 @@
       "scope": "frontend",
       "enabled": true,
       "slow": false,
+      "continueOnFail": true,
       "workdir": ".",
       "description": "Инвентарь HTTP-транспорта фронта: все шесть модулей используют generated paths через createOperationRequest; raw axios-инстансы не выходят из контрактных границ; fetch, redirects, XMLHttpRequest и sendBeacon не создают необъяснённый второй транспортный путь. Самопроверка доказывает красноту обходов через переменную, window.fetch, runtime axios, XMLHttpRequest и sendBeacon.",
       "commands": [
@@ -180,6 +193,7 @@
       "scope": "frontend",
       "enabled": true,
       "slow": false,
+      "continueOnFail": true,
       "workdir": ".",
       "description": "Дрейф realtime-контракта SignalR — та же проверка, что backend-realtime-contract, и тот же скрипт. Отдельный id нужен из-за областей CI: job changes включает область по префиксу изменённых путей, и без фронтовой копии правка frontend/src/shared/model/socket/contracts.ts (снятая подписка, подписка на несуществующее событие) не запускала бы гейт вовсе. Проверка одна и та же — четыре стороны сверяются целиком в обеих областях.",
       "commands": [

@@ -114,7 +114,6 @@ Realtime-события SignalR описаны в `specs/contracts/events.yaml`.
 контракт показывает `python3 scripts/quality/realtime-contract.py --list`.
 
 Архитектурные решения и причины — [specs/ADR/REGISTRY.md](specs/ADR/REGISTRY.md).
-Точка входа для агента — [ROOT.md](ROOT.md).
 
 ## Структура backend
 

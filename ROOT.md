@@ -25,8 +25,9 @@ Bugget — инструмент для баг-репортов: тестиров
 | Раннер проверок | `scripts/quality/verify.sh` |
 | Перегенерация кода из контрактов | `scripts/quality/openapi-generate.sh` (C#), `scripts/quality/frontend-openapi-generate.sh` (TypeScript) |
 | Какие HTTP-пути публичны и чем покрыты | [docs/public-contract-inventory.md](docs/public-contract-inventory.md) |
-| Как фронт ходит в API и какие есть исключения | [docs/frontend-api-inventory.md](docs/frontend-api-inventory.md) |
-| Как контрибьютить, безопасность, кодекс | [docs/](docs/) |
+| Как фронт ходит в API и какие есть исключения | гейт `frontend-api-inventory` — `scripts/quality/frontend-api-inventory.mjs` |
+| Как контрибьютить, дисциплина PR, формат коммита | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
+| Безопасность, кодекс | [docs/](docs/) |
 
 Код: `backend/` — .NET, решение `backend/Bugget.sln`; `frontend/` — Vite + React + TypeScript;
 `deploy/` — compose и nginx.

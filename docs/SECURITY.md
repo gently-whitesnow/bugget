@@ -7,7 +7,7 @@
 Если вы обнаружили уязвимость, **не создавайте публичный issue**.  
 Вместо этого, пожалуйста, отправьте подробное сообщение разработчику проекта:
 - [Telegram](https://t.me/gently_whitesnow)  
-- [Mail](gently.whitesnow@outlook.com)
+- [Mail](mailto:gently.whitesnow@yandex.ru)
 
 Сообщение должно содержать:
 

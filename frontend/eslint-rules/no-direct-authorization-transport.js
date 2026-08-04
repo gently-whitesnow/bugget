@@ -17,7 +17,7 @@ import { transportBoundaryOptions } from "./transport-boundary.js";
  * Под правило не попадает браузерная навигация на вход
  * (`window.location.href = "/api/authorization/v1/..."`): это не HTTP-вызов
  * фронта, а переход страницы, и в контракте таких путей нет — осознанное
- * исключение перечислено в `docs/frontend-api-inventory.md`.
+ * исключение перечислено в `scripts/quality/frontend-api-inventory.mjs`.
  *
  * Краснота правила закреплена тестом
  * `src/shared/api/authorization/transportBoundary.gate.test.ts`.

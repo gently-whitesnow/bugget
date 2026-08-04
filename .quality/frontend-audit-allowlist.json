@@ -1,13 +1,4 @@
 {
   "$comment": "Явно принятые уязвимости npm фронтенда. Читается scripts/quality/frontend-audit.sh (гейт frontend-audit). Всё, чего здесь нет, валит гейт. Запись добавляется, только если исправленной версии нет или обновление ломает проект; причина и дата пересмотра обязательны, обоснование — в коммите. Как только advisory исчезает из отчёта, гейт сам напоминает удалить запись.",
-  "accepted": [
-    {
-      "advisory": "https://github.com/advisories/GHSA-mh99-v99m-4gvg",
-      "package": "brace-expansion",
-      "severity": "high",
-      "reason": "DoS при разборе glob-паттернов. Исправление опубликовано только в brace-expansion 5.0.8, но его CJS-сборка отдаёт объект вместо функции, поэтому глобальный override на 5.x ломает всех потребителей minimatch 1.x–9.x. Из eslint и typescript-eslint уязвимость ушла обновлением до eslint 10 (там minimatch 10 → brace-expansion 5.0.8). Остался единственный путь: openapi-typescript 7.13.0 → @redocly/openapi-core 1.34.17 → minimatch 5.1.9. Ветка redocly 1.x закрыта, а override на 2.40.0 ломает кодоген (ERR_PACKAGE_PATH_NOT_EXPORTED на ./lib/ref-utils.js). Блокер: openapi-typescript должен перейти на @redocly/openapi-core 2.x. В рантайм не попадает: пакет только сборочный, паттерны приходят из наших же конфигов, не из пользовательского ввода.",
-      "review_by": "2026-10-01",
-      "issue": "MAIN-26"
-    }
-  ]
+  "accepted": []
 }

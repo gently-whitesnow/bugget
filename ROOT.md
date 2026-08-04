@@ -24,7 +24,7 @@ Bugget — инструмент для баг-репортов: тестиров
 | Что вообще проверяется перед сдачей | [.quality/quality.config.json](.quality/quality.config.json) |
 | Раннер проверок | `scripts/quality/verify.sh` |
 | Перегенерация кода из контрактов | `scripts/quality/openapi-generate.sh` (C#), `scripts/quality/frontend-openapi-generate.sh` (TypeScript) |
-| Какие HTTP-пути публичны и чем покрыты | [docs/public-contract-inventory.md](docs/public-contract-inventory.md) |
+| Какие HTTP-пути публичны и чем покрыты | `backend/Bugget.IntegrationTests/Contract/PublicContractInventory.cs` |
 | Как фронт ходит в API и какие есть исключения | гейт `frontend-api-inventory` — `scripts/quality/frontend-api-inventory.mjs` |
 | Как контрибьютить, дисциплина PR, формат коммита | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
 | Безопасность, кодекс | [docs/](docs/) |
@@ -94,10 +94,10 @@ Bugget — инструмент для баг-репортов: тестиров
 компиляция (контроллеры наследуют сгенерированные базы) и гейт `backend-contracts`.
 Contract-тесты в `backend/Bugget.IntegrationTests/Contract/` проверяют поведение явными
 assertions — статус, media type, `code` отказа и инвариант, ради которого написан
-сценарий. Причина — ADR-0010. Новый эндпоинт обязан появиться в
-[docs/public-contract-inventory.md](docs/public-contract-inventory.md) — иначе падает
-инвентарь; документ собирается из кода
-(`UPDATE_CONTRACT_INVENTORY=1 dotnet test backend/Bugget.IntegrationTests`).
+сценарий. Причина — ADR-0010. Новый эндпоинт обязан появиться в инвентаре
+`backend/Bugget.IntegrationTests/Contract/PublicContractInventory.cs` со строкой о том,
+кто его зовёт и чем он покрыт, — иначе падает `PublicContractInventoryTests`, который
+сверяет инвентарь с таблицей маршрутов живого хоста.
 
 **Новый код пишется по DDD.** Rich-модель и агрегаты для нового; легаси мигрируем только
 при касании. Причина — ADR-0003.

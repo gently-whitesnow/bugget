@@ -51,6 +51,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITeamMembersDbClient, TeamMembersDbClient>();
         services.AddSingleton<IMembersDbClient, MembersDbClient>();
         services.AddSingleton<IUserExternalLinksDbClient, UserExternalLinksDbClient>();
+        services.AddSingleton<IPersonalAccessTokensDbClient, PersonalAccessTokensDbClient>();
 
         // Тот же LocalFileStorageClient, что и у reports, но со своим корнем: named options
         // подставляются здесь, в композиционном корне, поэтому прикладной слой о DI не знает.

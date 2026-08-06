@@ -45,6 +45,14 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
     private const string UsersScriptsNamespace = "Bugget.Infrastructure.Users.DbUp.sql";
     private const string UsersLegacyJournalNamespace = "Users.DbUp.sql";
 
+    /// <summary>
+    /// Миграция, удаляющая TTL-инвайты: именно она обязана останавливаться на неизвестной
+    /// зависимости. Названа явно, а не как «единственная после baseline», — иначе тест
+    /// ломала бы любая следующая миграция, к самому сценарию отношения не имеющая.
+    /// </summary>
+    private const string UsersDropTeamInvitesJournalName =
+        $"{UsersLegacyJournalNamespace}.022_drop_team_invites.sql";
+
     [Fact(DisplayName = "Обновление reports с боевым журналом не выбирает ни одной миграции")]
     public async Task Reports_upgrade_over_legacy_journal_selects_no_scripts()
     {
@@ -118,14 +126,19 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
         var result = runner.PerformUpgrade();
 
         Assert.False(result.Successful, "022 должна fail-closed остановиться на неизвестной зависимости");
-        Assert.Equal(UsersPostBaselineJournalNames().Single(), result.ErrorScript?.Name);
+        Assert.Equal(UsersDropTeamInvitesJournalName, result.ErrorScript?.Name);
         var postgresError = Assert.IsType<PostgresException>(result.Error);
         Assert.Equal(PostgresErrorCodes.DependentObjectsStillExist, postgresError.SqlState);
         Assert.True(await UnexpectedTeamInvitesViewExistsAsync(target));
         Assert.True(await TeamInvitesTableExistsAsync(target));
         Assert.Equal(1, await TeamInviteRowCountAsync(target));
         Assert.Equal(ExpectedTeamInviteFunctionSignatures, await TeamInviteFunctionSignaturesAsync(target));
-        Assert.False(await JournalContainsAsync(target, UsersPostBaselineJournalNames().Single()));
+
+        // Fail-closed: в журнал не попала ни упавшая миграция, ни те, что стоят за ней.
+        foreach (var journalName in UsersPostBaselineJournalNames())
+        {
+            Assert.False(await JournalContainsAsync(target, journalName));
+        }
 
         var retry = Bugget.Infrastructure.Users.DbUp.DbUpService.BuildRunner(target);
         Assert.Equal(UsersPostBaselineJournalNames(), retry.GetScriptsToExecute().Select(script => script.Name));

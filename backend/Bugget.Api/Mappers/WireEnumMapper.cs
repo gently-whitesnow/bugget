@@ -60,6 +60,7 @@ internal static class WireEnumMapper
         (int)DomainModel.Common.CreatorType.User => CreatorType.User,
         (int)DomainModel.Common.CreatorType.System => CreatorType.System,
         (int)DomainModel.Common.CreatorType.TgBetaTester => CreatorType.Tg_beta_tester,
+        (int)DomainModel.Common.CreatorType.Agent => CreatorType.Agent,
         _ => throw Unknown(nameof(CreatorType), value)
     };
 
@@ -68,6 +69,7 @@ internal static class WireEnumMapper
         CreatorType.User => (int)DomainModel.Common.CreatorType.User,
         CreatorType.System => (int)DomainModel.Common.CreatorType.System,
         CreatorType.Tg_beta_tester => (int)DomainModel.Common.CreatorType.TgBetaTester,
+        CreatorType.Agent => (int)DomainModel.Common.CreatorType.Agent,
         _ => throw Unknown(nameof(CreatorType), value)
     };
 

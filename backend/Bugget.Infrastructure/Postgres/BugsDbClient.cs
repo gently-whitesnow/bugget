@@ -1,6 +1,7 @@
 using Bugget.Application.Commands.Bug;
 using Bugget.Application.Ports;
 using Bugget.Domain.Bugs;
+using Bugget.Domain.Common;
 using Bugget.Infrastructure.Transactions;
 using Dapper;
 
@@ -8,12 +9,16 @@ namespace Bugget.Infrastructure.Postgres;
 
 public sealed class BugsDbClient : PostgresClient, IBugsDbClient
 {
-    public async Task<BugSummary> CreateBugAsync(string userId, int reportId, BugDto bugDto)
+    public async Task<BugSummary> CreateBugAsync(
+        string userId,
+        int reportId,
+        BugDto bugDto,
+        int creatorType = (int)CreatorType.User)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
         return await connection.QuerySingleAsync<BugSummary>(
-            "SELECT * FROM public.create_bug_internal(@user_id, @report_id, @receive, @expect, @title);",
+            "SELECT * FROM public.create_bug_internal(@user_id, @report_id, @receive, @expect, @title, @creator_type);",
             new
             {
                 user_id = userId,
@@ -21,6 +26,7 @@ public sealed class BugsDbClient : PostgresClient, IBugsDbClient
                 receive = bugDto.Receive,
                 expect = bugDto.Expect,
                 title = bugDto.Title,
+                creator_type = (short)creatorType,
             }
                 );
     }
@@ -29,11 +35,12 @@ public sealed class BugsDbClient : PostgresClient, IBugsDbClient
         ITransactionScope scope,
         string userId,
         int reportId,
-        BugDto bugDto)
+        BugDto bugDto,
+        int creatorType = (int)CreatorType.User)
     {
         var (connection, tx) = scope.Unwrap();
         return connection.QuerySingleAsync<BugSummary>(new CommandDefinition(
-            "SELECT * FROM public.create_bug_internal(@user_id, @report_id, @receive, @expect, @title);",
+            "SELECT * FROM public.create_bug_internal(@user_id, @report_id, @receive, @expect, @title, @creator_type);",
             new
             {
                 user_id = userId,
@@ -41,6 +48,7 @@ public sealed class BugsDbClient : PostgresClient, IBugsDbClient
                 receive = bugDto.Receive,
                 expect = bugDto.Expect,
                 title = bugDto.Title,
+                creator_type = (short)creatorType,
             },
             transaction: tx));
     }

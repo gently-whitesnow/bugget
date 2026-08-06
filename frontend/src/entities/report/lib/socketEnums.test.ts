@@ -47,6 +47,7 @@ describe("числа SignalR переводятся в значения пров
     [0, CreatorTypes.USER],
     [1, CreatorTypes.SYSTEM],
     [2, CreatorTypes.TG_BETA_TESTER],
+    [3, CreatorTypes.AGENT],
   ])("creatorType %i → %s", (value, expected) => {
     expect(creatorTypeFromSocket(value)).toBe(expected);
   });

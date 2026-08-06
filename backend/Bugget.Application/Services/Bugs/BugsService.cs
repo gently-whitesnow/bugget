@@ -2,7 +2,6 @@ using System.Text.Json;
 using Bugget.Application.Commands.Bug;
 using Bugget.Application.DomainEvents;
 using Bugget.Application.Errors;
-using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Reports;
 using Bugget.Domain.Authentication;
@@ -10,7 +9,6 @@ using Bugget.Domain.Bugs;
 using Bugget.Domain.DomainEvents;
 using Bugget.Domain.Errors;
 using Bugget.Domain.Reports;
-using Microsoft.Extensions.Options;
 
 namespace Bugget.Application.Services.Bugs;
 
@@ -19,7 +17,6 @@ public sealed class BugsService(
     BugEventsService bugsEventsService,
     ITaskQueue taskQueue,
     IReportsService reportsService,
-    IOptions<ReportAliasOptions> aliasOptions,
     IDomainEventPublisher domainEventPublisher,
     IUnitOfWork unitOfWork) : IBugsService
 {
@@ -29,22 +26,19 @@ public sealed class BugsService(
         {
             return (null, BoErrors.BugMustHaveOneField);
         }
-        var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
-        var resolvedReport = await reportsService.ResolveReportIdAsync(
-            user.OrganizationId,
-            user.TeamId,
-            reportId,
-            publicId,
-            teamReportId
-        );
+
+        var resolvedReport = await reportsService.ResolveReportByAliasAsync(aliasId, user);
         if (resolvedReport == null)
         {
             return (null, BoErrors.ReportNotFoundError);
         }
 
+        var creatorType = (int)user.ActorCreatorType;
+
         var bugSummary = await unitOfWork.ExecuteAsync(async (scope, ct) =>
         {
-            var summary = await bugsDbClient.CreateBugAsync(scope, user.Id, resolvedReport.Id, bug);
+            var summary = await bugsDbClient.CreateBugAsync(
+                scope, user.Id, resolvedReport.Id, bug, creatorType);
 
             var payload = JsonSerializer.Serialize(new
             {
@@ -78,18 +72,13 @@ public sealed class BugsService(
 
     public async Task<(BugPatchResult? Value, Error? Error)> PatchBugAsync(UserIdentity user, string aliasId, int bugId, BugPatchDto patchDto)
     {
-        var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
-        var resolvedReport = await reportsService.ResolveReportIdAsync(
-            user.OrganizationId,
-            user.TeamId,
-            reportId,
-            publicId,
-            teamReportId
-        );
+        var resolvedReport = await reportsService.ResolveReportByAliasAsync(aliasId, user);
         if (resolvedReport == null)
         {
             return (null, BoErrors.ReportNotFoundError);
         }
+
+        var actorCreatorType = (short)user.ActorCreatorType;
 
         var bugPatchResult = await unitOfWork.ExecuteAsync(async (scope, ct) =>
         {
@@ -121,6 +110,7 @@ public sealed class BugsService(
                     EventType = BuggetEventTypes.BugStatusChanged,
                     Payload = payload,
                     ActorUserId = user.Id,
+                    ActorCreatorType = actorCreatorType,
                     OccurredAt = DateTimeOffset.UtcNow,
                     CorrelationId = Guid.NewGuid(),
                 }, scope, ct);

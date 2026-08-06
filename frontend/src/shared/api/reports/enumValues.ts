@@ -46,6 +46,7 @@ export const CreatorTypes = defineEnumValues<CreatorTypes>()({
   USER: "user",
   SYSTEM: "system",
   TG_BETA_TESTER: "tg_beta_tester",
+  AGENT: "agent",
 });
 
 export type CommentAudiences = components["schemas"]["CommentAudience"];

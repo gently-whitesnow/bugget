@@ -14,6 +14,12 @@ export const useUserDisplayName = (
   const currentUser = useUnit($authUserStore);
 
   if (creatorType === CreatorTypes.SYSTEM) return "Система";
+  if (creatorType === CreatorTypes.AGENT) {
+    if (commentUserId && users[commentUserId]?.name) {
+      return users[commentUserId].name;
+    }
+    return "Агент";
+  }
 
   if (currentUser?.id && commentUserId === currentUser.id) return youString;
 

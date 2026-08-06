@@ -46,6 +46,7 @@ public sealed class WireEnumTests
     [InlineData(CreatorType.User, "user")]
     [InlineData(CreatorType.System, "system")]
     [InlineData(CreatorType.Tg_beta_tester, "tg_beta_tester")]
+    [InlineData(CreatorType.Agent, "agent")]
     public void CreatorTypeIsWrittenAsWireString(CreatorType creatorType, string wire)
     {
         var json = JsonSerializer.Serialize(new CommentSummary { Creator_type = creatorType }, Options);

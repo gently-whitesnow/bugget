@@ -2,7 +2,6 @@ using System.Text.Json;
 using Bugget.Application.Commands.Comment;
 using Bugget.Application.DomainEvents;
 using Bugget.Application.Errors;
-using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Bugs;
 using Bugget.Application.Services.Reports;
@@ -12,7 +11,6 @@ using Bugget.Domain.Common;
 using Bugget.Domain.DomainEvents;
 using Bugget.Domain.Errors;
 using Bugget.Domain.Reports;
-using Microsoft.Extensions.Options;
 
 namespace Bugget.Application.Services.Comments;
 
@@ -21,21 +19,13 @@ public sealed class CommentsService(
     CommentEventsService commentEventsService,
     ITaskQueue taskQueue,
     IReportsService reportsService,
-    IOptions<ReportAliasOptions> aliasOptions,
     IBugsService bugsService,
     IDomainEventPublisher domainEventPublisher,
     IUnitOfWork unitOfWork) : ICommentsService
 {
     public async Task<(CommentSummary? Value, Error? Error)> CreateCommentAsync(UserIdentity user, string aliasId, int bugId, CommentDto commentDto)
     {
-        var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
-        var resolvedReport = await reportsService.ResolveReportIdAsync(
-            user.OrganizationId,
-            user.TeamId,
-            reportId,
-            publicId,
-            teamReportId
-        );
+        var resolvedReport = await reportsService.ResolveReportByAliasAsync(aliasId, user);
         if (resolvedReport == null)
         {
             return (null, BoErrors.ReportNotFoundError);
@@ -47,6 +37,8 @@ public sealed class CommentsService(
             return (null, BoErrors.BugNotFoundError);
         }
 
+        var creatorType = (int)user.ActorCreatorType;
+
         var comment = await unitOfWork.ExecuteAsync(async (scope, ct) =>
         {
             var audience = (int)(commentDto.Audience.HasValue
@@ -55,6 +47,7 @@ public sealed class CommentsService(
 
             var summary = await commentsDbClient.CreateCommentAsync(
                 scope, user.Id, bugId, commentDto.Text,
+                creatorType: creatorType,
                 audience: audience);
 
             var payload = JsonSerializer.Serialize(new
@@ -92,14 +85,7 @@ public sealed class CommentsService(
 
     public async Task<Error?> DeleteCommentAsync(UserIdentity user, string aliasId, int bugId, int commentId)
     {
-        var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
-        var resolvedReport = await reportsService.ResolveReportIdAsync(
-            user.OrganizationId,
-            user.TeamId,
-            reportId,
-            publicId,
-            teamReportId
-        );
+        var resolvedReport = await reportsService.ResolveReportByAliasAsync(aliasId, user);
         if (resolvedReport == null)
         {
             return BoErrors.ReportNotFoundError;
@@ -119,14 +105,7 @@ public sealed class CommentsService(
 
     public async Task<(CommentSummary? Value, Error? Error)> UpdateCommentAsync(UserIdentity user, string aliasId, int bugId, int commmentId, CommentDto commentDto)
     {
-        var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
-        var resolvedReport = await reportsService.ResolveReportIdAsync(
-            user.OrganizationId,
-            user.TeamId,
-            reportId,
-            publicId,
-            teamReportId
-        );
+        var resolvedReport = await reportsService.ResolveReportByAliasAsync(aliasId, user);
         if (resolvedReport == null)
         {
             return (null, BoErrors.ReportNotFoundError);

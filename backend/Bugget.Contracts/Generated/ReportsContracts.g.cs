@@ -75,7 +75,8 @@ namespace Bugget.Contracts.Reports.Generated
 
     /// <summary>
     /// Тип автора. Числа домена: `user` 0, `system` 1 (журнал действий),
-    /// <br/>`tg_beta_tester` 2 (внешний автор через beta-test bot).
+    /// <br/>`tg_beta_tester` 2 (внешний автор через beta-test bot),
+    /// <br/>`agent` 3 (запрос через PAT, не браузерная сессия).
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum CreatorType
@@ -89,6 +90,9 @@ namespace Bugget.Contracts.Reports.Generated
 
         [System.Runtime.Serialization.EnumMember(Value = @"tg_beta_tester")]
         Tg_beta_tester = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"agent")]
+        Agent = 3,
 
     }
 

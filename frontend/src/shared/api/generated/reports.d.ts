@@ -536,10 +536,11 @@ export interface components {
         BugStatus: "open" | "verified" | "rejected" | "fixed";
         /**
          * @description Тип автора. Числа домена: `user` 0, `system` 1 (журнал действий),
-         *     `tg_beta_tester` 2 (внешний автор через beta-test bot).
+         *     `tg_beta_tester` 2 (внешний автор через beta-test bot),
+         *     `agent` 3 (запрос через PAT, не браузерная сессия).
          * @enum {string}
          */
-        CreatorType: "user" | "system" | "tg_beta_tester";
+        CreatorType: "user" | "system" | "tg_beta_tester" | "agent";
         /**
          * @description Кому виден комментарий: `internal` — команде, `external` — уходит
          *     внешнему автору. Числа домена: `internal` 0, `external` 1.

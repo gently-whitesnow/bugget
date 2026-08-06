@@ -15,5 +15,10 @@ public enum CreatorType
     /// <summary>
     /// Внешний автор через beta-test bot (Telegram)
     /// </summary>
-    TgBetaTester = 2
+    TgBetaTester = 2,
+
+    /// <summary>
+    /// Неинтерактивный клиент: запрос пришёл через PAT, а не браузерную JWT-сессию.
+    /// </summary>
+    Agent = 3
 }

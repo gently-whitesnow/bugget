@@ -31,7 +31,7 @@ Enum-like значения публичного HTTP API модуля reports �
 | --- | --- |
 | `ReportStatus` | `backlog`, `resolved`, `fix`, `rejected`, `test` |
 | `BugStatus` | `open`, `verified`, `rejected`, `fixed` |
-| `CreatorType` | `user`, `system`, `tg_beta_tester` |
+| `CreatorType` | `user`, `system`, `tg_beta_tester`, `agent` |
 | `CommentAudience` | `internal`, `external` |
 | `AttachType` | `fact`, `expected`, `comment`, `bug_step` |
 

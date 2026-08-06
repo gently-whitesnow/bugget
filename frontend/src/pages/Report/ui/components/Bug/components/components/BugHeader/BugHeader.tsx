@@ -4,7 +4,7 @@ import { ru } from "date-fns/locale";
 import { Trash2, Link as LinkIcon } from "lucide-react";
 
 import { useUnit } from "effector-react";
-import { BugStatuses } from "@/shared/config";
+import { BugStatuses, CreatorTypes } from "@/shared/config";
 import { AutoResizeTextarea } from "@/shared/ui";
 import { BugClientEntity } from "@/entities/report";
 import { $authUserStore } from "@/entities/user";
@@ -36,15 +36,20 @@ const BugHeader = ({
     removeNewBugEvent,
     updateNewBugTitleEvent,
   ]);
+  const isAgentBug = bug.creatorType === CreatorTypes.AGENT;
   const isAuthorCurrentUser = Boolean(
     currentUser?.id && bug.creatorUserId === currentUser.id
   );
   const authorName = users[bug.creatorUserId]?.name;
-  const authorFragment = isAuthorCurrentUser
-    ? " вами"
-    : authorName
-      ? ` пользователем ${authorName}`
-      : "";
+  const authorFragment = isAgentBug
+    ? authorName
+      ? ` агентом ${authorName}`
+      : " агентом"
+    : isAuthorCurrentUser
+      ? " вами"
+      : authorName
+        ? ` пользователем ${authorName}`
+        : "";
 
   const displayTitle = bug.title ?? `Баг #${bug.id}`;
   const [localTitle, setLocalTitle] = useState(displayTitle);
@@ -139,6 +144,11 @@ const BugHeader = ({
             })}
             <span>{authorFragment}</span>
           </div>
+          {isAgentBug ? (
+            <span className="text-[10px] uppercase tracking-wide text-base-content/50">
+              агент
+            </span>
+          ) : null}
           <a
             href={getBugAnchorHref(bug.id)}
             onClick={handleCopyBugLink}

@@ -64,6 +64,7 @@ const Comment = memo((props: Props) => {
   const userDisplayName = useUserDisplayName(creatorUserId, creatorType);
   const isMyComment = currentUser?.id === creatorUserId;
   const isSystemComment = creatorType === CreatorTypes.SYSTEM;
+  const isAgentComment = creatorType === CreatorTypes.AGENT;
   const avatarUrl = creatorUserId ? users[creatorUserId]?.imageUrl : undefined;
 
   const [isEditing, setIsEditing] = useState(false);
@@ -167,7 +168,7 @@ const Comment = memo((props: Props) => {
         "border-primary ring-2 ring-primary/30 bg-base-200/40"
       )}`}
     >
-      {isSystemComment ? (
+      {isSystemComment || isAgentComment ? (
         <div className="w-8 h-8 rounded-full bg-base-200 flex items-center justify-center shrink-0">
           <Bot className="w-6 h-6 text-base-content/80" />
         </div>
@@ -180,6 +181,11 @@ const Comment = memo((props: Props) => {
             <span className="text-xs font-medium text-base-content">
               {userDisplayName}
             </span>
+            {isAgentComment ? (
+              <span className="text-[10px] uppercase tracking-wide text-base-content/50">
+                агент
+              </span>
+            ) : null}
             <span className="text-xs text-base-content/60">
               {getCommentTimeDisplay(createdAt)}
             </span>

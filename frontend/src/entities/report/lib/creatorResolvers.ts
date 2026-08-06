@@ -15,10 +15,14 @@ const internalUserResolver: CreatorResolver = (id, { users }) =>
 
 const systemResolver: CreatorResolver = () => "Система";
 
+const agentResolver: CreatorResolver = (id, { users }) =>
+  users[id]?.name ?? "Агент";
+
 const resolvers: Record<CreatorTypes, CreatorResolver> = {
   [CreatorTypes.USER]: internalUserResolver,
   [CreatorTypes.SYSTEM]: systemResolver,
   [CreatorTypes.TG_BETA_TESTER]: internalUserResolver,
+  [CreatorTypes.AGENT]: agentResolver,
 };
 
 export const resolveCreatorName = (

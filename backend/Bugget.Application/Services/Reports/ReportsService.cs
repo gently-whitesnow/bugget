@@ -29,16 +29,18 @@ public sealed class ReportsService(
 
     public async Task<(ReportPatchResult? Value, Error? Error)> PatchReportAsync(string aliasId, UserIdentity user, ReportPatchDto patchDto)
     {
-        var resolvedReport = await ResolveReportAsync(aliasId, user);
+        var resolvedReport = await ResolveReportByAliasAsync(aliasId, user);
         if (resolvedReport == null)
         {
             return (null, BoErrors.ReportNotFoundError);
         }
 
         var workspaceId = BugsService.ResolveWorkspaceId(resolvedReport.CreatorTeamId, user.OrganizationId);
+        var actorCreatorType = (short)user.ActorCreatorType;
 
         var (patchResult, effectivePatch) = await unitOfWork.ExecuteAsync(
-            (scope, ct) => ApplyStatusPatchInTxAsync(scope, ct, resolvedReport.Id, workspaceId, user, patchDto));
+            (scope, ct) => ApplyStatusPatchInTxAsync(
+                scope, ct, resolvedReport.Id, workspaceId, user, patchDto, actorCreatorType));
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(() => reportEventsService.HandlePatchReportEventAsync(reportIdContext, user, effectivePatch, patchResult));
@@ -46,7 +48,7 @@ public sealed class ReportsService(
         return (patchResult, null);
     }
 
-    private Task<ResolvedReportId?> ResolveReportAsync(string aliasId, UserIdentity user)
+    public Task<ResolvedReportId?> ResolveReportByAliasAsync(string aliasId, UserIdentity user)
     {
         var (reportId, publicId, teamReportId) = ReportIdResolveHelper.ResolveReportId(aliasId, aliasOptions.Value);
         return reportsDbClient.ResolveReportIdAsync(
@@ -63,7 +65,8 @@ public sealed class ReportsService(
         int reportId,
         string workspaceId,
         UserIdentity user,
-        ReportPatchDto patchDto)
+        ReportPatchDto patchDto,
+        short actorCreatorType)
     {
         var (oldStatus, oldResponsibleUserId) = await PreFetchStatusAndResponsibleAsync(scope, ct, reportId, patchDto);
 
@@ -88,7 +91,8 @@ public sealed class ReportsService(
                 reportId: reportId,
                 fromStatus: (ReportStatus)oldStatus.Value,
                 toStatus: (ReportStatus)patchResult.Status,
-                actorUserId: user.Id);
+                actorUserId: user.Id,
+                actorCreatorType: actorCreatorType);
 
             if (statusEvt is not null)
             {
@@ -103,7 +107,8 @@ public sealed class ReportsService(
                 reportId: reportId,
                 oldIsExcluded: oldIsExcluded.Value,
                 newIsExcluded: patchDto.IsExcludedFromAnalytics.Value,
-                actorUserId: user.Id);
+                actorUserId: user.Id,
+                actorCreatorType: actorCreatorType);
 
             if (excludedEvt is not null)
             {

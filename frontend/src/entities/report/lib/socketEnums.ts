@@ -36,6 +36,7 @@ const creatorTypes = [
   CreatorTypes.USER,
   CreatorTypes.SYSTEM,
   CreatorTypes.TG_BETA_TESTER,
+  CreatorTypes.AGENT,
 ] as const;
 
 const commentAudiences = [

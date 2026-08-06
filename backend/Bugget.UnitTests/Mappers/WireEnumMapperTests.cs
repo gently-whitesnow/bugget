@@ -42,6 +42,7 @@ public sealed class WireEnumMapperTests
     [InlineData(DomainModel.Common.CreatorType.User, CreatorType.User)]
     [InlineData(DomainModel.Common.CreatorType.System, CreatorType.System)]
     [InlineData(DomainModel.Common.CreatorType.TgBetaTester, CreatorType.Tg_beta_tester)]
+    [InlineData(DomainModel.Common.CreatorType.Agent, CreatorType.Agent)]
     public void CreatorTypeRoundTrips(DomainModel.Common.CreatorType domain, CreatorType wire)
     {
         WireEnumMapper.ToCreatorTypeWire((int)domain).Should().Be(wire);

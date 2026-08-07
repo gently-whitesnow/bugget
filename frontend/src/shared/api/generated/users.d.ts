@@ -98,6 +98,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspaceId}/teams/{teamId}/users/personal-access-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Personal access tokens текущего пользователя.
+         * @description Токены пользователя по всем его командам, а не только по команде из адреса:
+         *     это собственные данные пользователя, и при переключении команды они не должны
+         *     «пропадать» из настроек. Область действия каждого токена видна в самой строке
+         *     (`workspace_id`, `team_id`). Секрет в ответе не встречается ни в каком виде —
+         *     только опознавательный префикс.
+         */
+        get: operations["PersonalAccessTokens_ListInContext"];
+        put?: never;
+        /**
+         * Выпустить personal access token.
+         * @description Токен привязывается к рабочему пространству и команде из identity текущего
+         *     запроса и наследует права владельца в этой команде. Значение токена возвращается
+         *     только из этой ручки и только один раз: в хранилище остаётся хэш, повторно
+         *     показать значение нечем.
+         */
+        post: operations["PersonalAccessTokens_CreateInContext"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspaceId}/teams/{teamId}/users/personal-access-tokens/{tokenId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Отозвать personal access token.
+         * @description Отзыв необратим и действует немедленно. Отозвать можно только собственный
+         *     токен: чужой, уже отозванный и несуществующий неразличимы — 404.
+         */
+        delete: operations["PersonalAccessTokens_RevokeInContext"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{workspaceId}/teams/{teamId}/users/merge": {
         parameters: {
             query?: never;
@@ -618,6 +670,57 @@ export interface components {
             /** @description Сколько пользователей в текущей выдаче. */
             total: number;
         };
+        /**
+         * @description Personal access token в списке настроек: метаданные без секрета. По `token_prefix`
+         *     токен можно опознать среди своих, но восстановить значение из него нельзя.
+         */
+        PersonalAccessToken: {
+            id: components["schemas"]["Int64String"];
+            /** @description Рабочее пространство, на которое выпущен токен. */
+            workspace_id: number;
+            /** @description Команда, на которую выпущен токен. */
+            team_id: number;
+            /** @description Название, заданное при выпуске. */
+            label: string;
+            /** @description Открытое начало значения — только чтобы опознать токен в списке. */
+            token_prefix: string;
+            /**
+             * Format: date-time
+             * @description Момент выпуска.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Момент истечения; `null` — бессрочный.
+             */
+            expires_at: string | null;
+            /**
+             * Format: date-time
+             * @description Последняя аутентификация этим токеном; `null` — не использовался.
+             */
+            last_used_at: string | null;
+        };
+        /** @description Запрос на выпуск personal access token. */
+        PersonalAccessTokenCreateRequest: {
+            /** @description Название токена — зачем он выпущен, например `mcp`. */
+            label: string;
+            /**
+             * Format: date-time
+             * @description Момент истечения. Не указан или `null` — срок по умолчанию (90 дней).
+             *     Бессрочный токен через публичный API выпустить нельзя: забытый вечный
+             *     токен — лишний риск, а надобности в нём у клиентов контракта нет.
+             */
+            expires_at?: string | null;
+        };
+        /**
+         * @description Ответ на выпуск токена — единственное место, где значение существует в открытом
+         *     виде. Оно не сохраняется и повторно не показывается.
+         */
+        PersonalAccessTokenCreated: {
+            /** @description Полное значение токена (`bgt_pat_…`). Показывается один раз. */
+            token: string;
+            personal_access_token: components["schemas"]["PersonalAccessToken"];
+        };
         /** @description Привязанный способ входа. */
         ExternalLink: {
             /** @description Провайдер, например `mattermost`. */
@@ -748,6 +851,11 @@ export interface components {
         UserId: components["schemas"]["Int64String"];
         /** @description Провайдер входа, например `mattermost`. */
         Provider: string;
+        /**
+         * @description Идентификатор personal access token. Строка канонического Int64
+         *     (см. shared.yaml `Int64String`) — по той же причине, что и `UserId`.
+         */
+        TokenId: components["schemas"]["Int64String"];
     };
     requestBodies: never;
     headers: never;
@@ -1022,6 +1130,133 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             /** @description Такой привязки у пользователя нет. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    PersonalAccessTokens_ListInContext: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Сегмент адреса, значение которого ручка не использует: рабочее
+                 *     пространство берётся из identity. Описан строкой, потому что до
+                 *     contract-first этот сегмент не связывался вовсе — любой мусор в нём
+                 *     доезжал до действия, а не отбивался как 400.
+                 */
+                workspaceId: components["parameters"]["WorkspaceIdIgnored"];
+                /**
+                 * @description Сегмент адреса, значение которого ручка не использует: команда берётся
+                 *     из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.
+                 */
+                teamId: components["parameters"]["TeamIdIgnored"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Неотозванные токены, свежие сверху. Просроченные остаются в списке — пользователь должен видеть, что именно истекло. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalAccessToken"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    PersonalAccessTokens_CreateInContext: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Сегмент адреса, значение которого ручка не использует: рабочее
+                 *     пространство берётся из identity. Описан строкой, потому что до
+                 *     contract-first этот сегмент не связывался вовсе — любой мусор в нём
+                 *     доезжал до действия, а не отбивался как 400.
+                 */
+                workspaceId: components["parameters"]["WorkspaceIdIgnored"];
+                /**
+                 * @description Сегмент адреса, значение которого ручка не использует: команда берётся
+                 *     из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.
+                 */
+                teamId: components["parameters"]["TeamIdIgnored"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonalAccessTokenCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Токен выпущен. Единственный ответ, содержащий его значение. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalAccessTokenCreated"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            /** @description В identity запроса нет команды — токен не к чему привязать. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    PersonalAccessTokens_RevokeInContext: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Сегмент адреса, значение которого ручка не использует: рабочее
+                 *     пространство берётся из identity. Описан строкой, потому что до
+                 *     contract-first этот сегмент не связывался вовсе — любой мусор в нём
+                 *     доезжал до действия, а не отбивался как 400.
+                 */
+                workspaceId: components["parameters"]["WorkspaceIdIgnored"];
+                /**
+                 * @description Сегмент адреса, значение которого ручка не использует: команда берётся
+                 *     из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.
+                 */
+                teamId: components["parameters"]["TeamIdIgnored"];
+                /**
+                 * @description Идентификатор personal access token. Строка канонического Int64
+                 *     (см. shared.yaml `Int64String`) — по той же причине, что и `UserId`.
+                 */
+                tokenId: components["parameters"]["TokenId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Токен отозван. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Токена нет, он чужой или уже отозван. */
             404: {
                 headers: {
                     [name: string]: unknown;

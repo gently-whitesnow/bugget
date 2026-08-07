@@ -176,6 +176,69 @@ namespace Bugget.Api.Generated.Users
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class PersonalAccessTokensControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// Personal access tokens текущего пользователя.
+        /// </summary>
+        /// <remarks>
+        /// Токены пользователя по всем его командам, а не только по команде из адреса:
+        /// <br/>это собственные данные пользователя, и при переключении команды они не должны
+        /// <br/>«пропадать» из настроек. Область действия каждого токена видна в самой строке
+        /// <br/>(`workspace_id`, `team_id`). Секрет в ответе не встречается ни в каком виде —
+        /// <br/>только опознавательный префикс.
+        /// </remarks>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
+        /// <returns>Неотозванные токены, свежие сверху. Просроченные остаются в списке — пользователь должен видеть, что именно истекло.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/personal-access-tokens")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<PersonalAccessToken>>> ListInContext(string workspaceId, string teamId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Выпустить personal access token.
+        /// </summary>
+        /// <remarks>
+        /// Токен привязывается к рабочему пространству и команде из identity текущего
+        /// <br/>запроса и наследует права владельца в этой команде. Значение токена возвращается
+        /// <br/>только из этой ручки и только один раз: в хранилище остаётся хэш, повторно
+        /// <br/>показать значение нечем.
+        /// </remarks>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
+        /// <returns>Токен выпущен. Единственный ответ, содержащий его значение.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/personal-access-tokens")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<PersonalAccessTokenCreated>> CreateInContext(string workspaceId, string teamId, [Microsoft.AspNetCore.Mvc.FromBody] PersonalAccessTokenCreateRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Отозвать personal access token.
+        /// </summary>
+        /// <remarks>
+        /// Отзыв необратим и действует немедленно. Отозвать можно только собственный
+        /// <br/>токен: чужой, уже отозванный и несуществующий неразличимы — 404.
+        /// </remarks>
+        /// <param name="workspaceId">Сегмент адреса, значение которого ручка не использует: рабочее
+        /// <br/>пространство берётся из identity. Описан строкой, потому что до
+        /// <br/>contract-first этот сегмент не связывался вовсе — любой мусор в нём
+        /// <br/>доезжал до действия, а не отбивался как 400.</param>
+        /// <param name="teamId">Сегмент адреса, значение которого ручка не использует: команда берётся
+        /// <br/>из identity. Описан строкой по той же причине, что и `WorkspaceIdIgnored`.</param>
+        /// <param name="tokenId">Идентификатор personal access token. Строка канонического Int64
+        /// <br/>(см. shared.yaml `Int64String`) — по той же причине, что и `UserId`.</param>
+        /// <returns>Токен отозван.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("v1/workspaces/{workspaceId}/teams/{teamId}/users/personal-access-tokens/{tokenId}")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> RevokeInContext(string workspaceId, string teamId, string tokenId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public abstract class AvatarControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
     {
         /// <summary>

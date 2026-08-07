@@ -852,6 +852,140 @@ namespace Bugget.Contracts.Users.Generated
     }
 
     /// <summary>
+    /// Personal access token в списке настроек: метаданные без секрета. По `token_prefix`
+    /// <br/>токен можно опознать среди своих, но восстановить значение из него нельзя.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PersonalAccessToken
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.StringLength(19)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(0|[1-9][0-9]*)$")]
+        public string Id { get; set; }
+
+        /// <summary>
+        /// Рабочее пространство, на которое выпущен токен.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("workspace_id")]
+        public int Workspace_id { get; set; }
+
+        /// <summary>
+        /// Команда, на которую выпущен токен.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("team_id")]
+        public int Team_id { get; set; }
+
+        /// <summary>
+        /// Название, заданное при выпуске.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("label")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Label { get; set; }
+
+        /// <summary>
+        /// Открытое начало значения — только чтобы опознать токен в списке.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("token_prefix")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Token_prefix { get; set; }
+
+        /// <summary>
+        /// Момент выпуска.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("created_at")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public System.DateTimeOffset Created_at { get; set; }
+
+        /// <summary>
+        /// Момент истечения; `null` — бессрочный.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("expires_at")]
+        public System.DateTimeOffset? Expires_at { get; set; }
+
+        /// <summary>
+        /// Последняя аутентификация этим токеном; `null` — не использовался.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("last_used_at")]
+        public System.DateTimeOffset? Last_used_at { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Запрос на выпуск personal access token.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PersonalAccessTokenCreateRequest
+    {
+
+        /// <summary>
+        /// Название токена — зачем он выпущен, например `mcp`.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("label")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(128, MinimumLength = 1)]
+        public string Label { get; set; }
+
+        /// <summary>
+        /// Момент истечения. Не указан или `null` — срок по умолчанию (90 дней).
+        /// <br/>Бессрочный токен через публичный API выпустить нельзя: забытый вечный
+        /// <br/>токен — лишний риск, а надобности в нём у клиентов контракта нет.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("expires_at")]
+        public System.DateTimeOffset? Expires_at { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Ответ на выпуск токена — единственное место, где значение существует в открытом
+    /// <br/>виде. Оно не сохраняется и повторно не показывается.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PersonalAccessTokenCreated
+    {
+
+        /// <summary>
+        /// Полное значение токена (`bgt_pat_…`). Показывается один раз.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("token")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Token { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("personal_access_token")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public PersonalAccessToken Personal_access_token { get; set; } = new PersonalAccessToken();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
     /// Привязанный способ входа.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]

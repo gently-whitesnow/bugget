@@ -206,6 +206,89 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
 
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users/personal-access-tokens:
+    get:
+      operationId: PersonalAccessTokens_ListInContext
+      summary: Personal access tokens текущего пользователя.
+      description: |-
+        Токены пользователя по всем его командам, а не только по команде из адреса:
+        это собственные данные пользователя, и при переключении команды они не должны
+        «пропадать» из настроек. Область действия каждого токена видна в самой строке
+        (`workspace_id`, `team_id`). Секрет в ответе не встречается ни в каком виде —
+        только опознавательный префикс.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
+      responses:
+        '200':
+          description: Неотозванные токены, свежие сверху. Просроченные остаются в
+            списке — пользователь должен видеть, что именно истекло.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PersonalAccessToken'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      operationId: PersonalAccessTokens_CreateInContext
+      summary: Выпустить personal access token.
+      description: |-
+        Токен привязывается к рабочему пространству и команде из identity текущего
+        запроса и наследует права владельца в этой команде. Значение токена возвращается
+        только из этой ручки и только один раз: в хранилище остаётся хэш, повторно
+        показать значение нечем.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonalAccessTokenCreateRequest'
+      responses:
+        '200':
+          description: Токен выпущен. Единственный ответ, содержащий его значение.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalAccessTokenCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: В identity запроса нет команды — токен не к чему привязать.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+
+  /v1/workspaces/{workspaceId}/teams/{teamId}/users/personal-access-tokens/{tokenId}:
+    delete:
+      operationId: PersonalAccessTokens_RevokeInContext
+      summary: Отозвать personal access token.
+      description: |-
+        Отзыв необратим и действует немедленно. Отозвать можно только собственный
+        токен: чужой, уже отозванный и несуществующий неразличимы — 404.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceIdIgnored'
+        - $ref: '#/components/parameters/TeamIdIgnored'
+        - $ref: '#/components/parameters/TokenId'
+      responses:
+        '204':
+          description: Токен отозван.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Токена нет, он чужой или уже отозван.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+
   /v1/workspaces/{workspaceId}/teams/{teamId}/users/merge:
     post:
       operationId: Users_MergeUsersInContext
@@ -733,6 +816,16 @@ components:
       schema:
         type: string
 
+    TokenId:
+      name: tokenId
+      in: path
+      required: true
+      description: |-
+        Идентификатор personal access token. Строка канонического Int64
+        (см. shared.yaml `Int64String`) — по той же причине, что и `UserId`.
+      schema:
+        $ref: '../shared.yaml#/components/schemas/Int64String'
+
   schemas:
 
     IdList:
@@ -1173,6 +1266,85 @@ components:
         total:
           type: integer
           description: Сколько пользователей в текущей выдаче.
+
+    PersonalAccessToken:
+      type: object
+      description: |-
+        Personal access token в списке настроек: метаданные без секрета. По `token_prefix`
+        токен можно опознать среди своих, но восстановить значение из него нельзя.
+      required:
+        - id
+        - workspace_id
+        - team_id
+        - label
+        - token_prefix
+        - created_at
+        - expires_at
+        - last_used_at
+      properties:
+        id:
+          $ref: '../shared.yaml#/components/schemas/Int64String'
+        workspace_id:
+          type: integer
+          description: Рабочее пространство, на которое выпущен токен.
+        team_id:
+          type: integer
+          description: Команда, на которую выпущен токен.
+        label:
+          type: string
+          description: Название, заданное при выпуске.
+        token_prefix:
+          type: string
+          description: Открытое начало значения — только чтобы опознать токен в списке.
+        created_at:
+          type: string
+          format: date-time
+          description: Момент выпуска.
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Момент истечения; `null` — бессрочный.
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Последняя аутентификация этим токеном; `null` — не использовался.
+
+    PersonalAccessTokenCreateRequest:
+      type: object
+      description: Запрос на выпуск personal access token.
+      required:
+        - label
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Название токена — зачем он выпущен, например `mcp`.
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: |-
+            Момент истечения. Не указан или `null` — срок по умолчанию (90 дней).
+            Бессрочный токен через публичный API выпустить нельзя: забытый вечный
+            токен — лишний риск, а надобности в нём у клиентов контракта нет.
+
+    PersonalAccessTokenCreated:
+      type: object
+      description: |-
+        Ответ на выпуск токена — единственное место, где значение существует в открытом
+        виде. Оно не сохраняется и повторно не показывается.
+      required:
+        - token
+        - personal_access_token
+      properties:
+        token:
+          type: string
+          description: Полное значение токена (`bgt_pat_…`). Показывается один раз.
+        personal_access_token:
+          $ref: '#/components/schemas/PersonalAccessToken'
 
     ExternalLink:
       type: object

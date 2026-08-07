@@ -27,7 +27,8 @@ internal static class McpServiceCollectionExtensions
         services
             .AddMcpServer(options => options.ServerInfo = new() { Name = "bugget-api", Version = "1.0.0" })
             .WithHttpTransport()
-            .WithTools<ReportsReadTools>();
+            .WithTools<ReportsReadTools>()
+            .WithTools<ReportsWriteTools>();
 
         return services;
     }

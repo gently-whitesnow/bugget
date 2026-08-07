@@ -206,6 +206,34 @@ public sealed class AuthorizationContractTests(AppContractFixture fixture) : ICl
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Fact(DisplayName = "GET /_internal/auth с просроченным PAT: 401")]
+    public async Task InternalAuthWithExpiredPersonalAccessToken()
+    {
+        var scenario = await UsersScenario.CreateAsync(fixture);
+        var generated = PersonalAccessTokenSecret.Generate();
+        var tokens = fixture.Services.GetRequiredService<IPersonalAccessTokensDbClient>();
+        await tokens.CreateAsync(new CreatePersonalAccessTokenDto
+        {
+            UserId = scenario.UserId,
+            WorkspaceId = scenario.WorkspaceId,
+            TeamId = scenario.TeamId,
+            Label = "contract-pat-expired",
+            TokenHash = generated.Hash,
+            TokenPrefix = generated.DisplayPrefix,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(-1)
+        });
+
+        var client = fixture.CreateAnonymousClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", generated.Value);
+        client.DefaultRequestHeaders.Add(
+            "X-Original-URI",
+            $"/v1/workspaces/{scenario.WorkspaceId}/teams/{scenario.TeamId}/reports");
+
+        var response = await client.GetAsync("/_internal/auth");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     [Fact(DisplayName = "POST /v1/logout: 200 и адрес редиректа в теле")]
     public async Task Logout()
     {

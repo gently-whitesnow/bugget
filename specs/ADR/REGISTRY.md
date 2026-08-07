@@ -21,6 +21,7 @@
 | [0011](0011-created-report-location.md) | Создание репорта возвращает 201, тело и внешний origin-relative Location | Accepted | 2026-08-01 |
 | [0012](0012-public-int64-decimal-string.md) | Публичный неотрицательный Int64 — каноническая decimal string | Accepted | 2026-08-02 |
 | [0013](0013-string-enum-wire-contract.md) | Enum-like значения публичного HTTP API — строки `snake_case`, домен и БД остаются числовыми | Accepted | 2026-08-01 |
+| [0014](0014-agent-access-pat-and-inprocess-mcp.md) | Доступ агента — personal access tokens и in-process MCP | Accepted | 2026-08-07 |
 
 Идентификатор `ADR-20260518`, который встречается в описаниях контрактов и в
 сгенерированных `.g.cs`, — из старой схемы нумерации по дате. Он относится к решению

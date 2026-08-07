@@ -1,6 +1,6 @@
 import { createEffect, createEvent, sample } from "effector";
 
-import { createBug, updateBug } from "@/entities/report";
+import { createBug, requestBugFix, updateBug } from "@/entities/report";
 import type {
   CreateBugRequest,
   CreateBugResponse,
@@ -71,6 +71,28 @@ export const updateBugFx = createEffect<
                 ? "report-bug-expect-update-failed"
                 : "report-bug-update-failed",
       },
+    });
+    throw error;
+  }
+});
+
+/**
+ * Запрос «исправить баг агентом»: backend отвечает 202 и сам пишет
+ * комментарий-маркер, который приедет по realtime. Никакого локального
+ * состояния успеха здесь нет намеренно — обратная связь и есть тот комментарий.
+ */
+export const requestBugFixFx = createEffect<
+  { reportId: string; bugId: number },
+  void
+>(async ({ reportId, bugId }) => {
+  try {
+    await requestBugFix(reportId, bugId);
+  } catch (error) {
+    console.error("❌ requestBugFixFx error:", error);
+    notifyErrorRequested({
+      title: "Не удалось запросить исправление",
+      message: notificationMessages.errorRetry,
+      options: { dedupeKey: "report-bug-fix-request-failed" },
     });
     throw error;
   }

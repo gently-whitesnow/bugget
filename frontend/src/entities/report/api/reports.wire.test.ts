@@ -10,7 +10,7 @@ import {
   patchReport,
   resolveLegacyReport,
 } from "./reports";
-import { createBug, updateBug } from "./bugs";
+import { createBug, requestBugFix, updateBug } from "./bugs";
 import {
   createBugStep,
   deleteBugStep,
@@ -198,6 +198,16 @@ describe("тела запросов уходят в snake_case контракт�
 
     expect(sent().url).toBe(`${contextPrefix}/v2/reports/team-42/bugs`);
     expect(sentJsonBody()).toEqual({ receive: "падает", expect: null });
+  });
+
+  it("fix-request: POST без тела на путь бага", async () => {
+    await requestBugFix("team-42", 7);
+
+    expect(sent().method).toBe("post");
+    expect(sent().url).toBe(
+      `${contextPrefix}/v2/reports/team-42/bugs/7/fix-request`
+    );
+    expect(sent().data).toBeUndefined();
   });
 
   it("PATCH бага: статус и текстовые поля", async () => {

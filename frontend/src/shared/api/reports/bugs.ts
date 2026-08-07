@@ -20,3 +20,8 @@ export const patchBug = (aliasId: string, bugId: number, body: PatchBugBody) =>
     path: { aliasId, bugId },
     body,
   });
+
+export const requestBugFix = (aliasId: string, bugId: number) =>
+  request("/v2/reports/{aliasId}/bugs/{bugId}/fix-request", "post", {
+    path: { aliasId, bugId },
+  });

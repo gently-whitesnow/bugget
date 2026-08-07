@@ -76,6 +76,12 @@ internal sealed class ReportsWriteTools(
         [Description("Что получили по факту, от 1 до 2048 символов.")] string? receive = null,
         [Description("Что ожидали, от 1 до 2048 символов.")] string? expect = null)
     {
+        if (status is null && title is null && receive is null && expect is null)
+        {
+            throw new McpException(
+                "Передайте хотя бы одно поле: status, title, receive или expect — пустой патч ничего не меняет.");
+        }
+
         ValidateLength(title, 128, "title");
         ValidateLength(receive, 2048, "receive");
         ValidateLength(expect, 2048, "expect");

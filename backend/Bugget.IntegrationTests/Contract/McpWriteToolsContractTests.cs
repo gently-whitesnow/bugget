@@ -130,7 +130,8 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
         // История статусов живёт в domain_events; actor_creator_type там — уже
         // числовое значение домена: CreatorType.Agent = 3. Это чтение служебной
         // таблицы для проверки атрибуции, а не подготовка данных — данные выше
-        // созданы только публичным API.
+        // созданы только публичным API. Фильтр по актору: user id сценария уникален
+        // на каждый тест, поэтому событие гарантированно наше, а не соседнего теста.
         await using var connection = new Npgsql.NpgsqlConnection(
             Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING"));
         await connection.OpenAsync();
@@ -139,10 +140,9 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
             """
             SELECT actor_creator_type
             FROM domain_events
-            WHERE event_type = 'bugget.report.status_changed'
-            ORDER BY id DESC
-            LIMIT 1
-            """);
+            WHERE event_type = 'bugget.report.status_changed' AND actor_user_id = @actorUserId
+            """,
+            new { actorUserId = scenario.UserId });
         Assert.Equal((short)3, actorType);
     }
 
@@ -220,6 +220,23 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
             Args(("reportId", reportId), ("status", "готово")));
 
         Assert.Contains("backlog", text, StringComparison.Ordinal);
+    }
+
+    [Fact(DisplayName = "patch_bug без единого поля: отказ, а не тихий no-op")]
+    public async Task EmptyBugPatchIsRejected()
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var reportId = await scenario.CreateReportAsync();
+        var bugId = await scenario.CreateBugAsync(reportId);
+
+        await using var client = await CreateMcpClientAsync(scenario);
+        var text = await AssertToolFailsAsync(
+            client,
+            "patch_bug",
+            Args(("reportId", reportId), ("bugId", bugId)));
+
+        // Отказ должен подсказать модели, что передать, а не просто отказать.
+        Assert.Contains("status", text, StringComparison.Ordinal);
     }
 
     [Fact(DisplayName = "Текст длиннее лимита REST: отказ, а не запись")]

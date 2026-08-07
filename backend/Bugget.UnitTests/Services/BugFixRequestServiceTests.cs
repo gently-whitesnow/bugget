@@ -56,17 +56,7 @@ public sealed class BugFixRequestServiceTests
         _comments
             .Setup(c => c.CreateCommentAsync(
                 It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
-            .ReturnsAsync(new CommentSummary
-            {
-                Id = 1,
-                BugId = 42,
-                Text = "маркер",
-                CreatorUserId = SystemCreators.Bot,
-                CreatorType = 1,
-                Audience = 0,
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow,
-            });
+            .ReturnsAsync(Comment());
 
         var taskQueue = new Mock<ITaskQueue>();
         taskQueue
@@ -95,6 +85,32 @@ public sealed class BugFixRequestServiceTests
     }
 
     [Fact]
+    public async Task FailedRequestDoesNotBlockRetry()
+    {
+        // Первый вызов падает на создании маркера: пользователь получит 500 и
+        // нажмёт ещё раз. Если кулдаун остался занят, повтор ответит «принято»,
+        // не сделав ничего, — отказ станет невидимым.
+        _comments
+            .SetupSequence(c => c.CreateCommentAsync(
+                It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ThrowsAsync(new InvalidOperationException("база недоступна"))
+            .ReturnsAsync(Comment());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _service.RequestFixAsync(Identity(), "7", 42));
+
+        Assert.Null(await _service.RequestFixAsync(Identity(), "7", 42));
+
+        // Повтор реально сделал работу: маркер создан со второй попытки. Очередь
+        // здесь замокана и делегат не выполняет, поэтому спрашиваем с того шага,
+        // который сервис делает сам.
+        _comments.Verify(
+            c => c.CreateCommentAsync(
+                It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()),
+            Times.Exactly(2));
+    }
+
+    [Fact]
     public async Task CooldownExpiresWithTime()
     {
         Assert.Null(await _service.RequestFixAsync(Identity(), "7", 42));
@@ -106,6 +122,18 @@ public sealed class BugFixRequestServiceTests
                 It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()),
             Times.Exactly(2));
     }
+
+    private static CommentSummary Comment() => new()
+    {
+        Id = 1,
+        BugId = 42,
+        Text = "маркер",
+        CreatorUserId = SystemCreators.Bot,
+        CreatorType = 1,
+        Audience = 0,
+        CreatedAt = DateTimeOffset.UtcNow,
+        UpdatedAt = DateTimeOffset.UtcNow,
+    };
 
     private static UserIdentity Identity() =>
         new(new ClaimsPrincipal(new ClaimsIdentity(

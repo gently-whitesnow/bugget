@@ -30,6 +30,12 @@ public sealed class BugFixRequestService(
     /// </summary>
     private static readonly TimeSpan Cooldown = TimeSpan.FromMinutes(1);
 
+    /// <summary>
+    /// Порог уборки протухших записей. Словарь живёт столько же, сколько процесс,
+    /// и без уборки рос бы на запись за каждый когда-либо запрошенный баг.
+    /// </summary>
+    private const int SweepThreshold = 1024;
+
     private readonly ConcurrentDictionary<string, DateTimeOffset> _cooldownUntil = new();
 
     public async Task<Error?> RequestFixAsync(UserIdentity user, string aliasId, int bugId)
@@ -46,23 +52,36 @@ public sealed class BugFixRequestService(
             return BoErrors.BugNotFoundError;
         }
 
-        if (!TryEnterCooldown($"{resolvedReport.Id}:{bugId}"))
+        var cooldownKey = $"{resolvedReport.Id}:{bugId}";
+        if (!TryEnterCooldown(cooldownKey))
         {
             // Идемпотентный успех: запрос уже в работе, спамить нечем.
             return null;
         }
 
-        var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await commentLogsService.LogFixRequestedAsync(reportIdContext, bugId, user);
+        try
+        {
+            var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
+            await commentLogsService.LogFixRequestedAsync(reportIdContext, bugId, user);
 
-        var payload = new BugFixRequestedPayload(
-            user.OrganizationId,
-            user.TeamId,
-            aliasId,
-            bugId,
-            user.Id,
-            $"/api/app/workspaces/{user.OrganizationId}/teams/{user.TeamId}/v2/reports/{aliasId}");
-        await taskQueue.EnqueueAsync(() => notifier.NotifyAsync(payload, CancellationToken.None));
+            var payload = new BugFixRequestedPayload(
+                user.OrganizationId,
+                user.TeamId,
+                aliasId,
+                bugId,
+                user.Id,
+                $"/api/app/workspaces/{user.OrganizationId}/teams/{user.TeamId}/v2/reports/{aliasId}");
+            await taskQueue.EnqueueAsync(() => notifier.NotifyAsync(payload, CancellationToken.None));
+        }
+        catch
+        {
+            // Кулдаун занимается до работы, чтобы не пустить второй клик внутрь.
+            // Но если работа не сделалась, держать его нельзя: пользователь увидит
+            // 500, нажмёт ещё раз — и следующую минуту получал бы «принято», за
+            // которым ничего не стоит. Отказ обязан оставаться видимым.
+            _cooldownUntil.TryRemove(cooldownKey, out _);
+            throw;
+        }
 
         return null;
     }
@@ -72,10 +91,14 @@ public sealed class BugFixRequestService(
         var now = timeProvider.GetUtcNow();
         var until = now.Add(Cooldown);
 
+        if (_cooldownUntil.Count >= SweepThreshold)
+        {
+            SweepExpired(now);
+        }
+
         // Атомарно: победитель гонки — тот, чья запись реально легла (TryAdd или
         // TryUpdate с comparand). Сравнение значений времени тут не годится: два
         // запроса в один тик получили бы одинаковый until и оба «победили» бы.
-        // Протухшие записи перезаписываются по месту, отдельной чистки не нужно.
         while (true)
         {
             if (_cooldownUntil.TryAdd(key, until))
@@ -99,10 +122,19 @@ public sealed class BugFixRequestService(
             }
         }
     }
-}
 
-public interface IBugFixRequestService
-{
-    /// <summary><c>null</c> — принято (в том числе идемпотентный повтор в кулдауне).</summary>
-    Task<Error?> RequestFixAsync(UserIdentity user, string aliasId, int bugId);
+    /// <summary>
+    /// Уборка отработавших записей. Удаляется только то, что успело протухнуть, и
+    /// только если значение не подменили в гонке, — активный кулдаун снять нельзя.
+    /// </summary>
+    private void SweepExpired(DateTimeOffset now)
+    {
+        foreach (var (key, until) in _cooldownUntil)
+        {
+            if (until <= now)
+            {
+                _cooldownUntil.TryRemove(new KeyValuePair<string, DateTimeOffset>(key, until));
+            }
+        }
+    }
 }

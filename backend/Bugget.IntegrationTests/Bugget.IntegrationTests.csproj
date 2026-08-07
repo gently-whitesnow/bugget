@@ -20,6 +20,7 @@
     <PackageReference Include="Testcontainers.Keycloak" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+    <PackageReference Include="ModelContextProtocol.Core" />
   </ItemGroup>
 
   <ItemGroup>

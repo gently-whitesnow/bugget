@@ -1,3 +1,4 @@
+using Bugget.Api.Authentication;
 using Bugget.Api.Configurations;
 using Bugget.Api.Http;
 using Bugget.Api.Hubs;
@@ -31,6 +32,11 @@ public static class ApplicationBuilderExtensions
         {
             endpoints.MapControllers();
             endpoints.MapHub<ReportPageHub>("/v1/report-page-hub");
+            // MCP-эндпоинт (Streamable HTTP) — не MVC-контроллер, конвенция модуля
+            // reports его не достаёт, поэтому та же политика вешается явно. Через nginx
+            // путь проходит тем же location, что и остальной API: auth_request уже
+            // отработал, identity пришла заголовками.
+            endpoints.MapMcp("/v1/mcp").RequireAuthorization(ReportsModuleAuthorizationConvention.Policy);
             endpoints.MapHealthChecks("/_internal/ping");
             // Контракт self-hosted-контура: healthcheck контейнера ходит на /health.
             endpoints.MapHealthChecks("/health");

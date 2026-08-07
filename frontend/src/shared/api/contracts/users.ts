@@ -52,3 +52,15 @@ export type MergeUsersRequest = usersApi.MergeUsersBody;
 
 /** Тело создания рабочего пространства. */
 export type CreateWorkspaceRequest = usersApi.CreateWorkspaceBody;
+
+/** Токен неинтерактивного доступа в списке: метаданные без секрета. */
+export type PersonalAccessTokenResponse =
+  usersApi.PersonalAccessTokensResult[number];
+
+/** Что нужно для выпуска токена. */
+export type CreatePersonalAccessTokenRequest =
+  usersApi.CreatePersonalAccessTokenBody;
+
+/** Ответ на выпуск: единственное место, где значение токена открыто. */
+export type CreatedPersonalAccessTokenResponse =
+  usersApi.CreatePersonalAccessTokenResult;

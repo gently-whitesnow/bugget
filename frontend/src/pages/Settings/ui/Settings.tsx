@@ -26,6 +26,7 @@ import { SettingsHeader } from "./components/SettingsHeader/SettingsHeader";
 import { SettingsTabs } from "./components/SettingsTabs/SettingsTabs";
 import { SettingsSection } from "./components/SettingsSection/SettingsSection";
 import { UserProfileSection } from "./components/UserProfileSection/UserProfileSection";
+import { PersonalAccessTokensSection } from "./components/PersonalAccessTokensSection/PersonalAccessTokensSection";
 import { useExternalLinks } from "./hooks/useExternalLinks";
 import { useUserProfile } from "./hooks/useUserProfile";
 
@@ -215,6 +216,8 @@ export const Settings = () => {
         onMergeConfirm={handleMergeConfirm}
         onMergeCancel={handleMergeCancel}
       />
+
+      <PersonalAccessTokensSection />
 
       <SettingsHeader />
 

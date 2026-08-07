@@ -28,6 +28,7 @@ internal static class PublicContractInventory
         // --- bugs и шаги ---
         ["POST /v2/reports/{aliasId}/bugs"] = new(Frontend, "BugsContractTests"),
         ["PATCH /v2/reports/{aliasId}/bugs/{bugId}"] = new(Frontend, "BugsContractTests"),
+        ["POST /v2/reports/{aliasId}/bugs/{bugId}/fix-request"] = new(Frontend, "BugFixRequestContractTests"),
         ["POST /v2/reports/{aliasId}/bugs/{bugId}/steps"] = new(Frontend, "BugsContractTests"),
         ["PATCH /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}"] = new(Frontend, "BugsContractTests"),
         ["DELETE /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}"] = new(Frontend, "BugsContractTests"),

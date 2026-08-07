@@ -14,8 +14,29 @@ namespace Bugget.Api.Controllers.Bugs;
 /// <c>specs/contracts/reports/openapi.yaml</c> через <see cref="BugsControllerBase"/>.
 /// </summary>
 [ApiController]
-public sealed class BugsController(IBugsService bugsService) : BugsControllerBase
+public sealed class BugsController(
+    IBugsService bugsService,
+    IBugFixRequestService bugFixRequestService) : BugsControllerBase
 {
+    /// <summary>
+    /// Попросить агента починить баг: системный комментарий-маркер + асинхронный
+    /// сигнал раннеру. 202 и на повтор в кулдауне — запрос уже в работе.
+    /// </summary>
+    public override async Task<IActionResult> RequestBugFix(
+        string aliasId,
+        int bugId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = User.GetIdentity();
+        var error = await bugFixRequestService.RequestFixAsync(user, aliasId, bugId);
+        if (error is not null)
+        {
+            return error.ToProblemDetails(HttpContext);
+        }
+
+        return Accepted();
+    }
+
     public override Task<ActionResult<BugSummary>> CreateBug(
         string aliasId,
         BugRequest body,

@@ -122,6 +122,10 @@ internal sealed class ContractWebApplicationFactory : WebApplicationFactory<Prog
             // users проверялся бы в состоянии, которого в бою не бывает.
             services.AddHostedService<WorkspaceInitializationService>();
 
+            services.RemoveAll<IBugFixRequestedNotifier>();
+            services.AddSingleton<RecordingBugFixRequestedNotifier>();
+            services.AddSingleton<IBugFixRequestedNotifier>(sp => sp.GetRequiredService<RecordingBugFixRequestedNotifier>());
+
             services.RemoveAll<IReportPageHubClient>();
             services.AddSingleton<FakeReportPageHubClient>();
             services.AddSingleton<IReportPageHubClient>(sp => sp.GetRequiredService<FakeReportPageHubClient>());

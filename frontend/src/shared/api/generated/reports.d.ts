@@ -216,6 +216,30 @@ export interface paths {
         patch: operations["Bugs_PatchBug"];
         trace?: never;
     };
+    "/v2/reports/{aliasId}/bugs/{bugId}/fix-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Попросить агента починить баг.
+         * @description Продуктовый триггер «исправить баг»: в баге появляется системный
+         *     комментарий-маркер (приходит по realtime), а наружу асинхронно уходит
+         *     вебхук раннеру агента, если тот сконфигурирован. Bugget модель не
+         *     содержит — только маркер и сигнал. Повторный запрос в течение кулдауна
+         *     отвечает тем же 202, но нового комментария и вебхука не создаёт.
+         */
+        post: operations["Bugs_RequestBugFix"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/reports/{aliasId}/bugs/{bugId}/steps": {
         parameters: {
             query?: never;
@@ -1676,6 +1700,41 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    Bugs_RequestBugFix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Запрос принят. Тело пустое — результат придёт по realtime. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Репорт или баг не найден. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             500: components["responses"]["InternalServerError"];
         };
     };

@@ -23,6 +23,12 @@ public static class PersonalAccessTokenSecret
     /// </summary>
     private const int DisplaySecretLength = 6;
 
+    /// <summary>
+    /// Полная длина открытого префикса значения (<c>bgt_pat_</c> + первые символы
+    /// секрета) — то, что видно в списке токенов и чем ключуется троттлинг попыток.
+    /// </summary>
+    public static readonly int DisplayPrefixLength = Prefix.Length + DisplaySecretLength;
+
     private const int SecretBytes = 32;
 
     public static GeneratedPersonalAccessToken Generate()

@@ -58,7 +58,12 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddLogging(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSerilog((ctx, lc) => lc.ReadFrom.Configuration(configuration));
+        services.AddSerilog((ctx, lc) => lc
+            .ReadFrom.Configuration(configuration)
+            // Значение PAT в любом строковом свойстве события маскируется до
+            // открытого префикса — страховка на случай будущего логирования
+            // заголовков или тел запросов.
+            .Enrich.With(new Configurations.PatSecretMaskingEnricher()));
         return services;
     }
 

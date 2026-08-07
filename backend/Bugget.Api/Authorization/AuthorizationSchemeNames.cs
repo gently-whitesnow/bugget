@@ -11,6 +11,16 @@ public static class AuthorizationSchemeNames
     /// нужна стабильная ссылка на схему.
     /// </summary>
     public const string Jwt = "authorization-jwt";
+
+    /// <summary>
+    /// Bearer personal access token (<c>bgt_pat_*</c>).
+    /// </summary>
+    public const string Pat = "authorization-pat";
+
+    /// <summary>
+    /// Policy-схема для <c>/_internal/auth</c>: по формату Bearer выбирает JWT или PAT.
+    /// </summary>
+    public const string Internal = "authorization-internal";
 }
 
 /// <summary>
@@ -22,5 +32,17 @@ public sealed class JwtAuthAttribute : AuthorizeAttribute
     public JwtAuthAttribute()
     {
         AuthenticationSchemes = AuthorizationSchemeNames.Jwt;
+    }
+}
+
+/// <summary>
+/// Аутентификация nginx <c>auth_request</c>: JWT-сессия или PAT.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public sealed class InternalAuthAttribute : AuthorizeAttribute
+{
+    public InternalAuthAttribute()
+    {
+        AuthenticationSchemes = AuthorizationSchemeNames.Internal;
     }
 }

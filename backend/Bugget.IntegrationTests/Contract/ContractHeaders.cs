@@ -13,4 +13,5 @@ internal static class ContractHeaders
     public const string TeamId = "Auth-Request-Team-Id";
     public const string WorkspaceId = "Auth-Request-Workspace-Id";
     public const string WorkspaceRole = "Auth-Request-Workspace-Role";
+    public const string AuthMethod = "Auth-Request-Auth-Method";
 }

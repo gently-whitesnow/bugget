@@ -5,7 +5,8 @@
             "TeamIdHeaderName": "Auth-Request-Team-Id",
             "OrganizationIdHeaderName": "Auth-Request-Workspace-Id",
             "WorkspaceIdHeaderName": "Auth-Request-Workspace-Id",
-            "WorkspaceRoleHeaderName": "Auth-Request-Workspace-Role"
+            "WorkspaceRoleHeaderName": "Auth-Request-Workspace-Role",
+            "AuthMethodHeaderName": "Auth-Request-Auth-Method"
         }
     },
     "Serilog": {

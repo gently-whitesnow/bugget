@@ -4,6 +4,7 @@ using Bugget.Api.Authentication;
 using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Domain;
+using Bugget.Domain.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -50,12 +51,14 @@ public class UserAuthHandlerTests
         {
             UserIdHeaderName = "X-User-Id",
             TeamIdHeaderName = "X-Team-Id",
-            OrganizationIdHeaderName = "X-Org-Id"
+            OrganizationIdHeaderName = "X-Org-Id",
+            AuthMethodHeaderName = "Auth-Request-Auth-Method"
         };
         var context = new DefaultHttpContext();
         context.Request.Headers[headersOptions.UserIdHeaderName] = "user-123";
         context.Request.Headers[headersOptions.TeamIdHeaderName] = "team-456";
         context.Request.Headers[headersOptions.OrganizationIdHeaderName] = "org-789";
+        context.Request.Headers[headersOptions.AuthMethodHeaderName] = AuthMethods.Pat;
         context.Request.Headers["X-Signal-R-Connection-Id"] = "conn-abc";
 
         var usersClient = new Mock<IUsersClient>();
@@ -71,6 +74,7 @@ public class UserAuthHandlerTests
         Assert.Equal("team-456", claims["team_id"]);
         Assert.Equal("org-789", claims["organization_id"]);
         Assert.Equal("conn-abc", claims["signalr_connection_id"]);
+        Assert.Equal(AuthMethods.Pat, claims[AuthClaims.AuthMethod]);
     }
 
     [Fact]

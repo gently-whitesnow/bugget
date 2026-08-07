@@ -104,6 +104,7 @@ internal sealed class ContractWebApplicationFactory : WebApplicationFactory<Prog
         builder.UseSetting("ExternalSettings:Authentication:OrganizationIdHeaderName", ContractHeaders.WorkspaceId);
         builder.UseSetting("ExternalSettings:Authentication:WorkspaceIdHeaderName", ContractHeaders.WorkspaceId);
         builder.UseSetting("ExternalSettings:Authentication:WorkspaceRoleHeaderName", ContractHeaders.WorkspaceRole);
+        builder.UseSetting("ExternalSettings:Authentication:AuthMethodHeaderName", ContractHeaders.AuthMethod);
 
         // Ключи подписи JWT генерируются на старте во временный каталог: секретов в тестах нет.
         var keysDirectory = Path.Combine(Path.GetTempPath(), "bugget-contract-keys-" + Guid.NewGuid().ToString("N"));

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using Bugget.Domain.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,7 @@ public class UserAuthHandler(
     private readonly string TeamIdHeader = authHeadersOptions.CurrentValue.TeamIdHeaderName!;
     private readonly string WorkspaceIdHeader = authHeadersOptions.CurrentValue.WorkspaceIdHeaderName!;
     private readonly string RoleHeader = authHeadersOptions.CurrentValue.WorkspaceRoleHeaderName!;
+    private readonly string? AuthMethodHeader = authHeadersOptions.CurrentValue.AuthMethodHeaderName;
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
@@ -54,6 +56,12 @@ public class UserAuthHandler(
         if (!string.IsNullOrEmpty(workspaceId))
         {
             claims.Add(new Claim(ClaimKey.Workspace, workspaceId));
+        }
+
+        var authMethod = GetHeader(headers, AuthMethodHeader);
+        if (!string.IsNullOrEmpty(authMethod))
+        {
+            claims.Add(new Claim(AuthClaims.AuthMethod, authMethod));
         }
 
         Logger.LogInformation("UserAuthHandler: Created claims: {Claims}",

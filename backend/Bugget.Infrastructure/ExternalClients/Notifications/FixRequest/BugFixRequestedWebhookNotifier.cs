@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using Bugget.Application.Ports;
 using Microsoft.Extensions.Logging;
@@ -26,7 +26,12 @@ public sealed class BugFixRequestedWebhookNotifier(
         try
         {
             var client = httpClientFactory.CreateClient(HttpClientName);
-            var response = await client.PostAsJsonAsync(string.Empty, payload, Json, cancellationToken);
+            // Тело сериализуется заранее и уходит со Content-Length: PostAsJsonAsync
+            // стримит JSON с Transfer-Encoding: chunked, а простые вебхук-приёмники
+            // (включая пилотный раннер) chunked не разбирают и видят пустое тело.
+            using var content = new StringContent(
+                JsonSerializer.Serialize(payload, Json), Encoding.UTF8, "application/json");
+            var response = await client.PostAsync(string.Empty, content, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogWarning(

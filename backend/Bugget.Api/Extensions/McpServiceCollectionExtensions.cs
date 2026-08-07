@@ -24,6 +24,7 @@ internal static class McpServiceCollectionExtensions
         // IHttpContextAccessor нужен инструментам, чтобы взять identity того же
         // запроса: MCP-эндпоинт стоит за той же header-trust схемой, что контроллеры.
         services.AddHttpContextAccessor();
+        services.AddSingleton<McpAttachmentContent>();
         services
             .AddMcpServer(options => options.ServerInfo = new() { Name = "bugget-api", Version = "1.0.0" })
             .WithHttpTransport()

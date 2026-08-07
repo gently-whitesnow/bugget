@@ -81,11 +81,11 @@ internal sealed record McpAttachment(
     bool HasPreview);
 
 /// <summary>
-/// Ответ <c>get_attachment</c>: те же поля, что REST отдаёт в
-/// <c>AttachmentSummary</c>, плюс репорт, в котором вложение нашлось. Размер,
-/// mime-тип и ключ хранилища REST наружу не отдаёт, и MCP — не то место, где это
-/// решение отменяется мимоходом: чем модель платит за само содержимое, решает
-/// P2d.
+/// Метаданные ответа <c>get_attachment</c>. Mime-тип и размер здесь появились
+/// вместе с содержимым (P2d): по ним модель решает, запрашивать ли оригинал, —
+/// это и есть та цена, которую P2b оставлял на решение P2d. Ключ хранилища
+/// по-прежнему не уходит. <c>download_path</c> — внешний путь REST-скачивания
+/// для человека: модель байты видео не получает никогда.
 /// </summary>
 internal sealed record McpAttachmentDetails(
     int Id,
@@ -93,9 +93,23 @@ internal sealed record McpAttachmentDetails(
     int EntityId,
     string AttachType,
     string FileName,
+    string MimeType,
+    long? LengthBytes,
     bool HasPreview,
+    string DownloadPath,
     DateTimeOffset CreatedAt,
     string CreatorUserId);
+
+/// <summary>
+/// Пагинация текстового вложения: сколько символов всего, что отдано и остался
+/// ли хвост. Поля явные — «обрезали молча» для модели неотличимо от «файл
+/// закончился».
+/// </summary>
+internal sealed record McpTextPage(
+    int TotalChars,
+    int Offset,
+    int ReturnedChars,
+    bool Truncated);
 
 /// <summary>
 /// Ответ <c>patch_report</c> — та же проекция, что REST отдаёт из PATCH

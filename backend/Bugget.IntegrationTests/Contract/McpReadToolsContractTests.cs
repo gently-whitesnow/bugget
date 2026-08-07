@@ -126,8 +126,8 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
         Assert.Equal(reportId, FindReport(page, reportId).GetProperty("id").GetString());
     }
 
-    [Fact(DisplayName = "get_attachment: метаданные вложения без содержимого файла")]
-    public async Task GetAttachmentReturnsMetadataOnly()
+    [Fact(DisplayName = "get_attachment: первый блок — метаданные без ключа хранилища")]
+    public async Task GetAttachmentReturnsMetadataFirst()
     {
         var scenario = ContractScenario.Create(fixture);
         var reportId = await scenario.CreateReportAsync();
@@ -135,10 +135,15 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
         var attachmentId = await scenario.UploadBugAttachmentAsync(reportId, bugId, "снимок.png");
 
         await using var client = await CreateMcpClientAsync(scenario);
-        var attachment = await CallAsync(
-            client,
+        var result = await client.CallToolAsync(
             "get_attachment",
             Args(("reportId", reportId), ("attachmentId", attachmentId)));
+        Assert.True(result.IsError != true, TextOf(result));
+
+        // Содержимое (P2d) едет отдельными блоками — его контракт держит
+        // McpAttachmentContentContractTests. Здесь — форма метаданных.
+        var attachment = JsonDocument.Parse(
+            result.Content.OfType<TextContentBlock>().First().Text).RootElement;
 
         Assert.Equal(attachmentId, attachment.GetProperty("id").GetInt32());
         Assert.Equal(reportId, attachment.GetProperty("report_id").GetString());
@@ -146,7 +151,7 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
         // Картинки при загрузке нормализуются в webp — имя на диске уже не .png.
         Assert.Equal("снимок.webp", attachment.GetProperty("file_name").GetString());
         Assert.Equal("fact", attachment.GetProperty("attach_type").GetString());
-        Assert.False(attachment.TryGetProperty("content", out _));
+        Assert.False(attachment.TryGetProperty("storage_key", out _));
     }
 
     [Fact(DisplayName = "Чужое рабочее пространство: репорта нет ни в списке, ни в поиске, ни по идентификатору")]

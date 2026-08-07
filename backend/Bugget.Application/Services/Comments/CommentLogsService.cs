@@ -28,6 +28,23 @@ public class CommentLogsService(IUsersClient usersClient, ICommentsDbClient comm
         await reportPageHubClient.SendCommentCreateAsync(reportIdContext.GroupKey, commentSummary, null);
     }
 
+    /// <summary>
+    /// Маркер «запрошено исправление агентом» — такой же лог-комментарий, как
+    /// записи о смене статуса: создаётся от системного бота и уходит по realtime.
+    /// </summary>
+    public async Task LogFixRequestedAsync(ReportIdContext reportIdContext, int bugId, UserIdentity user)
+    {
+        var actorUser = await usersClient.GetUserAsync(user.Id);
+        var actorName = actorUser?.Name ?? user.Id;
+
+        var commentSummary = await commentsDbClient.CreateCommentAsync(
+            SystemCreators.Bot,
+            bugId,
+            $"{actorName}: запрошено исправление агентом",
+            (int)CreatorType.System);
+        await reportPageHubClient.SendCommentCreateAsync(reportIdContext.GroupKey, commentSummary, null);
+    }
+
     private string GetCommentText(BugPatchDto patchDto, string actorName)
     {
         switch (patchDto.Status)

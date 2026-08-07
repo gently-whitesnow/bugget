@@ -213,6 +213,23 @@ namespace Bugget.Api.Generated.Reports
         [Microsoft.AspNetCore.Mvc.HttpPatch, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<BugPatchResult>> PatchBug(string aliasId, int bugId, [Microsoft.AspNetCore.Mvc.FromBody] BugPatchRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
+        /// <summary>
+        /// Попросить агента починить баг.
+        /// </summary>
+        /// <remarks>
+        /// Продуктовый триггер «исправить баг»: в баге появляется системный
+        /// <br/>комментарий-маркер (приходит по realtime), а наружу асинхронно уходит
+        /// <br/>вебхук раннеру агента, если тот сконфигурирован. Bugget модель не
+        /// <br/>содержит — только маркер и сигнал. Повторный запрос в течение кулдауна
+        /// <br/>отвечает тем же 202, но нового комментария и вебхука не создаёт.
+        /// </remarks>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <returns>Запрос принят. Тело пустое — результат придёт по realtime.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/fix-request")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> RequestBugFix(string aliasId, int bugId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]

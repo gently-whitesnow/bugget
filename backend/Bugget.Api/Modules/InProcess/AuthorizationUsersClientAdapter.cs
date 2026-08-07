@@ -5,6 +5,7 @@ using Bugget.Api.Authorization.Models;
 using Bugget.Application.Authorization;
 using Bugget.Application.Authorization.Ports;
 using Bugget.Application.Users.Commands.Users;
+using Bugget.Application.Users.Ports;
 using Bugget.Domain.Errors;
 using UserExternalLinksService = Bugget.Application.Users.Interfaces.IUserExternalLinksService;
 using UsersService = Bugget.Application.Users.Interfaces.IUsersService;
@@ -17,7 +18,8 @@ namespace Bugget.Api.Modules.InProcess;
 /// </summary>
 public sealed class AuthorizationUsersClientAdapter(
     UsersService usersService,
-    UserExternalLinksService externalLinksService) : IUsersClient
+    UserExternalLinksService externalLinksService,
+    IPersonalAccessTokensDbClient personalAccessTokens) : IUsersClient
 {
     public async Task<User> InsertOrUpdateUserAsync(IExternalUser externalUser)
     {
@@ -60,6 +62,12 @@ public sealed class AuthorizationUsersClientAdapter(
         await externalLinksService.AddLinkAsync(userId, provider, externalId, email);
         return (true, null, null);
     }
+
+    public Task<Bugget.Domain.Users.PersonalAccessToken?> FindPersonalAccessTokenAsync(byte[] tokenHash) =>
+        personalAccessTokens.FindByHashAsync(tokenHash);
+
+    public Task TouchPersonalAccessTokenAsync(long tokenId) =>
+        personalAccessTokens.TouchLastUsedAsync(tokenId);
 
     private static (UserContext? Value, Error? Error) MapContext((Bugget.Application.Users.UserContext? Value, Error? Error) result)
     {

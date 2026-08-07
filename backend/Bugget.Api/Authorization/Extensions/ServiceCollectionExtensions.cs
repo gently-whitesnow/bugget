@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Security.Claims;
-using System.Text.Json;
 using Bugget.Api.Authorization.Abstractions;
 using Bugget.Api.Authorization.Interfaces;
 using Bugget.Api.Authorization.Oidc;
@@ -11,6 +10,7 @@ using Bugget.Api.Users.Authentication;
 using Bugget.Application.Authorization;
 using Bugget.Application.Authorization.Ports;
 using Bugget.Infrastructure.Authorization.Redis;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -93,9 +93,8 @@ public static class ServiceCollectionExtensions
             };
         });
 
-        // Схема всегда одна и та же (AuthorizationSchemeNames.Jwt) — меняется только
-        // конфигуратор. Иначе контроллерам пришлось бы знать про режим OIDC.
-        services.AddAuthentication().AddJwtBearer(AuthorizationSchemeNames.Jwt, _ => { });
+        // Jwt — одно имя и для собственных токенов, и для OIDC (меняется конфигуратор).
+        services.AddAuthentication().AddInternalAuthSchemes();
 
         var oidcOptions = cfg.GetSection(nameof(OidcAuthOptions)).Get<OidcAuthOptions>();
         if (oidcOptions?.Enabled == true)

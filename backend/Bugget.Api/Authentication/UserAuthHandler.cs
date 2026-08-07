@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Bugget.Application.Options;
-using Bugget.Application.Ports;
 using Bugget.Domain.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
@@ -19,6 +18,7 @@ public class UserAuthHandler(
     private readonly string? UserIdHeader = authHeadersOptions.CurrentValue.UserIdHeaderName;
     private readonly string? TeamIdHeader = authHeadersOptions.CurrentValue.TeamIdHeaderName;
     private readonly string? OrganizationIdHeader = authHeadersOptions.CurrentValue.OrganizationIdHeaderName;
+    private readonly string? AuthMethodHeader = authHeadersOptions.CurrentValue.AuthMethodHeaderName;
 
     private const string SignalRConnectionIdHeader = "X-Signal-R-Connection-Id";
 
@@ -52,8 +52,21 @@ public class UserAuthHandler(
             return Fail("Organization ID not found");
         }
 
-        var signalRId = GetHeaderOrDefault(headers, SignalRConnectionIdHeader);
+        return AuthenticateResult.Success(CreateTicket(BuildClaims(
+            userId,
+            teamId,
+            organizationId,
+            GetHeaderOrDefault(headers, SignalRConnectionIdHeader),
+            GetHeaderOrDefault(headers, AuthMethodHeader))));
+    }
 
+    private List<Claim> BuildClaims(
+        string userId,
+        string? teamId,
+        string? organizationId,
+        string? signalRId,
+        string? authMethod)
+    {
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, userId),
@@ -62,22 +75,19 @@ public class UserAuthHandler(
             new(AuthClaims.OrganizationIdHeaderConfigured, (!string.IsNullOrEmpty(OrganizationIdHeader)).ToString().ToLowerInvariant())
         };
 
-        if (!string.IsNullOrEmpty(teamId))
-        {
-            claims.Add(new Claim(AuthClaims.TeamId, teamId));
-        }
+        AddOptionalClaim(claims, AuthClaims.TeamId, teamId);
+        AddOptionalClaim(claims, AuthClaims.OrganizationId, organizationId);
+        AddOptionalClaim(claims, AuthClaims.SignalRConnectionId, signalRId);
+        AddOptionalClaim(claims, AuthClaims.AuthMethod, authMethod);
+        return claims;
+    }
 
-        if (!string.IsNullOrEmpty(organizationId))
+    private static void AddOptionalClaim(List<Claim> claims, string type, string? value)
+    {
+        if (!string.IsNullOrEmpty(value))
         {
-            claims.Add(new Claim(AuthClaims.OrganizationId, organizationId));
+            claims.Add(new Claim(type, value));
         }
-
-        if (!string.IsNullOrEmpty(signalRId))
-        {
-            claims.Add(new Claim(AuthClaims.SignalRConnectionId, signalRId));
-        }
-
-        return AuthenticateResult.Success(CreateTicket(claims));
     }
 
     private string? ResolveTeamId(IHeaderDictionary headers)

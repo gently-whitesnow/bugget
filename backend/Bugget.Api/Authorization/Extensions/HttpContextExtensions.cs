@@ -1,9 +1,10 @@
 using System;
 using System.Linq;
-using System.Text.RegularExpressions;
+using Bugget.Api.Authorization.Authentication;
 using Bugget.Api.Authorization.Models;
 using Bugget.Application.Authorization;
 using Bugget.Application.Authorization.Ports;
+using Bugget.Domain.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,8 @@ namespace Bugget.Api.Authorization.Extensions;
 
 public static class HttpContextExtensions
 {
+    public const string AuthMethodHeaderName = "Auth-Request-Auth-Method";
+
     public static bool IsDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
     public static string BuildCookieHeader(string name, string value, TimeSpan lifetime)
@@ -40,22 +43,17 @@ public static class HttpContextExtensions
         ctx.Response.Headers.Append("Set-Cookie", refreshCookie);
     }
 
-
-    public static void SetAuthHeaders(this HttpContext ctx, UserContext user)
+    public static void SetAuthHeaders(this HttpContext ctx, UserContext user, string authMethod = AuthMethods.Jwt)
     {
         ctx.Response.Headers["Auth-Request-User-Id"] = user.User.Id.ToString();
+        ctx.Response.Headers[AuthMethodHeaderName] = authMethod;
 
         var logger = ctx.RequestServices?.GetService<ILogger<HttpContext>>();
 
         var origUri = ctx.Request.Headers["X-Original-URI"].FirstOrDefault();
         logger?.LogInformation("X-Original-URI: {Uri}", origUri);
 
-        // Достаём wid/tid из origUri с помощью Regex
-        var matchWid = Regex.Match(origUri ?? "", @"workspaces/(?<wid>\d+)");
-        var matchTid = Regex.Match(origUri ?? "", @"teams/(?<tid>\d+)");
-
-        var wid = matchWid.Success ? int.Parse(matchWid.Groups["wid"].Value) : (int?)null;
-        var tid = matchTid.Success ? int.Parse(matchTid.Groups["tid"].Value) : (int?)null;
+        var (wid, tid) = OriginalUriScope.ParseOptional(origUri);
 
         logger?.LogInformation("Extracted from URI: wid={Wid}, tid={Tid}", wid, tid);
 

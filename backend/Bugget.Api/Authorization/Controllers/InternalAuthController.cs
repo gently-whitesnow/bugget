@@ -1,4 +1,3 @@
-using Bugget.Api.Users.Authentication;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bugget.Api.Authorization.Controllers;
@@ -11,7 +10,7 @@ public class InternalAuthController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet("/_internal/auth")]
-    [JwtAuth]
+    [InternalAuth]
     [ProducesResponseType(200)]
     public IActionResult Auth()
     {

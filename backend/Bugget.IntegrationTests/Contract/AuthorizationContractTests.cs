@@ -2,6 +2,10 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using Bugget.Api.Authorization.Interfaces;
+using Bugget.Application.Users.Commands.PersonalAccessTokens;
+using Bugget.Application.Users.Ports;
+using Bugget.Domain.Authentication;
+using Bugget.Domain.Users;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -90,6 +94,8 @@ public sealed class AuthorizationContractTests(AppContractFixture fixture) : ICl
         // (auth_request_set $auth_user_id $upstream_http_auth_request_user_id).
         Assert.True(response.Headers.TryGetValues(ContractHeaders.UserId, out var values));
         Assert.Equal(userId, Assert.Single(values!));
+        Assert.True(response.Headers.TryGetValues(ContractHeaders.AuthMethod, out var authMethod));
+        Assert.Equal(AuthMethods.Jwt, Assert.Single(authMethod!));
     }
 
     [Fact(DisplayName = "GET /_internal/auth с мусорным токеном: 401")]
@@ -97,6 +103,103 @@ public sealed class AuthorizationContractTests(AppContractFixture fixture) : ICl
     {
         var client = fixture.CreateAnonymousClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "not-a-token");
+
+        var response = await client.GetAsync("/_internal/auth");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact(DisplayName = "GET /_internal/auth с валидным PAT: 200, Auth-Request-* и auth_method=pat")]
+    public async Task InternalAuthWithPersonalAccessToken()
+    {
+        var scenario = await UsersScenario.CreateAsync(fixture);
+        var generated = PersonalAccessTokenSecret.Generate();
+        var tokens = fixture.Services.GetRequiredService<IPersonalAccessTokensDbClient>();
+        await tokens.CreateAsync(new CreatePersonalAccessTokenDto
+        {
+            UserId = scenario.UserId,
+            WorkspaceId = scenario.WorkspaceId,
+            TeamId = scenario.TeamId,
+            Label = "contract-pat",
+            TokenHash = generated.Hash,
+            TokenPrefix = generated.DisplayPrefix,
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(30)
+        });
+
+        var client = fixture.CreateAnonymousClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", generated.Value);
+        client.DefaultRequestHeaders.Add(
+            "X-Original-URI",
+            $"/v1/workspaces/{scenario.WorkspaceId}/teams/{scenario.TeamId}/reports");
+
+        var response = await client.GetAsync("/_internal/auth");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.TryGetValues(ContractHeaders.UserId, out var userId));
+        Assert.Equal(scenario.UserId.ToString(CultureInfo.InvariantCulture), Assert.Single(userId!));
+        Assert.True(response.Headers.TryGetValues(ContractHeaders.WorkspaceId, out var workspaceId));
+        Assert.Equal(scenario.WorkspaceId.ToString(CultureInfo.InvariantCulture), Assert.Single(workspaceId!));
+        Assert.True(response.Headers.TryGetValues(ContractHeaders.TeamId, out var teamId));
+        Assert.Equal(scenario.TeamId.ToString(CultureInfo.InvariantCulture), Assert.Single(teamId!));
+        Assert.True(response.Headers.TryGetValues(ContractHeaders.AuthMethod, out var authMethod));
+        Assert.Equal(AuthMethods.Pat, Assert.Single(authMethod!));
+
+        var stored = await tokens.FindByHashAsync(generated.Hash);
+        Assert.NotNull(stored);
+        Assert.NotNull(stored.LastUsedAt);
+    }
+
+    [Fact(DisplayName = "GET /_internal/auth с PAT и чужим workspace/team: 401")]
+    public async Task InternalAuthWithPersonalAccessTokenRejectsScopeMismatch()
+    {
+        var scenario = await UsersScenario.CreateAsync(fixture);
+        var generated = PersonalAccessTokenSecret.Generate();
+        var tokens = fixture.Services.GetRequiredService<IPersonalAccessTokensDbClient>();
+        await tokens.CreateAsync(new CreatePersonalAccessTokenDto
+        {
+            UserId = scenario.UserId,
+            WorkspaceId = scenario.WorkspaceId,
+            TeamId = scenario.TeamId,
+            Label = "contract-pat-mismatch",
+            TokenHash = generated.Hash,
+            TokenPrefix = generated.DisplayPrefix,
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(30)
+        });
+
+        var client = fixture.CreateAnonymousClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", generated.Value);
+        client.DefaultRequestHeaders.Add(
+            "X-Original-URI",
+            $"/v1/workspaces/{scenario.WorkspaceId}/teams/{scenario.TeamId + 1}/reports");
+
+        var response = await client.GetAsync("/_internal/auth");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact(DisplayName = "GET /_internal/auth с отозванным PAT: 401")]
+    public async Task InternalAuthWithRevokedPersonalAccessToken()
+    {
+        var scenario = await UsersScenario.CreateAsync(fixture);
+        var generated = PersonalAccessTokenSecret.Generate();
+        var tokens = fixture.Services.GetRequiredService<IPersonalAccessTokensDbClient>();
+        var created = await tokens.CreateAsync(new CreatePersonalAccessTokenDto
+        {
+            UserId = scenario.UserId,
+            WorkspaceId = scenario.WorkspaceId,
+            TeamId = scenario.TeamId,
+            Label = "contract-pat-revoked",
+            TokenHash = generated.Hash,
+            TokenPrefix = generated.DisplayPrefix,
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(30)
+        });
+        Assert.True(await tokens.RevokeAsync(created.Id, scenario.UserId));
+
+        var client = fixture.CreateAnonymousClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", generated.Value);
+        client.DefaultRequestHeaders.Add(
+            "X-Original-URI",
+            $"/v1/workspaces/{scenario.WorkspaceId}/teams/{scenario.TeamId}/reports");
 
         var response = await client.GetAsync("/_internal/auth");
 

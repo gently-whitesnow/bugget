@@ -159,19 +159,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITaskQueue, Bugget.Infrastructure.TaskQueue.TaskQueue>()
             .AddHostedService(provider => (Bugget.Infrastructure.TaskQueue.TaskQueue)provider.GetRequiredService<ITaskQueue>());
 
-        // MCP-сервер в том же процессе: только транспорт, tools добавляются в P2b/P2c.
-        // Модели внутри нет — она у внешнего клиента, который зовёт tools. Имя сервера
-        // задано явно: default берётся из entry assembly, и клиенты MCP показывают его
-        // пользователю в списке подключений. Пустая ToolCollection — не заглушка, а
-        // включение tools capability: без неё tools/list отвечает "method not available",
-        // и клиент, подключённый до появления первого инструмента, падал бы на рукопожатии.
-        services
-            .AddMcpServer(options =>
-            {
-                options.ServerInfo = new() { Name = "bugget-api", Version = "1.0.0" };
-                options.ToolCollection = [];
-            })
-            .WithHttpTransport();
+        services.AddMcp();
 
         return services;
     }

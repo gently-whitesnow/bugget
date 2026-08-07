@@ -66,9 +66,11 @@ public sealed class McpEndpointContractTests(AppContractFixture fixture) : IClas
 
         Assert.Equal("bugget-api", mcpClient.ServerInfo.Name);
 
-        // Каркас без tools: список обязан быть пустым, а не ошибкой метода.
+        // Инструменты видны и по этой цепочке тоже. Что именно они отвечают —
+        // предмет McpReadToolsContractTests; здесь важно, что tools/list доезжает
+        // до клиента, пришедшего с PAT, а не отвечает ошибкой метода.
         var tools = await mcpClient.ListToolsAsync();
-        Assert.Empty(tools);
+        Assert.Contains(tools, tool => tool.Name == "list_reports");
     }
 
     [Fact(DisplayName = "POST /v1/mcp без identity-заголовков: 401, как у остального модуля reports")]

@@ -32,14 +32,20 @@ internal static class McpReportMapper
             Map(report.Links, ToLink),
             Map(report.Bugs, ToBug));
 
-    public static McpAttachmentDetails ToAttachmentDetails(Attachment attachment, string reportId) =>
+    public static McpAttachmentDetails ToAttachmentDetails(
+        Attachment attachment,
+        string reportId,
+        string downloadPath) =>
         new(
             attachment.Id,
             reportId,
             attachment.EntityId,
             McpWire.FormatAttachType(attachment.AttachType),
             attachment.FileName,
+            attachment.MimeType,
+            attachment.LengthBytes,
             attachment.HasPreview ?? false,
+            downloadPath,
             attachment.CreatedAt,
             attachment.CreatorUserId);
 
@@ -49,13 +55,15 @@ internal static class McpReportMapper
     /// workspace и команде, и лишнего похода в файловое хранилище за содержимым
     /// не происходит.
     /// </summary>
-    public static Attachment? FindAttachment(Report report, int attachmentId) =>
-        (report.Bugs ?? []).SelectMany(BugAttachments).FirstOrDefault(a => a.Id == attachmentId);
+    public static LocatedAttachment? FindAttachment(Report report, int attachmentId) =>
+        (report.Bugs ?? []).SelectMany(BugAttachments).FirstOrDefault(a => a.Attachment.Id == attachmentId);
 
-    private static IEnumerable<Attachment> BugAttachments(Bug bug) =>
-        (bug.Attachments ?? [])
-            .Concat((bug.Comments ?? []).SelectMany(comment => comment.Attachments ?? []))
-            .Concat((bug.Steps ?? []).SelectMany(step => step.Attachments ?? []));
+    private static IEnumerable<LocatedAttachment> BugAttachments(Bug bug) =>
+        (bug.Attachments ?? []).Select(a => new LocatedAttachment(a, bug.Id, ParentId: 0))
+            .Concat((bug.Comments ?? []).SelectMany(comment =>
+                (comment.Attachments ?? []).Select(a => new LocatedAttachment(a, bug.Id, comment.Id))))
+            .Concat((bug.Steps ?? []).SelectMany(step =>
+                (step.Attachments ?? []).Select(a => new LocatedAttachment(a, bug.Id, step.Id))));
 
     private static McpReportListItem ToListItem(ReportViewModel report) =>
         new(

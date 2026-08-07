@@ -6,6 +6,7 @@ using Bugget.Domain.Authentication;
 using Bugget.Domain.Reports;
 using Microsoft.Extensions.Options;
 using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
 namespace Bugget.Api.Mcp;
@@ -23,7 +24,8 @@ namespace Bugget.Api.Mcp;
 internal sealed class ReportsReadTools(
     IReportsService reportsService,
     IHttpContextAccessor httpContextAccessor,
-    IOptions<ReportAliasOptions> aliasOptions)
+    IOptions<ReportAliasOptions> aliasOptions,
+    McpAttachmentContent attachmentContent)
 {
     /// <summary>
     /// Потолок страницы. REST его для поиска не ставит, но там за ответом человек
@@ -103,18 +105,57 @@ internal sealed class ReportsReadTools(
 
     [McpServerTool(Name = "get_attachment", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description(
-        "Метаданные вложения: имя файла, к чему приложено, есть ли превью. Содержимое файла не отдаёт.")]
-    public async Task<string> GetAttachmentAsync(
+        "Вложение: метаданные и содержимое. Картинки приходят превью, оригинал — по original=true. " +
+        "Текст приходит как есть, страницей offset/maxChars. " +
+        "Видео байтами не приходит никогда: кадр-превью и ссылка download_path для человека.")]
+    public async Task<IEnumerable<ContentBlock>> GetAttachmentAsync(
         [Description("Идентификатор репорта, в котором лежит вложение.")] string reportId,
-        [Description("Идентификатор вложения из ответа get_report.")] int attachmentId)
+        [Description("Идентификатор вложения из ответа get_report.")] int attachmentId,
+        [Description("Только для картинок: отдать оригинал вместо превью.")] bool original = false,
+        [Description("Только для текста: с какого символа читать. По умолчанию 0.")] int offset = 0,
+        [Description("Только для текста: сколько символов вернуть, от 1 до 50000. По умолчанию 20000.")]
+        int maxChars = McpAttachmentContent.DefaultMaxChars)
     {
+        McpAttachmentContent.ValidateTextPaging(offset, maxChars);
+
+        var user = CurrentUser();
         var report = await LoadReportAsync(reportId);
         var view = report.ToViewModel(aliasOptions.Value);
 
-        var attachment = McpReportMapper.FindAttachment(report, attachmentId)
+        var located = McpReportMapper.FindAttachment(report, attachmentId)
             ?? throw new McpException($"Вложение {attachmentId} в репорте {reportId} не найдено.");
 
-        return McpWire.Serialize(McpReportMapper.ToAttachmentDetails(attachment, view.Id));
+        var meta = McpReportMapper.ToAttachmentDetails(
+            located.Attachment,
+            view.Id,
+            DownloadPath(user, view.Id, located));
+
+        var blocks = new List<ContentBlock>
+        {
+            new TextContentBlock { Text = McpWire.Serialize(meta) },
+        };
+        blocks.AddRange(await attachmentContent.BuildAsync(user, view.Id, located, original, offset, maxChars));
+
+        return blocks;
+    }
+
+    /// <summary>
+    /// Внешний путь REST-скачивания — тот, по которому файл откроет человек в
+    /// браузере: с префиксом nginx и workspace/team из identity текущего запроса
+    /// (тот же принцип, что origin-relative Location в ADR-0011).
+    /// </summary>
+    private static string DownloadPath(UserIdentity user, string reportId, LocatedAttachment located)
+    {
+        var suffix = (Bugget.Domain.AttachType)located.Attachment.AttachType switch
+        {
+            Bugget.Domain.AttachType.Comment =>
+                $"bugs/{located.BugId}/comments/{located.ParentId}/attachments/{located.Attachment.Id}/content",
+            Bugget.Domain.AttachType.BugStep =>
+                $"bugs/{located.BugId}/steps/{located.ParentId}/attachments/{located.Attachment.Id}/content",
+            _ => $"bugs/{located.BugId}/attachments/{located.Attachment.Id}/content",
+        };
+
+        return $"/api/app/workspaces/{user.OrganizationId}/teams/{user.TeamId}/v2/reports/{reportId}/{suffix}";
     }
 
     private UserIdentity CurrentUser() =>

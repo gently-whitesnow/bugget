@@ -4,6 +4,7 @@ using Bugget.Application.Commands.Comment;
 using Bugget.Application.Commands.Report;
 using Bugget.Application.Mappers;
 using Bugget.Application.Options;
+using Bugget.Application.Services;
 using Bugget.Application.Services.Bugs;
 using Bugget.Application.Services.Comments;
 using Bugget.Application.Services.Reports;
@@ -39,6 +40,15 @@ internal sealed class ReportsWriteTools(
     IHttpContextAccessor httpContextAccessor,
     IOptions<ReportAliasOptions> aliasOptions)
 {
+    /// <summary>
+    /// Потолок write-вызовов на пользователя: сошедший с ума или скомпрометированный
+    /// агент не зальёт репорты сотнями правок, а нормальной работе (несколько правок
+    /// и комментариев на баг) лимит не виден. Static: инструменты создаются на вызов,
+    /// окно живёт с процессом.
+    /// </summary>
+    private static readonly FixedWindowLimiter WriteLimiter =
+        new(TimeProvider.System, limit: 30, window: TimeSpan.FromMinutes(1));
+
     [McpServerTool(Name = "patch_report", Idempotent = true, OpenWorld = false)]
     [Description(
         "Перевести репорт в другой статус. Отвечает обновлённым репортом: статус, " +
@@ -168,9 +178,19 @@ internal sealed class ReportsWriteTools(
         comment.CreatedAt,
         Attachments: null);
 
-    private UserIdentity CurrentUser() =>
-        httpContextAccessor.HttpContext?.User.GetIdentity()
-        ?? throw new McpException("Запрос пришёл без контекста пользователя.");
+    private UserIdentity CurrentUser()
+    {
+        var user = httpContextAccessor.HttpContext?.User.GetIdentity()
+            ?? throw new McpException("Запрос пришёл без контекста пользователя.");
+
+        if (!WriteLimiter.TryAcquire(user.Id))
+        {
+            throw new McpException(
+                "Слишком много правок за минуту. Подождите и продолжите — лимит защищает репорты от случайного потока изменений.");
+        }
+
+        return user;
+    }
 
     /// <summary>
     /// Отказ сервиса уходит модели заголовком прикладной ошибки — тем же текстом,

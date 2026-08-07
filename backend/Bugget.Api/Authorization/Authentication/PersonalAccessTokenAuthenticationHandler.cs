@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Bugget.Api.Authorization.Extensions;
 using Bugget.Api.Authorization.Interfaces;
+using Bugget.Application.Services;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Users;
 using Microsoft.AspNetCore.Authentication;
@@ -25,6 +26,16 @@ public sealed class PersonalAccessTokenAuthenticationHandler(
 {
     private const string BearerPrefix = "Bearer ";
 
+    /// <summary>
+    /// Троттлинг по открытому префиксу предъявленного токена: считаются только
+    /// неудачи (проверка — до похода в БД, запись — после провала), поэтому
+    /// валидный токен агента окно не наполняет, сколько бы запросов он ни делал.
+    /// Переполненное окно режет и походы в БД за заведомым мусором. Statics
+    /// сознательно: хендлер создаётся на запрос, а окно должно жить дольше.
+    /// </summary>
+    private static readonly FixedWindowLimiter FailedAttempts =
+        new(TimeProvider.System, limit: 10, window: TimeSpan.FromMinutes(5));
+
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!TryReadPatSecret(out var secret))
@@ -32,9 +43,17 @@ public sealed class PersonalAccessTokenAuthenticationHandler(
             return AuthenticateResult.NoResult();
         }
 
+        var attemptKey = secret[..PersonalAccessTokenSecret.DisplayPrefixLength];
+        if (FailedAttempts.IsLimited(attemptKey))
+        {
+            Logger.LogWarning("PAT rate limited: prefix={Prefix}", attemptKey);
+            return AuthenticateResult.Fail("personal access token rate limited");
+        }
+
         var token = await usersClient.FindPersonalAccessTokenAsync(PersonalAccessTokenSecret.ComputeHash(secret));
         if (token is null || !token.IsUsable(timeProvider.GetUtcNow()))
         {
+            FailedAttempts.Record(attemptKey);
             return AuthenticateResult.Fail("invalid personal access token");
         }
 

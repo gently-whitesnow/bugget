@@ -21,15 +21,20 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
 {
     private readonly List<HttpClientTransport> _transports = [];
 
-    [Fact(DisplayName = "tools/list: сервер объявляет четыре read-инструмента")]
+    [Fact(DisplayName = "tools/list: все четыре read-инструмента объявлены")]
     public async Task ServerAdvertisesFourReadTools()
     {
         var scenario = ContractScenario.Create(fixture);
         await using var client = await CreateMcpClientAsync(scenario);
 
-        var tools = (await client.ListToolsAsync()).Select(tool => tool.Name).Order().ToArray();
+        var tools = (await client.ListToolsAsync()).Select(tool => tool.Name).ToArray();
 
-        Assert.Equal(["get_attachment", "get_report", "list_reports", "search_reports"], tools);
+        // Точный список всей поверхности (read + write) держит
+        // McpWriteToolsContractTests: два точных списка расходились бы при каждом
+        // добавлении инструмента. Здесь — что read-четвёрка на месте.
+        Assert.Superset(
+            new HashSet<string> { "get_attachment", "get_report", "list_reports", "search_reports" },
+            tools.ToHashSet());
     }
 
     [Fact(DisplayName = "list_reports: репорт рабочего пространства, статус строкой, без дерева багов")]

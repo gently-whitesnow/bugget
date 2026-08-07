@@ -52,8 +52,30 @@ internal static class McpWire
     public static int[]? ParseReportStatuses(string[]? raw) =>
         Parse<ReportStatus>(raw, "report_statuses", value => value.ToDomainValue());
 
+    public static int ParseReportStatus(string raw) =>
+        ParseSingle<ReportStatus>(raw, "status", value => value.ToDomainValue());
+
+    public static int ParseBugStatus(string raw) =>
+        ParseSingle<BugStatus>(raw, "status", value => value.ToDomainValue());
+
+    public static int ParseAudience(string raw) =>
+        ParseSingle<CommentAudience>(raw, "audience", value => value.ToDomainValue());
+
     public static int[]? ParseCreatorTypes(string[]? raw) =>
         Parse<CreatorType>(raw, "creator_types", value => value.ToDomainValue());
+
+    private static int ParseSingle<TEnum>(string raw, string parameter, Func<TEnum, int> toDomainValue)
+        where TEnum : struct, Enum
+    {
+        var map = WireEnum.Map(typeof(TEnum));
+        if (!map.TryParse(raw, out var parsed))
+        {
+            throw new McpException(
+                $"Параметр {parameter}: значение «{raw}» неизвестно. Допустимые: {map.AllowedValues}.");
+        }
+
+        return toDomainValue((TEnum)parsed);
+    }
 
     private static string Format<TEnum>(TEnum value)
         where TEnum : struct, Enum =>

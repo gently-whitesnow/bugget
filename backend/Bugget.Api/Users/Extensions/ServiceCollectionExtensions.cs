@@ -83,6 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITeamMembersService, TeamMembersService>();
         services.AddSingleton<IWorkspaceMembersService, WorkspaceMembersService>();
         services.AddSingleton<IUserExternalLinksService, UserExternalLinksService>();
+        services.AddSingleton<IPersonalAccessTokensService, PersonalAccessTokensService>();
 
         if (hostingOptions.Enabled)
         {

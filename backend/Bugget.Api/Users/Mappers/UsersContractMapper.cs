@@ -44,6 +44,18 @@ internal static class UsersContractMapper
         Updated_at = model.UpdatedAt,
     };
 
+    public static PersonalAccessToken ToContract(this DomainModel.PersonalAccessToken model) => new()
+    {
+        Id = WireInt64.ToWire(model.Id),
+        Workspace_id = model.WorkspaceId,
+        Team_id = model.TeamId,
+        Label = model.Label,
+        Token_prefix = model.TokenPrefix,
+        Created_at = model.CreatedAt,
+        Expires_at = model.ExpiresAt,
+        Last_used_at = model.LastUsedAt,
+    };
+
     public static AutocompleteUsers ToContract(this AutocompleteUsersView view) => new()
     {
         Users = [.. view.Users.Select(user => new AutocompleteUser

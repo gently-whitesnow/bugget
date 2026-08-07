@@ -14,4 +14,7 @@ export type {
   UpdateUserRequest as UpdateCurrentUserRequest,
   ExternalLinkResponse as ExternalLink,
   MergeUsersRequest as MergeAccountsRequest,
+  PersonalAccessTokenResponse as PersonalAccessToken,
+  CreatePersonalAccessTokenRequest,
+  CreatedPersonalAccessTokenResponse as CreatedPersonalAccessToken,
 } from "@/shared/api";

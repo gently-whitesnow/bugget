@@ -15,6 +15,11 @@ import {
   unlinkProvider,
   updateUserInContext,
 } from "./users";
+import {
+  createPersonalAccessToken,
+  listPersonalAccessTokens,
+  revokePersonalAccessToken,
+} from "./personalAccessTokens";
 import { deleteAvatar, resolveAvatarUrl, uploadAvatar } from "./avatar";
 import { createTeam, deleteTeam, teamsAutocomplete, updateTeam } from "./teams";
 import {
@@ -277,6 +282,53 @@ describe("контекстная форма адреса: контекст из 
 
     await unlinkMattermost();
     expect(sent().method).toBe("delete");
+  });
+
+  it("personal access tokens: список, выпуск и отзыв", async () => {
+    payload = [];
+    await listPersonalAccessTokens();
+    expect(sent().url).toBe(`${contextPrefix}/users/personal-access-tokens`);
+    expect(sent().method).toBe("get");
+
+    payload = { token: "bgt_pat_x", personal_access_token: {} };
+    await createPersonalAccessToken({ label: "mcp" });
+    expect(sent().url).toBe(`${contextPrefix}/users/personal-access-tokens`);
+    expect(sent().method).toBe("post");
+    expect(sentJsonBody()).toEqual({ label: "mcp" });
+
+    responseStatus = 204;
+    responseContentType = "";
+    payload = undefined;
+    await revokePersonalAccessToken("7");
+    expect(sent().url).toBe(`${contextPrefix}/users/personal-access-tokens/7`);
+    expect(sent().method).toBe("delete");
+  });
+
+  it("выпуск токена: срок уходит на провод snake_case", async () => {
+    payload = { token: "bgt_pat_x", personal_access_token: {} };
+
+    await createPersonalAccessToken({
+      label: "mcp",
+      expiresAt: "2026-12-31T00:00:00Z",
+    });
+
+    expect(sentJsonBody()).toEqual({
+      label: "mcp",
+      expires_at: "2026-12-31T00:00:00Z",
+    });
+  });
+
+  it("отзыв сохраняет строковый long-идентификатор без потери точности", async () => {
+    const tokenId = "9007199254740993";
+    responseStatus = 204;
+    responseContentType = "";
+    payload = undefined;
+
+    await revokePersonalAccessToken(tokenId);
+
+    expect(sent().url).toBe(
+      `${contextPrefix}/users/personal-access-tokens/${tokenId}`
+    );
   });
 
   it("пользователи по списку в контекстной форме", async () => {

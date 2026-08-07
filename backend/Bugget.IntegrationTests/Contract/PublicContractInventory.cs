@@ -11,6 +11,7 @@ internal static class PublicContractInventory
     public const string Frontend = "фронт";
     public const string Nginx = "nginx";
     public const string Internal = "внутренний";
+    public const string McpClient = "MCP-клиент";
 
     /// <summary>Маршрут → кто зовёт, покрытие, причина.</summary>
     public static readonly IReadOnlyDictionary<string, Entry> Entries = new Dictionary<string, Entry>(StringComparer.Ordinal)
@@ -108,6 +109,12 @@ internal static class PublicContractInventory
         ["PUT /v1/workspaces/{workspaceId}/teams/{teamId}/users/mattermost"] = new(Frontend, "UsersProfileContractTests"),
         ["DELETE /v1/workspaces/{workspaceId}/teams/{teamId}/users/mattermost"] = new(Frontend, "UsersProfileContractTests"),
         ["POST /v1/workspaces/{workspaceId}/teams/{teamId}/users/merge"] = new(Frontend, "UsersProfileContractTests"),
+
+        // --- MCP ---
+        // Streamable HTTP: initialize, tools/* и остальные методы протокола ходят
+        // POST'ом на один путь. Зовёт не фронт, а MCP-клиент агента (Claude Code и
+        // т.п.) — через тот же nginx location, что и остальной API.
+        ["POST /v1/mcp/"] = new(McpClient, "McpEndpointContractTests"),
 
         // --- авторизация ---
         ["GET /_internal/auth"] = new(Nginx, "AuthorizationContractTests"),

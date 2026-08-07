@@ -15,11 +15,17 @@ namespace Bugget.Api.Authentication;
 /// </remarks>
 public sealed class ReportsModuleAuthorizationConvention : IControllerModelConvention
 {
-    private static readonly AuthorizeFilter Filter = new(
+    /// <summary>
+    /// Та же политика для не-MVC эндпоинтов модуля reports (MCP): конвенция достаёт
+    /// только контроллеры, а требование к доступу у всей поверхности одно.
+    /// </summary>
+    internal static readonly AuthorizationPolicy Policy =
         new AuthorizationPolicyBuilder()
             .AddAuthenticationSchemes(AuthSchemeNames.Headers)
             .RequireAuthenticatedUser()
-            .Build());
+            .Build();
+
+    private static readonly AuthorizeFilter Filter = new(Policy);
 
     public void Apply(ControllerModel controller)
     {

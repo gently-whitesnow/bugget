@@ -55,6 +55,18 @@ public class ApiDependencyRulesTests
                 "Bugget.Application.Services.Reports.ReportsService");
     }
 
+    [Fact(DisplayName = "Правило DI Api краснеет на MCP-tool-классе")]
+    public void Api_dependency_rule_is_provably_red_for_an_mcp_tool()
+    {
+        // Слой Mcp (P2a+) — обычные типы сборки Bugget.Api: tools обязаны брать
+        // use-case'ы через интерфейсы Application, отдельного правила для них нет,
+        // а покрытие существующим — вот оно.
+        FindConcreteApplicationDependencies(typeof(ApiDependencyRulesTests).Assembly, [])
+            .Should().Contain(
+                $"{typeof(CompositionFixtures.LeakingMcpTool).FullName} → " +
+                "Bugget.Application.Services.Reports.ReportsService");
+    }
+
     [Fact(DisplayName = "Поимённый композиционный корень вправе брать конкретные реализации")]
     public void Composition_root_is_allowed_to_take_concrete_implementations()
     {

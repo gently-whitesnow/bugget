@@ -48,6 +48,8 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
 
     <!-- API surface -->
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.1.0" />
+    <PackageVersion Include="ModelContextProtocol.Core" Version="2.1.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="8.1.1" />
 
     <!-- Annotations -->

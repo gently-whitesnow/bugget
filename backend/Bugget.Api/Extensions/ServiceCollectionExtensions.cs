@@ -126,7 +126,6 @@ public static class ServiceCollectionExtensions
             .AddSingleton<ISettingsService, SettingsService>()
             .AddSingleton<SettingsProcessorProvider>()
             .AddSingleton<CommentLogsService>()
-            .AddSingleton<IBugFixRequestService, BugFixRequestService>()
             .AddSingleton<IDomainEventPublisher, DomainEventPublisher>()
             .AddSingleton<IAnalyticsService, AnalyticsService>()
             .AddSingleton(TimeProvider.System)

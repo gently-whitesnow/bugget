@@ -16,10 +16,3 @@ export const updateBug = async (
   bugId: number,
   request: PatchBugRequest
 ): Promise<PatchBugResponse> => reportsApi.patchBug(reportId, bugId, request);
-
-export const requestBugFix = async (
-  reportId: string,
-  bugId: number
-): Promise<void> => {
-  await reportsApi.requestBugFix(reportId, bugId);
-};

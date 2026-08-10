@@ -15,7 +15,6 @@ import {
 } from "@/pages/Report/model-create-bug";
 import { getBugAnchorHref, useCopyAnchorLink } from "../../../../../../lib";
 
-import BugFixRequestButton from "./components/BugFixRequestButton/BugFixRequestButton";
 import BugStatusSelect from "./components/BugStatusSelect/BugStatusSelect";
 
 type Props = {
@@ -126,7 +125,6 @@ const BugHeader = ({
                       ожидает проверки
                     </span>
                   )}
-                  <BugFixRequestButton bugId={bug.id} status={bug.status} />
                   <BugStatusSelect
                     status={bug.status}
                     onChange={onStatusChange}

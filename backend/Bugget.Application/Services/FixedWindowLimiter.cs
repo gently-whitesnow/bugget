@@ -5,8 +5,7 @@ namespace Bugget.Application.Services;
 /// <summary>
 /// Счётчик «не больше N событий на ключ за окно» — общий для троттлинга неудачных
 /// PAT-попыток и write-инструментов агента. Состояние процесса, а не БД: контур
-/// одноинстансный (та же посылка, что у кулдауна fix-request), а после рестарта
-/// счёт честно начинается заново.
+/// одноинстансный, а после рестарта счёт честно начинается заново.
 /// </summary>
 public sealed class FixedWindowLimiter(TimeProvider timeProvider, int limit, TimeSpan window)
 {

@@ -476,29 +476,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /v2/reports/{aliasId}/bugs/{bugId}/fix-request:
-    post:
-      operationId: Bugs_RequestBugFix
-      summary: Попросить агента починить баг.
-      description: |-
-        Продуктовый триггер «исправить баг»: в баге появляется системный
-        комментарий-маркер (приходит по realtime), а наружу асинхронно уходит
-        вебхук раннеру агента, если тот сконфигурирован. Bugget модель не
-        содержит — только маркер и сигнал. Повторный запрос в течение кулдауна
-        отвечает тем же 202, но нового комментария и вебхука не создаёт.
-      parameters:
-        - $ref: '#/components/parameters/AliasId'
-        - $ref: '#/components/parameters/BugId'
-      responses:
-        '202':
-          description: Запрос принят. Тело пустое — результат придёт по realtime.
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          description: Репорт или баг не найден.
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
   /v2/reports/{aliasId}/bugs/{bugId}/steps:
     post:
       operationId: BugSteps_CreateBugStep

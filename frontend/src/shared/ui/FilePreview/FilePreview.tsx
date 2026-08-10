@@ -11,6 +11,7 @@ import {
 } from "@/shared/lib";
 import { AttachmentTypes } from "@/shared/config";
 import { PendingAttachment } from "@/shared/ui";
+import ImageViewer from "./components/ImageViewer";
 
 // Адрес содержимого вложения — операция-адрес модуля `reports`, а не строка рядом.
 const { attachmentContentUrl } = reportsApi;
@@ -50,9 +51,6 @@ type UploadingAttachment = {
 
 const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
 const videoExtensions = [".mp4", ".webm", ".mov", ".ogg", ".mkv"];
-const minZoomLevel = 1;
-const maxZoomLevel = 4;
-const zoomStep = 0.25;
 
 const isImage = (fileName: string): boolean => {
   const extension = fileName.toLowerCase().substring(fileName.lastIndexOf("."));
@@ -85,9 +83,6 @@ function FilePreview({
   disabled = false,
 }: Props) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [zoomLevel, setZoomLevel] = useState(minZoomLevel);
-  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [showOverlayControls, setShowOverlayControls] = useState(true);
   const [curlPreviewText, setCurlPreviewText] = useState("");
@@ -97,7 +92,6 @@ function FilePreview({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nextPendingAttachmentIdRef = useRef(0);
   const uploadingAttachmentsRef = useRef<UploadingAttachment[]>([]);
-  const dragStartRef = useRef({ x: 0, y: 0 });
   const controlsHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
@@ -110,29 +104,17 @@ function FilePreview({
   const isActiveCurl = activeAttachment
     ? isCurlAttachment(activeAttachment.fileName)
     : false;
+  const isActiveImage = activeAttachment
+    ? isImage(activeAttachment.fileName)
+    : false;
   const shouldHideOverlayControls =
     isActiveVideo && isVideoPlaying && !showOverlayControls;
-  const previewCursor = isDragging
-    ? "grabbing"
-    : zoomLevel > minZoomLevel
-      ? "zoom-out"
-      : "zoom-in";
   const [uploadingAttachments, setUploadingAttachments] = useState<
     UploadingAttachment[]
   >([]);
   const [pendingCurlAttachments, setPendingCurlAttachments] = useState<
     PendingAttachment[]
   >([]);
-
-  const resetImageTransform = () => {
-    setZoomLevel(minZoomLevel);
-    setImagePosition({ x: 0, y: 0 });
-    setIsDragging(false);
-  };
-
-  const clampZoom = (value: number) => {
-    return Math.min(Math.max(value, minZoomLevel), maxZoomLevel);
-  };
 
   const clearControlsHideTimeout = () => {
     if (controlsHideTimeoutRef.current) {
@@ -156,20 +138,17 @@ function FilePreview({
 
   const handleImageClick = (index: number) => {
     setActiveIndex(index);
-    resetImageTransform();
     resetVideoControlsState();
   };
 
   const handleCloseModal = () => {
     setActiveIndex(null);
-    resetImageTransform();
     resetVideoControlsState();
   };
 
   const handlePrev = () => {
     if (activeIndex !== null && activeIndex > 0) {
       setActiveIndex(activeIndex - 1);
-      resetImageTransform();
       resetVideoControlsState();
     }
   };
@@ -177,59 +156,8 @@ function FilePreview({
   const handleNext = () => {
     if (activeIndex !== null && activeIndex < attachments.length - 1) {
       setActiveIndex(activeIndex + 1);
-      resetImageTransform();
       resetVideoControlsState();
     }
-  };
-
-  const handleImageWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const zoomDelta = event.deltaY < 0 ? zoomStep : -zoomStep;
-    setZoomLevel((previousZoom) => {
-      const newZoom = clampZoom(previousZoom + zoomDelta);
-      if (newZoom === minZoomLevel) {
-        setImagePosition({ x: 0, y: 0 });
-      }
-      return newZoom;
-    });
-  };
-
-  const handleImageMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (zoomLevel <= minZoomLevel) {
-      return;
-    }
-
-    setIsDragging(true);
-    dragStartRef.current = {
-      x: event.clientX - imagePosition.x,
-      y: event.clientY - imagePosition.y,
-    };
-  };
-
-  const handleImageMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging || zoomLevel <= minZoomLevel) {
-      return;
-    }
-
-    setImagePosition({
-      x: event.clientX - dragStartRef.current.x,
-      y: event.clientY - dragStartRef.current.y,
-    });
-  };
-
-  const handleImageMouseUp = () => {
-    if (!isDragging) {
-      return;
-    }
-    setIsDragging(false);
-  };
-
-  const handleImageDoubleClick = () => {
-    if (zoomLevel === minZoomLevel) {
-      setZoomLevel(2);
-      return;
-    }
-    resetImageTransform();
   };
 
   const handleVideoPlay = () => {
@@ -439,10 +367,7 @@ function FilePreview({
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      const resetTransform = () => {
-        setZoomLevel(minZoomLevel);
-        setImagePosition({ x: 0, y: 0 });
-        setIsDragging(false);
+      const resetViewerState = () => {
         clearControlsTimer();
         setIsVideoPlaying(false);
         setShowOverlayControls(true);
@@ -450,14 +375,14 @@ function FilePreview({
 
       if (event.key === "Escape") {
         setActiveIndex(null);
-        resetTransform();
+        resetViewerState();
       }
 
       if (event.key === "ArrowLeft") {
         event.preventDefault();
         if (activeIndex > 0) {
           setActiveIndex(activeIndex - 1);
-          resetTransform();
+          resetViewerState();
         }
       }
 
@@ -465,37 +390,8 @@ function FilePreview({
         event.preventDefault();
         if (activeIndex < attachments.length - 1) {
           setActiveIndex(activeIndex + 1);
-          resetTransform();
+          resetViewerState();
         }
-      }
-
-      if (event.key === "+" || event.key === "=") {
-        event.preventDefault();
-        setZoomLevel((previousZoom) =>
-          Math.min(
-            Math.max(previousZoom + zoomStep, minZoomLevel),
-            maxZoomLevel
-          )
-        );
-      }
-
-      if (event.key === "-" || event.key === "_") {
-        event.preventDefault();
-        setZoomLevel((previousZoom) => {
-          const newZoom = Math.min(
-            Math.max(previousZoom - zoomStep, minZoomLevel),
-            maxZoomLevel
-          );
-          if (newZoom === minZoomLevel) {
-            setImagePosition({ x: 0, y: 0 });
-          }
-          return newZoom;
-        });
-      }
-
-      if (event.key === "0") {
-        event.preventDefault();
-        resetTransform();
       }
     };
 
@@ -750,28 +646,13 @@ function FilePreview({
                 </div>
               </div>
 
-              {isImage(activeAttachment.fileName) ? (
-                <div
-                  className="relative h-[88dvh] overflow-hidden rounded-box"
-                  style={{ cursor: previewCursor }}
-                  onWheel={handleImageWheel}
-                  onMouseDown={handleImageMouseDown}
-                  onMouseMove={handleImageMouseMove}
-                  onMouseUp={handleImageMouseUp}
-                  onMouseLeave={handleImageMouseUp}
-                  onDoubleClick={handleImageDoubleClick}
-                >
-                  <img
-                    src={getImageUrl(activeAttachment)}
-                    alt={activeAttachment.fileName}
-                    className="pointer-events-none absolute left-1/2 top-1/2 max-h-full max-w-full select-none"
-                    style={{
-                      transform: `translate(-50%, -50%) translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${zoomLevel})`,
-                      transformOrigin: "center center",
-                    }}
-                    draggable={false}
-                  />
-                </div>
+              {isActiveImage ? (
+                // key сбрасывает зум и сдвиг при переключении вложения.
+                <ImageViewer
+                  key={activeAttachment.id}
+                  src={getImageUrl(activeAttachment)}
+                  alt={activeAttachment.fileName}
+                />
               ) : isVideo(activeAttachment.fileName) ? (
                 <video
                   className="h-[88dvh] w-full rounded-box bg-base-200"

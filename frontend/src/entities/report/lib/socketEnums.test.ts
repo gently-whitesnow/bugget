@@ -110,4 +110,16 @@ describe("внешний автор через beta-test bot", () => {
 
     expect(name).not.toBe("Внутренний пользователь");
   });
+
+  it("агент подписывается «Агент», а не именем владельца токена", () => {
+    // Токен принадлежит человеку, но действие в истории — от агента; имя
+    // владельца токена показывать нельзя (kaiten 237718).
+    const users = {
+      "u-1": { name: "Владелец токена" },
+    } as unknown as Parameters<typeof resolveCreatorName>[2]["users"];
+
+    const name = resolveCreatorName("u-1", CreatorTypes.AGENT, { users });
+
+    expect(name).toBe("Агент");
+  });
 });

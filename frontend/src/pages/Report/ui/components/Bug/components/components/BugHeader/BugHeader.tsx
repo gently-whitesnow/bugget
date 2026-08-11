@@ -41,10 +41,9 @@ const BugHeader = ({
     currentUser?.id && bug.creatorUserId === currentUser.id
   );
   const authorName = users[bug.creatorUserId]?.name;
+  // Баг от агента подписывается «агентом» без имени владельца токена (kaiten 237718).
   const authorFragment = isAgentBug
-    ? authorName
-      ? ` агентом ${authorName}`
-      : " агентом"
+    ? " агентом"
     : isAuthorCurrentUser
       ? " вами"
       : authorName

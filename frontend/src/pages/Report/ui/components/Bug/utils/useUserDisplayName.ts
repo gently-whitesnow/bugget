@@ -14,12 +14,9 @@ export const useUserDisplayName = (
   const currentUser = useUnit($authUserStore);
 
   if (creatorType === CreatorTypes.SYSTEM) return "Система";
-  if (creatorType === CreatorTypes.AGENT) {
-    if (commentUserId && users[commentUserId]?.name) {
-      return users[commentUserId].name;
-    }
-    return "Агент";
-  }
+  // Действие агента подписывается «Агент», а не именем человека, чьим токеном
+  // оно сделано: в истории виден агент, а не владелец токена (kaiten 237718).
+  if (creatorType === CreatorTypes.AGENT) return "Агент";
 
   if (currentUser?.id && commentUserId === currentUser.id) return youString;
 

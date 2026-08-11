@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { copyToClipboard } from "@/shared/lib";
+import { McpConnectionInstructions } from "./McpConnectionInstructions";
 
 type Props = {
   token: string;
@@ -24,7 +25,7 @@ export const CreatedTokenDialog = ({ token, onClose }: Props) => {
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box relative max-w-lg">
+      <div className="modal-box relative max-w-2xl">
         <h3 className="font-bold text-lg">Токен выпущен</h3>
         <p className="py-4 text-sm text-base-content/80">
           Скопируйте значение сейчас — оно показывается один раз, повторно
@@ -33,6 +34,9 @@ export const CreatedTokenDialog = ({ token, onClose }: Props) => {
         <code className="block break-all rounded-lg bg-base-200 p-3 font-mono text-sm">
           {token}
         </code>
+        <div className="mt-4">
+          <McpConnectionInstructions token={token} />
+        </div>
         <div className="modal-action">
           <button className="btn btn-ghost btn-sm" onClick={handleCopy}>
             {isCopied ? "Скопировано" : "Скопировать"}

@@ -123,6 +123,21 @@ describe("список токенов", () => {
   });
 });
 
+describe("инструкция MCP", () => {
+  it("в блоке выпуска показывает URL текущей команды", async () => {
+    await renderSection();
+
+    expect(
+      await screen.findByText("Подключение MCP (Cursor, Claude Code, Codex)")
+    ).toBeDefined();
+    expect(
+      screen.getByText(
+        "http://localhost:3000/api/app/workspaces/1/teams/2/v1/mcp"
+      )
+    ).toBeDefined();
+  });
+});
+
 describe("выпуск токена", () => {
   const createToken = async (label: string) => {
     fireEvent.change(screen.getByPlaceholderText("Название, например mcp"), {
@@ -152,7 +167,9 @@ describe("выпуск токена", () => {
 
     await createToken("mcp");
     await screen.findByText("bgt_pat_secret-value");
-    fireEvent.click(screen.getByText("Скопировать"));
+    const tokenCopyButton = screen.getByText("Готово").previousElementSibling;
+    expect(tokenCopyButton).not.toBeNull();
+    fireEvent.click(tokenCopyButton!);
 
     await waitFor(() =>
       expect(writeText).toHaveBeenCalledWith("bgt_pat_secret-value")

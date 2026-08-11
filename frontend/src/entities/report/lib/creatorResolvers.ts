@@ -15,8 +15,9 @@ const internalUserResolver: CreatorResolver = (id, { users }) =>
 
 const systemResolver: CreatorResolver = () => "Система";
 
-const agentResolver: CreatorResolver = (id, { users }) =>
-  users[id]?.name ?? "Агент";
+// Имя человека, выпустившего токен, в подписи агента не показывается —
+// действие принадлежит агенту (kaiten 237718).
+const agentResolver: CreatorResolver = () => "Агент";
 
 const resolvers: Record<CreatorTypes, CreatorResolver> = {
   [CreatorTypes.USER]: internalUserResolver,

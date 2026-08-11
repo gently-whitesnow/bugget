@@ -5,6 +5,7 @@ import {
 } from "../../../lib/personalAccessTokens";
 import { usePersonalAccessTokens } from "../../hooks/usePersonalAccessTokens";
 import { CreatedTokenDialog } from "./components/CreatedTokenDialog";
+import { McpConnectionInstructions } from "./components/McpConnectionInstructions";
 import { TokenListItem } from "./components/TokenListItem";
 
 export const PersonalAccessTokensSection = () => {
@@ -66,6 +67,10 @@ export const PersonalAccessTokensSection = () => {
             "Выпустить токен"
           )}
         </button>
+      </div>
+
+      <div className="px-5 pb-4">
+        <McpConnectionInstructions />
       </div>
 
       {tokensError && (

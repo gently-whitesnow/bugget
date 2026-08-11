@@ -32,6 +32,36 @@ internal static class McpReportMapper
             Map(report.Links, ToLink),
             Map(report.Bugs, ToBug));
 
+    /// <summary>
+    /// Ответ create_report: репорт без вложенного дерева — оно на этот момент
+    /// пустое. Форма — та же, что элемент списка, но <c>bugs_count</c> опущен:
+    /// у только что созданного репорта он всегда ноль.
+    /// </summary>
+    public static McpReportSummary ToSummary(ReportSummaryViewModel report) =>
+        new(
+            report.Id,
+            report.Title,
+            McpWire.FormatReportStatus(report.Status),
+            report.CreatorUserId,
+            report.ResponsibleUserId,
+            report.CreatorTeamId,
+            McpWire.FormatCreatorType(report.CreatorType),
+            report.CreatedAt,
+            report.UpdatedAt);
+
+    /// <summary>Ответ create_bug: сам баг без вложенного дерева.</summary>
+    public static McpBugSummary ToBugSummary(BugSummary bug) =>
+        new(
+            bug.Id,
+            bug.Title,
+            McpWire.FormatBugStatus(bug.Status),
+            bug.CreatorUserId,
+            McpWire.FormatCreatorType(bug.CreatorType),
+            bug.CreatedAt,
+            bug.UpdatedAt,
+            bug.Receive,
+            bug.Expect);
+
     public static McpAttachmentDetails ToAttachmentDetails(
         Attachment attachment,
         string reportId,

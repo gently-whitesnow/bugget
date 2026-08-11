@@ -17,9 +17,9 @@ using ModelContextProtocol.Server;
 namespace Bugget.Api.Mcp;
 
 /// <summary>
-/// Write-инструменты MCP над репортами: статус репорта, содержимое бага,
-/// комментарии. Ровно та поверхность, которой агент отчитывается о починке;
-/// создание репортов и багов — сознательно вне MVP.
+/// Write-инструменты MCP над репортами: создание репорта и бага, статус репорта,
+/// содержимое бага, комментарии. Создание нужно, чтобы найденный баг заводился
+/// тем же PAT, что и правки, — а не выходом в неавторизованный CLI (kaiten 237700).
 ///
 /// Адаптер того же рода, что <see cref="ReportsReadTools"/>: identity — из
 /// запроса, изоляция workspace/team — в application-сервисах, как у REST.
@@ -48,6 +48,54 @@ internal sealed class ReportsWriteTools(
     /// </summary>
     private static readonly FixedWindowLimiter WriteLimiter =
         new(TimeProvider.System, limit: 30, window: TimeSpan.FromMinutes(1));
+
+    [McpServerTool(Name = "create_report", OpenWorld = false)]
+    [Description(
+        "Завести новый репорт с заголовком. Отвечает созданным репортом: id, статус, " +
+        "автор, момент создания. Баги в него добавляет create_bug.")]
+    public async Task<string> CreateReportAsync(
+        [Description("Заголовок репорта, от 1 до 128 символов.")] string title)
+    {
+        ValidateLength(title, 128, "title");
+
+        var report = await reportsService.CreateReportAsync(
+            CurrentUser(),
+            new ReportCreateDto { Title = title });
+
+        var view = report.ToViewModel(aliasOptions.Value);
+
+        return McpWire.Serialize(McpReportMapper.ToSummary(view));
+    }
+
+    [McpServerTool(Name = "create_bug", OpenWorld = false)]
+    [Description(
+        "Добавить баг в существующий репорт. Хотя бы одно из полей title/receive/expect " +
+        "обязано быть передано. Отвечает созданным багом.")]
+    public async Task<string> CreateBugAsync(
+        [Description("Идентификатор репорта, в который добавляется баг.")] string reportId,
+        [Description("Заголовок бага, от 1 до 128 символов.")] string? title = null,
+        [Description("Что получили по факту, от 1 до 2048 символов.")] string? receive = null,
+        [Description("Что ожидали, от 1 до 2048 символов.")] string? expect = null)
+    {
+        if (title is null && receive is null && expect is null)
+        {
+            throw new McpException(
+                "Передайте хотя бы одно поле: title, receive или expect — пустой баг завести нельзя.");
+        }
+
+        ValidateLength(title, 128, "title");
+        ValidateLength(receive, 2048, "receive");
+        ValidateLength(expect, 2048, "expect");
+
+        var (bug, error) = await bugsService.CreateBugAsync(
+            CurrentUser(),
+            reportId,
+            new BugDto { Title = title, Receive = receive, Expect = expect });
+
+        var created = Unwrap(bug, error);
+
+        return McpWire.Serialize(McpReportMapper.ToBugSummary(created));
+    }
 
     [McpServerTool(Name = "patch_report", Idempotent = true, OpenWorld = false)]
     [Description(

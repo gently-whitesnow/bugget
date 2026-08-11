@@ -18,7 +18,9 @@ public interface IReportsDbClient
         int skip,
         int take);
 
-    Task<ReportSummary> CreateReportAsync(string userId, string? teamId, string? organizationId, ReportCreateDto dto);
+    Task<ReportSummary> CreateReportAsync(
+        string userId, string? teamId, string? organizationId, ReportCreateDto dto,
+        short creatorType = (short)Bugget.Domain.Common.CreatorType.User);
 
     Task<ReportSummary> CreateReportAsync(
         ITransactionScope scope,

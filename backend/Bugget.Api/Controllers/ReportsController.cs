@@ -34,9 +34,7 @@ public sealed class ReportsController(
     {
         var user = User.GetIdentity();
         var reportSummary = await reportsService.CreateReportAsync(
-            user.Id,
-            user.TeamId,
-            user.OrganizationId,
+            user,
             new ReportCreateDto { Title = body.Title });
 
         var contract = reportSummary.ToViewModel(reportAliasOptions.Value).ToContract();

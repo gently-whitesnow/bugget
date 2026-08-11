@@ -6,8 +6,9 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Write-инструменты MCP: <c>patch_report</c>, <c>patch_bug</c>,
-/// <c>create_comment</c>, <c>update_comment</c>.
+/// Write-инструменты MCP: <c>create_report</c>, <c>create_bug</c>,
+/// <c>patch_report</c>, <c>patch_bug</c>, <c>create_comment</c>,
+/// <c>update_comment</c>.
 ///
 /// Клиент здесь ходит с identity, в которой способ входа — PAT
 /// (<c>Auth-Request-Auth-Method: pat</c>, ровно как выставляет
@@ -29,13 +30,13 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
 
         var tools = (await client.ListToolsAsync()).Select(tool => tool.Name).Order().ToArray();
 
-        // Точный список вместо Contains: создание репортов/багов, шаги, аналитика
-        // и настройки не должны появиться незамеченными — это граница MVP из
-        // карточки, а не случайность.
+        // Точный список вместо Contains: шаги, аналитика и настройки не должны
+        // появиться незамеченными — это граница поверхности, а не случайность.
         Assert.Equal(
             [
-                "create_comment", "get_attachment", "get_report", "list_reports",
-                "patch_bug", "patch_report", "search_reports", "update_comment",
+                "create_bug", "create_comment", "create_report", "get_attachment",
+                "get_report", "list_reports", "patch_bug", "patch_report",
+                "search_reports", "update_comment",
             ],
             tools);
     }

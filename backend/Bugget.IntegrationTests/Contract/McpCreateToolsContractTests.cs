@@ -74,7 +74,29 @@ public sealed class McpCreateToolsContractTests(AppContractFixture fixture)
         await using var client = await CreateMcpClientAsync(scenario);
         var error = await AssertToolFailsAsync(client, "create_bug", Args(("reportId", reportId)));
 
-        Assert.Contains("хотя бы одно поле", error, StringComparison.Ordinal);
+        Assert.Contains("receive", error, StringComparison.Ordinal);
+    }
+
+    [Fact(DisplayName = "create_bug только с title: отказ на границе инструмента, тем же правилом, что и домен")]
+    public async Task CreateBugRejectsTitleOnly()
+    {
+        // Домен (BugsService) требует receive или expect; одного title мало.
+        // Инструмент обязан отказать тем же критерием, а не пропустить вызов в
+        // сервис, где он упал бы менее понятной ошибкой.
+        var scenario = ContractScenario.Create(fixture);
+        var reportId = await scenario.CreateReportAsync();
+
+        await using var client = await CreateMcpClientAsync(scenario);
+        var error = await AssertToolFailsAsync(
+            client,
+            "create_bug",
+            Args(("reportId", reportId), ("title", "только заголовок")));
+
+        Assert.Contains("receive", error, StringComparison.Ordinal);
+
+        // Баг не завёлся: репорт остался пустым.
+        var report = await ContractScenario.ReadJsonAsync(await scenario.Client.GetAsync($"/v2/reports/{reportId}"));
+        Assert.Empty(report.GetProperty("bugs").EnumerateArray());
     }
 
     [Fact(DisplayName = "Чужое рабочее пространство: create_bug в чужой репорт — отказ")]

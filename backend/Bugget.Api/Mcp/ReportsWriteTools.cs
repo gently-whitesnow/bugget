@@ -69,18 +69,21 @@ internal sealed class ReportsWriteTools(
 
     [McpServerTool(Name = "create_bug", OpenWorld = false)]
     [Description(
-        "Добавить баг в существующий репорт. Хотя бы одно из полей title/receive/expect " +
-        "обязано быть передано. Отвечает созданным багом.")]
+        "Добавить баг в существующий репорт. Обязательно хотя бы одно из полей receive " +
+        "(что получили) или expect (что ожидали); title опционален. Отвечает созданным багом.")]
     public async Task<string> CreateBugAsync(
         [Description("Идентификатор репорта, в который добавляется баг.")] string reportId,
         [Description("Заголовок бага, от 1 до 128 символов.")] string? title = null,
         [Description("Что получили по факту, от 1 до 2048 символов.")] string? receive = null,
         [Description("Что ожидали, от 1 до 2048 символов.")] string? expect = null)
     {
-        if (title is null && receive is null && expect is null)
+        // Доменное правило (BugsService): баг обязан нести receive или expect;
+        // одного title мало. Проверяем здесь тем же критерием, чтобы отказ был
+        // понятным, а не приходил из сервиса на уже принятый инструментом вызов.
+        if (receive is null && expect is null)
         {
             throw new McpException(
-                "Передайте хотя бы одно поле: title, receive или expect — пустой баг завести нельзя.");
+                "Передайте receive (что получили) или expect (что ожидали) — одного заголовка для бага мало.");
         }
 
         ValidateLength(title, 128, "title");

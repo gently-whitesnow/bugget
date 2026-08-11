@@ -1,28 +1,51 @@
-import { getAppContext } from "@/shared/api";
+import { getAppContext, parseAppContextFromPath } from "@/shared/api";
 
 /** Плейсхолдер в сниппетах, пока значение токена ещё не показано. */
 export const MCP_TOKEN_PLACEHOLDER = "bgt_pat_…";
 
+export type McpAppContext = {
+  workspaceId: string | number;
+  teamId: string | number;
+};
+
 /**
- * URL Streamable HTTP MCP для текущей пары workspace+team.
- * Сегменты берутся из контекста приложения — тот же scope, что у PAT.
+ * Workspace/team для MCP URL — тот же scope, что у PAT.
+ * Сначала контекст приложения; если ещё не выставлен — из пути `/teams/:teamId`
+ * (self-hosted: workspace всегда 1).
  */
-export const buildMcpEndpointUrl = (
-  origin: string = typeof window !== "undefined" ? window.location.origin : ""
-): string | null => {
-  const { workspaceId, teamId } = getAppContext();
-  if (
-    workspaceId === null ||
-    workspaceId === undefined ||
-    workspaceId === "" ||
-    teamId === null ||
-    teamId === undefined ||
-    teamId === ""
-  ) {
-    return null;
+export const resolveMcpAppContext = (
+  pathname: string = typeof window !== "undefined" ? window.location.pathname : ""
+): McpAppContext | null => {
+  const fromStore = getAppContext();
+  if (hasContextIds(fromStore.workspaceId, fromStore.teamId)) {
+    return {
+      workspaceId: fromStore.workspaceId,
+      teamId: fromStore.teamId,
+    };
   }
 
-  return `${origin}/api/app/workspaces/${workspaceId}/teams/${teamId}/v1/mcp`;
+  const fromPath = parseAppContextFromPath(pathname);
+  if (hasContextIds(fromPath.workspaceId, fromPath.teamId)) {
+    return {
+      workspaceId: fromPath.workspaceId,
+      teamId: fromPath.teamId,
+    };
+  }
+
+  return null;
+};
+
+/**
+ * URL Streamable HTTP MCP для текущей пары workspace+team.
+ */
+export const buildMcpEndpointUrl = (
+  origin: string = typeof window !== "undefined" ? window.location.origin : "",
+  pathname?: string
+): string | null => {
+  const context = resolveMcpAppContext(pathname);
+  if (context === null) return null;
+
+  return `${origin}/api/app/workspaces/${context.workspaceId}/teams/${context.teamId}/v1/mcp`;
 };
 
 /** Готовый фрагмент `~/.cursor/mcp.json` с корнем `mcpServers`. */
@@ -79,3 +102,14 @@ export const buildCodexMcpSnippet = (url: string): string =>
     `url = "${url}"`,
     'bearer_token_env_var = "BUGGET_PAT"',
   ].join("\n");
+
+const hasContextIds = (
+  workspaceId: string | number | null | undefined,
+  teamId: string | number | null | undefined
+): workspaceId is string | number =>
+  workspaceId !== null &&
+  workspaceId !== undefined &&
+  workspaceId !== "" &&
+  teamId !== null &&
+  teamId !== undefined &&
+  teamId !== "";

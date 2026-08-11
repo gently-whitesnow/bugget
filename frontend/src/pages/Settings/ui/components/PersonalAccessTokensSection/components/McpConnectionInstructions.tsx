@@ -6,6 +6,7 @@ import {
   buildCursorMcpSnippet,
   buildMcpEndpointUrl,
   MCP_TOKEN_PLACEHOLDER,
+  resolveMcpAppContext,
 } from "../../../../lib/mcpConnection";
 
 type Props = {
@@ -36,6 +37,7 @@ const CLIENT_TABS: { id: ClientTab; label: string; fileHint: string }[] = [
 export const McpConnectionInstructions = ({ token }: Props) => {
   const [activeTab, setActiveTab] = useState<ClientTab>("cursor");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const context = resolveMcpAppContext();
   const mcpUrl = buildMcpEndpointUrl();
   const tokenForSnippet = token ?? MCP_TOKEN_PLACEHOLDER;
 
@@ -67,25 +69,66 @@ export const McpConnectionInstructions = ({ token }: Props) => {
       </summary>
       <div className="space-y-3 border-t border-base-300/50 px-3 py-3 text-sm">
         <p className="text-base-content/70">
-          URL собирается из адреса сайта и текущей команды:{" "}
+          URL:{" "}
           <code className="text-xs">
             {"{origin}/api/app/workspaces/{workspaceId}/teams/{teamId}/v1/mcp"}
           </code>
-          . Токен наследует права этой же команды — в{" "}
+          . В{" "}
           <code className="text-xs">Authorization</code> передавайте{" "}
-          <code className="text-xs">Bearer &lt;токен&gt;</code>.
+          <code className="text-xs">Bearer &lt;токен&gt;</code> — права как у
+          этой же команды.
         </p>
+
+        <ul className="list-disc space-y-1 pl-5 text-base-content/70">
+          <li>
+            <code className="text-xs">origin</code> — адрес Bugget в браузере
+            (например{" "}
+            <code className="text-xs">
+              {typeof window !== "undefined"
+                ? window.location.origin
+                : "https://bugget.ati.st"}
+            </code>
+            ).
+          </li>
+          <li>
+            <code className="text-xs">teamId</code> — id команды из адресной
+            строки:{" "}
+            <code className="text-xs">/teams/&lt;teamId&gt;/…</code>
+            {context !== null && (
+              <>
+                {" "}
+                (сейчас <code className="text-xs">{context.teamId}</code>)
+              </>
+            )}
+            .
+          </li>
+          <li>
+            <code className="text-xs">workspaceId</code> — id рабочего
+            пространства команды. В self-hosted обычно{" "}
+            <code className="text-xs">1</code>
+            {context !== null && (
+              <>
+                ; сейчас <code className="text-xs">{context.workspaceId}</code>
+              </>
+            )}
+            . На ATI смотрите его в Network у запросов{" "}
+            <code className="text-xs">/api/app/workspaces/…</code>.
+          </li>
+        </ul>
 
         {mcpUrl === null ? (
           <p className="text-base-content/60">
-            Выберите команду в сайдбаре — без workspace и team URL не собрать.
+            Откройте настройки из команды в сайдбаре (URL вида{" "}
+            <code className="text-xs">/teams/&lt;teamId&gt;/settings</code>) —
+            без teamId URL не собрать.
           </p>
         ) : (
           <>
             <div>
               <div className="mb-1 flex items-center justify-between gap-2">
                 <span className="text-xs font-medium text-base-content/60">
-                  URL для текущей команды
+                  URL для текущей команды (workspaceId=
+                  {context?.workspaceId}, teamId={context?.teamId})
                 </span>
                 <button
                   type="button"

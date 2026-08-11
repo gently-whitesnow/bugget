@@ -3,21 +3,55 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/shared/api", () => ({
   getAppContext: vi.fn(),
+  parseAppContextFromPath: vi.fn(),
 }));
 
-import { getAppContext } from "@/shared/api";
+import { getAppContext, parseAppContextFromPath } from "@/shared/api";
 import {
   buildClaudeCodeMcpSnippet,
   buildCodexMcpSnippet,
   buildCursorMcpSnippet,
   buildMcpEndpointUrl,
   MCP_TOKEN_PLACEHOLDER,
+  resolveMcpAppContext,
 } from "./mcpConnection";
 
 const mockedGetAppContext = vi.mocked(getAppContext);
+const mockedParseAppContextFromPath = vi.mocked(parseAppContextFromPath);
 
 afterEach(() => {
   vi.clearAllMocks();
+});
+
+describe("resolveMcpAppContext", () => {
+  it("берёт workspace/team из контекста приложения", () => {
+    mockedGetAppContext.mockReturnValue({ workspaceId: 1, teamId: 2 });
+
+    expect(resolveMcpAppContext("/teams/9/settings")).toEqual({
+      workspaceId: 1,
+      teamId: 2,
+    });
+    expect(mockedParseAppContextFromPath).not.toHaveBeenCalled();
+  });
+
+  it("если контекст пуст — вытаскивает teamId из /teams/:id, workspace=1", () => {
+    mockedGetAppContext.mockReturnValue({
+      workspaceId: null,
+      teamId: null,
+    });
+    mockedParseAppContextFromPath.mockReturnValue({
+      workspaceId: 1,
+      teamId: 7,
+    });
+
+    expect(resolveMcpAppContext("/teams/7/settings")).toEqual({
+      workspaceId: 1,
+      teamId: 7,
+    });
+    expect(mockedParseAppContextFromPath).toHaveBeenCalledWith(
+      "/teams/7/settings"
+    );
+  });
 });
 
 describe("buildMcpEndpointUrl", () => {
@@ -31,6 +65,10 @@ describe("buildMcpEndpointUrl", () => {
 
   it("без контекста команды URL не отдаёт — PAT к нему не привязать", () => {
     mockedGetAppContext.mockReturnValue({
+      workspaceId: null,
+      teamId: null,
+    });
+    mockedParseAppContextFromPath.mockReturnValue({
       workspaceId: null,
       teamId: null,
     });

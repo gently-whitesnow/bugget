@@ -21,6 +21,10 @@
 
 ## Быстрый старт
 
+Из зависимостей нужен только Docker с compose v2: весь контур собирается из исходников
+в контейнерах. Node 24 и .NET SDK 9 (версия зафиксирована в `global.json`) понадобятся
+дальше, для локальной разработки фронта и бэкенда.
+
 ```sh
 cd deploy
 docker compose -f docker-compose.yml -f docker-compose.dev.yml \
@@ -33,7 +37,40 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml \
 http://localhost/api/authorization/v1/fake/login?externalId=user-1&name=Tester
 ```
 
-Остановить и удалить данные: `docker compose ... --profile full down -v`.
+Остановить и удалить данные:
+
+```sh
+cd deploy
+docker compose -f docker-compose.yml -f docker-compose.dev.yml \
+  --env-file env/dev.env --profile full down -v
+```
+
+Флаги в команде, каждый обязателен:
+
+| Флаг | Что даёт | Что будет без него |
+| --- | --- | --- |
+| `-f docker-compose.yml` | образы, тома, сеть | `service "redis" has neither an image nor a build context specified` |
+| `-f docker-compose.dev.yml` | порты наружу | контейнеры поднимутся, но с хоста недоступны |
+| `--env-file env/dev.env` | `ASPNETCORE_ENVIRONMENT=Development` | fake-логин выключен |
+| `--profile full` | выбирает сервисы | не поднимется ничего |
+
+Профили:
+
+| Профиль | Сервисы | Когда |
+| --- | --- | --- |
+| `full` | postgres, redis, app-api, app-ui, nginx | приложение целиком в docker |
+| `back` | postgres, redis, app-api, nginx | фронт локально в vite |
+| `front` | — | нерабочий: `nginx` зависит от `app-api`, которого в профиле нет |
+
+Порты на хост:
+
+| Сервис | Порт |
+| --- | --- |
+| nginx | 80 |
+| app-api | 7777 |
+| app-ui | 1337 |
+| postgres | 5432 |
+| redis | 6379 |
 
 ### Разработка фронтенда
 
@@ -42,9 +79,13 @@ http://localhost/api/authorization/v1/fake/login?externalId=user-1&name=Tester
 ```sh
 cd frontend
 npm ci
-npm run start-backend   # postgres + redis + api + nginx
+npm run start-backend   # профиль back: postgres + redis + api + nginx
 npm run dev             # vite на :5173, проксирует /api на nginx
+npm run stop-backend    # погасить контур и удалить данные
 ```
+
+`start-backend` подменяет `APP_DOMAIN` на `http://localhost:5173`, поэтому после
+fake-логина редирект возвращает на vite, а не на nginx.
 
 ### Разработка бэкенда
 

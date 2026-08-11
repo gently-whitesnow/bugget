@@ -8,7 +8,7 @@ namespace Bugget.Application.Services.Reports;
 
 public interface IReportsService
 {
-    Task<ReportSummary> CreateReportAsync(string userId, string? teamId, string? organizationId, ReportCreateDto createDto);
+    Task<ReportSummary> CreateReportAsync(UserIdentity user, ReportCreateDto createDto);
     Task<(ReportPatchResult? Value, Error? Error)> PatchReportAsync(string aliasId, UserIdentity user, ReportPatchDto patchDto);
     Task<(Report? Value, Error? Error)> GetReportAsync(string aliasId, string? organizationId, string? teamId);
     Task<ResolvedReportId?> ResolveReportByAliasAsync(string aliasId, UserIdentity user);

@@ -43,6 +43,30 @@ internal sealed record McpReport(
     McpReportLink[]? Links,
     McpBug[]? Bugs);
 
+/// <summary>Ответ create_report: репорт без вложенного дерева.</summary>
+internal sealed record McpReportSummary(
+    string Id,
+    string Title,
+    string Status,
+    string CreatorUserId,
+    string ResponsibleUserId,
+    string? CreatorTeamId,
+    string CreatorType,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt);
+
+/// <summary>Ответ create_bug: баг без вложенного дерева.</summary>
+internal sealed record McpBugSummary(
+    int Id,
+    string? Title,
+    string Status,
+    string CreatorUserId,
+    string CreatorType,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    string? Receive,
+    string? Expect);
+
 internal sealed record McpReportLink(string Name, string Link);
 
 internal sealed record McpBug(

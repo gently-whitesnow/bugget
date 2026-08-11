@@ -22,9 +22,10 @@ public sealed class ReportsService(
     IOptions<ReportAliasOptions> aliasOptions) : IReportsService
 {
 
-    public Task<ReportSummary> CreateReportAsync(string userId, string? teamId, string? organizationId, ReportCreateDto createDto)
+    public Task<ReportSummary> CreateReportAsync(UserIdentity user, ReportCreateDto createDto)
     {
-        return reportsDbClient.CreateReportAsync(userId, teamId, organizationId, createDto);
+        return reportsDbClient.CreateReportAsync(
+            user.Id, user.TeamId, user.OrganizationId, createDto, (short)user.ActorCreatorType);
     }
 
     public async Task<(ReportPatchResult? Value, Error? Error)> PatchReportAsync(string aliasId, UserIdentity user, ReportPatchDto patchDto)

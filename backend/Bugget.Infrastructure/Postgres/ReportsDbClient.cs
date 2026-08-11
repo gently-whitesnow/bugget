@@ -4,6 +4,7 @@ using Bugget.Domain;
 using Bugget.Domain.Attachments;
 using Bugget.Domain.Bugs;
 using Bugget.Domain.Comments;
+using Bugget.Domain.Common;
 using Bugget.Domain.Reports;
 using Bugget.Domain.Search;
 using Bugget.Infrastructure.Transactions;
@@ -144,13 +145,12 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
     /// <summary>
     /// Создает новый отчет и возвращает его краткую структуру.
     /// </summary>
-    public async Task<ReportSummary> CreateReportAsync(string userId, string? teamId, string? organizationId, ReportCreateDto dto)
+    public async Task<ReportSummary> CreateReportAsync(string userId, string? teamId, string? organizationId, ReportCreateDto dto, short creatorType = (short)CreatorType.User)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
         return await conn.QuerySingleAsync<ReportSummary>(
-            "SELECT * FROM public.create_report_v3(@userId, @title, @teamId, @organizationId);",
-            new { userId, title = dto.Title, teamId, organizationId }
-        );
+            "SELECT * FROM public.create_report_v3(@userId, @title, @teamId, @organizationId, @creatorType);",
+            new { userId, title = dto.Title, teamId, organizationId, creatorType });
     }
 
     public Task<ReportSummary> CreateReportAsync(

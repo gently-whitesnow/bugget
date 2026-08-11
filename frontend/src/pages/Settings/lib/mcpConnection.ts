@@ -14,25 +14,19 @@ export type McpAppContext = {
  * (self-hosted: workspace всегда 1).
  */
 export const resolveMcpAppContext = (
-  pathname: string = typeof window !== "undefined" ? window.location.pathname : ""
+  pathname: string = typeof window !== "undefined"
+    ? window.location.pathname
+    : ""
 ): McpAppContext | null => {
   const fromStore = getAppContext();
-  if (hasContextIds(fromStore.workspaceId, fromStore.teamId)) {
-    return {
-      workspaceId: fromStore.workspaceId,
-      teamId: fromStore.teamId,
-    };
-  }
+  const fromStoreContext = toMcpAppContext(
+    fromStore.workspaceId,
+    fromStore.teamId
+  );
+  if (fromStoreContext !== null) return fromStoreContext;
 
   const fromPath = parseAppContextFromPath(pathname);
-  if (hasContextIds(fromPath.workspaceId, fromPath.teamId)) {
-    return {
-      workspaceId: fromPath.workspaceId,
-      teamId: fromPath.teamId,
-    };
-  }
-
-  return null;
+  return toMcpAppContext(fromPath.workspaceId, fromPath.teamId);
 };
 
 /**
@@ -103,13 +97,20 @@ export const buildCodexMcpSnippet = (url: string): string =>
     'bearer_token_env_var = "BUGGET_PAT"',
   ].join("\n");
 
-const hasContextIds = (
+const toMcpAppContext = (
   workspaceId: string | number | null | undefined,
   teamId: string | number | null | undefined
-): workspaceId is string | number =>
-  workspaceId !== null &&
-  workspaceId !== undefined &&
-  workspaceId !== "" &&
-  teamId !== null &&
-  teamId !== undefined &&
-  teamId !== "";
+): McpAppContext | null => {
+  if (
+    workspaceId === null ||
+    workspaceId === undefined ||
+    workspaceId === "" ||
+    teamId === null ||
+    teamId === undefined ||
+    teamId === ""
+  ) {
+    return null;
+  }
+
+  return { workspaceId, teamId };
+};

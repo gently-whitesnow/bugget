@@ -139,12 +139,8 @@ describe("инструкция MCP", () => {
         "http://localhost:3000/api/app/workspaces/1/teams/2/v1/mcp"
       )
     ).toBeDefined();
-    expect(
-      screen.getByText(/id команды из адресной строки/)
-    ).toBeDefined();
-    expect(
-      screen.getByText(/id рабочего пространства команды/)
-    ).toBeDefined();
+    expect(screen.getByText(/id команды из адресной строки/)).toBeDefined();
+    expect(screen.getByText(/id рабочего пространства команды/)).toBeDefined();
   });
 });
 

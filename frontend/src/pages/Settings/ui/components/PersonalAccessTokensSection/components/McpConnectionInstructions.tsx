@@ -73,8 +73,7 @@ export const McpConnectionInstructions = ({ token }: Props) => {
           <code className="text-xs">
             {"{origin}/api/app/workspaces/{workspaceId}/teams/{teamId}/v1/mcp"}
           </code>
-          . В{" "}
-          <code className="text-xs">Authorization</code> передавайте{" "}
+          . В <code className="text-xs">Authorization</code> передавайте{" "}
           <code className="text-xs">Bearer &lt;токен&gt;</code> — права как у
           этой же команды.
         </p>
@@ -92,8 +91,7 @@ export const McpConnectionInstructions = ({ token }: Props) => {
           </li>
           <li>
             <code className="text-xs">teamId</code> — id команды из адресной
-            строки:{" "}
-            <code className="text-xs">/teams/&lt;teamId&gt;/…</code>
+            строки: <code className="text-xs">/teams/&lt;teamId&gt;/…</code>
             {context !== null && (
               <>
                 {" "}

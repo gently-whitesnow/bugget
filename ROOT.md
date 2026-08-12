@@ -24,6 +24,7 @@
 | Перегенерация кода из контрактов | `scripts/quality/openapi-generate.sh` (C#), `scripts/quality/frontend-openapi-generate.sh` (TypeScript) |
 | Какие HTTP-пути публичны и чем покрыты | `backend/Bugget.IntegrationTests/Contract/PublicContractInventory.cs` |
 | Как фронт ходит в API и какие есть исключения | гейт `frontend-api-inventory` — `scripts/quality/frontend-api-inventory.mjs` |
+| Дизайн-система фронтенда: токены, палитра, типографика, компоненты | [frontend/DESIGN.md](frontend/DESIGN.md) |
 | Как контрибьютить, дисциплина PR, формат коммита | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
 | Безопасность, кодекс | [docs/](docs/) |
 

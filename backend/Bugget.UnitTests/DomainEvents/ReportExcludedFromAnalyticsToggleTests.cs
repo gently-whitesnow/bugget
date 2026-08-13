@@ -171,8 +171,8 @@ public class ReportExcludedFromAnalyticsToggleTests
         var db = new Mock<IReportsDbClient>();
         db.Setup(x => x.ResolveReportIdAsync(It.IsAny<string>(), It.IsAny<string>(), 7, It.IsAny<Guid?>(), It.IsAny<int?>()))
             .ReturnsAsync(new ResolvedReportId { Id = 7, CreatorTeamId = null });
-        db.Setup(x => x.GetStatusAndResponsibleAsync(It.IsAny<ITransactionScope>(), 7, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(((int)ReportStatus.Backlog, (string?)null));
+        db.Setup(x => x.GetPatchSnapshotAsync(It.IsAny<ITransactionScope>(), 7, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportPatchSnapshot((int)ReportStatus.Backlog, null, null, "creator"));
         db.Setup(x => x.GetIsExcludedFromAnalyticsAsync(It.IsAny<ITransactionScope>(), 7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         db.Setup(x => x.PatchReportAsync(7, It.IsAny<ReportPatchDto>(), It.IsAny<ITransactionScope?>(), It.IsAny<CancellationToken>()))

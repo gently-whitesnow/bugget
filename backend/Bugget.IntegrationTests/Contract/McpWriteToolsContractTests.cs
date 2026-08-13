@@ -61,6 +61,36 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
         Assert.Equal("fix", rest.GetProperty("status").GetString());
     }
 
+    [Fact(DisplayName = "patch_report: агент забирает репорт в fix и возвращает тестировщику в test")]
+    public async Task PatchReportHandsReportBetweenAgentOwnerAndTester()
+    {
+        var scenario = ContractScenario.Create(fixture);
+        var reportId = await scenario.CreateReportAsync("mcp-передача-ответственности");
+
+        // Владелец PAT — не автор репорта: иначе передача была бы неотличима от no-op.
+        var ownerUserId = $"pat-owner-{Guid.NewGuid():N}";
+        await using var client = await CreateMcpClientAsync(scenario, ownerUserId);
+
+        // Агент начал правки: репорт в fix, держит его владелец токена.
+        var inFix = await CallAsync(
+            client,
+            "patch_report",
+            Args(("reportId", reportId), ("status", "fix")));
+
+        Assert.Equal("fix", inFix.GetProperty("status").GetString());
+        Assert.Equal(ownerUserId, inFix.GetProperty("responsible_user_id").GetString());
+
+        // Агент запушил: репорт в test, ответственность возвращается тестировщику —
+        // тому, кто держал репорт до агента (автору-создателю сценария).
+        var inTest = await CallAsync(
+            client,
+            "patch_report",
+            Args(("reportId", reportId), ("status", "test")));
+
+        Assert.Equal("test", inTest.GetProperty("status").GetString());
+        Assert.Equal(scenario.UserId, inTest.GetProperty("responsible_user_id").GetString());
+    }
+
     [Fact(DisplayName = "patch_bug: текст и статус меняются, непереданные поля остаются")]
     public async Task PatchBugChangesTextAndStatus()
     {
@@ -272,7 +302,7 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
     /// заголовки проверяет <see cref="McpEndpointContractTests"/>; здесь важно,
     /// что write-запись под такой identity атрибутируется агенту.
     /// </summary>
-    private async Task<McpClient> CreateMcpClientAsync(ContractScenario scenario)
+    private async Task<McpClient> CreateMcpClientAsync(ContractScenario scenario, string? userId = null)
     {
         var transport = new HttpClientTransport(
             new HttpClientTransportOptions
@@ -280,7 +310,7 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
                 Endpoint = new Uri(fixture.BaseAddress, "/v1/mcp"),
                 AdditionalHeaders = new Dictionary<string, string>
                 {
-                    [ContractHeaders.UserId] = scenario.UserId,
+                    [ContractHeaders.UserId] = userId ?? scenario.UserId,
                     [ContractHeaders.TeamId] = scenario.TeamId,
                     [ContractHeaders.WorkspaceId] = scenario.WorkspaceId,
                     [ContractHeaders.WorkspaceRole] = "owner",

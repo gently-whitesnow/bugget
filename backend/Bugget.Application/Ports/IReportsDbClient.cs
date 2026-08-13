@@ -33,12 +33,13 @@ public interface IReportsDbClient
     Task<int?> GetStatusInternalAsync(ITransactionScope scope, int reportId, CancellationToken ct = default);
 
     /// <summary>
-    /// Tx-aware fetch текущих `status` и `responsible_user_id` репорта. Используется
-    /// auto-status driver'ом (T04): чтобы решить, надо ли пересчитать status при
-    /// смене responsible, нужно сразу знать обе величины в той же транзакции, что и
-    /// PATCH. Возвращает <c>null</c>, если репорт не найден.
+    /// Tx-aware снимок репорта перед PATCH: `status`, `responsible_user_id`,
+    /// `past_responsible_user_id`, `creator_user_id`. Нужен драйверам effective-патча
+    /// — auto-status по смене responsible (T04) и agent-handoff по смене статуса
+    /// (kaiten 238350) — в той же транзакции, что и UPDATE. Возвращает <c>null</c>,
+    /// если репорт не найден.
     /// </summary>
-    Task<(int Status, string? ResponsibleUserId)?> GetStatusAndResponsibleAsync(
+    Task<ReportPatchSnapshot?> GetPatchSnapshotAsync(
         ITransactionScope scope,
         int reportId,
         CancellationToken ct = default);

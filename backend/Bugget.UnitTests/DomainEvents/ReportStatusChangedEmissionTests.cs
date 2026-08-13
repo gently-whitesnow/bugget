@@ -84,8 +84,8 @@ public class ReportStatusChangedEmissionTests
         var db = new Mock<IReportsDbClient>();
         db.Setup(x => x.ResolveReportIdAsync(It.IsAny<string>(), It.IsAny<string>(), reportId, It.IsAny<Guid?>(), It.IsAny<int?>()))
             .ReturnsAsync(new ResolvedReportId { Id = reportId, CreatorTeamId = null });
-        db.Setup(x => x.GetStatusAndResponsibleAsync(It.IsAny<ITransactionScope>(), reportId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((currentStatus, currentResponsibleUserId));
+        db.Setup(x => x.GetPatchSnapshotAsync(It.IsAny<ITransactionScope>(), reportId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReportPatchSnapshot(currentStatus, currentResponsibleUserId, PastResponsibleUserId: null, CreatorUserId: "creator"));
 
         var observed = new List<ReportPatchDto>();
         db.Setup(x => x.PatchReportAsync(reportId, It.IsAny<ReportPatchDto>(), It.IsAny<ITransactionScope?>(), It.IsAny<CancellationToken>()))
@@ -156,7 +156,7 @@ public class ReportStatusChangedEmissionTests
         await svc.PatchReportAsync("42", user, new ReportPatchDto { Title = "renamed" });
 
         publisher.Verify(p => p.PublishAsync(It.IsAny<DomainEvent>(), It.IsAny<ITransactionScope>(), It.IsAny<CancellationToken>()), Times.Never);
-        db.Verify(x => x.GetStatusAndResponsibleAsync(It.IsAny<ITransactionScope>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        db.Verify(x => x.GetPatchSnapshotAsync(It.IsAny<ITransactionScope>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "Manual: явный Status, но from == to — дедупликация, эмиссии нет")]

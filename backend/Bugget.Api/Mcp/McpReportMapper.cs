@@ -125,7 +125,11 @@ internal static class McpReportMapper
             Map(bug.Comments, ToComment),
             Map(bug.Attachments, ToAttachment));
 
-    private static McpBugStep ToStep(BugStepSummary step) =>
+    /// <summary>
+    /// Шаг в дереве репорта и он же — ответ create_bug_step/update_bug_step:
+    /// форма одна, чтобы модель не встречала два разных вида одного шага.
+    /// </summary>
+    public static McpBugStep ToStep(BugStepSummary step) =>
         new(step.Id, step.StepNumber, step.Text, Map(step.Attachments, ToAttachment));
 
     private static McpComment ToComment(Comment comment) =>

@@ -56,11 +56,15 @@
    policy header-trust, тем же nginx location — без правок nginx. Инструменты —
    тонкие адаптеры над интерфейсами `Bugget.Application` (как контроллеры), под
    теми же арх-правилами сборки Api; их точный список закреплён contract-тестом:
-   10 инструментов — read (`list_reports`, `get_report`, `search_reports`,
+   13 инструментов — read (`list_reports`, `get_report`, `search_reports`,
    `get_attachment`) и write (`create_report`, `create_bug`, `patch_report` —
-   принимает только статус, `patch_bug`, `create_comment`, `update_comment`).
+   принимает только статус, `patch_bug`, `create_bug_step`, `update_bug_step`,
+   `delete_bug_step`, `create_comment`, `update_comment`).
    Создание репорта и бага (kaiten 237700) добавлено после MVP: чтобы найденный
-   баг заводился тем же PAT, а не выходом в неавторизованный CLI скилла. Валидация
+   баг заводился тем же PAT, а не выходом в неавторизованный CLI скилла. Шаги
+   воспроизведения (kaiten 238350) — чтобы заведённый агентом баг не оставался
+   без пути воспроизведения; перестановка шагов (`order`) не выносится: агент
+   пишет шаги по порядку, перетасовка — жест человека в UI. Валидация
    длин REST повторена в инструментах явно: DataAnnotations без MVC-биндинга не
    срабатывают.
 
@@ -99,9 +103,9 @@
 
 ## Вне MVP (сознательно не сделано)
 
-- CRUD шагов, report-links, аналитика, workspace/team/settings через MCP.
+- Report-links, аналитика, workspace/team/settings через MCP.
   (Создание репортов и багов было здесь на старте эпика; вынесено в инструменты
-  по kaiten 237700 — см. п. 4.)
+  по kaiten 237700, CRUD шагов без перестановки — по kaiten 238350 — см. п. 4.)
 - Отдельная агент-сущность (service user): отброшена в пользу атрибуции по
   способу входа (kaiten 236888) — вернуться, только если понадобится агент со
   своей идентичностью.

@@ -186,18 +186,21 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
     }
 
     /// <inheritdoc />
-    public async Task<(int Status, string? ResponsibleUserId)?> GetStatusAndResponsibleAsync(
+    public Task<ReportPatchSnapshot?> GetPatchSnapshotAsync(
         ITransactionScope scope,
         int reportId,
         CancellationToken ct = default)
     {
         var (connection, tx) = scope.Unwrap();
-        var row = await connection.QuerySingleOrDefaultAsync<ReportStatusResponsibleRow?>(new CommandDefinition(
-            "SELECT status, responsible_user_id FROM public.get_report_internal(@reportId);",
+        // Алиасы — под параметры конструктора рекорда: у позиционного рекорда нет
+        // parameterless-конструктора, Dapper сопоставляет колонки по именам параметров.
+        return connection.QuerySingleOrDefaultAsync<ReportPatchSnapshot?>(new CommandDefinition(
+            "SELECT status AS Status, responsible_user_id AS ResponsibleUserId, " +
+            "past_responsible_user_id AS PastResponsibleUserId, creator_user_id AS CreatorUserId " +
+            "FROM public.get_report_internal(@reportId);",
             new { reportId },
             transaction: tx,
             cancellationToken: ct));
-        return row is null ? null : (row.Status, row.ResponsibleUserId);
     }
 
     /// <inheritdoc />
@@ -239,11 +242,6 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
             cancellationToken: ct));
     }
 
-    private sealed class ReportStatusResponsibleRow
-    {
-        public int Status { get; init; }
-        public string? ResponsibleUserId { get; init; }
-    }
 
     /// <summary>
     /// Список репортов тестера для команды <c>/my</c> (TECHSPEC §4.3.5).

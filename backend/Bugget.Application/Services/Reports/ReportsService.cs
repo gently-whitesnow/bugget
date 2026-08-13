@@ -6,6 +6,7 @@ using Bugget.Application.Ports;
 using Bugget.Application.Services.Bugs;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Bugs;
+using Bugget.Domain.Common;
 using Bugget.Domain.Errors;
 using Bugget.Domain.Reports;
 using Bugget.Domain.Search;
@@ -69,7 +70,8 @@ public sealed class ReportsService(
         ReportPatchDto patchDto,
         short actorCreatorType)
     {
-        var (oldStatus, oldResponsibleUserId) = await PreFetchStatusAndResponsibleAsync(scope, ct, reportId, patchDto);
+        var snapshot = await PreFetchPatchSnapshotAsync(scope, ct, reportId, patchDto);
+        var oldStatus = snapshot?.Status;
 
         // Снимок `is_excluded_from_analytics` ДО UPDATE и под FOR UPDATE row lock
         // (см. tx-overload GetIsExcludedFromAnalyticsAsync). Нужен и чтобы эмиттер
@@ -81,7 +83,8 @@ public sealed class ReportsService(
             ? await reportsDbClient.GetIsExcludedFromAnalyticsAsync(scope, reportId, ct)
             : null;
 
-        var effectivePatch = ApplyAutoStatusDriver(patchDto, oldStatus, oldResponsibleUserId);
+        var effectivePatch = ApplyAgentHandoffDriver(patchDto, user, snapshot);
+        effectivePatch = ApplyAutoStatusDriver(effectivePatch, oldStatus, snapshot?.ResponsibleUserId);
 
         var patchResult = await reportsDbClient.PatchReportAsync(reportId, effectivePatch, scope, ct);
 
@@ -120,7 +123,7 @@ public sealed class ReportsService(
         return (patchResult, effectivePatch);
     }
 
-    private async Task<(int? OldStatus, string? OldResponsibleUserId)> PreFetchStatusAndResponsibleAsync(
+    private async Task<ReportPatchSnapshot?> PreFetchPatchSnapshotAsync(
         ITransactionScope scope,
         CancellationToken ct,
         int reportId,
@@ -129,13 +132,50 @@ public sealed class ReportsService(
         var needsPreFetch = patchDto.Status.HasValue || patchDto.ResponsibleUserId != null;
         if (!needsPreFetch)
         {
-            return (null, null);
+            return null;
         }
 
-        var current = await reportsDbClient.GetStatusAndResponsibleAsync(scope, reportId, ct);
-        return current.HasValue
-            ? (current.Value.Status, current.Value.ResponsibleUserId)
-            : (null, null);
+        return await reportsDbClient.GetPatchSnapshotAsync(scope, reportId, ct);
+    }
+
+    /// <summary>
+    /// Если статус меняет агент (актор по PAT) и PATCH не задаёт responsible явно,
+    /// подставляет ответственного по <see cref="AgentReportHandoff"/>: Fix — владелец
+    /// токена, Test — прежний ответственный или автор репорта. Явный responsible в
+    /// PATCH и действия человека возвращаются без изменений.
+    /// </summary>
+    internal static ReportPatchDto ApplyAgentHandoffDriver(
+        ReportPatchDto patchDto,
+        UserIdentity user,
+        ReportPatchSnapshot? snapshot)
+    {
+        if (user.ActorCreatorType != CreatorType.Agent
+            || patchDto.ResponsibleUserId != null
+            || !patchDto.Status.HasValue
+            || snapshot is null)
+        {
+            return patchDto;
+        }
+
+        var responsible = AgentReportHandoff.ResolveResponsible(
+            (ReportStatus)patchDto.Status.Value,
+            user.Id,
+            snapshot.ResponsibleUserId,
+            snapshot.PastResponsibleUserId,
+            snapshot.CreatorUserId);
+
+        if (responsible is null)
+        {
+            return patchDto;
+        }
+
+        return new ReportPatchDto
+        {
+            Title = patchDto.Title,
+            Status = patchDto.Status,
+            ResponsibleUserId = responsible,
+            IsExcludedFromAnalytics = patchDto.IsExcludedFromAnalytics,
+        };
     }
 
     /// <summary>

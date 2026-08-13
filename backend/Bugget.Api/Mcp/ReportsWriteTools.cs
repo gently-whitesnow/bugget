@@ -102,11 +102,17 @@ internal sealed class ReportsWriteTools(
 
     [McpServerTool(Name = "patch_report", Idempotent = true, OpenWorld = false)]
     [Description(
-        "Перевести репорт в другой статус. Отвечает обновлённым репортом: статус, " +
-        "ответственный, момент изменения.")]
+        "Перевести репорт в другой статус. Протокол работы над правками: взял баги " +
+        "репорта в работу — сразу переведи репорт в fix; запушил правки — переведи в " +
+        "test. Ответственного выбирать не нужно: при fix сервер назначит владельца " +
+        "токена, при test вернёт репорт тестировщику (прежнему ответственному или " +
+        "автору репорта). Отвечает обновлённым репортом: статус, ответственный, " +
+        "момент изменения.")]
     public async Task<string> PatchReportAsync(
         [Description("Идентификатор репорта из list_reports или get_report.")] string reportId,
-        [Description("Новый статус: backlog, resolved, fix, rejected, test.")] string status)
+        [Description(
+            "Новый статус: backlog, resolved, fix (начал править баги), rejected, " +
+            "test (запушил правки, репорт уходит тестировщику).")] string status)
     {
         var (result, error) = await reportsService.PatchReportAsync(
             reportId,

@@ -3,6 +3,7 @@ using Bugget.Application.ExternalProducer.Ports;
 using Bugget.Application.Options;
 using Bugget.Application.Ports;
 using Bugget.Application.Services.Reports;
+using Bugget.Domain.Common;
 using Microsoft.Extensions.Options;
 
 namespace Bugget.Infrastructure.ExternalClients.Notifications.Mattermost;
@@ -26,8 +27,13 @@ public sealed class MattermostService(
         }
 
         var responsibleUser = await usersClient.GetUserAsync(reportPatchContext.Result.ResponsibleUserId);
-        var updaterUser = await usersClient.GetUserAsync(reportPatchContext.UserId);
-        if (responsibleUser == null || updaterUser == null || responsibleUser.MattermostUserId is null)
+        if (responsibleUser?.MattermostUserId is null)
+        {
+            return;
+        }
+
+        var initiatorName = await ResolveInitiatorNameAsync(reportPatchContext);
+        if (initiatorName == null)
         {
             return;
         }
@@ -44,9 +50,25 @@ public sealed class MattermostService(
             : null;
 
         var message = ReportMessageBuilder.GetYourResponsibleAfterPatchReportMessage(
-            aliasId, teamId, reportPatchContext.Result.Title, updaterUser.Name
+            aliasId, teamId, reportPatchContext.Result.Title, initiatorName
         );
 
         await mattermostClient.SendMessageAsync(responsibleUser.MattermostUserId, message);
+    }
+
+    /// <summary>
+    /// Кем подписать уведомление. У агента имени нет — <c>UserId</c> указывает на
+    /// владельца токена, и подставлять его имя нельзя: репорт перевёл агент.
+    /// <c>null</c> — инициатор-человек не нашёлся, отправлять нечего.
+    /// </summary>
+    private async Task<string?> ResolveInitiatorNameAsync(ReportPatchContext reportPatchContext)
+    {
+        if (reportPatchContext.ActorCreatorType == CreatorType.Agent)
+        {
+            return ReportMessageBuilder.AgentInitiatorName;
+        }
+
+        var updaterUser = await usersClient.GetUserAsync(reportPatchContext.UserId);
+        return updaterUser?.Name;
     }
 }

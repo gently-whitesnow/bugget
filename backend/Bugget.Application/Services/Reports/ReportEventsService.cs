@@ -17,7 +17,7 @@ public class ReportEventsService(
     {
         await Task.WhenAll(
             reportPageHubClient.SendReportPatchAsync(reportIdContext.GroupKey, patchDto.ToSocketView(result), user.SignalRConnectionId),
-            externalProducerService.ExecuteReportPatchPostActions(new ReportPatchContext(user.Id, patchDto, result)),
+            externalProducerService.ExecuteReportPatchPostActions(new ReportPatchContext(user.Id, patchDto, result, user.ActorCreatorType)),
             participantsService.AddParticipantIfNotExistAsync(reportIdContext, user.Id),
             patchDto.ResponsibleUserId != null ? participantsService.AddParticipantIfNotExistAsync(reportIdContext, patchDto.ResponsibleUserId) : Task.CompletedTask
         );

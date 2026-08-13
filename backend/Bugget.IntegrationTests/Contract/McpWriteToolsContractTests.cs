@@ -8,7 +8,9 @@ namespace Bugget.IntegrationTests.Contract;
 /// <summary>
 /// Write-инструменты MCP: <c>create_report</c>, <c>create_bug</c>,
 /// <c>patch_report</c>, <c>patch_bug</c>, <c>create_comment</c>,
-/// <c>update_comment</c>.
+/// <c>update_comment</c>. Инструменты шагов воспроизведения — в
+/// <see cref="McpBugStepToolsContractTests"/>; точный список инструментов
+/// сервер отвечает здесь.
 ///
 /// Клиент здесь ходит с identity, в которой способ входа — PAT
 /// (<c>Auth-Request-Auth-Method: pat</c>, ровно как выставляет
@@ -22,7 +24,7 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
 {
     private readonly List<HttpClientTransport> _transports = [];
 
-    [Fact(DisplayName = "tools/list: ровно четыре read- и четыре write-инструмента, запрещённых нет")]
+    [Fact(DisplayName = "tools/list: ровно четыре read- и девять write-инструментов, запрещённых нет")]
     public async Task ServerAdvertisesExactlyExpectedTools()
     {
         var scenario = ContractScenario.Create(fixture);
@@ -30,13 +32,14 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
 
         var tools = (await client.ListToolsAsync()).Select(tool => tool.Name).Order().ToArray();
 
-        // Точный список вместо Contains: шаги, аналитика и настройки не должны
-        // появиться незамеченными — это граница поверхности, а не случайность.
+        // Точный список вместо Contains: аналитика, настройки и перестановка шагов
+        // не должны появиться незамеченными — это граница поверхности, а не случайность.
         Assert.Equal(
             [
-                "create_bug", "create_comment", "create_report", "get_attachment",
-                "get_report", "list_reports", "patch_bug", "patch_report",
-                "search_reports", "update_comment",
+                "create_bug", "create_bug_step", "create_comment", "create_report",
+                "delete_bug_step", "get_attachment", "get_report", "list_reports",
+                "patch_bug", "patch_report", "search_reports", "update_bug_step",
+                "update_comment",
             ],
             tools);
     }

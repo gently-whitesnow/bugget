@@ -77,6 +77,34 @@ public class UserAuthHandlerTests
         Assert.Equal(AuthMethods.Pat, claims[AuthClaims.AuthMethod]);
     }
 
+    [Fact(DisplayName =
+        "Когда имя заголовка способа входа не задано в конфигурации, а запрос принёс отметку PAT — " +
+        "claim способа входа не создаётся и автор действий определяется как CreatorType равен 0 - \"Пользователь\", " +
+        "а не 3 - \"Неинтерактивный клиент: запрос пришёл через PAT, а не браузерную JWT-сессию.\"")]
+    public async Task AuthenticateAsync_ShouldDegradeActorToUser_WhenAuthMethodHeaderNameIsNotConfigured()
+    {
+        // Arrange: конфигурация без AuthMethodHeaderName — форма прод-инцидента
+        // (bugget report 436, баг 2): nginx честно принёс Auth-Request-Auth-Method: pat,
+        // но хендлер не знает имени заголовка и молча теряет способ входа.
+        var headersOptions = new AuthHeadersOptions
+        {
+            UserIdHeaderName = "X-User-Id"
+        };
+        var context = new DefaultHttpContext();
+        context.Request.Headers[headersOptions.UserIdHeaderName] = "user-123";
+        context.Request.Headers["Auth-Request-Auth-Method"] = AuthMethods.Pat;
+
+        var handler = CreateHandler(context, headersOptions);
+
+        // Act
+        var result = await handler.AuthenticateAsync();
+
+        // Assert: аутентификация успешна, но claim нет — и атрибуция деградирует к User
+        Assert.True(result.Succeeded);
+        Assert.Null(result.Principal!.FindFirst(AuthClaims.AuthMethod));
+        Assert.Equal(Bugget.Domain.Common.CreatorType.User, result.Principal.GetIdentity().ActorCreatorType);
+    }
+
     [Fact]
     public async Task Fails_WhenUserHeaderConfiguredButMissing()
     {

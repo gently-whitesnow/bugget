@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Bugget.Application.Commands.Bug;
+using Bugget.Application.Commands.BugStep;
 using Bugget.Application.Commands.Comment;
 using Bugget.Application.Commands.Report;
 using Bugget.Application.Mappers;
@@ -18,8 +19,12 @@ namespace Bugget.Api.Mcp;
 
 /// <summary>
 /// Write-инструменты MCP над репортами: создание репорта и бага, статус репорта,
-/// содержимое бага, комментарии. Создание нужно, чтобы найденный баг заводился
-/// тем же PAT, что и правки, — а не выходом в неавторизованный CLI (kaiten 237700).
+/// содержимое бага, шаги воспроизведения, комментарии. Создание нужно, чтобы
+/// найденный баг заводился тем же PAT, что и правки, — а не выходом в
+/// неавторизованный CLI (kaiten 237700); шаги — чтобы заведённый агентом баг
+/// не оставался без пути воспроизведения (kaiten 238350). Перестановка шагов
+/// (order) сознательно не выносится: агент пишет шаги по порядку, а
+/// перетасовка — жест человека в UI.
 ///
 /// Адаптер того же рода, что <see cref="ReportsReadTools"/>: identity — из
 /// запроса, изоляция workspace/team — в application-сервисах, как у REST.
@@ -36,6 +41,7 @@ namespace Bugget.Api.Mcp;
 internal sealed class ReportsWriteTools(
     IReportsService reportsService,
     IBugsService bugsService,
+    IBugStepsService bugStepsService,
     ICommentsService commentsService,
     IHttpContextAccessor httpContextAccessor,
     IOptions<ReportAliasOptions> aliasOptions)
@@ -174,6 +180,64 @@ internal sealed class ReportsWriteTools(
             patched.Receive,
             patched.Expect,
             patched.UpdatedAt));
+    }
+
+    [McpServerTool(Name = "create_bug_step", OpenWorld = false)]
+    [Description(
+        "Добавить багу шаг воспроизведения. Шаги добавляются по одному, порядок " +
+        "вызовов задаёт порядок шагов. Отвечает созданным шагом с его номером.")]
+    public async Task<string> CreateBugStepAsync(
+        [Description("Идентификатор репорта, в котором лежит баг.")] string reportId,
+        [Description("Идентификатор бага из get_report.")] int bugId,
+        [Description("Текст шага, от 1 до 2048 символов.")] string text)
+    {
+        ValidateLength(text, 2048, "text");
+
+        var (step, error) = await bugStepsService.CreateBugStepAsync(
+            CurrentUser(),
+            reportId,
+            bugId,
+            new BugStepDto { Text = text });
+
+        return McpWire.Serialize(McpReportMapper.ToStep(Unwrap(step, error)));
+    }
+
+    [McpServerTool(Name = "update_bug_step", Idempotent = true, OpenWorld = false)]
+    [Description("Заменить текст шага воспроизведения. Отвечает обновлённым шагом.")]
+    public async Task<string> UpdateBugStepAsync(
+        [Description("Идентификатор репорта, в котором лежит баг.")] string reportId,
+        [Description("Идентификатор бага из get_report.")] int bugId,
+        [Description("Идентификатор шага из get_report или create_bug_step.")] int stepId,
+        [Description("Новый текст шага, от 1 до 2048 символов.")] string text)
+    {
+        ValidateLength(text, 2048, "text");
+
+        var (step, error) = await bugStepsService.PatchBugStepAsync(
+            CurrentUser(),
+            reportId,
+            bugId,
+            stepId,
+            new BugStepDto { Text = text });
+
+        return McpWire.Serialize(McpReportMapper.ToStep(Unwrap(step, error)));
+    }
+
+    [McpServerTool(Name = "delete_bug_step", Idempotent = true, OpenWorld = false)]
+    [Description(
+        "Удалить шаг воспроизведения. Номера оставшихся шагов не меняются — " +
+        "актуальный список в get_report. Отвечает подтверждением удаления.")]
+    public async Task<string> DeleteBugStepAsync(
+        [Description("Идентификатор репорта, в котором лежит баг.")] string reportId,
+        [Description("Идентификатор бага из get_report.")] int bugId,
+        [Description("Идентификатор шага из get_report.")] int stepId)
+    {
+        var error = await bugStepsService.DeleteBugStepAsync(CurrentUser(), reportId, bugId, stepId);
+        if (error is not null)
+        {
+            throw new McpException(error.Title);
+        }
+
+        return McpWire.Serialize(new McpBugStepDeleted(stepId));
     }
 
     [McpServerTool(Name = "create_comment", OpenWorld = false)]

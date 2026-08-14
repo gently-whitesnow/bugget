@@ -4,7 +4,6 @@ import { useUnit } from "effector-react";
 
 import { resolveLegacyReport } from "@/entities/report";
 import { $bootstrapState } from "@/shared/model";
-import { setAppContext } from "@/shared/api";
 import { BootstrapStatus } from "@/shared/config";
 
 const LegacyReportRedirectPage = () => {
@@ -19,9 +18,6 @@ const LegacyReportRedirectPage = () => {
       return;
     }
 
-    // URL /reports/:legacyId не содержит workspace/team,
-    // поэтому ApiBaseBoot не может извлечь контекст из пути.
-    // Ждём bootstrap и устанавливаем контекст, чтобы appApi сформировал правильный URL.
     if (
       bootstrapState.status !== BootstrapStatus.READY ||
       !bootstrapState.workspace
@@ -32,8 +28,6 @@ const LegacyReportRedirectPage = () => {
       setError("not-found");
       return;
     }
-
-    setAppContext(bootstrapState.workspace.id, bootstrapState.defaultTeamId);
 
     resolveLegacyReport(legacyId)
       .then(({ teamId, teamReportId }) => {

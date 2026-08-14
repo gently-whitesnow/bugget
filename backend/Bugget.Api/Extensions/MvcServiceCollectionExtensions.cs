@@ -21,7 +21,7 @@ public static class MvcServiceCollectionExtensions
         {
             // Модуль reports исторически требует аутентификации на всех своих контроллерах.
             // Контроллеры модулей users и authorization живут в том же процессе и объявляют
-            // авторизацию сами ([Auth] / [JwtAuth]), поэтому фильтр вешается по сборке,
+            // авторизацию сами ([Auth] / [JwtAuth]), поэтому фильтр вешается по модулю,
             // а не глобально.
             options.Conventions.Add(new ReportsModuleAuthorizationConvention());
 

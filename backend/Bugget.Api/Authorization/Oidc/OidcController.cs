@@ -1,5 +1,6 @@
 using Bugget.Api.Authorization.Abstractions;
 using Bugget.Api.Authorization.Oidc.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -22,7 +23,11 @@ public sealed class OidcController(
     /// Callback после OIDC авторизации через oauth2-proxy.
     /// Валидирует токен, привязывает OIDC identity, редиректит на next.
     /// </summary>
-    [HttpGet("callback")]
+    /// <remarks>
+    /// Маршрут анонимный по замыслу: вызывающего ещё нет в базе — он тут и заводится, —
+    /// а доверие даёт не сессия, а токен провайдера, который валидируется ниже.
+    /// </remarks>
+    [AllowAnonymous, HttpGet("callback")]
     public async Task<IActionResult> CallbackAsync()
     {
         // 1. Извлекаем токен из cookie

@@ -106,16 +106,16 @@ typography:
     letterSpacing: 0
   button:
     fontFamily: Verdana
-    fontSize: 14px
+    fontSize: 13px
     fontWeight: 400
     lineHeight: 1.20
-    letterSpacing: 0
+    letterSpacing: -0.13px
   button-sm:
     fontFamily: Verdana
     fontSize: 12px
     fontWeight: 400
     lineHeight: 1.20
-    letterSpacing: 0
+    letterSpacing: -0.12px
   eyebrow:
     fontFamily: Verdana
     fontSize: 12px
@@ -126,8 +126,7 @@ typography:
 rounded:
   sm: 4px
   md: 6px
-  field: 8px
-  dark-field: 4px
+  field: 6px
   box: 8px
   lg: 8px
   xl: 12px
@@ -158,32 +157,50 @@ components:
     textColor: "{colors.primary-content}"
     typography: "{typography.button}"
     rounded: "{rounded.field}"
-    padding: 0 16px
+    padding: 0 12px
     height: 35px
   button-info:
     backgroundColor: "{colors.info}"
     textColor: "{colors.info-content}"
     typography: "{typography.button}"
     rounded: "{rounded.field}"
-    padding: 8px 16px
+    padding: 8px 12px
+    height: 35px
   button-outline-secondary:
     backgroundColor: transparent
     textColor: "{colors.secondary}"
     typography: "{typography.button}"
     rounded: "{rounded.field}"
-    padding: 8px 16px
+    padding: 8px 12px
+    height: 35px
+  button-neutral:
+    backgroundColor: "{colors.base-200}"
+    textColor: "{colors.base-content}"
+    typography: "{typography.button}"
+    rounded: "{rounded.field}"
+    padding: 0 12px
+    height: 35px
   button-ghost:
     backgroundColor: transparent
     textColor: "{colors.base-content}"
     typography: "{typography.button}"
     rounded: "{rounded.field}"
-    padding: 0 16px
+    padding: 0 12px
+    height: 35px
+  button-ghost-hover:
+    backgroundColor: color-mix(in oklab, {colors.base-content} 8%, transparent)
+    textColor: "{colors.base-content}"
+    typography: "{typography.button}"
+    rounded: "{rounded.field}"
+    padding: 0 12px
+    height: 35px
   button-error:
     backgroundColor: "{colors.error}"
     textColor: "{colors.error-content}"
     typography: "{typography.button}"
     rounded: "{rounded.field}"
-    padding: 0 16px
+    padding: 0 12px
+    height: 35px
   text-input:
     backgroundColor: "{colors.base-100}"
     textColor: "{colors.base-content}"
@@ -474,7 +491,7 @@ font-family: Verdana, "Dejavu Sans", Geneva, Tahoma, sans-serif;
 | `{typography.body-sm}` | `text-sm` | 14px | 400 | 1.43 | Контролы, меню, плотные блоки (109) |
 | `{typography.field-label}` | `.field-label` | 13px | 400 | 1.54 | Подписи к полям формы |
 | `{typography.caption}` | `text-xs` | 12px | 400 | 1.33 | Метаданные, счётчики (75) |
-| `{typography.button}` | `btn` | 14px | 400 | 1.20 | Кнопки обычного размера |
+| `{typography.button}` | `btn` | 13px | 400 | 1.20 | Кнопки обычного размера |
 | `{typography.button-sm}` | `btn-sm` | 12px | 400 | 1.20 | Кнопки в плотных местах (39) |
 | `{typography.eyebrow}` | `text-xs tracking-wide` | 12px | 500 | 1.33 | Надзаголовки секций (13) |
 
@@ -603,6 +620,7 @@ CSS-переменной — сначала ищи подходящий, пот�
 ### Фокус и доступность
 
 - Кольцо фокуса — `focus-visible:ring-2 ring-primary/25` при `focus-visible:outline-none`.
+- У кнопок кольцо своё: `outline: 2px` цвета кнопки на 45% с отступом 2px (см. Кнопки).
 - Нативный `outline` полей формы снят в `@layer components`, но **цвет границы при фокусе
   не меняется** — фокус на полях ввода сейчас читается слабо (см. Known Gaps).
 - `prefers-reduced-motion: reduce` обрезает все анимации и переходы до 0.01ms глобально.
@@ -617,6 +635,9 @@ CSS-переменной — сначала ищи подходящий, пот�
 скрытия/показа хедера и смены высоты сайдбара. `duration-300` и `duration-500` —
 единичные случаи для появления контента. Переходят **цвет и трансформация**, не размеры.
 
+Кнопки — исключение: у них 150ms и `cubic-bezier(0.4, 0, 0.2, 1)`. Кнопку жмут, а не
+разглядывают, и отклик на ней должен опережать остальную анимацию интерфейса.
+
 ## Shapes
 
 ### Шкала радиусов
@@ -629,7 +650,7 @@ CSS-переменной — сначала ищи подходящий, пот�
 | `{rounded.sm}` | 4px | `rounded-sm` | Контур сайдбара (`rounded-l-sm` / `rounded-r-sm`) |
 | `{rounded.md}` | 6px | `rounded-md` | Мелкие элементы, скелетоны (33), тултипы |
 | `{rounded.box}` | 8px | `rounded-box` | **Триггеры селектов и строки опций** (20) |
-| `{rounded.field}` | 8px / 4px в тёмной | `rounded-field`, `btn`, `input` | Кнопки, поля ввода |
+| `{rounded.field}` | 6px | `rounded-field`, `btn`, `input` | Кнопки, поля ввода |
 | `{rounded.lg}` | 8px | `rounded-lg` | Чипы, плашки, коллауты (17) |
 | `{rounded.xl}` | 12px | `rounded-xl` | Карточки (6) |
 | `{rounded.popup}` | 14px | `rounded-[14px]` | **Только popup-поверхности** (4) |
@@ -646,15 +667,20 @@ CSS-переменной — сначала ищи подходящий, пот�
 
 ### Границы
 
-`--border: 1.5px` в обеих темах — толщина рамки компонентов DaisyUI (кнопки, поля).
-Разделители и контуры карточек рисуются обычным 1px `border-base-300`.
+`--border: 1.5px` в обеих темах — толщина рамки компонентов DaisyUI (поля ввода,
+чекбоксы). Разделители и контуры карточек рисуются обычным 1px `border-base-300`.
+**Кнопка — исключение: у неё 1px**, задан прямо на `.btn`. 1.5px на кнопке читается как
+обводка, 1px — как край поверхности.
 
 Спецификация DESIGN.md не знает под-токена `border`, поэтому границы компонентов не влезли
 во front matter и живут здесь:
 
 | Компонент | Граница |
 | --- | --- |
-| `button-outline-secondary` | 1.5px `{colors.secondary}` |
+| `button-primary`, `button-info`, `button-error` | 1px в цвет собственного фона — шва не видно |
+| `button-neutral` | 1px `base-content` 14%, при наведении 24% |
+| `button-outline-secondary` | 1px `{colors.secondary}` |
+| `button-ghost` | нет — прозрачна и в покое, и под курсором |
 | `text-input`, `text-input-focused` | 1.5px `base-content` 15% (при фокусе **не меняется**) |
 | `select-trigger` | нет — прозрачен в покое |
 | `select-trigger-focused` | `ring-2` `primary` 25%, `outline: none` |
@@ -680,12 +706,35 @@ CSS-переменной — сначала ищи подходящий, пот�
 
 ### Кнопки
 
+Общий контракт всех вариантов задан в `@layer utilities` в `shared/styles/tailwind.css`.
+Блок лежит именно в `utilities`, а не в `components`: базовые правила DaisyUI объявлены в
+`utilities`, и из более раннего слоя их не перебить — специфичность тут не помогает,
+слой сильнее.
+
+**Кнопка плоская.** На `.btn` переопределён `--depth: 0`, и это снимает всю «объёмность»
+DaisyUI разом: белый `text-shadow` на подписи, внутренний блик сверху и двойную тень снизу.
+Токен переопределён на самой кнопке, поэтому поля ввода, чекбоксы и алерты своей глубины не
+теряют. Тени под кнопкой нет ни в одном состоянии — иерархию держат заливка и граница,
+как и везде в системе.
+
+**Геометрия.** Высота `--size-field × 10` = **35px в обеих темах**, `btn-sm` — 28px,
+`btn-xs` — 21px. Горизонтальный паддинг — 12px (`btn-sm` 10px, `btn-xs` 8px), радиус
+`{rounded.field}` 6px, граница 1px. Подпись — `{typography.button}` 13px обычного
+начертания с тречингом −0.13px: Verdana широкая, и на плотной кнопке ей нужно чуть
+поджать межбуквенное.
+
+**Наведение и нажатие.** В фон подмешивается `{colors.base-content}`: 10% под курсором,
+16% на нажатии, плюс сдвиг на 0.5px вниз. В светлой теме `base-content` тёмный и кнопка
+темнеет, в тёмной светлый и кнопка светлеет — правильное поведение в обеих темах получается
+из одного правила, новых цветов не заводится.
+
+**Фокус.** `outline: 2px` цвета самой кнопки на 45% с `outline-offset: 2px`; у нейтральных
+и призрачных кнопок кольцо брендовое. Это единственное место, где кнопка что-то рисует за
+своими границами.
+
 **`button-primary`** — брендовый CTA.
 
-- `btn btn-primary`. Фон `{colors.primary}`, текст `{colors.primary-content}`,
-  тип `{typography.button}`, радиус `{rounded.field}`.
-- Высота считается DaisyUI как `--size-field × 10`: **35px в светлой теме, 40px в тёмной**
-  (`--size-field` = 0.21875rem / 0.25rem). Это расхождение тем, а не задумка — см. Known Gaps.
+- `btn btn-primary`. Фон `{colors.primary}`, текст `{colors.primary-content}`.
 
 **`button-info`** — кнопка «Сохранить» (`SaveButton`).
 
@@ -695,14 +744,28 @@ CSS-переменной — сначала ищи подходящий, пот�
 
 **`button-outline-secondary`** — кнопка «Отменить» (`CancelButton`).
 
-- `btn btn-outline btn-secondary px-4 py-2`. Прозрачный фон, рамка 1.5px.
+- `btn btn-outline btn-secondary px-4 py-2`. Прозрачный фон, рамка 1px.
+- Под курсором остаётся контурной: подложка — свой же цвет на 10%, текст и рамка не меняются.
+  DaisyUI по умолчанию заливает её сплошным цветом с инверсией текста, и в тёмной теме
+  «Отменить» вспыхивала маджентой — от этого поведения мы отказались.
 - Всегда идёт в паре с `button-info` и блокируется по тому же `isChanged`.
+
+**`button-neutral`** — кнопка без цветового модификатора (`btn`, часто с `bg-base-100`).
+
+- При `--depth: 0` DaisyUI рисует ей границу в цвет фона, и на `base-100` такая кнопка
+  пропадает совсем. Поэтому у неё отдельный волосок `base-content` 14%, под курсором 24%.
 
 **`button-ghost`** — иконочные и низкоприоритетные действия (31 употребление).
 
 - `btn btn-ghost`, часто с `btn-sm` / `btn-square` / `btn-circle`.
+- Под курсором — заливка `base-content` 8% (13% на нажатии) **без рамки**, подпись
+  сохраняет свой цвет: `btn-ghost text-error` остаётся красной. DaisyUI вместо этого
+  заливал призрачную кнопку плотным `base-200` и возвращал ей рамку.
 
 **`button-error`** — деструктивные действия. `btn btn-error`.
+
+**Заблокированная кнопка** — подпись `base-content` 40%, фон `base-content` 8%, рамки нет.
+У DaisyUI подпись гаснет до 20% и не читается вовсе.
 
 Размеры: `btn-sm` (39) — рабочая лошадка в плотных местах, `btn-xs` (18) — внутри строк
 списков, размер по умолчанию — на формах.
@@ -1035,9 +1098,9 @@ import { Bug, Settings } from "lucide-react";
 ### Тач-цели
 
 - Поля ввода — 42px, выше минимальных 44px не поднимаются, но и не опускаются ниже.
-- Кнопки размера по умолчанию — 35px (светлая) / 40px (тёмная); `btn-sm` — 28px / 32px.
-  На тач-устройствах `btn-sm` и `btn-xs` в одиночных действиях не годятся — только внутри
-  строк списка, где вся строка кликабельна.
+- Кнопки размера по умолчанию — 35px, `btn-sm` — 28px, `btn-xs` — 21px; в обеих темах
+  одинаково. На тач-устройствах `btn-sm` и `btn-xs` в одиночных действиях не годятся —
+  только внутри строк списка, где вся строка кликабельна.
 - Триггеры селектов сжимаются по контенту; в тач-контексте им нужен внешний паддинг.
 
 ### Движение и предпочтения
@@ -1078,12 +1141,15 @@ import { Bug, Settings } from "lucide-react";
   `button-error` — **4.08:1**. Порог AA для обычного текста — 4.5:1. Хуже всех
   `btn-info`, то есть кнопка «Сохранить». Это фактическое состояние продукта, не опечатка
   в документе; чинится сменой `*-content` на тёмный либо понижением светлоты фона в oklch.
-- **Расхождение размеров контролов между темами.** `--size-field` равен `0.21875rem` в
-  светлой теме и `0.25rem` в тёмной, `--radius-field` — `0.5rem` и `0.25rem`. Из-за этого
-  кнопки в тёмной теме выше (40px против 35px) и острее по углам. То же с
-  `--radius-selector`: 32px против 8px — чекбоксы и тогглы в светлой теме круглые, в
-  тёмной почти квадратные. Похоже на артефакт, а не на решение; здесь зафиксировано как
-  есть.
+  Редизайн кнопок эти цифры не менял и не мог: он не трогает палитру. Но подпись стала
+  13px вместо 14px, так что запас по читаемости у этих трёх кнопок теперь ещё меньше —
+  чинить контраст стоит раньше, чем позже.
+- **Расхождение размеров контролов между темами — частично снято.** `--size-field` и
+  `--radius-field` теперь одинаковы в обеих темах (`0.21875rem` и `0.375rem`), кнопки и
+  поля больше не меняют высоту и скругление при переключении темы. Осталось
+  `--radius-selector`: 32px в светлой против 8px в тёмной — чекбоксы и тогглы в светлой
+  теме круглые, в тёмной почти квадратные. Похоже на тот же артефакт, но селекторов
+  редизайн кнопок не касался.
 - **Две «главные» кнопки.** Бренд — `{colors.primary}` (`btn-primary`, 33 употребления), но
   «Сохранить» в формах исторически `btn-info` (`SaveButton`). Какая из них главный CTA —
   системой не зафиксировано.

@@ -95,7 +95,7 @@ export const ToastNotificationItem = ({
                 <button
                   key={`${notification.id}-${action.label}-${index}`}
                   className={[
-                    "btn btn-xs font-normal",
+                    "btn btn-xs",
                     getActionKindClass(action.kind ?? "ghost"),
                   ].join(" ")}
                   style={{ borderWidth: "1px" }}

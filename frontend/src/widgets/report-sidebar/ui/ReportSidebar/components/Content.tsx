@@ -80,14 +80,7 @@ const Content = ({
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="text-sm text-base-content/70">
-                Участники
-                {participantsWithNames && participantsWithNames.length > 0 && (
-                  <span className="ml-1 text-xs text-base-content/45">
-                    · клик по аватару назначит ответственного
-                  </span>
-                )}
-              </div>
+              <div className="text-sm text-base-content/70">Участники</div>
               <div className="mt-3 flex gap-2">
                 {participantsWithNames?.map((participant) => (
                   <ParticipantAvatar

@@ -120,6 +120,16 @@
 
 @plugin "@tailwindcss/typography";
 
+/* На экранах ниже 2dppx 1px-рамка на дуге 6px распадается на тусклые
+   полупиксели — угол «шакалит». 4px там рисуется одним пикселем. Вне слоя,
+   чтобы перебить токен темы DaisyUI из @layer base. */
+@media not all and (min-resolution: 2dppx) {
+  :root,
+  [data-theme] {
+    --radius-field: 0.25rem;
+  }
+}
+
 /* Тултип. Слой utilities обязателен: daisyUI объявляет тултип там же, из components
    не перебить. Контракт вида — DESIGN.md, Components → Тултипы. */
 @layer utilities {

@@ -81,7 +81,7 @@ const Content = ({
 
             <div className="flex flex-col gap-2">
               <div className="text-sm text-base-content/70">Участники</div>
-              <div className="mt-2 flex gap-2">
+              <div className="mt-3 flex gap-2">
                 {participantsWithNames?.map((participant) => (
                   <ParticipantAvatar
                     key={participant.id}

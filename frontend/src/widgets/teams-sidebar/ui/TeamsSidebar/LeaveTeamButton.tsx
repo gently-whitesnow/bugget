@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { LogOut } from "lucide-react";
 import { useUnit } from "effector-react";
 import { useNavigate } from "react-router";
 import {
@@ -51,7 +52,7 @@ export const LeaveTeamButton: FC = () => {
 
   return (
     <button
-      className="btn btn-sm btn-ghost text-xs opacity-40 hover:opacity-100 justify-start mt-auto"
+      className="btn btn-sm btn-ghost mt-auto justify-start text-error hover:bg-error/10"
       onClick={handleLeaveTeam}
       disabled={isLeaving}
     >
@@ -61,7 +62,10 @@ export const LeaveTeamButton: FC = () => {
           Выход...
         </>
       ) : (
-        <>Покинуть команду</>
+        <>
+          <LogOut className="h-4 w-4" />
+          Покинуть команду
+        </>
       )}
     </button>
   );

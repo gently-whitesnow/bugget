@@ -119,3 +119,78 @@
 }
 
 @plugin "@tailwindcss/typography";
+
+/* Тултип. Слой utilities обязателен: daisyUI объявляет тултип там же, из components
+   не перебить. Контракт вида — DESIGN.md, Components → Тултипы. */
+@layer utilities {
+  .tooltip {
+    --tt-off: calc(100% + 0.375rem);
+    --tt-surface: var(--tt-bg);
+  }
+
+  /* dark neutral темнее base-100, поэтому в тёмной теме поверхность поднимается над
+     фоном, а не инвертируется. */
+  @media (prefers-color-scheme: dark) {
+    .tooltip {
+      --tt-surface: color-mix(
+        in oklab,
+        var(--color-base-100) 90%,
+        var(--color-base-content) 10%
+      );
+    }
+  }
+
+  .tooltip:is(
+    .tooltip-primary,
+    .tooltip-secondary,
+    .tooltip-accent,
+    .tooltip-info,
+    .tooltip-success,
+    .tooltip-warning,
+    .tooltip-error
+  ) {
+    --tt-surface: var(--tt-bg);
+  }
+
+  .tooltip[data-tip]::before,
+  .tooltip > .tooltip-content {
+    /* Lightning CSS выбрасывает непрефиксное свойство, если оно стоит первым: Firefox
+       останется без размытия. */
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    backdrop-filter: blur(10px) saturate(140%);
+    background-color: color-mix(in oklab, var(--tt-surface) 85%, transparent);
+    border: 1px solid
+      color-mix(in oklab, var(--color-neutral-content) 12%, transparent);
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1.5rem -0.75rem oklch(0% 0 0 / 0.45);
+    font-size: 0.75rem;
+    line-height: 1.33;
+    max-width: 16rem;
+    padding-block: 0.25rem;
+    padding-inline: 0.5rem;
+    text-align: left;
+    text-wrap: pretty;
+    z-index: 300;
+  }
+
+  .tooltip[data-tip]::after,
+  .tooltip:has(.tooltip-content)::after {
+    display: none;
+  }
+
+  @supports not (backdrop-filter: blur(1px)) {
+    .tooltip[data-tip]::before,
+    .tooltip > .tooltip-content {
+      background-color: var(--tt-surface);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tooltip.tooltip[data-tip]:not([data-tip=""]):hover::before,
+    .tooltip.tooltip:has(:focus-visible)[data-tip]::before,
+    .tooltip.tooltip:has(.tooltip-content):hover > .tooltip-content,
+    .tooltip.tooltip:has(:focus-visible) > .tooltip-content {
+      transition-delay: 250ms;
+    }
+  }
+}

@@ -1,6 +1,7 @@
 export * from "./bugAnchor";
 export * from "./bugStepAnchor";
 export * from "./commentAnchor";
+export * from "./createWithAttachments";
 export * from "./domain";
 export * from "./nestedEntityAnchor";
 export * from "./useCopyAnchorLink";

@@ -212,8 +212,7 @@
     --btn-p: 0.75rem;
     --fontsize: 0.8125rem;
     border-width: 1px;
-    font-weight: 500;
-    letter-spacing: -0.01em;
+    font-weight: 400;
     transition-property:
       color, background-color, border-color, outline-color, box-shadow;
     transition-duration: 0.15s;

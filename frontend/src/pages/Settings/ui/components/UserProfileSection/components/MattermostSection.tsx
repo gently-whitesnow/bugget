@@ -78,12 +78,13 @@ export const MattermostSection = ({
               )}
             </button>
           </div>
-          {!isMattermostIdValid(mattermostIdInput) && (
-            <p className="text-sm text-error">
-              Необходимая длина идентификатора - {mattermostIdMaxLength}{" "}
-              символов
-            </p>
-          )}
+          {mattermostIdInput.length > 0 &&
+            !isMattermostIdValid(mattermostIdInput) && (
+              <p className="text-sm text-error">
+                Необходимая длина идентификатора - {mattermostIdMaxLength}{" "}
+                символов
+              </p>
+            )}
         </div>
       )}
     </div>

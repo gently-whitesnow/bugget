@@ -17,10 +17,7 @@ const SearchResults = () => {
       ))}
       {compareWireInt64(searchResult.total, searchResult.reports?.length ?? 0) >
         0 && (
-        <button
-          onClick={loadMoreHandler}
-          className="btn btn-outline btn-secondary"
-        >
+        <button onClick={loadMoreHandler} className="btn">
           <ChevronDown className="w-12 h-12" />
         </button>
       )}

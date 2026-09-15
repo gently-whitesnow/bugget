@@ -264,8 +264,9 @@
   }
 
   /* Кнопка без цветового модификатора при --depth: 0 рисует границу в цвет
-     собственного фона, а фон у неё base-200 — на base-100 такая кнопка
-     пропадает. Возвращаем ей отдельный бордер. */
+     собственного фона и на base-100 пропадает — возвращаем ей бордер. Фон не
+     base-200: в тёмной теме он темнее страницы и кнопка проваливается. Примесь
+     base-content светлеет в тёмной теме и темнеет в светлой. */
   .btn:not(
     .btn-ghost,
     .btn-link,
@@ -284,6 +285,11 @@
     [disabled],
     .btn-disabled
   ) {
+    --btn-bg: color-mix(
+      in oklab,
+      var(--color-base-100) 97%,
+      var(--color-base-content)
+    );
     --btn-border: color-mix(
       in oklab,
       var(--color-base-content) 14%,
@@ -310,12 +316,44 @@
         [disabled],
         .btn-disabled
       ):hover {
+      --btn-bg: color-mix(
+        in oklab,
+        var(--color-base-100) 92%,
+        var(--color-base-content)
+      );
       --btn-border: color-mix(
         in oklab,
         var(--color-base-content) 24%,
         transparent
       );
     }
+  }
+
+  /* Правило покоя выше перебивает общее .btn:active порядком, поэтому
+     нажатие нейтральной кнопки объявлено отдельно. */
+  .btn:not(
+      .btn-ghost,
+      .btn-link,
+      .btn-outline,
+      .btn-soft,
+      .btn-active,
+      .btn-primary,
+      .btn-secondary,
+      .btn-accent,
+      .btn-neutral,
+      .btn-info,
+      .btn-success,
+      .btn-warning,
+      .btn-error,
+      :disabled,
+      [disabled],
+      .btn-disabled
+    ):active {
+    --btn-bg: color-mix(
+      in oklab,
+      var(--color-base-100) 87%,
+      var(--color-base-content)
+    );
   }
 
   /* Призрачная кнопка — иконочные и низкоприоритетные действия. DaisyUI по
@@ -336,7 +374,7 @@
   }
 
   /* Контурная кнопка по наведению у DaisyUI схлопывается в сплошную заливку
-     своим цветом — в тёмной теме «Отменить» вспыхивает маджентой. Оставляем её
+     своим цветом — btn-secondary в тёмной теме вспыхивает маджентой. Оставляем её
      контурной и добавляем мягкий подтон. */
   @media (hover: hover) {
     .btn-outline:hover:not(

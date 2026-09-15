@@ -145,7 +145,7 @@ export const UserProfileSection = ({
               disabled={isProfileUpdating}
             />
             <button
-              className="btn btn-primary btn-sm"
+              className="btn btn-primary btn-field min-w-32"
               onClick={onProfileNameSave}
               disabled={
                 !hasProfileNameChanges ||

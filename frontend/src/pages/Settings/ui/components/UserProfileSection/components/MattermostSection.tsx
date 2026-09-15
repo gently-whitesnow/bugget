@@ -54,7 +54,7 @@ export const MattermostSection = ({
               , он ответит вашим User ID.
             </p>
           )}
-          <div className="responsive-inline [--responsive-gap:0.5rem] [--responsive-item-min:11rem]">
+          <div className="flex flex-wrap gap-2">
             <input
               type="text"
               className="input input-bordered input-sm flex-1 font-mono"
@@ -64,14 +64,8 @@ export const MattermostSection = ({
               onChange={(e) => onMattermostIdInputChange(e.target.value)}
               disabled={isMattermostLinking}
             />
-            {!isMattermostIdValid(mattermostIdInput) && (
-              <p className="text-sm text-error">
-                Необходимая длина идентификатора - {mattermostIdMaxLength}{" "}
-                символов
-              </p>
-            )}
             <button
-              className="btn btn-primary btn-sm"
+              className="btn btn-primary btn-field min-w-32"
               onClick={onMattermostLink}
               disabled={
                 !isMattermostIdValid(mattermostIdInput) || isMattermostLinking
@@ -84,6 +78,13 @@ export const MattermostSection = ({
               )}
             </button>
           </div>
+          {mattermostIdInput.length > 0 &&
+            !isMattermostIdValid(mattermostIdInput) && (
+              <p className="text-sm text-error">
+                Необходимая длина идентификатора - {mattermostIdMaxLength}{" "}
+                символов
+              </p>
+            )}
         </div>
       )}
     </div>

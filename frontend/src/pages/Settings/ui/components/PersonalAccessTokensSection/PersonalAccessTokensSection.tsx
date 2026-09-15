@@ -57,7 +57,7 @@ export const PersonalAccessTokensSection = () => {
           onChange={(event) => setNewTokenLabel(event.target.value)}
         />
         <button
-          className="btn btn-primary btn-sm"
+          className="btn btn-primary btn-field"
           onClick={handleTokenCreate}
           disabled={isTokenCreating || newTokenLabel.trim() === ""}
         >

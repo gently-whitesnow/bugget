@@ -257,7 +257,7 @@ const ReportPage = () => {
         {!allBugs.some((bug) => bug.isLocalOnly) && (
           <button
             ref={addBugButtonRef}
-            className="btn btn-outline btn-primary font-normal ml-auto"
+            className="btn btn-outline btn-primary ml-auto"
             onClick={handleAddBugClick}
             disabled={!title.trim()}
           >

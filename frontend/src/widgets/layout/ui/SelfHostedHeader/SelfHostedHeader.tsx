@@ -129,7 +129,7 @@ const SelfHostedHeader = ({ sidebarAction }: Props) => {
         )}
 
         {(!isOnReportsPage || reportId) && (
-          <CreateReportButton className="btn btn-primary font-normal" />
+          <CreateReportButton className="btn btn-primary" />
         )}
       </div>
 
@@ -168,7 +168,7 @@ const SelfHostedHeader = ({ sidebarAction }: Props) => {
         )}
 
         {(!isOnReportsPage || reportId) && (
-          <CreateReportButton className="btn btn-primary w-full justify-start font-normal" />
+          <CreateReportButton className="btn btn-primary w-full justify-start" />
         )}
       </HeaderActionsMenu>
     </HeaderContainer>

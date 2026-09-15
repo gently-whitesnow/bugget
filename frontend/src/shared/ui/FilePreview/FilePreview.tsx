@@ -667,7 +667,7 @@ function FilePreview({
                 <div className="relative flex h-[88dvh] flex-col overflow-hidden rounded-box border border-base-300 bg-base-200">
                   <button
                     type="button"
-                    className="btn btn-square btn-sm absolute right-3 top-3 z-10 cursor-pointer border-info/25 bg-info/10 text-info shadow-sm backdrop-blur transition-colors hover:border-info/35 hover:bg-info/15 hover:text-info"
+                    className="btn btn-square btn-sm absolute right-3 top-3 z-10"
                     onClick={handleCopyCurl}
                     disabled={
                       isCurlPreviewLoading ||
@@ -699,7 +699,7 @@ function FilePreview({
                           {curlPreviewError}
                         </p>
                         <a
-                          className="btn btn-sm btn-info btn-soft mt-4"
+                          className="btn btn-sm mt-4"
                           href={getImageUrl(activeAttachment)}
                           target="_blank"
                           rel="noreferrer"
@@ -723,7 +723,7 @@ function FilePreview({
                     </p>
                     <p className="text-sm text-base-content/60">Файл</p>
                     <a
-                      className="btn btn-sm btn-info btn-soft mt-4"
+                      className="btn btn-sm mt-4"
                       href={getImageUrl(activeAttachment)}
                       target="_blank"
                       rel="noreferrer"

@@ -9,7 +9,7 @@ type Props = {
 
 const CreateReportButton = ({
   label = "Новый репорт",
-  className = "btn btn-primary font-normal",
+  className = "btn btn-primary",
 }: Props) => {
   const navigate = useNavigate();
   const { teamId } = useParams();

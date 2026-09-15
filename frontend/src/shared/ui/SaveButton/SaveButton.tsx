@@ -8,7 +8,7 @@ const SaveButton = ({ isChanged, onSave, isLoading }: Props) => {
   return (
     <button
       onClick={onSave}
-      className={`btn btn-info px-4 py-2`}
+      className={`btn btn-primary px-4 py-2`}
       disabled={!isChanged}
     >
       {isLoading ? (

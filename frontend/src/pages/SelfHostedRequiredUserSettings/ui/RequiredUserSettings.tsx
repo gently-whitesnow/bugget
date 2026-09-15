@@ -165,12 +165,13 @@ export const RequiredUserSettings = () => {
                   onChange={(e) => setMattermostId(e.target.value)}
                   disabled={isSaving}
                 />
-                {!isMattermostIdValid(mattermostId) && (
-                  <p className="text-sm text-error">
-                    Необходимая длина идентификатора - {mattermostIdMaxLength}{" "}
-                    символов
-                  </p>
-                )}
+                {mattermostId.length > 0 &&
+                  !isMattermostIdValid(mattermostId) && (
+                    <p className="text-sm text-error">
+                      Необходимая длина идентификатора - {mattermostIdMaxLength}{" "}
+                      символов
+                    </p>
+                  )}
                 <button
                   className="btn btn-primary w-full"
                   onClick={handleLinkMattermost}

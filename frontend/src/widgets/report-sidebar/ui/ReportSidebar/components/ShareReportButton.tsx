@@ -25,10 +25,7 @@ const ShareReportButton = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <button
-        onClick={handleShareReport}
-        className="btn btn-primary font-normal"
-      >
+      <button onClick={handleShareReport} className="btn btn-primary">
         {isCopied ? "Скопировано!" : "Поделиться репортом"}
       </button>
     </div>

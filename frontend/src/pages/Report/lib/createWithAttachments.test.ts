@@ -18,10 +18,10 @@ const setup = (uploadResults: boolean[]) => {
 };
 
 describe("createWithAttachments", () => {
-  it("удаляет пустую запись, если ни один файл не загрузился", async () => {
+  it("удаляет пустую запись, если файл не загрузился", async () => {
     const units = setup([false]);
 
-    await createWithAttachments({
+    const sent = await createWithAttachments({
       text: "  ",
       files: [file("a.txt")],
       ...units,
@@ -29,40 +29,75 @@ describe("createWithAttachments", () => {
 
     expect(units.create).toHaveBeenCalledWith(attachmentOnlyText);
     expect(units.remove).toHaveBeenCalledWith(7);
+    expect(sent).toBe(false);
   });
 
-  it("оставляет запись с текстом, даже если файлы не загрузились", async () => {
+  it("удаляет и запись с текстом, чтобы повтор не создал дубль", async () => {
     const units = setup([false]);
 
-    await createWithAttachments({
+    const sent = await createWithAttachments({
       text: "Смотри лог",
       files: [file("a.txt")],
       ...units,
     });
 
     expect(units.create).toHaveBeenCalledWith("Смотри лог");
-    expect(units.remove).not.toHaveBeenCalled();
+    expect(units.remove).toHaveBeenCalledWith(7);
+    expect(sent).toBe(false);
   });
 
-  it("не удаляет запись, если загрузился хотя бы один файл", async () => {
-    const units = setup([false, true]);
+  it("при ошибке одного файла не грузит остальные и удаляет запись", async () => {
+    const units = setup([true, false, true]);
 
-    await createWithAttachments({
+    const sent = await createWithAttachments({
+      text: "",
+      files: [file("a.txt"), file("b.txt"), file("c.txt")],
+      ...units,
+    });
+
+    expect(units.upload).toHaveBeenCalledTimes(2);
+    expect(units.remove).toHaveBeenCalledWith(7);
+    expect(sent).toBe(false);
+  });
+
+  it("сообщает об успехе, если загрузились все файлы", async () => {
+    const units = setup([true, true]);
+
+    const sent = await createWithAttachments({
       text: "",
       files: [file("a.txt"), file("b.txt")],
       ...units,
     });
 
-    expect(units.upload).toHaveBeenCalledTimes(2);
     expect(units.remove).not.toHaveBeenCalled();
+    expect(sent).toBe(true);
   });
 
   it("без файлов ничего не загружает и не удаляет", async () => {
     const units = setup([]);
 
-    await createWithAttachments({ text: "текст", files: [], ...units });
+    const sent = await createWithAttachments({
+      text: "текст",
+      files: [],
+      ...units,
+    });
 
     expect(units.upload).not.toHaveBeenCalled();
     expect(units.remove).not.toHaveBeenCalled();
+    expect(sent).toBe(true);
+  });
+
+  it("не отправлено, если запись не создалась", async () => {
+    const units = setup([]);
+    units.create.mockResolvedValueOnce(null as never);
+
+    const sent = await createWithAttachments({
+      text: "текст",
+      files: [file("a.txt")],
+      ...units,
+    });
+
+    expect(units.upload).not.toHaveBeenCalled();
+    expect(sent).toBe(false);
   });
 });

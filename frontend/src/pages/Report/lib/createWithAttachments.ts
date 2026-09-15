@@ -9,9 +9,12 @@ type Params = {
 };
 
 /**
- * Комментарий и шаг создаются отдельно от вложений. Если текста не было и ни
- * один файл не загрузился, запись с подставленным «Файл прикреплен» пустая —
- * её удаляем. Ошибку загрузки показывает эффект вложения.
+ * Комментарий и шаг создаются отдельно от вложений, поэтому атомарность
+ * держим на фронте: если файл не загрузился, запись удаляем, а форма
+ * сохраняет введённое для повторной отправки. Ошибку загрузки показывает
+ * эффект вложения.
+ *
+ * @returns true, если запись создана со всеми файлами.
  */
 export const createWithAttachments = async ({
   text,
@@ -19,22 +22,17 @@ export const createWithAttachments = async ({
   create,
   upload,
   remove,
-}: Params): Promise<void> => {
-  const trimmed = text.trim();
-  const created = await create(trimmed || attachmentOnlyText);
-  if (!created?.id || files.length === 0) return;
+}: Params): Promise<boolean> => {
+  const created = await create(text.trim() || attachmentOnlyText);
+  if (!created?.id) return false;
 
-  let uploaded = 0;
-  for (const file of files) {
-    try {
+  try {
+    for (const file of files) {
       await upload(created.id, file);
-      uploaded += 1;
-    } catch {
-      // Остальные файлы всё равно пробуем загрузить.
     }
-  }
-
-  if (uploaded === 0 && !trimmed) {
+    return true;
+  } catch {
     await remove(created.id);
+    return false;
   }
 };

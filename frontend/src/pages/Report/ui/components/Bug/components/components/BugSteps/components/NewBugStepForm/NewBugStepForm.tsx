@@ -32,14 +32,14 @@ const NewBugStepForm = ({
 
   const handleCreateStep = useCallback(
     async (files: File[]) => {
-      if (!reportId) return;
-      if (!text.trim() && files.length === 0) return;
+      if (!reportId) return false;
+      if (!text.trim() && files.length === 0) return false;
 
       setIsSubmitting(true);
       const currentText = text;
 
       try {
-        await createWithAttachments({
+        const sent = await createWithAttachments({
           text: currentText,
           files,
           create: (stepText) =>
@@ -49,9 +49,11 @@ const NewBugStepForm = ({
           remove: (stepId) => deleteStep({ reportId, bugId, stepId }),
         });
 
-        setText("");
+        if (sent) setText("");
+        return sent;
       } catch (error) {
         console.error("Ошибка при создании шага:", error);
+        return false;
       } finally {
         setIsSubmitting(false);
       }

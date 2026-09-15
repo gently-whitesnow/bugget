@@ -14,7 +14,8 @@ const imageFileNamePattern = /\.(jpe?g|png|gif|webp)$/i;
 type Props = {
   value: string;
   onChange: (value: string) => void;
-  onSend: (attachments: File[]) => void;
+  /** false — отправка не удалась, вложения остаются в форме для повтора. */
+  onSend: (attachments: File[]) => void | boolean | Promise<void | boolean>;
   disabled?: boolean;
   placeholder?: string;
   autoFocus?: boolean;
@@ -87,8 +88,10 @@ const ComposerInput = ({
     }
   };
 
-  const handleSend = () => {
-    onSend(attachments.map(getFileForUpload));
+  const handleSend = async () => {
+    const sent = await onSend(attachments.map(getFileForUpload));
+    if (sent === false) return;
+
     attachments.forEach((attachment) => {
       if (attachment.previewUrl) {
         URL.revokeObjectURL(attachment.previewUrl);

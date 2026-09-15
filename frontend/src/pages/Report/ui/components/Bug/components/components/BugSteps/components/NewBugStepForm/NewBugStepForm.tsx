@@ -2,9 +2,11 @@ import { useState, useCallback } from "react";
 import { useUnit } from "effector-react";
 
 import { ComposerInput } from "@/shared/ui";
+import { createWithAttachments } from "@/pages/Report/lib";
 import {
   createBugStepAttachmentFx,
   createBugStepFx,
+  deleteBugStepFx,
 } from "@/pages/Report/model-bug-step";
 import { bugStepMaxLength } from "@/shared/config";
 
@@ -26,41 +28,37 @@ const NewBugStepForm = ({
 
   const createStep = useUnit(createBugStepFx);
   const addAttachment = useUnit(createBugStepAttachmentFx);
+  const deleteStep = useUnit(deleteBugStepFx);
 
   const handleCreateStep = useCallback(
     async (files: File[]) => {
-      if (!reportId) return;
-      if (!text.trim() && files.length === 0) return;
+      if (!reportId) return false;
+      if (!text.trim() && files.length === 0) return false;
 
       setIsSubmitting(true);
       const currentText = text;
 
       try {
-        const created = await createStep({
-          reportId,
-          bugId,
-          payload: { text: currentText.trim() || "Файл прикреплен" },
+        const sent = await createWithAttachments({
+          text: currentText,
+          files,
+          create: (stepText) =>
+            createStep({ reportId, bugId, payload: { text: stepText } }),
+          upload: (stepId, file) =>
+            addAttachment({ reportId, bugId, stepId, file }),
+          remove: (stepId) => deleteStep({ reportId, bugId, stepId }),
         });
 
-        if (created?.id && files.length > 0) {
-          for (const file of files) {
-            await addAttachment({
-              reportId,
-              bugId,
-              stepId: created.id,
-              file,
-            });
-          }
-        }
-
-        setText("");
+        if (sent) setText("");
+        return sent;
       } catch (error) {
         console.error("Ошибка при создании шага:", error);
+        return false;
       } finally {
         setIsSubmitting(false);
       }
     },
-    [text, reportId, bugId, createStep, addAttachment]
+    [text, reportId, bugId, createStep, addAttachment, deleteStep]
   );
 
   return (

@@ -12,6 +12,7 @@ import {
 import type { BugStepRequest, BugStepResponse } from "@/entities/report";
 import { attachmentFromSocket, bugStepFromSocket } from "@/entities/report";
 import { AttachmentTypes } from "@/shared/config";
+import { notificationMessages, notifyErrorRequested } from "@/shared/model";
 import type { BugStep, Attachment } from "@/entities/report";
 import type {
   AttachmentSocketResponse,
@@ -93,13 +94,24 @@ export const createBugStepAttachmentFx = createEffect<
   { reportId: string; bugId: number; stepId: number; file: File },
   { bugId: number; stepId: number; attachment: Attachment }
 >(async ({ reportId, bugId, stepId, file }) => {
-  const attachment = await createBugStepAttachment(
-    reportId,
-    bugId,
-    stepId,
-    file
-  );
-  return { bugId, stepId, attachment };
+  try {
+    const attachment = await createBugStepAttachment(
+      reportId,
+      bugId,
+      stepId,
+      file
+    );
+    return { bugId, stepId, attachment };
+  } catch (error) {
+    notifyErrorRequested({
+      title: "Не удалось загрузить вложение",
+      message: notificationMessages.errorRetry,
+      options: {
+        dedupeKey: "report-bug-step-attachment-upload-failed",
+      },
+    });
+    throw error;
+  }
 });
 
 export const deleteBugStepAttachmentFx = createEffect<

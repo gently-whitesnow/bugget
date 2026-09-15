@@ -46,9 +46,20 @@ internal static class AttachmentUploadReader
         }
 
         var mimeType = IsDevelopment
-            ? file.ContentType
+            ? StripMimeParameters(file.ContentType)
             : await mimeTypeDetector.DetectAsync(content, cancellationToken);
 
         return (content, new FileMeta(file.FileName, content.Length, mimeType));
+    }
+
+    /// <summary>
+    /// Белый список сравнивает MIME целиком, поэтому <c>text/plain;charset=utf-8</c>
+    /// от браузера не проходил бы как <c>text/plain</c>.
+    /// </summary>
+    internal static string StripMimeParameters(string contentType)
+    {
+        var separator = contentType.IndexOf(';');
+        var mediaType = separator < 0 ? contentType : contentType[..separator];
+        return mediaType.Trim();
     }
 }

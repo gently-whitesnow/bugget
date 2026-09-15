@@ -26,6 +26,7 @@
 | Как фронт ходит в API и какие есть исключения | гейт `frontend-api-inventory` — `scripts/quality/frontend-api-inventory.mjs` |
 | Дизайн-система фронтенда: токены, палитра, типографика, компоненты | [frontend/DESIGN.md](frontend/DESIGN.md) |
 | Как контрибьютить, дисциплина PR, формат коммита | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
+| Отложенные продуктовые задачи | [docs/TODO.md](docs/TODO.md) |
 | Безопасность, кодекс | [docs/](docs/) |
 
 Код: `backend/` — .NET, решение `backend/Bugget.sln`; `frontend/` — Vite + React + TypeScript;

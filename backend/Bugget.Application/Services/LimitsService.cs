@@ -9,7 +9,7 @@ namespace Bugget.Application.Services;
 public sealed class LimitsService(
     IAttachmentDbClient attachmentDbClient)
 {
-    private const int MaxAttachmentsCount = 10;
+    public const int MaxAttachmentsCount = 10;
 
     public async Task<Error?> ValidateBugAttachmentLimitAsync(
         int reportId,

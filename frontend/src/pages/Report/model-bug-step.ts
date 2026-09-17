@@ -60,11 +60,26 @@ export const $bugStepsStore = createStore<Record<number, BugStep[]>>({});
 /**
  * Эффекты
  */
-export const createBugStepFx = createEffect<
-  { reportId: string; bugId: number; payload: BugStepRequest },
-  BugStep
->(async ({ reportId, bugId, payload }) => {
-  return await createBugStep(reportId, bugId, payload);
+type CreateBugStepParams = {
+  reportId: string;
+  bugId: number;
+  payload: BugStepRequest;
+  files?: File[];
+};
+
+export const createBugStepFx = createEffect<CreateBugStepParams, BugStep>(
+  ({ reportId, bugId, payload, files }) =>
+    createBugStep(reportId, bugId, payload, files)
+);
+
+sample({
+  clock: createBugStepFx.fail,
+  fn: () => ({
+    title: "Не удалось добавить шаг",
+    message: notificationMessages.errorRetry,
+    options: { dedupeKey: "report-bug-step-create-failed" },
+  }),
+  target: notifyErrorRequested,
 });
 
 export const patchBugStepFx = createEffect<

@@ -77,12 +77,14 @@ export const createCommentFx = createEffect<
     bugId: number;
     text: string;
     audience?: CommentAudiences;
+    files?: File[];
   },
   Comment,
   Error
->(async ({ reportId, bugId, text, audience }) => {
+>(async ({ reportId, bugId, text, audience, files }) => {
   try {
-    const result = await createComment(reportId, bugId, { text, audience });
+    const request = { text, audience };
+    const result = await createComment(reportId, bugId, request, files);
     return {
       id: result.id,
       bugId: result.bugId,
@@ -92,8 +94,7 @@ export const createCommentFx = createEffect<
       updatedAt: result.updatedAt,
       creatorType: result.creatorType,
       audience: result.audience,
-      // Ручка создания вложений не отдаёт: у нового комментария их ещё нет.
-      attachments: null,
+      attachments: "attachments" in result ? result.attachments : null,
     };
   } catch (error) {
     console.error("❌ createCommentFx error:", error);

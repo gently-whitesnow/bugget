@@ -29,12 +29,14 @@ internal static class PublicContractInventory
         ["POST /v2/reports/{aliasId}/bugs"] = new(Frontend, "BugsContractTests"),
         ["PATCH /v2/reports/{aliasId}/bugs/{bugId}"] = new(Frontend, "BugsContractTests"),
         ["POST /v2/reports/{aliasId}/bugs/{bugId}/steps"] = new(Frontend, "BugsContractTests"),
+        ["POST /v2/reports/{aliasId}/bugs/{bugId}/steps/with-attachments"] = new(Frontend, "RecordsWithAttachmentsContractTests"),
         ["PATCH /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}"] = new(Frontend, "BugsContractTests"),
         ["DELETE /v2/reports/{aliasId}/bugs/{bugId}/steps/{stepId}"] = new(Frontend, "BugsContractTests"),
         ["PUT /v2/reports/{aliasId}/bugs/{bugId}/steps/order"] = new(Frontend, "BugsContractTests"),
 
         // --- комментарии и ссылки ---
         ["POST /v2/reports/{aliasId}/bugs/{bugId}/comments"] = new(Frontend, "CommentsAndLinksContractTests"),
+        ["POST /v2/reports/{aliasId}/bugs/{bugId}/comments/with-attachments"] = new(Frontend, "RecordsWithAttachmentsContractTests"),
         ["PUT /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}"] = new(Frontend, "CommentsAndLinksContractTests"),
         ["DELETE /v2/reports/{aliasId}/bugs/{bugId}/comments/{commentId}"] = new(Frontend, "CommentsAndLinksContractTests"),
         ["POST /v2/reports/{aliasId}/links"] = new(Frontend, "CommentsAndLinksContractTests"),

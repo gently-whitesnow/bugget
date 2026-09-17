@@ -13,8 +13,8 @@
   ],
   "baseline": {
     "frontend/src/entities/report/model.ts": 498,
-    "frontend/src/pages/Report/model-bug-step.ts": 428,
-    "frontend/src/pages/Report/model-comment.ts": 465,
+    "frontend/src/pages/Report/model-bug-step.ts": 443,
+    "frontend/src/pages/Report/model-comment.ts": 466,
     "frontend/src/shared/ui/FilePreview/FilePreview.tsx": 773,
     "frontend/src/shared/ui/MarkdownTextarea/MarkdownTextarea.tsx": 351,
     "frontend/src/widgets/custom-left-sidebar/ui/CustomLeftSidebar/CustomLeftSidebar.tsx": 576

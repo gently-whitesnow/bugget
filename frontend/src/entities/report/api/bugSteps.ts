@@ -5,12 +5,21 @@ import type {
   BugStepResponse,
 } from "./contracts";
 
+/** С файлами шаг и вложения создаются одной транзакцией (ADR-0015). */
 export const createBugStep = async (
   reportId: string,
   bugId: number,
-  payload: BugStepRequest
+  payload: BugStepRequest,
+  files: File[] = []
 ): Promise<BugStepResponse> =>
-  reportsApi.createBugStep(reportId, bugId, payload);
+  files.length === 0
+    ? reportsApi.createBugStep(reportId, bugId, payload)
+    : reportsApi.createBugStepWithAttachments(
+        reportId,
+        bugId,
+        payload.text,
+        files
+      );
 
 export const patchBugStep = async (
   reportId: string,

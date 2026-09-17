@@ -2,12 +2,8 @@ import { useState, useCallback } from "react";
 import { useUnit } from "effector-react";
 
 import { ComposerInput } from "@/shared/ui";
-import { createWithAttachments } from "@/pages/Report/lib";
-import {
-  createBugStepAttachmentFx,
-  createBugStepFx,
-  deleteBugStepFx,
-} from "@/pages/Report/model-bug-step";
+import { composerText } from "@/pages/Report/lib";
+import { createBugStepFx } from "@/pages/Report/model-bug-step";
 import { bugStepMaxLength } from "@/shared/config";
 
 type Props = {
@@ -27,8 +23,6 @@ const NewBugStepForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createStep = useUnit(createBugStepFx);
-  const addAttachment = useUnit(createBugStepAttachmentFx);
-  const deleteStep = useUnit(deleteBugStepFx);
 
   const handleCreateStep = useCallback(
     async (files: File[]) => {
@@ -36,29 +30,19 @@ const NewBugStepForm = ({
       if (!text.trim() && files.length === 0) return false;
 
       setIsSubmitting(true);
-      const currentText = text;
 
       try {
-        const sent = await createWithAttachments({
-          text: currentText,
-          files,
-          create: (stepText) =>
-            createStep({ reportId, bugId, payload: { text: stepText } }),
-          upload: (stepId, file) =>
-            addAttachment({ reportId, bugId, stepId, file }),
-          remove: (stepId) => deleteStep({ reportId, bugId, stepId }),
-        });
-
-        if (sent) setText("");
-        return sent;
-      } catch (error) {
-        console.error("Ошибка при создании шага:", error);
+        const payload = { text: composerText(text) };
+        await createStep({ reportId, bugId, payload, files });
+        setText("");
+        return true;
+      } catch {
         return false;
       } finally {
         setIsSubmitting(false);
       }
     },
-    [text, reportId, bugId, createStep, addAttachment, deleteStep]
+    [text, reportId, bugId, createStep]
   );
 
   return (

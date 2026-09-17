@@ -36,6 +36,16 @@ public class AttachmentEventsService(
             PublishDomainEventAsync(reportIdContext, user, attachment));
     }
 
+    public Task HandleAttachmentsCreateEventAsync(
+        ReportIdContext reportIdContext,
+        UserIdentity user,
+        IReadOnlyList<Attachment> attachments,
+        CancellationToken ct = default)
+    {
+        return Task.WhenAll(attachments.Select(attachment =>
+            HandleAttachmentCreateEventAsync(reportIdContext, user, attachment, ct)));
+    }
+
     public async Task HandleAttachmentDeleteEventAsync(ReportIdContext reportIdContext, UserIdentity user, Attachment attachment)
     {
         var tasks = new List<Task>

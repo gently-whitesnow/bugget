@@ -503,6 +503,37 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /v2/reports/{aliasId}/bugs/{bugId}/steps/with-attachments:
+    post:
+      operationId: BugSteps_CreateBugStepWithAttachments
+      summary: Добавить шаг воспроизведения вместе с вложениями.
+      description: |
+        Запись и её вложения создаются одной транзакцией: если хотя бы один файл
+        не прошёл проверку или не сохранился, не создаётся ничего, и другие
+        участники репорта не получают ни одного realtime-события (ADR-0015).
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BugStepWithAttachmentsUpload'
+      responses:
+        '201':
+          description: Шаг и все вложения сохранены.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BugStep'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /v2/reports/{aliasId}/bugs/{bugId}/steps/order:
     put:
       operationId: BugSteps_UpdateBugStepsOrder
@@ -599,6 +630,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommentSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v2/reports/{aliasId}/bugs/{bugId}/comments/with-attachments:
+    post:
+      operationId: Comments_CreateCommentWithAttachments
+      summary: Добавить комментарий вместе с вложениями.
+      description: |
+        Запись и её вложения создаются одной транзакцией: если хотя бы один файл
+        не прошёл проверку или не сохранился, не создаётся ничего, и другие
+        участники репорта не получают ни одного realtime-события (ADR-0015).
+      parameters:
+        - $ref: '#/components/parameters/AliasId'
+        - $ref: '#/components/parameters/BugId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommentWithAttachmentsUpload'
+      responses:
+        '201':
+          description: Комментарий и все вложения сохранены.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1260,6 +1322,51 @@ components:
           type: string
           format: binary
           description: Содержимое файла.
+
+    BugStepWithAttachmentsUpload:
+      type: object
+      description: Шаг воспроизведения и его файлы одним запросом.
+      required:
+        - text
+        - files
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2048
+          description: Текст шага.
+        files:
+          type: array
+          minItems: 1
+          description: Файлы шага. Имя поля формы повторяется для каждого файла.
+          items:
+            type: string
+            format: binary
+
+    CommentWithAttachmentsUpload:
+      type: object
+      description: Комментарий и его файлы одним запросом.
+      required:
+        - text
+        - files
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2048
+          description: Текст комментария.
+        audience:
+          allOf:
+            - $ref: '#/components/schemas/CommentAudience'
+          nullable: true
+          description: Пропущенное поле трактуется как `internal`, как и в `CommentRequest`.
+        files:
+          type: array
+          minItems: 1
+          description: Файлы комментария. Имя поля формы повторяется для каждого файла.
+          items:
+            type: string
+            format: binary
 
     AttachmentRenameRequest:
       type: object

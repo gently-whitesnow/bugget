@@ -19,10 +19,10 @@ harness check                        # рамка репозитория: .harne
 ./scripts/verify.sh frontend # одна область: backend | frontend
 ```
 
-Перед работой выполни `harness guide` — он объясняет, как читать `.harness.json`, цикл
-`check → --only <id> --verbose → explain <id>` и формат коммита. Один раз на клон —
-`harness setup` (хук и шаблон сообщения коммита). Установка harness —
-[README.md](README.md#проверки-качества).
+Перед работой проверь `command -v harness`. Если команды нет, добавь `~/.local/bin`
+в `PATH`; если бинаря нет — установи по [README.md](README.md#проверки-качества).
+Затем: `harness guide` → `harness setup` (один раз на клон) → `harness check`.
+Если установка недоступна, сообщи причину и отметь проверку как невыполненную.
 
 Шаги `verify.sh` перечислены в самом скрипте. `apps/landing` в проверки не входит — его держит
 `.github/workflows/deploy-landing.yml`.

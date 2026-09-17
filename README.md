@@ -70,6 +70,7 @@ harness check                                     # рамка репозито�
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/gently-whitesnow/harness-cli/master/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
 harness setup    # хук commit-msg и шаблон сообщения коммита, один раз на клон
 harness guide    # как работать с рамкой: цикл check → explain, exit-коды, коммиты
 ```

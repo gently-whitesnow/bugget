@@ -5,7 +5,7 @@ import { transportBoundaryOptions } from "./transport-boundary.js";
  * `src/shared/api/authorization`. Закрыты обе формы адреса: полный
  * `/api/authorization/v1/...` и путь контракта `/v1/logout` (префикс допишет
  * интерсептор). Навигация `window.location.href` — осознанное исключение,
- * см. `scripts/quality/frontend-api-inventory.mjs`.
+ * см. `scripts/contracts/frontend-api-inventory.mjs`.
  * Гейт-тест: `src/shared/api/authorization/transportBoundary.gate.test.ts`.
  */
 

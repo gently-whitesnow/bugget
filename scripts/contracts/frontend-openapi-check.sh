@@ -27,14 +27,14 @@
 # в рабочем дереве, и его видно обычным `git diff`.
 #
 # Использование:
-#   scripts/quality/frontend-openapi-check.sh
+#   scripts/contracts/frontend-openapi-check.sh
 #
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 if [ "${1:-}" = "--self-test" ]; then
-  exec bash "$ROOT/scripts/quality/frontend-openapi-selftest.sh"
+  exec bash "$ROOT/scripts/contracts/frontend-openapi-selftest.sh"
 fi
 
 # Каталоги переопределяются только самопроверкой (--self-test), которая гоняет
@@ -82,13 +82,13 @@ for src in "$OUT_DIR"/*.d.ts; do
 done
 shopt -u nullglob
 
-bash "$ROOT/scripts/quality/frontend-openapi-generate.sh"
+bash "$ROOT/scripts/contracts/frontend-openapi-generate.sh"
 
 # Имена полей тела: канон провода, обратимость проекции и запрет свободных
 # словарей. То, что проекция фронта не выражает, ломает провод молча, поэтому
 # контрактная проверка останавливается на этом до того, как контракт начнут
 # использовать.
-if ! BUGGET_GENERATED_DIR="$OUT_DIR" python3 "$ROOT/scripts/quality/frontend-case-roundtrip.py" >&2; then
+if ! BUGGET_GENERATED_DIR="$OUT_DIR" python3 "$ROOT/scripts/contracts/frontend-case-roundtrip.py" >&2; then
   failed=1
 fi
 
@@ -123,7 +123,7 @@ if [ "$failed" -ne 0 ]; then
 
 Если правили generated/*.d.ts руками — не надо: источник правды
 specs/contracts/**/openapi.yaml (ADR-0005).
-Если правили контракт — прогоните scripts/quality/frontend-openapi-generate.sh
+Если правили контракт — прогоните scripts/contracts/frontend-openapi-generate.sh
 и закоммитьте результат вместе с yaml (перегенерация уже сделана этим гейтом,
 дифф в рабочем дереве).
 Если удалили модуль контракта — удалите и соответствующий .d.ts.

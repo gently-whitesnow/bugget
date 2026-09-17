@@ -9,7 +9,7 @@
 # здесь — сам провод: форму сообщений менять нельзя, фронт стоит в проде у заказчика
 # (MAIN-22, ADR-0007).
 #
-# Проверяет соответствие гейт realtime-contract (scripts/quality/realtime-contract.py).
+# Проверяет соответствие гейт realtime-contract (scripts/contracts/realtime-contract.py).
 # Он сверяет четыре стороны и краснеет на расхождении любой:
 #
 #   1) этот файл;

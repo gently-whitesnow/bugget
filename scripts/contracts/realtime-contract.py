@@ -49,7 +49,16 @@ import re
 import sys
 from dataclasses import dataclass, field
 
-import quality_common as q
+ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+
+
+def rel(path: pathlib.Path) -> str:
+    try:
+        return path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
 
 CONTRACT = "specs/contracts/events.yaml"
 
@@ -503,7 +512,7 @@ def parse_subscriber(text: str, enum_name: str) -> tuple[set[str], set[str]]:
 #-----------------------------------------------------------------------------------------
 
 def read_file(path: str) -> str:
-    file = q.ROOT / path
+    file = ROOT / path
     if not file.exists():
         raise ContractError(f"файл из контракта не найден: {path}")
     return file.read_text(encoding="utf-8")
@@ -511,10 +520,10 @@ def read_file(path: str) -> str:
 
 def scan_files(root: str, suffixes: tuple[str, ...], skip: tuple[str, ...] = ()) -> list[str]:
     found = []
-    for file in sorted((q.ROOT / root).rglob("*")):
+    for file in sorted((ROOT / root).rglob("*")):
         if not file.is_file() or file.suffix not in suffixes:
             continue
-        path = q.rel(file)
+        path = rel(file)
         if any(part in f"/{path}" for part in skip):
             continue
         found.append(path)

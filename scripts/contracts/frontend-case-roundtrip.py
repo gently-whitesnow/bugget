@@ -38,9 +38,9 @@ media type интерсептор не конвертирует вовсе, по
 разбора, отдала бы свои поля предыдущей схеме и унаследовала бы её исключение.
 
 Использование:
-  scripts/quality/frontend-case-roundtrip.py            # каталог по умолчанию
-  BUGGET_GENERATED_DIR=... scripts/quality/frontend-case-roundtrip.py
-  scripts/quality/frontend-case-roundtrip.py --self-test
+  scripts/contracts/frontend-case-roundtrip.py            # каталог по умолчанию
+  BUGGET_GENERATED_DIR=... scripts/contracts/frontend-case-roundtrip.py
+  scripts/contracts/frontend-case-roundtrip.py --self-test
 """
 
 from __future__ import annotations

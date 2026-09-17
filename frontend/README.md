@@ -36,10 +36,8 @@ TODO писать сюда все новые пакеты что добавля�
 
 ### Проверки качества
 
-- `../scripts/quality/verify.sh --scope frontend` – все фронтовые гейты, ровно как в CI
-- `../scripts/quality/verify.sh --scope frontend --fast` – без медленных (без `npm audit`)
+- `../scripts/verify.sh frontend` – все фронтовые проверки, ровно как в CI
 - `harness check` – рамка репозитория, подробности в [корневом README](../README.md#проверки-качества)
-- `npm audit`: принятые уязвимости с причинами в `.quality/frontend-audit-allowlist.json`
 - точечные отключения правил FSD – в `steiger.config.js`, каждое с причиной
 
 ## Идеи на будущее

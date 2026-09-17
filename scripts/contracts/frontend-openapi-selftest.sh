@@ -12,12 +12,12 @@
 # BUGGET_CONTRACTS_DIR / BUGGET_GENERATED_DIR).
 #
 # Использование:
-#   scripts/quality/frontend-openapi-check.sh --self-test
+#   scripts/contracts/frontend-openapi-check.sh --self-test
 #
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CHECK="$ROOT/scripts/quality/frontend-openapi-check.sh"
+CHECK="$ROOT/scripts/contracts/frontend-openapi-check.sh"
 
 SANDBOX="$(mktemp -d)"
 trap 'rm -rf "$SANDBOX"' EXIT
@@ -38,7 +38,7 @@ mkdir -p "$SANDBOX/baseline/generated"
 cp -R "$ROOT/specs/contracts" "$SANDBOX/baseline/contracts"
 if ! BUGGET_CONTRACTS_DIR="$SANDBOX/baseline/contracts" \
      BUGGET_GENERATED_DIR="$SANDBOX/baseline/generated" \
-       bash "$ROOT/scripts/quality/frontend-openapi-generate.sh" >"$SANDBOX/out" 2>&1; then
+       bash "$ROOT/scripts/contracts/frontend-openapi-generate.sh" >"$SANDBOX/out" 2>&1; then
   printf 'error: не удалось собрать эталон для самопроверки\n' >&2
   cat "$SANDBOX/out" >&2
   exit 2
@@ -119,7 +119,7 @@ expect "удалённый контракт краснеет" 1 "$?" "сирот
 # имена и свободный словарь проверяются end-to-end намеренно: первая версия
 # проверки читала только некавыченные идентификаторы и такие поля молча пропускала.
 patch_user_sections() {
-  python3 "$ROOT/scripts/quality/frontend-openapi-selftest-patch.py" \
+  python3 "$ROOT/scripts/contracts/frontend-openapi-selftest-patch.py" \
     "$SANDBOX/contracts/settings/openapi.yaml" "$1"
 }
 
@@ -146,7 +146,7 @@ roundtrip_case "имя с ведущей цифрой краснеет" digit "�
 roundtrip_case "свободный словарь в теле краснеет" freekey "свободный ключ"
 
 # 11. Самопроверка самой проверки имён.
-if ! python3 "$ROOT/scripts/quality/frontend-case-roundtrip.py" --self-test >"$SANDBOX/out" 2>&1; then
+if ! python3 "$ROOT/scripts/contracts/frontend-case-roundtrip.py" --self-test >"$SANDBOX/out" 2>&1; then
   printf '  ПРОВАЛ  самопроверка frontend-case-roundtrip.py\n' >&2
   sed 's/^/          /' "$SANDBOX/out" >&2
   FAILED=$(( FAILED + 1 ))

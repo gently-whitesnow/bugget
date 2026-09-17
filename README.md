@@ -58,11 +58,9 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml \
 
 ```sh
 harness check                                     # рамка репозитория (.harness.json)
-./scripts/quality/verify.sh                       # все гейты: сборка, тесты, контракты, линтеры
-./scripts/quality/verify.sh --list                # что вообще проверяется
-./scripts/quality/verify.sh --fast                # без медленных гейтов, не требует Docker
-./scripts/quality/verify.sh --scope backend       # только бекенд
-./scripts/quality/verify.sh --only frontend-lint  # ровно один гейт
+./scripts/verify.sh                               # сборка, тесты, контракты, линтеры
+./scripts/verify.sh backend                       # только бекенд
+./scripts/verify.sh frontend                      # только фронтенд
 ```
 
 [harness](https://github.com/gently-whitesnow/harness-cli) — CLI, который проверяет сам
@@ -76,16 +74,15 @@ harness setup    # хук commit-msg и шаблон сообщения комм
 harness guide    # как работать с рамкой: цикл check → explain, exit-коды, коммиты
 ```
 
-Набор гейтов `verify.sh` лежит в `.quality/quality.config.json` — новая проверка добавляется
-туда, а не в workflow. Гейты прогоняются все, даже если что-то упало; в конце — сводка со
-статусом и временем. Нужны `jq` и `python3`. Полный прогон поднимает Postgres и Keycloak в
-Docker (Testcontainers); `--fast` их пропускает.
+`scripts/verify.sh` — обычный bash-скрипт: шаги идут подряд, первый упавший останавливает
+прогон. Новый шаг добавляется прямо в него. Нужен `python3`; интеграционные тесты бекенда
+поднимают Postgres и Keycloak в Docker (Testcontainers).
 
 ## Контракты и архитектурные решения
 
 Контракты API — `specs/contracts/<module>/openapi.yaml`, общие схемы —
 `specs/contracts/shared.yaml`. Это источник правды: `*.g.cs` и фронтовые `*.d.ts` только
-генерируются (`scripts/quality/openapi-generate.sh`, `frontend-openapi-generate.sh`).
+генерируются (`scripts/contracts/openapi-generate.sh`, `frontend-openapi-generate.sh`).
 Контроллеры наследуют сгенерированные базы, поэтому маршрут или форма ответа мимо контракта
 не компилируются. Realtime-события SignalR описаны в `specs/contracts/events.yaml` (ADR-0007).
 

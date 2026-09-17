@@ -17,7 +17,7 @@
 # в рабочем дереве, и его видно обычным `git diff`.
 #
 # Использование:
-#   scripts/quality/openapi-check.sh
+#   scripts/contracts/openapi-check.sh
 #
 set -euo pipefail
 
@@ -51,7 +51,7 @@ for output in "${outputs[@]}"; do
   fi
 done
 
-bash "$ROOT/scripts/quality/openapi-generate.sh"
+bash "$ROOT/scripts/contracts/openapi-generate.sh"
 
 failed=0
 for output in "${outputs[@]}"; do
@@ -77,7 +77,7 @@ if [ "$failed" -ne 0 ]; then
 Сгенерированный код разошёлся с контрактом.
 
 Если правили *.g.cs руками — не надо: источник правды specs/contracts/**/openapi.yaml.
-Если правили контракт — прогоните scripts/quality/openapi-generate.sh и закоммитьте
+Если правили контракт — прогоните scripts/contracts/openapi-generate.sh и закоммитьте
 результат вместе с yaml (перегенерация уже сделана этим гейтом, дифф в рабочем дереве).
 EOF
   exit 1

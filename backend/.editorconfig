@@ -3,7 +3,7 @@
 # Стиль backend-кода Bugget.
 #
 # Этот файл — единственный источник правды о формате C#. Его читают IDE и гейт
-# `backend-format` (`dotnet format --verify-no-changes`, см. .quality/quality.config.json),
+# `backend-format` (`dotnet format --verify-no-changes`, см. scripts/verify.sh),
 # поэтому «у меня в редакторе иначе» здесь невозможно.
 #
 # Правила разделены по строгости намеренно:

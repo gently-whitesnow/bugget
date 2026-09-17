@@ -5,7 +5,7 @@
 ## Процесс
 
 1. Ветка, изменения, пул-реквест в `main`.
-2. Все проверки зелёные: `harness check` и `./scripts/quality/verify.sh` — то же самое
+2. Все проверки зелёные: `harness check` и `./scripts/verify.sh` — то же самое
    крутится на PR.
 3. Ревью.
 4. Мёрж.
@@ -60,10 +60,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml \
 
 ```sh
 harness check                        # рамка репозитория
-./scripts/quality/verify.sh          # все гейты, это же крутится на PR
-./scripts/quality/verify.sh --fast   # без медленных гейтов, не требует Docker
-./scripts/quality/verify.sh --list   # что вообще проверяется
+./scripts/verify.sh          # все гейты, это же крутится на PR
 ```
 
-Набор гейтов лежит в `.quality/quality.config.json` — новая проверка добавляется туда,
-а не в workflow. Подробности — в [README](../README.md#проверки-качества).
+Шаги перечислены в самом `scripts/verify.sh`. Подробности — в [README](../README.md#проверки-качества).

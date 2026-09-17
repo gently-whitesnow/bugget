@@ -9,8 +9,8 @@
 # nswag.template.json — шаблон для нового модуля, он намеренно пропускается.
 #
 # Использование:
-#   scripts/quality/openapi-generate.sh            # перегенерировать все модули
-#   scripts/quality/openapi-generate.sh analytics  # только указанные модули
+#   scripts/contracts/openapi-generate.sh            # перегенерировать все модули
+#   scripts/contracts/openapi-generate.sh analytics  # только указанные модули
 #
 set -euo pipefail
 

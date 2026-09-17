@@ -8,7 +8,7 @@ openapi: 3.0.3
 # бизнес-логика (так у analytics), — здесь этого нет.
 #
 # Контракт снят с работающего API 1:1. Правится этот файл, а не .g.cs:
-# перегенерация — scripts/quality/openapi-generate.sh.
+# перегенерация — scripts/contracts/openapi-generate.sh.
 
 info:
   title: Bugget Settings API

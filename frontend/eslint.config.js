@@ -15,7 +15,7 @@ import { noDirectAuthorizationTransportOptions } from "./eslint-rules/no-direct-
 
 export default tseslint.config(
   // src/shared/api/generated — вывод openapi-typescript, правится только
-  // перегенерацией (scripts/quality/frontend-openapi-generate.sh).
+  // перегенерацией (scripts/contracts/frontend-openapi-generate.sh).
   { ignores: ["dist", "src/shared/api/generated"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],

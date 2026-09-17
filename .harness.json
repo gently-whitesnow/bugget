@@ -46,7 +46,7 @@
     },
     "verify": {
       "paths": [
-        "scripts/quality/verify.sh"
+        "scripts/verify.sh"
       ]
     }
   },

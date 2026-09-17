@@ -3,7 +3,7 @@
 # Перегенерация TypeScript-типов фронтенда из OpenAPI-контрактов.
 #
 # Источник правды — specs/contracts/<module>/openapi.yaml, тот же, из которого
-# генерируется C# (scripts/quality/openapi-generate.sh). Один контракт — две
+# генерируется C# (scripts/contracts/openapi-generate.sh). Один контракт — две
 # генерации: серверные базы контроллеров и клиентские типы. Расхождение фронта
 # с бекендом становится ошибкой типов, а не сюрпризом в рантайме (ADR-0005).
 #
@@ -17,8 +17,8 @@
 # коде — ровно того, что запрещено.
 #
 # Использование:
-#   scripts/quality/frontend-openapi-generate.sh            # все модули
-#   scripts/quality/frontend-openapi-generate.sh reports    # только указанные
+#   scripts/contracts/frontend-openapi-generate.sh            # все модули
+#   scripts/contracts/frontend-openapi-generate.sh reports    # только указанные
 #
 set -euo pipefail
 

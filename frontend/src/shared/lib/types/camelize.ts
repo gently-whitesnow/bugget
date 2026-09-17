@@ -3,7 +3,7 @@
  * (ADR-0009): провод `snake_case`, рантайм и UI — `camelCase`, перекладывает
  * интерсептор `shared/api/instances/base.ts`. Query/path-параметры и
  * `application/problem+json` не преобразуются (ADR-0008).
- * Round-trip имён проверяет `scripts/quality/frontend-case-roundtrip.py`.
+ * Round-trip имён проверяет `scripts/contracts/frontend-case-roundtrip.py`.
  */
 
 /** `some_key` → `someKey`. Ключи без `_` остаются как есть. */

@@ -10,22 +10,15 @@ using Microsoft.Extensions.Options;
 
 namespace Bugget.Api.Http;
 
-public sealed record ProblemDescriptor(string Code, string Title, int Status);
-
 public static class ProblemDetailsFactory
 {
     private const string TypePrefix = "urn:bugget:error:";
     private const string InternalTitle = "Внутренняя ошибка сервера";
     private const string ProblemContentType = "application/problem+json";
 
-    /// <summary>
-    /// Имена, которые прикладной словарь extensions занять не может: RFC-поля и вычисляемые
-    /// фабрикой <c>code</c>/<c>traceId</c>. Инвариант «type и code выводятся из одного
-    /// дескриптора» иначе разваливается снаружи — достаточно передать свой <c>code</c>.
-    /// Конфликт не 500-ит запрос: прикладное значение молча не попадает в ответ, канонические
-    /// поля всегда выигрывают. Сравнение регистронезависимое: под snake_case-политикой
-    /// <c>Code</c> уехал бы отдельным ключом рядом с каноническим.
-    /// </summary>
+    // Имена, которые прикладные extensions занять не могут: RFC-поля и вычисляемые code/traceId, иначе инвариант
+    // «type и code из одного дескриптора» ломается снаружи. Конфликт не 500-ит: прикладное значение молча отбрасывается.
+    // Сравнение регистронезависимое: под snake_case-политикой Code уехал бы отдельным ключом рядом с каноническим.
     private static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "type", "title", "status", "detail", "instance", "code", "traceId"
@@ -63,10 +56,8 @@ public static class ProblemDetailsFactory
     public static ObjectResult CreateValidation(ActionContext context)
     {
         var descriptor = CommonProblemDescriptors.ModelStateValidation;
-        // Ключи уже в wire-форме: за это отвечает SystemTextJsonValidationMetadataProvider,
-        // зарегистрированный в MVC-пайплайне. Он знает JSON-имя каждого свойства на любой
-        // глубине, поэтому вложенный путь `scopes[0].key` нормализуется целиком — своей
-        // таблицы имён здесь нет и быть не должно.
+        // Ключи уже в wire-форме: SystemTextJsonValidationMetadataProvider в MVC-пайплайне знает JSON-имя свойства
+        // на любой глубине (`scopes[0].key`), поэтому своей таблицы имён здесь нет и быть не должно.
         var problem = new ValidationProblemDetails(context.ModelState)
         {
             Type = TypePrefix + descriptor.Code,
@@ -85,9 +76,7 @@ public static class ProblemDetailsFactory
     {
         var result = Create(context, descriptor);
         context.Response.StatusCode = descriptor.Status;
-        // Content-type задаётся аргументом, а не свойством Response: WriteAsJsonAsync
-        // перетирает ранее выставленное значение своим application/json, и ответ middleware
-        // переставал быть problem+json.
+        // Content-type — аргументом, а не свойством Response: WriteAsJsonAsync перетирает его своим application/json.
         return context.Response.WriteAsJsonAsync(result.Value, GetJsonOptions(context), ProblemContentType);
     }
 
@@ -98,13 +87,8 @@ public static class ProblemDetailsFactory
         return result;
     }
 
-    /// <summary>
-    /// <c>traceId</c> — обязательное поле ответа, а оба обычных источника могут быть пустыми:
-    /// <see cref="Activity.Current"/> отсутствует без включённой трассировки, а
-    /// <see cref="HttpContext.TraceIdentifier"/> — пустая строка, если его обнулили выше по
-    /// пайплайну. Приоритет источников прежний; сгенерированный fallback записывается обратно в
-    /// контекст, чтобы логи и ответ ссылались на один и тот же идентификатор.
-    /// </summary>
+    // traceId обязателен, а Activity.Current и TraceIdentifier могут быть пустыми; сгенерированный fallback
+    // пишется обратно в контекст, чтобы логи и ответ ссылались на один идентификатор.
     private static string GetTraceId(HttpContext context)
     {
         var activityId = Activity.Current?.Id;

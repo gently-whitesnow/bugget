@@ -4,18 +4,12 @@ using Bugget.Domain.Analytics;
 namespace Bugget.Application.Services.Analytics;
 
 /// <summary>
-/// Бизнес-логика эндпоинтов <c>/v2/analytics/*</c> + sub-resource
-/// <c>GET /v2/reports/{id}/analytics</c>: оркестрирует выборку данных через
-/// <see cref="IAnalyticsDbClient"/> и сводит их в BO через pure-функцию
-/// <see cref="ComputeSummary"/>.
+/// Логика <c>/v2/analytics/*</c> и <c>GET /v2/reports/{id}/analytics</c>: выборка через
+/// <see cref="IAnalyticsDbClient"/>, сведение в BO — pure-функцией <see cref="ComputeSummary"/>.
 /// </summary>
 public sealed class AnalyticsService(IAnalyticsDbClient analyticsDb, TimeProvider timeProvider) : IAnalyticsService
 {
-    /// <summary>
-    /// Сводка по workspace. <paramref name="teamId"/> — опциональный фильтр по
-    /// <c>reports.creator_team_id</c>; <c>null</c> → workspace-wide.
-    /// Объединяет прежние <c>GetSummaryAsync</c> и <c>GetSummaryByTeamAsync</c>.
-    /// </summary>
+    /// <summary>Сводка по workspace; teamId — опциональный фильтр по <c>reports.creator_team_id</c>, <c>null</c> → workspace-wide.</summary>
     public async Task<AnalyticsSummaryBo> GetSummaryAsync(
         string workspaceId,
         string? period,
@@ -27,10 +21,6 @@ public sealed class AnalyticsService(IAnalyticsDbClient analyticsDb, TimeProvide
         return ComputeSummary(window, raw);
     }
 
-    /// <summary>
-    /// Сводка по конкретному <paramref name="userId"/>: participated + completed
-    /// + avg_fix_phase_days.
-    /// </summary>
     public async Task<AnalyticsResponsibleBo> GetByResponsibleAsync(
         string workspaceId,
         string userId,
@@ -76,11 +66,8 @@ public sealed class AnalyticsService(IAnalyticsDbClient analyticsDb, TimeProvide
         };
     }
 
-    /// <summary>
-    /// Pure-функция: собирает <see cref="AnalyticsSummaryBo"/> из «сырых» данных.
-    /// Conditional denominator: TestRetest/Fix → null, если репортов с такой фазой нет.
-    /// На пустой выборке: rework_rate = 0, avg_*/top — null/пусто.
-    /// </summary>
+    // Pure-функция. Conditional denominator: TestRetest/Fix → null, если репортов с такой фазой нет.
+    // На пустой выборке: rework_rate = 0, avg_*/top — null/пусто.
     public static AnalyticsSummaryBo ComputeSummary(PeriodWindow window, AnalyticsRawData raw)
     {
         var closedReports = raw.ClosedReports;
@@ -88,9 +75,9 @@ public sealed class AnalyticsService(IAnalyticsDbClient analyticsDb, TimeProvide
 
         var byBucket = raw.PhaseAggregates.ToDictionary(p => p.Bucket);
 
-        double testInitialDays = AverageDays(byBucket, PhaseBucket.TestInitial) ?? 0.0;
-        double? testRetestDays = AverageDays(byBucket, PhaseBucket.TestRetest);
-        double? fixDays = AverageDays(byBucket, PhaseBucket.Fix);
+        var testInitialDays = AverageDays(byBucket, PhaseBucket.TestInitial) ?? 0.0;
+        var testRetestDays = AverageDays(byBucket, PhaseBucket.TestRetest);
+        var fixDays = AverageDays(byBucket, PhaseBucket.Fix);
 
         // Репорт закрыт из Backlog в Resolved → first_test_entered_at пустой; пропускаем.
         var fullCycleSamples = closedReports
@@ -100,7 +87,7 @@ public sealed class AnalyticsService(IAnalyticsDbClient analyticsDb, TimeProvide
         double? avgFullCycleDays = fullCycleSamples.Length > 0 ? fullCycleSamples.Average() : null;
 
         var reportsWithRegression = closedReports.Count(r => r.TestIntervals >= 2);
-        double reworkRate = totalClosed == 0 ? 0.0 : (double)reportsWithRegression / totalClosed;
+        var reworkRate = totalClosed == 0 ? 0.0 : (double)reportsWithRegression / totalClosed;
 
         double? avgRegressionCyclesWhenPresent = reportsWithRegression == 0
             ? null
@@ -108,15 +95,15 @@ public sealed class AnalyticsService(IAnalyticsDbClient analyticsDb, TimeProvide
                 .Where(r => r.TestIntervals >= 2)
                 .Average(r => (double)(r.TestIntervals - 1));
 
-        long totalTestSeconds =
+        var totalTestSeconds =
             (byBucket.GetValueOrDefault(PhaseBucket.TestInitial)?.TotalDurationSeconds ?? 0)
             + (byBucket.GetValueOrDefault(PhaseBucket.TestRetest)?.TotalDurationSeconds ?? 0);
-        long totalFixSeconds =
+        var totalFixSeconds =
             byBucket.GetValueOrDefault(PhaseBucket.Fix)?.TotalDurationSeconds ?? 0;
-        long totalBoth = totalTestSeconds + totalFixSeconds;
+        var totalBoth = totalTestSeconds + totalFixSeconds;
 
-        double testPct = totalBoth == 0 ? 0.0 : (double)totalTestSeconds / totalBoth;
-        double fixPct = totalBoth == 0 ? 0.0 : (double)totalFixSeconds / totalBoth;
+        var testPct = totalBoth == 0 ? 0.0 : (double)totalTestSeconds / totalBoth;
+        var fixPct = totalBoth == 0 ? 0.0 : (double)totalFixSeconds / totalBoth;
 
         var top = closedReports
             .Where(r => r.TestIntervals >= 2)
@@ -149,7 +136,7 @@ public sealed class AnalyticsService(IAnalyticsDbClient analyticsDb, TimeProvide
     }
 
     private static double? AverageDays(
-        IReadOnlyDictionary<PhaseBucket, PhaseAggregateRow> byBucket,
+        Dictionary<PhaseBucket, PhaseAggregateRow> byBucket,
         PhaseBucket bucket)
     {
         if (!byBucket.TryGetValue(bucket, out var row) || row.ReportCount == 0)

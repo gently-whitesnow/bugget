@@ -29,7 +29,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное создание пользователя")]
     public async Task InsertOrUpdateUserAsync_WhenNewUser_ShouldCreateUser()
     {
-        // Arrange
         var createUserDto = new CreateUserDto
         {
             ExternalId = $"test_user_{Guid.NewGuid()}",
@@ -37,10 +36,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
             ImageUrl = "https://example.com/avatar.jpg"
         };
 
-        // Act
         var result = await _usersDbClient.TryInsertUserAsync(createUserDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(createUserDto.ExternalId, result.ExternalId);
@@ -53,7 +50,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное получение пользователя")]
     public async Task GetUserAsync_WhenUserExists_ShouldReturnUser()
     {
-        // Arrange
         var createUserDto = new CreateUserDto
         {
             ExternalId = $"test_user_{Guid.NewGuid()}",
@@ -63,10 +59,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var createdUser = await _usersDbClient.TryInsertUserAsync(createUserDto);
 
-        // Act
         var result = await _usersDbClient.GetUserAsync(createdUser.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(createdUser.Id, result.Id);
         Assert.Equal(createdUser.ExternalId, result.ExternalId);
@@ -77,20 +71,16 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение пользователя, которого нет в базе возвращает null")]
     public async Task GetUserAsync_WhenUserDoesNotExist_ShouldReturnNull()
     {
-        // Arrange
         const long nonExistentUserId = 999999;
 
-        // Act
         var result = await _usersDbClient.GetUserAsync(nonExistentUserId);
 
-        // Assert
         Assert.Null(result);
     }
 
     [Fact(DisplayName = "Автодополнение пользователей в рабочем пространстве")]
     public async Task AutocompleteUsersAsync_WhenWorkspaceHasUsers_ShouldReturnMatchingUsers()
     {
-        // Arrange
         var ownerCreateDto = new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -102,10 +92,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
-        // Act
         var result = await _usersDbClient.AutocompleteUsersAsync(team.WorkspaceId, "Test", 0, 10);
 
-        // Assert
         Assert.NotEmpty(result);
         Assert.Contains(result, u => u.Id == ownerUser.Id);
         Assert.All(result, user => Assert.Contains("Test", user.Name, StringComparison.OrdinalIgnoreCase));
@@ -114,7 +102,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Автодополнение пользователей, когда нет совпадений")]
     public async Task AutocompleteUsersAsync_WhenNoMatchingUsers_ShouldReturnEmptyArray()
     {
-        // Arrange
         var ownerCreateDto = new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -126,17 +113,16 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
-        // Act - ищем пользователей с именем, которого нет
+        // Ищем пользователей с именем, которого нет
         var result = await _usersDbClient.AutocompleteUsersAsync(team.WorkspaceId, "NonExistentName", 0, 10);
 
-        // Assert
         Assert.Empty(result);
     }
 
     [Fact(DisplayName = "Автодополнение пользователей с пагинацией")]
     public async Task AutocompleteUsersAsync_WithPagination_ShouldReturnCorrectPagedResults()
     {
-        // Arrange - Создаем несколько пользователей с похожими именами
+        // Создаем несколько пользователей с похожими именами
         var owner1Dto = new CreateUserDto
         {
             ExternalId = $"owner1_{Guid.NewGuid()}",
@@ -157,11 +143,10 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var workspace2 = await _workspacesDbClient.CreateWorkspaceAsync(owner2.Id, "Workspace 2");
         var team2 = await _teamsDbClient.CreateTeamAsync(workspace2.Id, "Team 2");
 
-        // Act - Запрашиваем первую страницу с лимитом 1
+        // Запрашиваем первую страницу с лимитом 1
         var firstPageResult = await _usersDbClient.AutocompleteUsersAsync(team1.WorkspaceId, "Test", 0, 1);
         var allResults = await _usersDbClient.AutocompleteUsersAsync(team1.WorkspaceId, "Test", 0, 10);
 
-        // Assert
         Assert.Single(firstPageResult);
         Assert.Single(allResults); // В организации только один владелец с "Test" в имени
         Assert.Equal(owner1.Id, firstPageResult[0].Id);
@@ -171,7 +156,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Автодополнение пользователей с пустым поисковым запросом")]
     public async Task AutocompleteUsersAsync_WithEmptySearchString_ShouldReturnAllUsersInWorkspace()
     {
-        // Arrange
         var ownerCreateDto = new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -183,10 +167,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
-        // Act
         var result = await _usersDbClient.AutocompleteUsersAsync(team.WorkspaceId, "", 0, 10);
 
-        // Assert
         Assert.NotEmpty(result);
         Assert.Contains(result, u => u.Id == ownerUser.Id);
     }
@@ -194,7 +176,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Автодополнение пользователей с разными регистрами")]
     public async Task AutocompleteUsersAsync_CaseInsensitiveSearch_ShouldFindUsers()
     {
-        // Arrange
         var ownerCreateDto = new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -206,10 +187,9 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
-        // Act - поиск в разных регистрах
+        // Поиск в разных регистрах
         var mixedCaseResult = await _usersDbClient.AutocompleteUsersAsync(team.WorkspaceId, "OrGaNiZaTiOn", 0, 10);
 
-        // Assert
         Assert.NotEmpty(mixedCaseResult);
         Assert.Contains(mixedCaseResult, u => u.Id == ownerUser.Id);
     }
@@ -217,20 +197,16 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Автодополнение пользователей в несуществующем рабочем пространстве")]
     public async Task AutocompleteUsersAsync_WithNonExistentWorkspace_ShouldReturnEmptyArray()
     {
-        // Arrange
         const int nonExistentWorkspaceId = 999999;
 
-        // Act
         var result = await _usersDbClient.AutocompleteUsersAsync(nonExistentWorkspaceId, "any", 0, 10);
 
-        // Assert
         Assert.Empty(result);
     }
 
     [Fact(DisplayName = "Автодополнение пользователей с потенциально опасными символами")]
     public async Task AutocompleteUsersAsync_WithSpecialCharacters_ShouldBeSafeFromSqlInjection()
     {
-        // Arrange
         var ownerDto = new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -242,7 +218,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var workspace = await _workspacesDbClient.CreateWorkspaceAsync(ownerUser.Id, "Test Workspace");
         var team = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Test Team");
 
-        // Act - тестируем различные потенциально опасные строки
+        // Тестируем различные потенциально опасные строки
         var searchStrings = new[]
         {
             "'; DROP TABLE users; --",
@@ -254,7 +230,7 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         foreach (var searchString in searchStrings)
         {
-            // Assert - запросы должны выполняться безопасно без SQL injection
+            // Запросы должны выполняться безопасно без SQL injection
             var result = await _usersDbClient.AutocompleteUsersAsync(team.WorkspaceId, searchString, 0, 10);
             Assert.NotNull(result);
 
@@ -269,7 +245,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Автодополнение: члены команды ранжируются выше остальных")]
     public async Task AutocompleteUsersAsync_WithTeamId_ShouldRankTeamMembersFirst()
     {
-        // Arrange
         var ownerDto = new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -290,13 +265,12 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var outsider = await _usersDbClient.TryInsertUserAsync(outsiderDto);
         await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(outsider.Id, workspace.Id, WorkspaceRole.Member);
 
-        // Добавляем owner в команду
         await _teamMembersDbClient.CreateTeamMemberAsync(owner.Id, team.Id);
 
-        // Act — поиск с teamId
+        // Поиск с teamId
         var result = await _usersDbClient.AutocompleteUsersAsync(workspace.Id, "", 0, 10, team.Id);
 
-        // Assert — оба найдены, но член команды (Alpha Owner) первый
+        // Оба найдены, но член команды (Alpha Owner) первый
         Assert.True(result.Length >= 2);
         var ownerIndex = Array.FindIndex(result, u => u.Id == owner.Id);
         var outsiderIndex = Array.FindIndex(result, u => u.Id == outsider.Id);
@@ -306,7 +280,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Автодополнение: без teamId сортировка по имени")]
     public async Task AutocompleteUsersAsync_WithoutTeamId_ShouldSortByNameOnly()
     {
-        // Arrange
         var ownerDto = new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -326,10 +299,10 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var member = await _usersDbClient.TryInsertUserAsync(memberDto);
         await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(member.Id, workspace.Id, WorkspaceRole.Member);
 
-        // Act — без teamId
+        // Без teamId
         var result = await _usersDbClient.AutocompleteUsersAsync(workspace.Id, "", 0, 10);
 
-        // Assert — сортировка алфавитная: Anna < Zara
+        // Сортировка алфавитная: Anna < Zara
         Assert.True(result.Length >= 2);
         var annaIndex = Array.FindIndex(result, u => u.Id == member.Id);
         var zaraIndex = Array.FindIndex(result, u => u.Id == owner.Id);
@@ -339,7 +312,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Автодополнение: внутри группы ранжирования сортировка по имени")]
     public async Task AutocompleteUsersAsync_WithTeamId_ShouldSortByNameWithinRankGroups()
     {
-        // Arrange
         var ownerDto = new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -382,10 +354,9 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var outsider = await _usersDbClient.TryInsertUserAsync(outsiderDto);
         await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(outsider.Id, workspace.Id, WorkspaceRole.Member);
 
-        // Act
         var result = await _usersDbClient.AutocompleteUsersAsync(workspace.Id, "", 0, 10, team.Id);
 
-        // Assert — порядок: Alice, Bob, Charlie (члены команды по алфавиту), затем Aaron (не-член)
+        // Порядок: Alice, Bob, Charlie (члены команды по алфавиту), затем Aaron (не-член)
         var aliceIdx = Array.FindIndex(result, u => u.Id == memberA.Id);
         var bobIdx = Array.FindIndex(result, u => u.Id == memberB.Id);
         var charlieIdx = Array.FindIndex(result, u => u.Id == owner.Id);
@@ -401,7 +372,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Автодополнение: ранжирование работает с фильтром по имени")]
     public async Task AutocompleteUsersAsync_WithTeamIdAndSearchString_ShouldRankAndFilter()
     {
-        // Arrange
         var ownerDto = new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -431,10 +401,10 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var unrelated = await _usersDbClient.TryInsertUserAsync(unrelatedDto);
         await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(unrelated.Id, workspace.Id, WorkspaceRole.Member);
 
-        // Act — поиск "RankTest" с teamId
+        // Поиск "RankTest" с teamId
         var result = await _usersDbClient.AutocompleteUsersAsync(workspace.Id, "RankTest", 0, 10, team.Id);
 
-        // Assert — только два с "RankTest", член команды первый
+        // Только два с "RankTest", член команды первый
         Assert.Equal(2, result.Length);
         Assert.Equal(member.Id, result[0].Id);
         Assert.Equal(owner.Id, result[1].Id);
@@ -445,7 +415,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение списка пользователей по ID")]
     public async Task ListUsersAsync_WhenUsersExist_ShouldReturnRequestedUsers()
     {
-        // Arrange
         var user1Dto = new CreateUserDto
         {
             ExternalId = $"user1_{Guid.NewGuid()}",
@@ -466,10 +435,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var userIds = new List<long> { user1.Id, user2.Id };
 
-        // Act
         var result = await _usersDbClient.ListUsersAsync(userIds.ToArray(), workspace1.Id);
 
-        // Assert
         Assert.NotEmpty(result);
         Assert.Contains(result, u => u.Id == user1.Id);
         Assert.DoesNotContain(result, u => u.Id == user2.Id);
@@ -485,7 +452,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение списка пользователей с несуществующими ID")]
     public async Task ListUsersAsync_WithNonExistentUserIds_ShouldReturnEmptyArray()
     {
-        // Arrange
         var ownerDto = new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -499,17 +465,14 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var nonExistentUserIds = new List<long> { 999999, 999998 };
 
-        // Act
         var result = await _usersDbClient.ListUsersAsync(nonExistentUserIds.ToArray(), team.WorkspaceId);
 
-        // Assert
         Assert.Empty(result);
     }
 
     [Fact(DisplayName = "Получение списка пользователей с пустым списком ID")]
     public async Task ListUsersAsync_WithEmptyUserIdsList_ShouldReturnEmptyArray()
     {
-        // Arrange
         var ownerDto = new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -523,17 +486,14 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var emptyUserIds = new List<long>();
 
-        // Act
         var result = await _usersDbClient.ListUsersAsync(emptyUserIds.ToArray(), team.WorkspaceId);
 
-        // Assert
         Assert.Empty(result);
     }
 
     [Fact(DisplayName = "Получение списка пользователей в несуществующем рабочем пространстве")]
     public async Task ListUsersAsync_WithNonExistentWorkspace_ShouldReturnEmptyArray()
     {
-        // Arrange
         var userDto = new CreateUserDto
         {
             ExternalId = $"user_{Guid.NewGuid()}",
@@ -545,17 +505,14 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         const int nonExistentWorkspaceId = 999999;
         var userIds = new List<long> { user.Id };
 
-        // Act
         var result = await _usersDbClient.ListUsersAsync(userIds.ToArray(), nonExistentWorkspaceId);
 
-        // Assert
         Assert.Empty(result);
     }
 
     [Fact(DisplayName = "Получение списка пользователей с частично существующими ID")]
     public async Task ListUsersAsync_WithMixedExistingAndNonExistentIds_ShouldReturnOnlyExistingUsers()
     {
-        // Arrange
         var user1Dto = new CreateUserDto
         {
             ExternalId = $"user1_{Guid.NewGuid()}",
@@ -568,10 +525,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var mixedUserIds = new List<long> { user1.Id, 999999, 999998 };
 
-        // Act
         var result = await _usersDbClient.ListUsersAsync(mixedUserIds.ToArray(), team1.WorkspaceId);
 
-        // Assert
         Assert.Single(result);
         Assert.Equal(user1.Id, result[0].Id);
         Assert.Equal("Existing User", result[0].Name);
@@ -580,7 +535,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение списка пользователей с дублирующимися ID")]
     public async Task ListUsersAsync_WithDuplicateUserIds_ShouldReturnUniqueUsers()
     {
-        // Arrange
         var userDto = new CreateUserDto
         {
             ExternalId = $"user_{Guid.NewGuid()}",
@@ -594,10 +548,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var duplicateUserIds = new List<long> { user.Id, user.Id, user.Id };
 
-        // Act
         var result = await _usersDbClient.ListUsersAsync(duplicateUserIds.ToArray(), workspace.Id);
 
-        // Assert
         Assert.Single(result);
         Assert.Equal(user.Id, result[0].Id);
     }
@@ -605,7 +557,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное удаление пользователя")]
     public async Task DeleteUserAsync_WhenUserExists_ShouldDeleteUser()
     {
-        // Arrange
         var createUserDto = new CreateUserDto
         {
             ExternalId = $"test_user_{Guid.NewGuid()}",
@@ -615,14 +566,11 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var createdUser = await _usersDbClient.TryInsertUserAsync(createUserDto);
 
-        // Убеждаемся, что пользователь создан
         var userBeforeDeletion = await _usersDbClient.GetUserAsync(createdUser.Id);
         Assert.NotNull(userBeforeDeletion);
 
-        // Act
         await _usersDbClient.DeleteUserAsync(createdUser.Id);
 
-        // Assert
         var userAfterDeletion = await _usersDbClient.GetUserAsync(createdUser.Id);
         Assert.Null(userAfterDeletion);
     }
@@ -630,10 +578,9 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Удаление несуществующего пользователя не вызывает исключение")]
     public async Task DeleteUserAsync_WhenUserDoesNotExist_ShouldNotThrowException()
     {
-        // Arrange
         const long nonExistentUserId = 999999;
 
-        // Act & Assert - не должно вызывать исключение
+        // Не должно вызывать исключение
         var exception = await Record.ExceptionAsync(() => _usersDbClient.DeleteUserAsync(nonExistentUserId));
         Assert.Null(exception);
     }
@@ -641,7 +588,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Повторное удаление уже удаленного пользователя не вызывает исключение")]
     public async Task DeleteUserAsync_WhenUserAlreadyDeleted_ShouldNotThrowException()
     {
-        // Arrange
         var createUserDto = new CreateUserDto
         {
             ExternalId = $"test_user_{Guid.NewGuid()}",
@@ -651,14 +597,12 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var createdUser = await _usersDbClient.TryInsertUserAsync(createUserDto);
 
-        // Первое удаление
         await _usersDbClient.DeleteUserAsync(createdUser.Id);
 
-        // Убеждаемся, что пользователь удален
         var userAfterFirstDeletion = await _usersDbClient.GetUserAsync(createdUser.Id);
         Assert.Null(userAfterFirstDeletion);
 
-        // Act & Assert - повторное удаление не должно вызывать исключение
+        // Повторное удаление не должно вызывать исключение
         var exception = await Record.ExceptionAsync(() => _usersDbClient.DeleteUserAsync(createdUser.Id));
         Assert.Null(exception);
     }
@@ -666,7 +610,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Удаление пользователя не влияет на других пользователей")]
     public async Task DeleteUserAsync_ShouldNotAffectOtherUsers()
     {
-        // Arrange
         var user1Dto = new CreateUserDto
         {
             ExternalId = $"user1_{Guid.NewGuid()}",
@@ -684,10 +627,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var user1 = await _usersDbClient.TryInsertUserAsync(user1Dto);
         var user2 = await _usersDbClient.TryInsertUserAsync(user2Dto);
 
-        // Act
         await _usersDbClient.DeleteUserAsync(user1.Id);
 
-        // Assert
         var deletedUser = await _usersDbClient.GetUserAsync(user1.Id);
         var remainingUser = await _usersDbClient.GetUserAsync(user2.Id);
 
@@ -702,7 +643,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное обновление URL аватара пользователя")]
     public async Task UpdateUserImageUrlAsync_WhenUserExists_ShouldUpdateImageUrl()
     {
-        // Arrange
         var createUserDto = new CreateUserDto
         {
             ExternalId = $"test_user_{Guid.NewGuid()}",
@@ -713,10 +653,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var createdUser = await _usersDbClient.TryInsertUserAsync(createUserDto);
         var newImageUrl = "https://example.com/new-avatar.jpg";
 
-        // Act
         await _usersDbClient.UpdateUserImageUrlAsync(createdUser.Id, newImageUrl);
 
-        // Assert
         var updatedUser = await _usersDbClient.GetUserAsync(createdUser.Id);
         Assert.NotNull(updatedUser);
         Assert.Equal(newImageUrl, updatedUser.ImageUrl);
@@ -725,11 +663,10 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Обновление URL аватара несуществующего пользователя не вызывает исключение")]
     public async Task UpdateUserImageUrlAsync_WhenUserDoesNotExist_ShouldNotThrowException()
     {
-        // Arrange
         const long nonExistentUserId = 999999;
         var newImageUrl = "https://example.com/avatar.jpg";
 
-        // Act & Assert - не должно вызывать исключение
+        // Не должно вызывать исключение
         var exception = await Record.ExceptionAsync(() =>
             _usersDbClient.UpdateUserImageUrlAsync(nonExistentUserId, newImageUrl));
         Assert.Null(exception);
@@ -738,7 +675,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Обновление URL аватара не влияет на других пользователей")]
     public async Task UpdateUserImageUrlAsync_ShouldNotAffectOtherUsers()
     {
-        // Arrange
         var user1Dto = new CreateUserDto
         {
             ExternalId = $"user1_{Guid.NewGuid()}",
@@ -758,10 +694,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var newImageUrl = "https://example.com/user1-new.jpg";
 
-        // Act
         await _usersDbClient.UpdateUserImageUrlAsync(user1.Id, newImageUrl);
 
-        // Assert
         var updatedUser1 = await _usersDbClient.GetUserAsync(user1.Id);
         var unchangedUser2 = await _usersDbClient.GetUserAsync(user2.Id);
 
@@ -778,7 +712,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное обновление данных пользователя")]
     public async Task PutUserAsync_WhenUserExists_ShouldUpdateAndReturnUser()
     {
-        // Arrange
         var createUserDto = new CreateUserDto
         {
             ExternalId = $"test_user_{Guid.NewGuid()}",
@@ -789,10 +722,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var createdUser = await _usersDbClient.TryInsertUserAsync(createUserDto);
         var putUserDto = new PutUserDto { Name = "Updated Name" };
 
-        // Act
         var result = await _usersDbClient.PutUserAsync(createdUser.Id, putUserDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(createdUser.Id, result.Id);
         Assert.Equal("Updated Name", result.Name);
@@ -803,11 +734,9 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Обновление данных несуществующего пользователя вызывает исключение")]
     public async Task PutUserAsync_WhenUserDoesNotExist_ShouldThrowException()
     {
-        // Arrange
         const long nonExistentUserId = 999999;
         var putUserDto = new PutUserDto { Name = "New Name" };
 
-        // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _usersDbClient.PutUserAsync(nonExistentUserId, putUserDto));
     }
@@ -815,7 +744,6 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Обновление данных пользователя не влияет на других пользователей")]
     public async Task PutUserAsync_ShouldNotAffectOtherUsers()
     {
-        // Arrange
         var user1Dto = new CreateUserDto
         {
             ExternalId = $"user1_{Guid.NewGuid()}",
@@ -835,10 +763,8 @@ public class UsersDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var putUserDto = new PutUserDto { Name = "User One Updated" };
 
-        // Act
         await _usersDbClient.PutUserAsync(user1.Id, putUserDto);
 
-        // Assert
         var updatedUser1 = await _usersDbClient.GetUserAsync(user1.Id);
         var unchangedUser2 = await _usersDbClient.GetUserAsync(user2.Id);
 

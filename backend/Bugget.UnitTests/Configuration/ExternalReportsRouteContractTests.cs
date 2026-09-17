@@ -43,7 +43,7 @@ public sealed class ExternalReportsRouteContractTests
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "ROOT.md")))
+            if (File.Exists(Path.Combine(directory.FullName, "AGENTS.md")))
             {
                 return directory.FullName;
             }

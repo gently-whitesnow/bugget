@@ -1,7 +1,3 @@
-// MAIN-20: тест намеренно проверяет вызов контракта, помеченного [Obsolete] —
-// миграция на provider-required API идёт отдельной задачей. До слияния проектов
-// предупреждение было не видно: у Authorization.Tests был выключен TreatWarningsAsErrors.
-#pragma warning disable CS0618
 using System;
 using System.Security.Claims;
 using System.Threading;
@@ -23,7 +19,6 @@ public class OidcControllerTests
     [Fact]
     public async Task Callback_ValidTokenInCookie_AuthorizesAndRedirects()
     {
-        // Arrange
         const string externalId = "oidc-user-123";
         const string nextPath = "/dashboard";
 
@@ -34,10 +29,8 @@ public class OidcControllerTests
         controller.ControllerContext.HttpContext.Request.Headers["Cookie"] = "_oauth2_proxy=valid.jwt.token";
         controller.ControllerContext.HttpContext.Request.QueryString = new QueryString($"?next={nextPath}");
 
-        // Act
         var result = await controller.CallbackAsync();
 
-        // Assert
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.EndsWith(nextPath, redirect.Url);
 
@@ -53,7 +46,6 @@ public class OidcControllerTests
     [Fact]
     public async Task Callback_ValidTokenInHeader_AuthorizesAndRedirects()
     {
-        // Arrange
         const string externalId = "oidc-user-header";
         const string nextPath = "/app";
 
@@ -61,14 +53,11 @@ public class OidcControllerTests
         var externalAuth = new Mock<IExternalAuthService>();
         var controller = CreateController(tokenValidator, externalAuth.Object, tokenHeaderName: "X-Id-Token");
 
-        // Token in header (with Bearer prefix)
         controller.ControllerContext.HttpContext.Request.Headers["X-Id-Token"] = "Bearer valid.jwt.token";
         controller.ControllerContext.HttpContext.Request.QueryString = new QueryString($"?next={nextPath}");
 
-        // Act
         var result = await controller.CallbackAsync();
 
-        // Assert
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.EndsWith(nextPath, redirect.Url);
 
@@ -84,21 +73,17 @@ public class OidcControllerTests
     [Fact]
     public async Task Callback_ValidTokenInHeaderWithoutBearerPrefix_AuthorizesAndRedirects()
     {
-        // Arrange
         const string externalId = "oidc-user-raw";
 
         var tokenValidator = CreateMockTokenValidator(externalId);
         var externalAuth = new Mock<IExternalAuthService>();
         var controller = CreateController(tokenValidator, externalAuth.Object, tokenHeaderName: "X-Id-Token");
 
-        // Token in header without Bearer prefix
         controller.ControllerContext.HttpContext.Request.Headers["X-Id-Token"] = "valid.jwt.token";
         controller.ControllerContext.HttpContext.Request.QueryString = new QueryString("?next=/");
 
-        // Act
         var result = await controller.CallbackAsync();
 
-        // Assert
         Assert.IsType<RedirectResult>(result);
         externalAuth.Verify(
             e => e.AuthorizeAsync(It.IsAny<HttpContext>(), It.IsAny<IExternalUser>(), true, "oidc", null),
@@ -108,7 +93,6 @@ public class OidcControllerTests
     [Fact]
     public async Task Callback_HeaderPriorityOverCookie()
     {
-        // Arrange - header user should win over cookie user
         const string headerExternalId = "header-user";
         const string cookieExternalId = "cookie-user";
 
@@ -128,15 +112,12 @@ public class OidcControllerTests
         var externalAuth = new Mock<IExternalAuthService>();
         var controller = CreateController(tokenValidator.Object, externalAuth.Object, tokenHeaderName: "X-Id-Token");
 
-        // Both header and cookie set
         controller.ControllerContext.HttpContext.Request.Headers["X-Id-Token"] = "header-token";
         controller.ControllerContext.HttpContext.Request.Headers["Cookie"] = "_oauth2_proxy=cookie-token";
         controller.ControllerContext.HttpContext.Request.QueryString = new QueryString("?next=/");
 
-        // Act
         var result = await controller.CallbackAsync();
 
-        // Assert - should use header token, not cookie
         externalAuth.Verify(e => e.AuthorizeAsync(
             It.IsAny<HttpContext>(),
             It.Is<IExternalUser>(u => u.ExternalId == headerExternalId),
@@ -149,17 +130,12 @@ public class OidcControllerTests
     [Fact]
     public async Task Callback_NoToken_ReturnsUnauthorized()
     {
-        // Arrange
         var tokenValidator = new Mock<IOidcTokenValidator>();
         var externalAuth = new Mock<IExternalAuthService>();
         var controller = CreateController(tokenValidator.Object, externalAuth.Object);
 
-        // No cookie or header set
-
-        // Act
         var result = await controller.CallbackAsync();
 
-        // Assert
         // Тело собирает общий адаптер границы, а не контроллер: причина остаётся в журнале.
         Assert.IsType<UnauthorizedResult>(result);
     }
@@ -167,7 +143,6 @@ public class OidcControllerTests
     [Fact]
     public async Task Callback_InvalidToken_ReturnsUnauthorized()
     {
-        // Arrange
         var tokenValidator = new Mock<IOidcTokenValidator>();
         tokenValidator.Setup(v => v.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ClaimsPrincipal?)null);
@@ -177,10 +152,8 @@ public class OidcControllerTests
 
         controller.ControllerContext.HttpContext.Request.Headers["Cookie"] = "_oauth2_proxy=invalid.token";
 
-        // Act
         var result = await controller.CallbackAsync();
 
-        // Assert
         // Тело собирает общий адаптер границы, а не контроллер: причина остаётся в журнале.
         Assert.IsType<UnauthorizedResult>(result);
     }
@@ -188,7 +161,6 @@ public class OidcControllerTests
     [Fact]
     public async Task Callback_NoSubjectClaim_ReturnsUnauthorized()
     {
-        // Arrange
         var principal = new ClaimsPrincipal(new ClaimsIdentity());
 
         var tokenValidator = new Mock<IOidcTokenValidator>();
@@ -202,10 +174,8 @@ public class OidcControllerTests
 
         controller.ControllerContext.HttpContext.Request.Headers["Cookie"] = "_oauth2_proxy=token.without.sub";
 
-        // Act
         var result = await controller.CallbackAsync();
 
-        // Assert
         // Тело собирает общий адаптер границы, а не контроллер: причина остаётся в журнале.
         Assert.IsType<UnauthorizedResult>(result);
     }
@@ -213,7 +183,6 @@ public class OidcControllerTests
     [Fact]
     public async Task Callback_NoNextParam_RedirectsToRoot()
     {
-        // Arrange
         const string externalId = "oidc-user-456";
 
         var tokenValidator = CreateMockTokenValidator(externalId);
@@ -221,12 +190,9 @@ public class OidcControllerTests
         var controller = CreateController(tokenValidator, externalAuth.Object);
 
         controller.ControllerContext.HttpContext.Request.Headers["Cookie"] = "_oauth2_proxy=valid.jwt.token";
-        // No ?next query param
 
-        // Act
         var result = await controller.CallbackAsync();
 
-        // Assert
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.EndsWith("/", redirect.Url);
     }
@@ -234,7 +200,6 @@ public class OidcControllerTests
     [Fact]
     public async Task Callback_MaliciousNext_SanitizesToRoot()
     {
-        // Arrange
         const string externalId = "oidc-user-789";
 
         var tokenValidator = CreateMockTokenValidator(externalId);
@@ -244,10 +209,8 @@ public class OidcControllerTests
         controller.ControllerContext.HttpContext.Request.Headers["Cookie"] = "_oauth2_proxy=valid.jwt.token";
         controller.ControllerContext.HttpContext.Request.QueryString = new QueryString("?next=https://evil.com/steal");
 
-        // Act
         var result = await controller.CallbackAsync();
 
-        // Assert
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.EndsWith("/", redirect.Url);
     }
@@ -303,5 +266,3 @@ public class OidcControllerTests
         return controller;
     }
 }
-
-#pragma warning restore CS0618

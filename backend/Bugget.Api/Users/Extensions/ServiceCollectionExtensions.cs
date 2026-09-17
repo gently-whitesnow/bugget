@@ -23,9 +23,8 @@ namespace Bugget.Api.Users.Extensions;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Ключ экземпляра файлового хранилища users. Порт и реализация общие с reports,
-    /// различается только корень хранилища, поэтому это keyed-регистрация одного типа,
-    /// а не второй контракт.
+    /// Ключ файлового хранилища users: порт и реализация общие с reports, различается только корень —
+    /// поэтому keyed-регистрация одного типа, а не второй контракт.
     /// </summary>
     public const string FileStorageServiceKey = "users";
 
@@ -34,8 +33,7 @@ public static class ServiceCollectionExtensions
         services.Configure<AuthHeadersOptions>(configuration.GetSection("ExternalSettings:Authentication"));
         services.Configure<TeamsOptions>(configuration.GetSection(nameof(TeamsOptions)));
         services.Configure<WorkspacesOptions>(configuration.GetSection(nameof(WorkspacesOptions)));
-        // Своя секция: FileStorageOptions в этом же процессе занята хранилищем вложений reports.
-        // Тип настроек один, имя — named options: дефолт остаётся за reports.
+        // Своя секция и named options: дефолтный FileStorageOptions в этом процессе занят вложениями reports.
         services.Configure<FileStorageOptions>(FileStorageServiceKey, configuration.GetSection("UsersFileStorageOptions"));
         services.Configure<SelfHostedOptions>(configuration.GetSection(nameof(SelfHostedOptions)));
         return services;
@@ -53,8 +51,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IUserExternalLinksDbClient, UserExternalLinksDbClient>();
         services.AddSingleton<IPersonalAccessTokensDbClient, PersonalAccessTokensDbClient>();
 
-        // Тот же LocalFileStorageClient, что и у reports, но со своим корнем: named options
-        // подставляются здесь, в композиционном корне, поэтому прикладной слой о DI не знает.
+        // Named options подставляются здесь, в композиционном корне: прикладной слой о DI не знает.
         services.AddKeyedSingleton<IFileStorageClient>(FileStorageServiceKey, (provider, _) =>
             new Bugget.Infrastructure.Files.LocalFileStorageClient(
                 new Microsoft.Extensions.Options.OptionsWrapper<FileStorageOptions>(
@@ -66,11 +63,9 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddBusinessLogic(this IServiceCollection services, IConfiguration configuration, SelfHostedOptions hostingOptions)
     {
-        // TaskQueue
         services.AddSingleton<ITaskQueue, Bugget.Infrastructure.TaskQueue.TaskQueue>();
         services.AddHostedService(sp => (Bugget.Infrastructure.TaskQueue.TaskQueue)sp.GetRequiredService<ITaskQueue>());
 
-        // Avatar service. Файловое хранилище — keyed-экземпляр users.
         services.AddSingleton<IAvatarDownloadService>(provider => new AvatarDownloadService(
             provider.GetRequiredService<IHttpClientFactory>(),
             provider.GetRequiredKeyedService<IFileStorageClient>(FileStorageServiceKey),
@@ -108,10 +103,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>
-    /// Web-часть модуля. Controllers, CORS, JSON-настройки и pipeline принадлежат хосту —
-    /// здесь только то, что специфично для users.
-    /// </summary>
+    /// <summary>Web-часть модуля: только специфичное для users; controllers, CORS, JSON и pipeline принадлежат хосту.</summary>
     public static IServiceCollection AddWebApi(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
     {
         services.AddAuthHeaders();

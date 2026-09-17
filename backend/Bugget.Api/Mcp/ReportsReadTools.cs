@@ -12,13 +12,8 @@ using ModelContextProtocol.Server;
 namespace Bugget.Api.Mcp;
 
 /// <summary>
-/// Read-инструменты MCP над репортами.
-///
-/// Адаптер того же рода, что контроллер: разбирает аргументы, зовёт
-/// application-сервис, приводит ответ к проводу. Изоляция данных здесь не
-/// повторяется и не ослабляется — workspace приходит из identity запроса и
-/// уходит в сервис тем же параметром, что из REST, а режет по нему SQL. Ни один
-/// аргумент инструмента задать workspace не может.
+/// Read-инструменты MCP над репортами. Изоляция данных не повторяется и не ослабляется: workspace
+/// приходит из identity запроса, режет по нему SQL; аргументом инструмента его задать нельзя.
 /// </summary>
 [McpServerToolType]
 internal sealed class ReportsReadTools(
@@ -27,11 +22,7 @@ internal sealed class ReportsReadTools(
     IOptions<ReportAliasOptions> aliasOptions,
     McpAttachmentContent attachmentContent)
 {
-    /// <summary>
-    /// Потолок страницы. REST его для поиска не ставит, но там за ответом человек
-    /// со скроллом, а здесь — окно контекста, в которое ответ должен поместиться
-    /// целиком.
-    /// </summary>
+    // Потолок страницы: ответ должен целиком поместиться в окно контекста.
     private const int MaxTake = 100;
 
     [McpServerTool(Name = "list_reports", ReadOnly = true, Idempotent = true, OpenWorld = false)]
@@ -139,11 +130,7 @@ internal sealed class ReportsReadTools(
         return blocks;
     }
 
-    /// <summary>
-    /// Внешний путь REST-скачивания — тот, по которому файл откроет человек в
-    /// браузере: с префиксом nginx и workspace/team из identity текущего запроса
-    /// (тот же принцип, что origin-relative Location в ADR-0011).
-    /// </summary>
+    // Внешний путь REST-скачивания для человека: префикс nginx и workspace/team из identity (принцип ADR-0011).
     private static string DownloadPath(UserIdentity user, string reportId, LocatedAttachment located)
     {
         var suffix = (Bugget.Domain.AttachType)located.Attachment.AttachType switch
@@ -162,11 +149,7 @@ internal sealed class ReportsReadTools(
         httpContextAccessor.HttpContext?.User.GetIdentity()
         ?? throw new McpException("Запрос пришёл без контекста пользователя.");
 
-    /// <summary>
-    /// Причина отказа наружу не уходит: «нет такого репорта» и «репорт не твой»
-    /// снаружи обязаны быть неразличимы, иначе перебор идентификаторов расскажет,
-    /// что заведено в соседнем workspace.
-    /// </summary>
+    // «Нет такого репорта» и «репорт не твой» снаружи неразличимы, иначе перебор id раскроет соседний workspace.
     private async Task<Report> LoadReportAsync(string reportId)
     {
         var user = CurrentUser();

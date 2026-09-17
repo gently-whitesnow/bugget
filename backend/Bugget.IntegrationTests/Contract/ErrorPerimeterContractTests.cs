@@ -9,10 +9,8 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Периметр ошибок: ответы, которые формирует не контроллер, а фреймворк, — промах
-/// маршрутизации, неподходящий метод, отказ аутентификации и авторизации. До MAIN-69
-/// они уходили без тела либо в чужой форме ASP.NET; теперь у каждого есть стабильный
-/// <c>code</c> из общего каталога (ADR-0008).
+/// Периметр ошибок: ответы фреймворка, а не контроллера (промах маршрутизации, метод, 401, 403).
+/// У каждого есть стабильный <c>code</c> из общего каталога (ADR-0008, MAIN-69).
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class ErrorPerimeterContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
@@ -28,8 +26,7 @@ public sealed class ErrorPerimeterContractTests(AppContractFixture fixture) : IC
     }
 
     /// <summary>
-    /// <c>Forbid()</c> — единственный источник 403 в модуле users: identity есть, но
-    /// workspace в пути чужой. Тело такого отказа собирает та же граница.
+    /// <c>Forbid()</c> — единственный источник 403 в модуле users: identity есть, но workspace в пути чужой.
     /// </summary>
     [Fact(DisplayName = "Forbid(): 403 с problem+json и кодом forbidden")]
     public async Task ForbidIsAProblem()
@@ -102,9 +99,8 @@ public sealed class ErrorPerimeterContractTests(AppContractFixture fixture) : IC
         var target = await UsersScenario.CreateAsync(fixture);
         var sourceUserId = await UsersScenario.CreateUserAsync(fixture);
 
-        // В self-hosted режиме публичное создание workspace закрыто. Для достижения
-        // прикладной conflict-ветки подготавливаем только владение source-пользователя:
-        // сам ответ по-прежнему получаем через публичный HTTP endpoint.
+        // В self-hosted публичное создание workspace закрыто: для conflict-ветки готовим только владение
+        // source-пользователя, сам ответ получаем через публичный HTTP endpoint.
         await using (var connection = new NpgsqlConnection(
             Environment.GetEnvironmentVariable("USERS_POSTGRES_CONNECTION_STRING")!))
         {

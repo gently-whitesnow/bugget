@@ -7,10 +7,8 @@ using Bugget.Domain.Reports;
 namespace Bugget.Api.Mcp;
 
 /// <summary>
-/// Доменная модель репорта → проекции MCP. Входом служит
-/// <see cref="ReportViewModel"/>, а не доменный <see cref="Report"/>: alias-ид,
-/// под которым репорт известен снаружи, считает application-слой, и
-/// пересчитывать его здесь означало бы завести второй источник правды.
+/// Доменная модель репорта → проекции MCP. Вход — <see cref="ReportViewModel"/>, а не <see cref="Report"/>:
+/// alias-ид считает application-слой, пересчёт здесь завёл бы второй источник правды.
 /// </summary>
 internal static class McpReportMapper
 {
@@ -32,11 +30,7 @@ internal static class McpReportMapper
             Map(report.Links, ToLink),
             Map(report.Bugs, ToBug));
 
-    /// <summary>
-    /// Ответ create_report: репорт без вложенного дерева — оно на этот момент
-    /// пустое. Форма — та же, что элемент списка, но <c>bugs_count</c> опущен:
-    /// у только что созданного репорта он всегда ноль.
-    /// </summary>
+    /// <summary>Ответ create_report: без дерева и без <c>bugs_count</c> — у нового репорта он всегда ноль.</summary>
     public static McpReportSummary ToSummary(ReportSummaryViewModel report) =>
         new(
             report.Id,
@@ -79,12 +73,7 @@ internal static class McpReportMapper
             attachment.CreatedAt,
             attachment.CreatorUserId);
 
-    /// <summary>
-    /// Вложение ищется в уже загруженном дереве репорта, а не отдельной ручкой:
-    /// дерево пришло из <c>GetReportAsync</c>, то есть уже отфильтровано по
-    /// workspace и команде, и лишнего похода в файловое хранилище за содержимым
-    /// не происходит.
-    /// </summary>
+    /// <summary>Вложение ищется в уже загруженном дереве: оно отфильтровано по workspace и команде.</summary>
     public static LocatedAttachment? FindAttachment(Report report, int attachmentId) =>
         (report.Bugs ?? []).SelectMany(BugAttachments).FirstOrDefault(a => a.Attachment.Id == attachmentId);
 
@@ -125,10 +114,7 @@ internal static class McpReportMapper
             Map(bug.Comments, ToComment),
             Map(bug.Attachments, ToAttachment));
 
-    /// <summary>
-    /// Шаг в дереве репорта и он же — ответ create_bug_step/update_bug_step:
-    /// форма одна, чтобы модель не встречала два разных вида одного шага.
-    /// </summary>
+    /// <summary>Шаг в дереве и ответ create/update_bug_step — одна форма, чтобы модель не видела два вида шага.</summary>
     public static McpBugStep ToStep(BugStepSummary step) =>
         new(step.Id, step.StepNumber, step.Text, Map(step.Attachments, ToAttachment));
 
@@ -149,11 +135,7 @@ internal static class McpReportMapper
             McpWire.FormatAttachType(attachment.AttachType),
             attachment.HasPreview ?? false);
 
-    /// <summary>
-    /// Пустая коллекция схлопывается в <c>null</c>, чтобы сериализатор выбросил
-    /// поле целиком: <c>"bugs":[]</c> в каждом из десяти репортов — оплаченный
-    /// шум, а не сведения.
-    /// </summary>
+    /// <summary>Пустая коллекция → <c>null</c>, чтобы сериализатор выбросил поле: <c>"bugs":[]</c> — шум.</summary>
     private static TResult[]? Map<TSource, TResult>(TSource[]? source, Func<TSource, TResult> map) =>
         source is null || source.Length == 0 ? null : [.. source.Select(map)];
 

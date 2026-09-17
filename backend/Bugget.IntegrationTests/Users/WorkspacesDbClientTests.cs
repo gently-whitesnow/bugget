@@ -33,7 +33,6 @@ public class WorkspacesDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное создание воркспейса")]
     public async Task CreateWorkspaceAsync_WhenValidData_ShouldCreateWorkspace()
     {
-        // Arrange
         var ownerDto = new CreateUserDto
         {
             ExternalId = $"workspace_owner_{Guid.NewGuid()}",
@@ -44,10 +43,8 @@ public class WorkspacesDbClientTests : IClassFixture<AppWithPostgresFixture>
 
         var workspaceName = "Test Workspace";
 
-        // Act
         var result = await _workspacesDbClient.CreateWorkspaceAsync(owner.Id, workspaceName);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(workspaceName, result.Name);
@@ -77,7 +74,6 @@ public class WorkspacesDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "DeleteWorkspaceAsync удаляет воркспейс и каскадно удаляет команды, членов воркспейса и членов команд")]
     public async Task DeleteWorkspaceAsync_ShouldCascadeDeleteTeamsWorkspaceMembersAndTeamMembers()
     {
-        // Arrange - создаем воркспейс с owner
         var owner = await _usersDbClient.TryInsertUserAsync(new CreateUserDto
         {
             ExternalId = $"owner_{Guid.NewGuid()}",
@@ -86,7 +82,6 @@ public class WorkspacesDbClientTests : IClassFixture<AppWithPostgresFixture>
         });
         var workspace = await _workspacesDbClient.CreateWorkspaceAsync(owner.Id, "Test Workspace");
 
-        // Добавляем дополнительных членов воркспейса
         var wsMember1 = await _usersDbClient.TryInsertUserAsync(new CreateUserDto
         {
             ExternalId = $"ws_member1_{Guid.NewGuid()}",
@@ -103,11 +98,9 @@ public class WorkspacesDbClientTests : IClassFixture<AppWithPostgresFixture>
         await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(wsMember1.Id, workspace.Id, WorkspaceRole.Member, 10);
         await _workspaceMembersDbClient.CreateWorkspaceMemberAsync(wsMember2.Id, workspace.Id, WorkspaceRole.Admin, 10);
 
-        // Создаем команды в воркспейсе
         var team1 = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Team 1");
         var team2 = await _teamsDbClient.CreateTeamAsync(workspace.Id, "Team 2");
 
-        // Добавляем участников в команды
         var teamMember1 = await _usersDbClient.TryInsertUserAsync(new CreateUserDto
         {
             ExternalId = $"team_member1_{Guid.NewGuid()}",
@@ -125,19 +118,16 @@ public class WorkspacesDbClientTests : IClassFixture<AppWithPostgresFixture>
         await _teamMembersDbClient.CreateTeamMemberAsync(teamMember2.Id, team1.Id, 10);
         await _teamMembersDbClient.CreateTeamMemberAsync(teamMember1.Id, team2.Id, 10);
 
-        // Проверяем, что все создано
         var workspaceMembersBeforeDelete = await _workspaceMembersDbClient.ListWorkspaceMembersAsync(workspace.Id);
         var team1MembersBeforeDelete = await _teamMembersDbClient.ListTeamMembersAsync(team1.Id);
         var team2MembersBeforeDelete = await _teamMembersDbClient.ListTeamMembersAsync(team2.Id);
 
-        Assert.Equal(3, workspaceMembersBeforeDelete.Length); // owner + 2 members
+        Assert.Equal(3, workspaceMembersBeforeDelete.Length);
         Assert.Equal(2, team1MembersBeforeDelete.Length);
         Assert.Single(team2MembersBeforeDelete);
 
-        // Act - удаляем воркспейс
         await _workspacesDbClient.DeleteWorkspaceAsync(workspace.Id);
 
-        // Assert - проверяем, что воркспейс удален
         var workspacesAfterDelete = await _workspacesDbClient.ListWorkspacesAsync(owner.Id);
         Assert.DoesNotContain(workspacesAfterDelete, w => w.Id == workspace.Id);
 
@@ -170,13 +160,10 @@ public class WorkspacesDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "CreateWorkspaceAsync без userId успешно создает воркспейс (self-hosted режим)")]
     public async Task CreateWorkspaceAsync_WithoutUserId_ShouldCreateWorkspace()
     {
-        // Arrange
         var workspaceName = "Self-Hosted Workspace";
 
-        // Act
         var result = await _workspacesDbClient.CreateWorkspaceAsync(workspaceName);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(workspaceName, result.Name);
@@ -187,14 +174,11 @@ public class WorkspacesDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "ListWorkspacesAsync без userId возвращает все воркспейсы (self-hosted режим)")]
     public async Task ListWorkspacesAsync_WithoutUserId_ShouldReturnAllWorkspaces()
     {
-        // Arrange - создаем воркспейсы в self-hosted режиме
         var ws1 = await _workspacesDbClient.CreateWorkspaceAsync("Global WS1");
         var ws2 = await _workspacesDbClient.CreateWorkspaceAsync("Global WS2");
 
-        // Act
         var list = await _workspacesDbClient.ListWorkspacesAsync();
 
-        // Assert
         Assert.True(list.Length >= 2);
         Assert.Contains(list, x => x.Id == ws1.Id && x.Name == ws1.Name);
         Assert.Contains(list, x => x.Id == ws2.Id && x.Name == ws2.Name);

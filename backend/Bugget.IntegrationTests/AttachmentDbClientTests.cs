@@ -40,7 +40,6 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное создание вложения для бага")]
     public async Task CreateAttachment_ForBug_ShouldCreateAttachment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -56,10 +55,8 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
             MimeType = "image/jpeg"
         };
 
-        // Act
         var result = await _attachmentDbClient.CreateAttachment(createModel);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(bug.Id, result.EntityId);
@@ -76,7 +73,6 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное создание вложения для комментария")]
     public async Task CreateAttachment_ForComment_ShouldCreateAttachment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -93,10 +89,8 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
             MimeType = "application/pdf"
         };
 
-        // Act
         var result = await _attachmentDbClient.CreateAttachment(createModel);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(comment.Id, result.EntityId);
@@ -108,7 +102,6 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное создание вложения для шага бага")]
     public async Task CreateAttachment_ForBugStep_ShouldCreateAttachment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -125,10 +118,8 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
             MimeType = "image/jpeg"
         };
 
-        // Act
         var result = await _attachmentDbClient.CreateAttachment(createModel);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(step.Id, result.EntityId);
@@ -139,7 +130,6 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Создание нескольких вложений для одного бага")]
     public async Task CreateAttachment_MultipleBugAttachments_ShouldCreateAll()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -168,11 +158,9 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
             MimeType = "image/png"
         };
 
-        // Act
         var result1 = await _attachmentDbClient.CreateAttachment(attachment1);
         var result2 = await _attachmentDbClient.CreateAttachment(attachment2);
 
-        // Assert
         Assert.NotNull(result1);
         Assert.NotNull(result2);
         Assert.NotEqual(result1.Id, result2.Id);
@@ -187,7 +175,6 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное обновление вложения")]
     public async Task UpdateAttachmentAsync_WithNewData_ShouldUpdateAttachment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -205,10 +192,8 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
             IsGzipCompressed = true
         };
 
-        // Act
         var result = await _attachmentDbClient.UpdateAttachmentAsync(updateModel);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(attachment.Id, result.Id);
         Assert.Equal(updateModel.StorageKey, result.StorageKey);
@@ -223,7 +208,6 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Обновление только имени файла")]
     public async Task UpdateAttachmentAsync_OnlyFileName_ShouldUpdate()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -241,10 +225,8 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
             IsGzipCompressed = attachment.IsGzipCompressed ?? false
         };
 
-        // Act
         var result = await _attachmentDbClient.UpdateAttachmentAsync(updateModel);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal("completely_new_name.jpg", result.FileName);
         Assert.Equal(attachment.StorageKey, result.StorageKey);
@@ -257,16 +239,13 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение вложения бага по ID")]
     public async Task GetBugAttachmentAsync_ValidAttachment_ShouldReturnAttachment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var attachment = await CreateTestBugAttachmentAsync(userId, bug.Id);
 
-        // Act
         var result = await _attachmentDbClient.GetBugAttachmentInternalAsync(report.Id, bug.Id, attachment.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(attachment.Id, result.Id);
         Assert.Equal(attachment.FileName, result.FileName);
@@ -275,32 +254,26 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение несуществующего вложения бага")]
     public async Task GetBugAttachmentAsync_NonExistent_ShouldReturnNull()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
 
-        // Act
         var result = await _attachmentDbClient.GetBugAttachmentInternalAsync(report.Id, bug.Id, 999999);
 
-        // Assert
         Assert.Null(result);
     }
 
     [Fact(DisplayName = "Получение вложения бага с organizationId")]
     public async Task GetBugAttachmentAsync_WithOrganization_ShouldReturnAttachment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var organizationId = $"org_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId, organizationId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var attachment = await CreateTestBugAttachmentAsync(userId, bug.Id);
 
-        // Act
         var result = await _attachmentDbClient.GetBugAttachmentInternalAsync(report.Id, bug.Id, attachment.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(attachment.Id, result.Id);
     }
@@ -312,18 +285,15 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение вложения комментария по ID")]
     public async Task GetCommentAttachmentAsync_ValidAttachment_ShouldReturnAttachment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var comment = await CreateTestCommentAsync(userId, report.Id, bug.Id, "Test");
         var attachment = await CreateTestCommentAttachmentAsync(userId, comment.Id);
 
-        // Act
         var result = await _attachmentDbClient.GetCommentAttachmentInternalAsync(
             report.Id, bug.Id, comment.Id, attachment.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(attachment.Id, result.Id);
         Assert.Equal(attachment.FileName, result.FileName);
@@ -332,18 +302,15 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение вложения шага бага по ID")]
     public async Task GetBugStepAttachmentAsync_ValidAttachment_ShouldReturnAttachment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var step = await CreateTestBugStepAsync(userId, report.Id, bug.Id);
         var attachment = await CreateTestBugStepAttachmentAsync(userId, step.Id);
 
-        // Act
         var result = await _attachmentDbClient.GetBugStepAttachmentInternalAsync(
             report.Id, bug.Id, step.Id, attachment.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(attachment.Id, result.Id);
         Assert.Equal(attachment.FileName, result.FileName);
@@ -352,17 +319,14 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение несуществующего вложения комментария")]
     public async Task GetCommentAttachmentAsync_NonExistent_ShouldReturnNull()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var comment = await CreateTestCommentAsync(userId, report.Id, bug.Id, "Test");
 
-        // Act
         var result = await _attachmentDbClient.GetCommentAttachmentInternalAsync(
             report.Id, bug.Id, comment.Id, 999999);
 
-        // Assert
         Assert.Null(result);
     }
 
@@ -373,22 +337,18 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Подсчет вложений бага - нет вложений")]
     public async Task GetBugAttachmentsCountAsync_NoAttachments_ShouldReturnZero()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
 
-        // Act
         var count = await _attachmentDbClient.GetBugAttachmentsCountInternalAsync(report.Id, bug.Id, AttachType_BugFact);
 
-        // Assert
         Assert.Equal(0, count);
     }
 
     [Fact(DisplayName = "Подсчет вложений бага - несколько вложений")]
     public async Task GetBugAttachmentsCountAsync_MultipleAttachments_ShouldReturnCorrectCount()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -397,10 +357,8 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
         await CreateTestBugAttachmentAsync(userId, bug.Id);
         await CreateTestBugAttachmentAsync(userId, bug.Id);
 
-        // Act
         var count = await _attachmentDbClient.GetBugAttachmentsCountInternalAsync(report.Id, bug.Id, AttachType_BugFact);
 
-        // Assert
         Assert.Equal(3, count);
     }
 
@@ -411,24 +369,20 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Подсчет вложений комментария - нет вложений")]
     public async Task GetCommentAttachmentsCountAsync_NoAttachments_ShouldReturnZero()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var comment = await CreateTestCommentAsync(userId, report.Id, bug.Id, "Test");
 
-        // Act
         var count = await _attachmentDbClient.GetCommentAttachmentsCountInternalAsync(
             userId, report.Id, bug.Id, comment.Id);
 
-        // Assert
         Assert.Equal(0, count);
     }
 
     [Fact(DisplayName = "Подсчет вложений комментария - несколько вложений")]
     public async Task GetCommentAttachmentsCountAsync_MultipleAttachments_ShouldReturnCorrectCount()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -437,18 +391,15 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
         await CreateTestCommentAttachmentAsync(userId, comment.Id);
         await CreateTestCommentAttachmentAsync(userId, comment.Id);
 
-        // Act
         var count = await _attachmentDbClient.GetCommentAttachmentsCountInternalAsync(
             userId, report.Id, bug.Id, comment.Id);
 
-        // Assert
         Assert.Equal(2, count);
     }
 
     [Fact(DisplayName = "Подсчет вложений шага бага")]
     public async Task GetBugStepAttachmentsCountAsync_MultipleAttachments_ShouldReturnCorrectCount()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -457,11 +408,9 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
         await CreateTestBugStepAttachmentAsync(userId, step.Id);
         await CreateTestBugStepAttachmentAsync(userId, step.Id);
 
-        // Act
         var count = await _attachmentDbClient.GetBugStepAttachmentsCountInternalAsync(
             report.Id, bug.Id, step.Id);
 
-        // Assert
         Assert.Equal(2, count);
     }
 
@@ -472,16 +421,13 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Удаление вложения бага")]
     public async Task DeleteBugAttachmentAsync_ValidAttachment_ShouldDeleteAndReturnAttachment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var attachment = await CreateTestBugAttachmentAsync(userId, bug.Id);
 
-        // Act
         var deleted = await _attachmentDbClient.DeleteBugAttachmentInternalAsync(report.Id, bug.Id, attachment.Id);
 
-        // Assert
         Assert.NotNull(deleted);
         Assert.Equal(attachment.Id, deleted.Id);
 
@@ -493,15 +439,12 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Удаление несуществующего вложения бага")]
     public async Task DeleteBugAttachmentAsync_NonExistent_ShouldReturnNull()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
 
-        // Act
         var result = await _attachmentDbClient.DeleteBugAttachmentInternalAsync(report.Id, bug.Id, 999999);
 
-        // Assert
         Assert.Null(result);
     }
 
@@ -512,18 +455,15 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Удаление вложения комментария")]
     public async Task DeleteCommentAttachmentAsync_ValidAttachment_ShouldDeleteAndReturnAttachment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var comment = await CreateTestCommentAsync(userId, report.Id, bug.Id, "Test");
         var attachment = await CreateTestCommentAttachmentAsync(userId, comment.Id);
 
-        // Act
         var deleted = await _attachmentDbClient.DeleteCommentAttachmentInternalAsync(
             report.Id, bug.Id, comment.Id, attachment.Id);
 
-        // Assert
         Assert.NotNull(deleted);
         Assert.Equal(attachment.Id, deleted.Id);
 
@@ -536,35 +476,29 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Удаление несуществующего вложения комментария")]
     public async Task DeleteCommentAttachmentAsync_NonExistent_ShouldReturnNull()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var comment = await CreateTestCommentAsync(userId, report.Id, bug.Id, "Test");
 
-        // Act
         var result = await _attachmentDbClient.DeleteCommentAttachmentInternalAsync(
             report.Id, bug.Id, comment.Id, 999999);
 
-        // Assert
         Assert.Null(result);
     }
 
     [Fact(DisplayName = "Удаление вложения шага бага")]
     public async Task DeleteBugStepAttachmentAsync_ValidAttachment_ShouldDeleteAndReturnAttachment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var step = await CreateTestBugStepAsync(userId, report.Id, bug.Id);
         var attachment = await CreateTestBugStepAttachmentAsync(userId, step.Id);
 
-        // Act
         var deleted = await _attachmentDbClient.DeleteBugStepAttachmentInternalAsync(
             report.Id, bug.Id, step.Id, attachment.Id);
 
-        // Assert
         Assert.NotNull(deleted);
         Assert.Equal(attachment.Id, deleted.Id);
 
@@ -579,7 +513,6 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Удаление всех вложений комментария")]
     public async Task DeleteCommentAttachmentsAsync_MultipleAttachments_ShouldDeleteAll()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -589,10 +522,8 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
         var attachment2 = await CreateTestCommentAttachmentAsync(userId, comment.Id);
         var attachment3 = await CreateTestCommentAttachmentAsync(userId, comment.Id);
 
-        // Act
         var deleted = await _attachmentDbClient.DeleteCommentAttachmentsAsync(comment.Id);
 
-        // Assert
         Assert.NotNull(deleted);
         Assert.Equal(3, deleted.Length);
         Assert.Contains(deleted, a => a.Id == attachment1.Id);
@@ -603,16 +534,13 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Удаление вложений комментария без вложений")]
     public async Task DeleteCommentAttachmentsAsync_NoAttachments_ShouldReturnEmpty()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var comment = await CreateTestCommentAsync(userId, report.Id, bug.Id, "Test");
 
-        // Act
         var deleted = await _attachmentDbClient.DeleteCommentAttachmentsAsync(comment.Id);
 
-        // Assert
         Assert.NotNull(deleted);
         Assert.Empty(deleted);
     }
@@ -620,7 +548,6 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Удаление всех вложений шага бага")]
     public async Task DeleteBugStepAttachmentsAsync_MultipleAttachments_ShouldDeleteAll()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -629,10 +556,8 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
         var attachment1 = await CreateTestBugStepAttachmentAsync(userId, step.Id);
         var attachment2 = await CreateTestBugStepAttachmentAsync(userId, step.Id);
 
-        // Act
         var deleted = await _attachmentDbClient.DeleteBugStepAttachmentsAsync(step.Id);
 
-        // Assert
         Assert.NotNull(deleted);
         Assert.Equal(2, deleted.Length);
         Assert.Contains(deleted, a => a.Id == attachment1.Id);
@@ -646,7 +571,6 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Полный жизненный цикл вложения: создание -> обновление -> получение -> удаление")]
     public async Task AttachmentLifecycle_CreateUpdateGetDelete_ShouldWorkCorrectly()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -786,4 +710,3 @@ public class AttachmentDbClientTests : IClassFixture<AppWithPostgresFixture>
 
     #endregion
 }
-

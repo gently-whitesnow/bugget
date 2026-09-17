@@ -20,10 +20,8 @@ using Xunit;
 namespace Bugget.IntegrationTests;
 
 /// <summary>
-/// /v2/analytics/summary + /v2/reports/{id}/analytics + /v2/analytics/responsible
-/// — end-to-end через HTTP pipeline + Postgres testcontainer. Сидим репорты +
-/// интервалы напрямую в БД (минуя domain-events poller), чтобы контролировать
-/// данные, попадающие в JSON.
+/// Аналитические эндпоинты end-to-end через HTTP pipeline + Postgres testcontainer. Репорты и интервалы сидим
+/// напрямую в БД (минуя domain-events poller), чтобы контролировать данные, попадающие в JSON.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsControllerTests.AnalyticsAppFixture>
@@ -37,6 +35,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
 
     private readonly HttpClient _client;
     private readonly string _connectionString;
+    private readonly AnalyticsSeeder _seeder;
     private readonly string _workspaceId;
 
     public AnalyticsControllerTests(AnalyticsAppFixture fixture)
@@ -47,6 +46,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         _client.DefaultRequestHeaders.Add(TeamHeader, TeamId);
         _client.DefaultRequestHeaders.Add(UserHeader, "test-user");
         _connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING")!;
+        _seeder = new AnalyticsSeeder(_connectionString);
     }
 
     [Fact(DisplayName = "GET /v2/analytics/summary: closed-in-period репорт попадает, excluded — нет")]
@@ -57,7 +57,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         // r2 — closed-in-period, но `is_excluded_from_analytics = TRUE` → не в выборке.
         var now = DateTimeOffset.UtcNow;
 
-        var r1 = await SeedClosedReportAsync(
+        var r1 = await _seeder.SeedClosedReportAsync(
             workspaceId: _workspaceId,
             title: "regression-r1",
             status: ReportStatus.Resolved,
@@ -69,7 +69,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
                 new SeedInterval(ReportStatus.Test, now.AddDays(-3),  now.AddDays(-2),  1),
             ]);
 
-        var r2 = await SeedClosedReportAsync(
+        var r2 = await _seeder.SeedClosedReportAsync(
             workspaceId: _workspaceId,
             title: "excluded-r2",
             status: ReportStatus.Resolved,
@@ -79,8 +79,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
                 new SeedInterval(ReportStatus.Test, now.AddDays(-5), now.AddDays(-1), 0),
             ]);
 
-        // Закрытый в другом workspace репорт — тоже не должен попасть.
-        await SeedClosedReportAsync(
+        await _seeder.SeedClosedReportAsync(
             workspaceId: $"other_ws_{Guid.NewGuid():N}",
             title: "other-ws-r",
             status: ReportStatus.Resolved,
@@ -96,7 +95,6 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
         var root = doc.RootElement;
 
-        // Только r1 попал в выборку. r2 (excluded) и репорт другого workspace отсечены.
         Assert.Equal(1, root.GetProperty("reports_closed").GetInt32());
         Assert.Equal("last_30_days", root.GetProperty("period").GetProperty("label").GetString());
 
@@ -119,7 +117,6 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         Assert.InRange(dist.GetProperty("test_pct").GetDouble(), 0.6, 0.7);
         Assert.InRange(dist.GetProperty("fix_pct").GetDouble(), 0.3, 0.4);
 
-        // unused id из второго repor'а
         Assert.True(r2 > 0);
     }
 
@@ -132,7 +129,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         var t3 = now.AddDays(-3);
         var t4 = now.AddDays(-2);
 
-        var reportId = await SeedClosedReportAsync(
+        var reportId = await _seeder.SeedClosedReportAsync(
             workspaceId: _workspaceId,
             title: "r-detail",
             status: ReportStatus.Resolved,
@@ -141,15 +138,15 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
             [
                 new SeedInterval(ReportStatus.Test, t1, t2, 0),
                 new SeedInterval(ReportStatus.Fix,  t2, t3, 0),
-                new SeedInterval(ReportStatus.Test, t3, t4, 1), // retest
+                new SeedInterval(ReportStatus.Test, t3, t4, 1),
             ]);
 
         // 4 bug'а: 1 Open, 1 Fixed, 1 Verified, 1 Rejected.
         // Один из bug'ов создан во время Test#2 (regression) → bugs_added_during_regression = 1.
-        await SeedBugAsync(reportId, BugStatus.Open, createdAt: t1.AddHours(2));
-        await SeedBugAsync(reportId, BugStatus.Fixed, createdAt: t2.AddHours(2));
-        await SeedBugAsync(reportId, BugStatus.Verified, createdAt: t3.AddMinutes(30)); // в Test#2 (regression)
-        await SeedBugAsync(reportId, BugStatus.Rejected, createdAt: t4.AddHours(-1));   // в Test#2 (regression)
+        await _seeder.SeedBugAsync(reportId, BugStatus.Open, createdAt: t1.AddHours(2));
+        await _seeder.SeedBugAsync(reportId, BugStatus.Fixed, createdAt: t2.AddHours(2));
+        await _seeder.SeedBugAsync(reportId, BugStatus.Verified, createdAt: t3.AddMinutes(30));
+        await _seeder.SeedBugAsync(reportId, BugStatus.Rejected, createdAt: t4.AddHours(-1));
 
         var resp = await _client.GetAsync($"/v2/reports/{reportId}/analytics");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
@@ -159,7 +156,6 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
 
         Assert.Equal(reportId.ToString(CultureInfo.InvariantCulture), root.GetProperty("report_id").GetString());
 
-        // 2 Test-интервала → regression_cycles = 1.
         Assert.Equal(1, root.GetProperty("regression_cycles").GetInt32());
 
         var timeline = root.GetProperty("phase_timeline");
@@ -176,7 +172,6 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         Assert.Equal(1, bugs.GetProperty("verified").GetInt32());
         Assert.Equal(1, bugs.GetProperty("rejected").GetInt32());
 
-        // 2 bug'а добавлены во время Test#2 (regression_cycle_index=1).
         Assert.Equal(2, root.GetProperty("bugs_added_during_regression").GetInt32());
     }
 
@@ -185,7 +180,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
     {
         var foreignWorkspace = $"foreign_ws_{Guid.NewGuid():N}";
         var now = DateTimeOffset.UtcNow;
-        var reportId = await SeedClosedReportAsync(
+        var reportId = await _seeder.SeedClosedReportAsync(
             workspaceId: foreignWorkspace,
             title: "foreign",
             status: ReportStatus.Resolved,
@@ -207,7 +202,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         var teamIdStr = teamId.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         // r1: наша команда, попадает в выборку.
-        var r1 = await SeedClosedReportAsync(
+        var r1 = await _seeder.SeedClosedReportAsync(
             workspaceId: _workspaceId,
             title: "team-r1",
             status: ReportStatus.Resolved,
@@ -221,7 +216,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
             ]);
 
         // r2: другая команда — НЕ попадает.
-        var r2 = await SeedClosedReportAsync(
+        var r2 = await _seeder.SeedClosedReportAsync(
             workspaceId: _workspaceId,
             title: "other-team-r2",
             status: ReportStatus.Resolved,
@@ -233,7 +228,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
             ]);
 
         // r3: без teamId — НЕ попадает (фильтр строгий).
-        var r3 = await SeedClosedReportAsync(
+        var r3 = await _seeder.SeedClosedReportAsync(
             workspaceId: _workspaceId,
             title: "no-team-r3",
             status: ReportStatus.Resolved,
@@ -264,20 +259,20 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         var userId = $"resp_{Guid.NewGuid():N}";
 
         // r1: активный (status=Test) репорт с интервалом в окне периода — пользователь участвует.
-        var r1 = await SeedClosedReportAsync(
+        var r1 = await _seeder.SeedClosedReportAsync(
             workspaceId: _workspaceId,
             title: "active-with-participant",
-            status: ReportStatus.Test, // не terminal → попадает в participated
+            status: ReportStatus.Test,
             isExcluded: false,
             creatorTeamId: null,
             intervals:
             [
-                new SeedInterval(ReportStatus.Test, now.AddDays(-5), null, 0), // активный интервал
+                new SeedInterval(ReportStatus.Test, now.AddDays(-5), null, 0),
             ]);
-        await SeedParticipantAsync(r1, userId);
+        await _seeder.SeedParticipantAsync(r1, userId);
 
         // r2: активный репорт, но пользователь НЕ участник → не входит.
-        var r2 = await SeedClosedReportAsync(
+        var r2 = await _seeder.SeedClosedReportAsync(
             workspaceId: _workspaceId,
             title: "active-without-participant",
             status: ReportStatus.Fix,
@@ -289,7 +284,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
             ]);
 
         // r3: completed-репорт пользователя — попадает в reports_completed.
-        var r3 = await SeedClosedReportAsync(
+        var r3 = await _seeder.SeedClosedReportAsync(
             workspaceId: _workspaceId,
             title: "completed-by-user",
             status: ReportStatus.Resolved,
@@ -300,10 +295,10 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
                 new SeedInterval(ReportStatus.Test, now.AddDays(-5), now.AddDays(-4), 0),
                 new SeedInterval(ReportStatus.Fix,  now.AddDays(-4), now.AddDays(-3), 0),
             ]);
-        await SeedParticipantAsync(r3, userId);
+        await _seeder.SeedParticipantAsync(r3, userId);
 
         // r4: excluded — не учитывается.
-        var r4 = await SeedClosedReportAsync(
+        var r4 = await _seeder.SeedClosedReportAsync(
             workspaceId: _workspaceId,
             title: "excluded",
             status: ReportStatus.Resolved,
@@ -313,7 +308,7 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
             [
                 new SeedInterval(ReportStatus.Fix, now.AddDays(-5), now.AddDays(-2), 0),
             ]);
-        await SeedParticipantAsync(r4, userId);
+        await _seeder.SeedParticipantAsync(r4, userId);
 
         var resp = await _client.GetAsync($"/v2/analytics/responsible/{userId}?period=30d");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
@@ -339,7 +334,6 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
     [Fact(DisplayName = "PATCH /v2/reports/{id}: is_excluded_from_analytics обновляет БД и пишет в outbox при изменении")]
     public async Task PatchReport_TogglesIsExcluded()
     {
-        // Сидим репорт через прямой INSERT (минуя бизнес-сервис), без интервалов.
         var workspaceId = _workspaceId;
         await using var conn = new NpgsqlConnection(_connectionString);
         await conn.OpenAsync();
@@ -353,19 +347,16 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
             ) RETURNING id;",
             new { workspaceId });
 
-        // PATCH: устанавливаем флаг в TRUE.
         var resp = await _client.PatchAsJsonAsync(
             $"/v2/reports/{reportId}",
             new { is_excluded_from_analytics = true });
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
-        // Проверяем, что флаг в БД изменился.
         var isExcluded = await conn.ExecuteScalarAsync<bool>(
             "SELECT is_excluded_from_analytics FROM public.reports WHERE id = @reportId;",
             new { reportId });
         Assert.True(isExcluded);
 
-        // В outbox появилось событие toggled.
         var eventCount = await conn.ExecuteScalarAsync<int>(@"
             SELECT COUNT(*)::int FROM public.domain_events
             WHERE aggregate_id = @aggId
@@ -386,7 +377,6 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
             new { aggId = reportId.ToString() });
         Assert.Equal(1, eventCountAfter);
 
-        // Снимаем флаг → новое событие.
         var resp3 = await _client.PatchAsJsonAsync(
             $"/v2/reports/{reportId}",
             new { is_excluded_from_analytics = false });
@@ -400,100 +390,9 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
         Assert.Equal(2, eventCountFinal);
     }
 
-    // ============ Seed helpers ============
-
-    private sealed record SeedInterval(
-        ReportStatus Phase,
-        DateTimeOffset EnteredAt,
-        DateTimeOffset? ExitedAt,
-        int RegressionCycleIndex);
-
-    private async Task<int> SeedClosedReportAsync(
-        string workspaceId,
-        string title,
-        ReportStatus status,
-        bool isExcluded,
-        SeedInterval[] intervals,
-        string? creatorTeamId = null)
-    {
-        await using var conn = new NpgsqlConnection(_connectionString);
-        await conn.OpenAsync();
-
-        var reportId = await conn.ExecuteScalarAsync<int>(@"
-            INSERT INTO public.reports (
-                title, status, responsible_user_id, creator_user_id,
-                created_at, updated_at, creator_organization_id, is_excluded_from_analytics,
-                creator_team_id
-            ) VALUES (
-                @title, @status, '', 'seed-user',
-                now(), now(), @workspaceId, @isExcluded,
-                @creatorTeamId
-            ) RETURNING id;",
-            new
-            {
-                title,
-                status = (int)status,
-                workspaceId,
-                isExcluded,
-                creatorTeamId,
-            });
-
-        // source_event_id должен быть уникальным глобально (UNIQUE constraint),
-        // поэтому генерим псевдо-уникальный bigint от report_id + индекса.
-        var seq = 0;
-        foreach (var interval in intervals)
-        {
-            seq++;
-            await conn.ExecuteAsync(@"
-                INSERT INTO public.report_phase_intervals (
-                    report_id, phase, entered_at, exited_at,
-                    regression_cycle_index, source_event_id
-                ) VALUES (
-                    @reportId, @phase, @enteredAt, @exitedAt,
-                    @regressionCycleIndex, @sourceEventId
-                );",
-                new
-                {
-                    reportId,
-                    phase = (short)interval.Phase,
-                    enteredAt = interval.EnteredAt,
-                    exitedAt = interval.ExitedAt,
-                    regressionCycleIndex = interval.RegressionCycleIndex,
-                    sourceEventId = ((long)reportId * 1_000_000L) + seq,
-                });
-        }
-
-        return reportId;
-    }
-
-    private async Task SeedBugAsync(int reportId, BugStatus status, DateTimeOffset createdAt)
-    {
-        await using var conn = new NpgsqlConnection(_connectionString);
-        await conn.OpenAsync();
-        await conn.ExecuteAsync(@"
-            INSERT INTO public.bugs (
-                report_id, receive, expect, created_at, updated_at, creator_user_id, status
-            ) VALUES (
-                @reportId, 'r', 'e', @createdAt, @createdAt, 'seed-user', @status
-            );",
-            new { reportId, status = (int)status, createdAt });
-    }
-
-    private async Task SeedParticipantAsync(int reportId, string userId)
-    {
-        await using var conn = new NpgsqlConnection(_connectionString);
-        await conn.OpenAsync();
-        await conn.ExecuteAsync(@"
-            INSERT INTO public.report_participants (report_id, user_id)
-            VALUES (@reportId, @userId)
-            ON CONFLICT DO NOTHING;",
-            new { reportId, userId });
-    }
-
     /// <summary>
-    /// Фикстура с явно сконфигурированными auth-headers: иначе глобальный
-    /// <c>[Authorize]</c> + дефолтный <c>default-user</c> с <c>OrganizationId=null</c>
-    /// не дадут провалидировать workspace-фильтрацию analytics-эндпоинтов.
+    /// Явные auth-headers: иначе глобальный <c>[Authorize]</c> и дефолтный <c>default-user</c> с
+    /// <c>OrganizationId=null</c> не дадут проверить workspace-фильтрацию.
     /// </summary>
     public sealed class AnalyticsAppFixture(PostgresContainerFixture container) : WebApplicationFactory<Program>
     {
@@ -508,7 +407,6 @@ public sealed class AnalyticsControllerTests : IClassFixture<AnalyticsController
             Directory.CreateDirectory(fileStorageDir);
             builder.UseSetting("FileStorageOptions:BaseDirectory", fileStorageDir);
 
-            // Включаем header-based auth, чтобы UserIdentity.OrganizationId был не null.
             builder.UseSetting("ExternalSettings:Authentication:UserIdHeaderName", UserHeader);
             builder.UseSetting("ExternalSettings:Authentication:OrganizationIdHeaderName", OrganizationHeader).UseSetting("ExternalSettings:Authentication:TeamIdHeaderName", TeamHeader);
 

@@ -7,12 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Bugget.Architecture.Tests;
 
 /// <summary>
-/// Шов между Kaiten-адаптером и внутренней записью ссылки отчёта.
-///
-/// Широкий <see cref="IReportLinksService"/> — HTTP-сценарий контроллера (create/update/delete
-/// по alias). Инфраструктурному адаптеру из него нужна ровно одна операция, поэтому он видит
-/// узкий <see cref="IReportLinkCreator"/>. Реализация при этом одна: два контракта не должны
-/// превращаться в два singleton'а с независимым состоянием.
+/// Шов между Kaiten-адаптером и записью ссылки отчёта: адаптер видит узкий <see cref="IReportLinkCreator"/>, а не широкий
+/// <see cref="IReportLinksService"/>. Реализация одна: два контракта не должны стать двумя singleton'ами.
 /// </summary>
 public class ReportLinksSeamRulesTests
 {
@@ -33,8 +29,7 @@ public class ReportLinksSeamRulesTests
     [Fact(DisplayName = "KaitenApplyService видит узкий IReportLinkCreator")]
     public void Kaiten_apply_service_sees_the_narrow_contract()
     {
-        // Позитивная половина правила: без неё шов «проходит» и после того, как зависимость
-        // просто выкинули вместе со сценарием записи ссылки.
+        // Позитивная половина: иначе шов «проходит» и тогда, когда зависимость просто выкинули.
         FindConstructorDependenciesOn([typeof(KaitenApplyService)], typeof(IReportLinkCreator))
             .Should().ContainSingle();
     }
@@ -72,10 +67,7 @@ public class ReportLinksSeamRulesTests
             .Which.Should().Be(typeof(ReportLinksService).FullName);
     }
 
-    /// <summary>
-    /// Пары «тип → контракт» для типов, принимающих <paramref name="contract"/> в конструкторе.
-    /// Отдельная функция, а не тело теста: ту же проверку прогоняют доказательства красноты.
-    /// </summary>
+    /// <summary>Отдельная функция, а не тело теста: ту же проверку прогоняют доказательства красноты.</summary>
     private static string[] FindConstructorDependenciesOn(IEnumerable<Type> types, Type contract) =>
     [
         .. types
@@ -87,12 +79,8 @@ public class ReportLinksSeamRulesTests
             .OrderBy(value => value, StringComparer.Ordinal)
     ];
 
-    /// <summary>
-    /// Реализации, которые singleton-регистрации инстанцируют больше одного раза: контейнер
-    /// хранит экземпляр на дескриптор, поэтому два дескриптора с одним
-    /// <c>ImplementationType</c> — это два объекта. Регистрация интерфейса фабрикой
-    /// (<c>ImplementationFactory</c>) собственный экземпляр не создаёт и сюда не попадает.
-    /// </summary>
+    // Контейнер хранит экземпляр на дескриптор: два дескриптора с одним ImplementationType — два объекта.
+    // Регистрация фабрикой (ImplementationFactory) своего экземпляра не создаёт и сюда не попадает.
     private static string[] FindDuplicatedSingletonImplementations(IServiceCollection services) =>
     [
         .. services

@@ -64,12 +64,10 @@ internal static class ProblemDetailsExpectedErrors
         ("teams_count_limit_exceeded_error", 400, "Превышен лимит команд"),
         ("workspace_limit_exceeded_error", 400, "Превышен лимит воркспейса"));
 
-    private static IReadOnlyDictionary<string, ExpectedError> Create(
+    private static Dictionary<string, ExpectedError> Create(
         params (string Code, int Status, string Title)[] errors) =>
         errors.ToDictionary(
             error => error.Code,
             error => new ExpectedError(error.Status, error.Title),
             StringComparer.Ordinal);
 }
-
-internal sealed record ExpectedError(int Status, string Title);

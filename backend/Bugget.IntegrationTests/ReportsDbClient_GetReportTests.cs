@@ -41,14 +41,11 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение простого репорта без багов")]
     public async Task GetReportAsync_EmptyReport_ShouldReturnReport()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var created = await CreateTestReportAsync(userId);
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(created.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(created.Id, result.Id);
         Assert.Equal(created.Title, result.Title);
@@ -62,15 +59,12 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение репорта с одним багом")]
     public async Task GetReportAsync_WithOneBug_ShouldReturnReportWithBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(report.Id, result.Id);
         Assert.NotNull(result.Bugs);
@@ -87,17 +81,14 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение репорта с несколькими багами")]
     public async Task GetReportAsync_WithMultipleBugs_ShouldReturnAllBugs()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug1 = await CreateTestBugAsync(userId, report.Id, "Bug 1 receive", "Bug 1 expect");
         var bug2 = await CreateTestBugAsync(userId, report.Id, "Bug 2 receive", "Bug 2 expect");
         var bug3 = await CreateTestBugAsync(userId, report.Id, "Bug 3 receive", "Bug 3 expect");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         Assert.Equal(3, result.Bugs.Length);
@@ -109,17 +100,14 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение репорта с багом и комментариями")]
     public async Task GetReportAsync_WithBugAndComments_ShouldReturnCommentsInBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var comment1 = await CreateTestCommentAsync(userId, bug.Id, "Comment 1");
         var comment2 = await CreateTestCommentAsync(userId, bug.Id, "Comment 2", (int)CreatorType.System);
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         Assert.Single(result.Bugs);
@@ -133,17 +121,14 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение репорта с багом и вложениями бага")]
     public async Task GetReportAsync_WithBugAttachments_ShouldReturnAttachmentsInBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var attachment1 = await CreateTestBugAttachmentAsync(userId, bug.Id, "file1.jpg");
         var attachment2 = await CreateTestBugAttachmentAsync(userId, bug.Id, "file2.png");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         Assert.Single(result.Bugs);
@@ -157,17 +142,14 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение репорта с комментарием и вложениями комментария")]
     public async Task GetReportAsync_WithCommentAttachments_ShouldReturnAttachmentsInComment()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var comment = await CreateTestCommentAsync(userId, bug.Id, "Test comment");
         var attachment = await CreateTestCommentAttachmentAsync(userId, comment.Id, "comment_file.pdf");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         Assert.Single(result.Bugs);
@@ -184,7 +166,6 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение репорта с участниками")]
     public async Task GetReportAsync_WithParticipants_ShouldReturnParticipants()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var participant1 = $"user_{Guid.NewGuid()}";
@@ -193,10 +174,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participant1);
         await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participant2);
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.ParticipantsUserIds);
         Assert.Contains(participant1, result.ParticipantsUserIds);
@@ -206,7 +185,6 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение полного репорта со всеми связанными данными")]
     public async Task GetReportAsync_CompleteReport_ShouldReturnFullGraph()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
 
@@ -221,10 +199,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         var comment = await CreateTestCommentAsync(userId, bug.Id, "Test comment");
         var commentAttachment = await CreateTestCommentAttachmentAsync(userId, comment.Id, "comment_file.pdf");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(report.Id, result.Id);
 
@@ -257,20 +233,16 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение несуществующего репорта возвращает null")]
     public async Task GetReportAsync_NonExistentReport_ShouldReturnNull()
     {
-        // Arrange
         var nonExistentId = 999999;
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(nonExistentId);
 
-        // Assert
         Assert.Null(result);
     }
 
     [Fact(DisplayName = "Комментарии группируются по багам корректно")]
     public async Task GetReportAsync_MultipleБugsWithComments_ShouldGroupCommentsCorrectly()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
 
@@ -281,10 +253,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         var comment2ForBug1 = await CreateTestCommentAsync(userId, bug1.Id, "Bug1 Comment2");
         var comment1ForBug2 = await CreateTestCommentAsync(userId, bug2.Id, "Bug2 Comment1");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         Assert.Equal(2, result.Bugs.Length);
@@ -305,7 +275,6 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Вложения группируются по типам корректно")]
     public async Task GetReportAsync_WithDifferentAttachmentTypes_ShouldGroupCorrectly()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -317,10 +286,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         // Вложение к комментарию (AttachType 2)
         var commentAttachment = await CreateTestCommentAttachmentAsync(userId, comment.Id, "comment.pdf");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         var bugResult = result.Bugs[0];
@@ -343,7 +310,6 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Комментарии сортируются по времени создания")]
     public async Task GetReportAsync_Comments_ShouldBeSortedByCreatedAt()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -355,10 +321,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         await Task.Delay(10);
         var comment3 = await CreateTestCommentAsync(userId, bug.Id, "Third");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         var comments = result.Bugs[0].Comments;
@@ -377,7 +341,6 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение репорта с багом и шагами воспроизведения")]
     public async Task GetReportAsync_WithBugSteps_ShouldReturnStepsInBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -385,10 +348,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         var step2 = await CreateTestBugStepAsync(userId, bug.Id, "Step 2: Click button");
         var step3 = await CreateTestBugStepAsync(userId, bug.Id, "Step 3: Verify result");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         Assert.Single(result.Bugs);
@@ -403,7 +364,6 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Шаги воспроизведения группируются по багам корректно")]
     public async Task GetReportAsync_MultipleBugsWithSteps_ShouldGroupStepsCorrectly()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
 
@@ -414,10 +374,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         var step2ForBug1 = await CreateTestBugStepAsync(userId, bug1.Id, "Bug1 Step2");
         var step1ForBug2 = await CreateTestBugStepAsync(userId, bug2.Id, "Bug2 Step1");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         Assert.Equal(2, result.Bugs.Length);
@@ -438,7 +396,6 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Шаги воспроизведения сортируются по StepNumber")]
     public async Task GetReportAsync_Steps_ShouldBeSortedByStepNumber()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -448,10 +405,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         var step2 = await CreateTestBugStepAsync(userId, bug.Id, "Second step");
         var step3 = await CreateTestBugStepAsync(userId, bug.Id, "Third step");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         var steps = result.Bugs[0].Steps;
@@ -475,7 +430,6 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение репорта с шагами бага и вложениями шагов")]
     public async Task GetReportAsync_WithBugStepAttachments_ShouldReturnAttachmentsInStep()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -483,10 +437,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         var stepAttachment1 = await CreateTestBugStepAttachmentAsync(userId, step.Id, "step_file1.jpg");
         var stepAttachment2 = await CreateTestBugStepAttachmentAsync(userId, step.Id, "step_file2.png");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         Assert.Single(result.Bugs);
@@ -503,7 +455,6 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Вложения шагов группируются корректно и не попадают в вложения бага")]
     public async Task GetReportAsync_WithBugAndStepAttachments_ShouldGroupCorrectly()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -515,10 +466,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         // Вложение к шагу
         var stepAttachment = await CreateTestBugStepAttachmentAsync(userId, step.Id, "step.pdf");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         var bugResult = result.Bugs[0];
@@ -541,7 +490,6 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Вложения шагов группируются по шагам корректно")]
     public async Task GetReportAsync_MultipleStepsWithAttachments_ShouldGroupAttachmentsCorrectly()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -553,10 +501,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         var step2 = await CreateTestBugStepAsync(userId, bug.Id, "Step 2");
         var step2Attachment = await CreateTestBugStepAttachmentAsync(userId, step2.Id, "step2_file.pdf");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Bugs);
         var bugResult = result.Bugs[0];
@@ -579,7 +525,6 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
     [Fact(DisplayName = "Получение полного репорта со всеми данными, включая шаги воспроизведения")]
     public async Task GetReportAsync_CompleteReportWithSteps_ShouldReturnFullGraph()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
 
@@ -596,10 +541,8 @@ public class ReportsDbClient_GetReportTests : IClassFixture<AppWithPostgresFixtu
         var comment = await CreateTestCommentAsync(userId, bug.Id, "Test comment");
         var commentAttachment = await CreateTestCommentAttachmentAsync(userId, comment.Id, "comment_file.pdf");
 
-        // Act
         var result = await _reportsDbClient.GetReportInternalAsync(report.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(report.Id, result.Id);
 

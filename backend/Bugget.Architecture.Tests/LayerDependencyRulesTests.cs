@@ -3,32 +3,16 @@ using FluentAssertions;
 namespace Bugget.Architecture.Tests;
 
 /// <summary>
-/// Целевые правила слоёв квартета (ADR-0001) на уровне скомпилированных сборок.
-///
-/// <code>
-/// Bugget.Api ──────────► Bugget.Application ──────► Bugget.Domain
-///     │                        ▲
-///     └──► Bugget.Infrastructure┘      Bugget.Contracts (без зависимостей)
-///          (только DI-композиция)
-/// </code>
-///
-/// Проверяется не то, что объявлено в .csproj (это делает <see cref="SolutionGraphRulesTests"/>),
-/// а то, на какие сборки код слоя ссылается по факту: транзитивная зависимость в .csproj
-/// не видна, а в ссылках сборки видна ровно тогда, когда ею начали пользоваться.
-///
-/// Списки белые: перечислено разрешённое. Новая сборка в зависимостях нижних слоёв — красный
-/// гейт, даже если пакет протащили транзитивно и в .csproj он не появился.
+/// Правила слоёв квартета (ADR-0001) по фактическим ссылкам скомпилированных сборок, а не по .csproj (это делает
+/// <see cref="SolutionGraphRulesTests"/>). Списки белые: новая сборка у нижних слоёв — красный гейт, даже транзитивная.
 /// </summary>
 public class LayerDependencyRulesTests
 {
-    /// <summary>Части BCL, разрешённые любому слою.</summary>
     private static readonly string[] Bcl = ["System", "netstandard"];
 
     /// <summary>
-    /// Сборки abstractions, которыми прикладной слой фактически пользуется и которые разрешены поимённо.
-    /// Разрешённый в <see cref="SolutionGraphRulesTests"/> пакет не разрешает автоматически все
-    /// доставленные им транзитивные сборки: новая запись появляется здесь только вместе с фактической
-    /// ссылкой Application и при сохранении границы ADR-0001.
+    /// Abstractions, разрешённые Application поимённо: пакет из <see cref="SolutionGraphRulesTests"/> не разрешает свои
+    /// транзитивные сборки — запись появляется только вместе с фактической ссылкой и при сохранении границы ADR-0001.
     /// </summary>
     private static readonly string[] MicrosoftExtensionsAbstractions =
     [
@@ -121,9 +105,7 @@ public class LayerDependencyRulesTests
     [Fact(DisplayName = "Правило слоя доказуемо краснеет на подсунутой ссылке")]
     public void Layer_rule_is_provably_red()
     {
-        // Гейт без доказательства красноты — это гейт, про который никто не знает, работает ли
-        // он (ADR-0002). Прогоняем ту же функцию, что и правила выше, на синтетическом наборе
-        // ссылок: домен, который «начал» зависеть от Npgsql и ASP.NET.
+        // Доказательство красноты гейта (ADR-0002): та же функция на синтетике — домен «зависит» от Npgsql и ASP.NET.
         var violations = Quartet.FindDisallowedReferences(
             Quartet.Domain,
             ["System.Runtime", "Npgsql", "Microsoft.AspNetCore.Http.Abstractions"],

@@ -5,9 +5,7 @@ using Xunit;
 
 namespace Bugget.UnitTests.Services.Analytics;
 
-/// <summary>
-/// AnalyticsService.ComputeSummary — pure-функция, без моков.
-/// </summary>
+/// <summary>AnalyticsService.ComputeSummary — pure-функция, без моков.</summary>
 public sealed class AnalyticsServiceTests
 {
     private static readonly PeriodWindow Window = new()
@@ -101,10 +99,8 @@ public sealed class AnalyticsServiceTests
     [Fact]
     public void ComputeSummary_FixPhase_ConditionalDenominator_ExcludesReportsWithoutFix()
     {
-        // 3 closed reports, два прошли Fix-фазу, один — нет.
-        // PhaseAggregates: Fix bucket → ReportCount=2, TotalDurationSeconds=2*86400 (2 дня).
-        // avg_fix = 2 days / 2 reports = 1.0 day («conditional denominator»: знаменатель —
-        // только репорты, прошедшие фазу). Если бы знаменатель был 3 (все closed), вышло бы 0.666…
+        // Conditional denominator: знаменатель — только репорты, прошедшие фазу.
+        // Fix bucket: 2 репорта, 2 дня → avg_fix = 1.0; при знаменателе 3 (все closed) вышло бы 0.666…
         var raw = BuildRaw(
             closedReports: new[]
             {
@@ -125,8 +121,7 @@ public sealed class AnalyticsServiceTests
         var summary = AnalyticsService.ComputeSummary(Window, raw);
 
         summary.AvgFixDays.Should().BeApproximately(1.0, 1e-9);
-        // sanity: total closed остаётся 3, чтобы убедиться, что conditional denom
-        // не подменяет основной count.
+        // conditional denom не должен подменять основной count.
         summary.ReportsClosed.Should().Be(3);
     }
 
@@ -196,8 +191,7 @@ public sealed class AnalyticsServiceTests
     [Fact]
     public void ComputeSummary_TopRegressionReports_OrderedDescByCyclesAndTakesTen()
     {
-        // 12 reports, у каждого test_intervals = i (от 2 до 13). Ожидаем top-10
-        // c regression_cycles от 12 до 3.
+        // test_intervals от 2 до 13 → top-10 c regression_cycles от 12 до 3.
         var reports = Enumerable.Range(2, 12)
             .Select(i => MakeReport(reportId: i, testIntervals: i, fixIntervals: i - 1))
             .ToArray();
@@ -212,11 +206,8 @@ public sealed class AnalyticsServiceTests
     [Fact]
     public void ComputeSummary_PhaseTrendsWeekly_PassedThroughIncludingYearEndIsoWeek()
     {
-        // Иногда конец декабря попадает в ISO-неделю следующего года
-        // (например, 2024-12-30 → 2025-W01) — postgres-форматтер
-        // <c>to_char(IYYY-"W"IW)</c> уже корректно с этим справляется. На уровне
-        // ComputeSummary мы только проверяем, что строки проходят насквозь без
-        // переинтерпретации, в том числе на пограничных годах.
+        // Конец декабря может попасть в ISO-неделю следующего года (2024-12-30 → 2025-W01); это делает postgres,
+        // а ComputeSummary обязан пропустить строки насквозь без переинтерпретации.
         var trends = new[]
         {
             new PhaseTrendWeeklyBo { IsoWeek = "2025-W01", TestDays = 1.5, FixDays = 0.5, ReportsClosed = 2 },
@@ -260,8 +251,7 @@ public sealed class AnalyticsServiceTests
     [Fact]
     public void ComputeSummary_SingleReportWithoutRegression_AvgRegressionCyclesIsNull()
     {
-        // Один-единственный репорт в выборке, без регрессии:
-        // avg_regression_cycles_when_present должен быть null (нет данных), не 0.
+        // Без регрессий avg_regression_cycles_when_present — null (нет данных), не 0.
         var raw = BuildRaw(
             closedReports: new[] { MakeReport(reportId: 1, testIntervals: 1, fixIntervals: 1) },
             phaseAggregates: Array.Empty<PhaseAggregateRow>());
@@ -276,9 +266,7 @@ public sealed class AnalyticsServiceTests
     [Fact]
     public void ComputeSummary_AvgFullCycle_SkipsReportsWithoutFirstTest()
     {
-        // r1: closed_at − first_test_entered_at = 1 day.
-        // r2: первая Test-фаза отсутствует (closed напрямую) — пропускается.
-        // avg = 1.0.
+        // r1: closed_at − first_test_entered_at = 1 day; r2 без Test-фазы пропускается → avg = 1.0.
         var t0 = new DateTimeOffset(2026, 4, 1, 0, 0, 0, TimeSpan.Zero);
         var raw = BuildRaw(
             closedReports: new[]
@@ -288,7 +276,7 @@ public sealed class AnalyticsServiceTests
                     ReportId = 1, Title = "r1",
                     CreatedAt = t0,
                     FirstTestEnteredAt = t0.AddHours(6),
-                    ClosedAt = t0.AddHours(30), // +1 day = 1.0
+                    ClosedAt = t0.AddHours(30),
                     TestIntervals = 1, FixIntervals = 0,
                     TestDurationSeconds = 0, FixDurationSeconds = 0,
                 },
@@ -309,7 +297,6 @@ public sealed class AnalyticsServiceTests
         summary.AvgFullCycleDays.Should().BeApproximately(1.0, 1e-9);
     }
 
-    // ============ helpers ============
 
     private static ClosedReportRow MakeReport(int reportId, int testIntervals, int fixIntervals)
     {

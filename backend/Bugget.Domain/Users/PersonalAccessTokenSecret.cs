@@ -4,29 +4,19 @@ using System.Text;
 
 namespace Bugget.Domain.Users;
 
-/// <summary>
-/// Секрет personal access token: генерация, хэш для хранения и распознавание формата.
-/// Живёт в домене, потому что нужен обеим сторонам — и выпуску токена, и аутентификации.
-/// </summary>
+/// <summary>Секрет PAT: генерация, хэш и формат. В домене, потому что нужен и выпуску токена, и аутентификации.</summary>
 public static class PersonalAccessTokenSecret
 {
     /// <summary>
-    /// Опознавательный префикс. Нужен не для красоты: по нему секрет-сканеры находят
-    /// утёкший токен в чужом репозитории, а схема аутентификации отличает PAT от JWT
-    /// в заголовке Authorization, не заглядывая в БД.
+    /// Опознавательный префикс: по нему секрет-сканеры находят утёкший токен, а схема аутентификации
+    /// отличает PAT от JWT в заголовке Authorization, не заглядывая в БД.
     /// </summary>
     public const string Prefix = "bgt_pat_";
 
-    /// <summary>
-    /// Сколько символов секрета попадает в открытый префикс записи. Столько же видит
-    /// пользователь в списке своих токенов.
-    /// </summary>
+    /// <summary>Сколько символов секрета попадает в открытый префикс записи (видно в списке токенов).</summary>
     private const int DisplaySecretLength = 6;
 
-    /// <summary>
-    /// Полная длина открытого префикса значения (<c>bgt_pat_</c> + первые символы
-    /// секрета) — то, что видно в списке токенов и чем ключуется троттлинг попыток.
-    /// </summary>
+    /// <summary>Полная длина открытого префикса значения; им же ключуется троттлинг попыток.</summary>
     public static readonly int DisplayPrefixLength = Prefix.Length + DisplaySecretLength;
 
     private const int SecretBytes = 32;
@@ -50,9 +40,3 @@ public static class PersonalAccessTokenSecret
         && tokenValue.StartsWith(Prefix, StringComparison.Ordinal)
         && tokenValue.Length > Prefix.Length + DisplaySecretLength;
 }
-
-/// <summary>
-/// Свежевыпущенный токен. <paramref name="Value"/> существует только в этом ответе:
-/// в БД уходит <paramref name="Hash"/>, пользователю — <paramref name="Value"/> один раз.
-/// </summary>
-public sealed record GeneratedPersonalAccessToken(string Value, string DisplayPrefix, byte[] Hash);

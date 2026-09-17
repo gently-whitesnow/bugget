@@ -7,30 +7,18 @@ using Microsoft.AspNetCore.Mvc;
 namespace Bugget.Architecture.Tests;
 
 /// <summary>
-/// Кто закрывает каждый контроллер <c>Bugget.Api</c>. В одном процессе живут три модуля
-/// с разными схемами: reports закрывает конвенция
-/// <see cref="ReportsModuleAuthorizationConvention"/>, users и authorization — свои
-/// атрибуты. Пока модули были отдельными сборками, границей конвенции была сборка;
-/// после слияния в квартет она молча накрыла анонимный OIDC-callback, и новые
-/// пользователи перестали заводиться. Правило ниже держит обе стороны этой границы:
-/// контроллер без собственной авторизации обязан либо попадать в модуль reports, либо
-/// стоять в поимённом списке анонимной поверхности — то есть в диффе.
+/// Кто закрывает каждый контроллер <c>Bugget.Api</c>: reports — <see cref="ReportsModuleAuthorizationConvention"/>, users и authorization — свои атрибуты.
+/// После слияния сборок конвенция молча накрыла анонимный OIDC-callback; поэтому контроллер без авторизации обязан быть в reports или в поимённом списке.
 /// </summary>
 public class ControllerAccessSurfaceRulesTests
 {
-    /// <summary>
-    /// Анонимная поверхность: контроллеры, которым аутентификация не нужна по замыслу.
-    /// Список поимённый, потому что «нет атрибута» и «доступ открыт осознанно» снаружи
-    /// выглядят одинаково — а цена ошибки разная в обе стороны.
-    /// </summary>
+    // Список поимённый: «нет атрибута» и «доступ открыт осознанно» снаружи выглядят одинаково, а цена ошибки разная.
     private static readonly string[] AnonymousSurface =
     [
-        // Вызывает oauth2-proxy до того, как пользователь появился в базе; доверие даёт
-        // токен провайдера, который контроллер валидирует сам.
+        // Вызывается oauth2-proxy до появления пользователя в базе; токен провайдера контроллер валидирует сам.
         "Bugget.Api.Authorization.Oidc.OidcController",
 
-        // Вход fake-провайдера: регистрируется только в Development, в Production
-        // маршрута нет (FakeLoginEnvironmentBoundaryTests).
+        // Fake-провайдер регистрируется только в Development (FakeLoginEnvironmentBoundaryTests).
         "Bugget.Api.Authorization.Fake.FakeController",
 
         // Точка auth_request для nginx: сама схема аутентификации и есть её проверка.
@@ -98,11 +86,6 @@ public class ControllerAccessSurfaceRulesTests
             .Should().NotContain(typeof(AccessSurfaceFixtures.GuardedController).FullName!);
     }
 
-    /// <summary>
-    /// Контроллеры сборки, за которыми не стоит ни конвенция reports, ни собственный
-    /// атрибут авторизации, ни строка в списке анонимных. Отдельная функция, а не тело
-    /// теста: ту же проверку прогоняет доказательство красноты на фикстурах.
-    /// </summary>
     private static string[] FindUnguardedControllers(Assembly assembly) =>
         [
             .. Controllers(assembly)
@@ -118,11 +101,7 @@ public class ControllerAccessSurfaceRulesTests
             .Where(type => type is { IsClass: true, IsAbstract: false })
             .Where(type => typeof(ControllerBase).IsAssignableFrom(type));
 
-    /// <summary>
-    /// Авторизация объявлена самим контроллером: атрибут на типе, на его базе или на
-    /// любом действии. Смотрим на <see cref="IAuthorizeData"/>, а не на конкретные
-    /// атрибуты модулей: у каждого из них своя схема, а требование тут одно.
-    /// </summary>
+    // Смотрим на IAuthorizeData (тип, база, любое действие), а не на атрибуты модулей: схемы разные, требование одно.
     private static bool DeclaresAuthorization(Type type) =>
         type.GetCustomAttributes(inherit: true).OfType<IAuthorizeData>().Any()
         || type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)

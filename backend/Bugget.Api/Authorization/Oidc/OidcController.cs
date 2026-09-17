@@ -19,10 +19,7 @@ public sealed class OidcController(
     private readonly string _domain = Environment.GetEnvironmentVariable("APP_DOMAIN")
         ?? throw new InvalidOperationException("APP_DOMAIN is not set");
 
-    /// <summary>
-    /// Callback после OIDC авторизации через oauth2-proxy.
-    /// Валидирует токен, привязывает OIDC identity, редиректит на next.
-    /// </summary>
+    /// <summary>Callback после OIDC авторизации через oauth2-proxy: валидирует токен, привязывает identity, редиректит на next.</summary>
     /// <remarks>
     /// Маршрут анонимный по замыслу: вызывающего ещё нет в базе — он тут и заводится, —
     /// а доверие даёт не сессия, а токен провайдера, который валидируется ниже.
@@ -30,7 +27,6 @@ public sealed class OidcController(
     [AllowAnonymous, HttpGet("callback")]
     public async Task<IActionResult> CallbackAsync()
     {
-        // 1. Извлекаем токен из cookie
         var token = ExtractToken();
         if (string.IsNullOrEmpty(token))
         {
@@ -38,7 +34,6 @@ public sealed class OidcController(
             return Unauthorized();
         }
 
-        // 2. Валидируем токен
         var principal = await tokenValidator.ValidateTokenAsync(token, HttpContext.RequestAborted);
         if (principal == null)
         {
@@ -46,7 +41,6 @@ public sealed class OidcController(
             return Unauthorized();
         }
 
-        // 3. Извлекаем external_id (sub claim)
         var externalId = tokenValidator.GetSubject(principal);
         if (string.IsNullOrEmpty(externalId))
         {
@@ -54,18 +48,10 @@ public sealed class OidcController(
             return Unauthorized();
         }
 
-        // 4. Создаём external user и привязываем OIDC identity.
         var externalUser = new OidcExternalUser(externalId);
         logger.LogInformation("OIDC redirect: authorizing user {ExternalId}", externalId);
-        // MAIN-20: контракт помечен [Obsolete] намеренно (миграция на provider-required API —
-        // отдельная задача). До слияния проектов предупреждение было не видно: у модулей
-        // authorization/oidc был выключен TreatWarningsAsErrors. Функциональных правок в PR
-        // слияния нет, поэтому вызов оставлен как есть под точечным подавлением.
-#pragma warning disable CS0618
         await externalAuth.AuthorizeAsync(HttpContext, externalUser, true, Provider);
-#pragma warning restore CS0618
 
-        // 5. Редирект на next (sanitized)
         var nextRaw = HttpContext.Request.Query["next"].ToString();
         var next = SanitizeHelper.SanitizeLocalPath(nextRaw) ?? _options.DefaultRedirectPath;
 

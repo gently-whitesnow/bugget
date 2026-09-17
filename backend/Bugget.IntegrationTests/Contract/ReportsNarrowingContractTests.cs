@@ -4,27 +4,14 @@ using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
 
-/// <summary>
-/// Сужение публичной формы модуля <c>reports</c>: карточка отдаёт вложения без полей
-/// хранилища, а элемент списка — без ссылок, вложений бага и шагов (ADR-0005,
-/// «Сужение wire-контракта reports»).
-///
-/// Здесь проверяется то, чего не видит снимок: снимок сливает элементы массива в одно
-/// объединение путей, поэтому не отличает «ключа нет» от «ключ есть со значением
-/// <c>null</c>» и не ловит лишний ключ у отдельного элемента. Форма же карточки и
-/// списка — публичный контракт, и его сужение должно быть ровно согласованным:
-/// ни больше, ни меньше.
-/// </summary>
+/// <summary>Сужение публичной формы <c>reports</c> (ADR-0005): карточка — вложения без полей хранилища, элемент
+/// списка — без ссылок, вложений бага и шагов. Проверяется то, чего не видит снимок: он сливает элементы массива
+/// в объединение путей и не отличает «ключа нет» от <c>null</c>, не ловит лишний ключ у элемента.</summary>
 [Collection("PostgresCollection")]
 public sealed class ReportsNarrowingContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
-    /// <summary>
-    /// Вложение с <c>attach_type = 1</c> (ожидаемый результат) — единственное значение
-    /// диапазона 0..3, которого нет в остальных тестах: сид везде грузит только факт.
-    /// Оба вложения бага лежат в одной коллекции и различаются только <c>attach_type</c>,
-    /// поэтому здесь проверяется, что тип 1 доезжает до провода как есть и не подменяется
-    /// на 0 при переходе на публичную форму вложения.
-    /// </summary>
+    /// <summary><c>attach_type = 1</c> — единственное значение 0..3, которого нет в остальных тестах (сид грузит
+    /// только факт): тип должен доехать до провода как есть, а не подмениться на 0.</summary>
     [Fact(DisplayName = "GET /v2/reports/{aliasId}: вложение expect отдаётся с attach_type = 1")]
     public async Task GetReportKeepsExpectedAttachmentType()
     {
@@ -50,12 +37,8 @@ public sealed class ReportsNarrowingContractTests(AppContractFixture fixture) : 
         AssertPublicAttachmentShape(expected);
     }
 
-    /// <summary>
-    /// Пустая коллекция и отсутствующий ключ — разные вещи на проводе. Сужение формы
-    /// вложений не должно было превратить «вложений нет» в «ключа нет»: у бага без
-    /// вложений, у комментария и у шага все три ключа обязаны присутствовать пустыми
-    /// массивами — иначе код, читающий <c>attachments.length</c>, падает.
-    /// </summary>
+    /// <summary>Пустая коллекция и отсутствующий ключ — разные вещи на проводе: без ключа код,
+    /// читающий <c>attachments.length</c>, падает.</summary>
     [Fact(DisplayName = "GET /v2/reports/{aliasId}: пустые вложения — пустые массивы, а не отсутствие ключа")]
     public async Task GetReportKeepsEmptyCollectionsAsArrays()
     {
@@ -83,12 +66,7 @@ public sealed class ReportsNarrowingContractTests(AppContractFixture fixture) : 
         AssertEmptyArray(step, "attachments");
     }
 
-    /// <summary>
-    /// Снимок фиксирует объединение ключей по всем элементам массива, поэтому лишний
-    /// ключ у одного элемента в нём растворяется. Здесь набор ключей элемента списка и
-    /// его бага сверяется поимённо и целиком: и потеря согласованного ключа, и возврат
-    /// удалённого красят тест.
-    /// </summary>
+    /// <summary>Набор ключей сверяется поимённо и целиком: в снимке лишний ключ одного элемента растворяется.</summary>
     [Fact(DisplayName = "GET /v2/reports: набор ключей элемента списка и его бага — ровно контрактный")]
     public async Task ListReportsKeepsExactKeySet()
     {
@@ -117,10 +95,7 @@ public sealed class ReportsNarrowingContractTests(AppContractFixture fixture) : 
             "id", "receive", "report_id", "status", "title", "updated_at");
     }
 
-    /// <summary>
-    /// У бага без комментариев ключ <c>comments</c> обязан остаться пустым массивом:
-    /// карточка в списке считает комментарии через <c>bugs[].comments.length</c>.
-    /// </summary>
+    /// <summary>Карточка в списке считает комментарии через <c>bugs[].comments.length</c> — ключ обязан быть массивом.</summary>
     [Fact(DisplayName = "GET /v2/reports: у бага без комментариев comments — пустой массив")]
     public async Task ListReportsKeepsEmptyCommentsAsArray()
     {

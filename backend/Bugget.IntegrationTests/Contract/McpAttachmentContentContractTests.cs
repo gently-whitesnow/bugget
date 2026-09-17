@@ -8,17 +8,16 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Содержимое вложений через <c>get_attachment</c> (P2d, token-economy):
-/// картинки — превью по умолчанию и оригинал только по явному флагу; видео —
-/// байты не уходят никогда; текст — как есть, без перекодировок, страницами с
-/// явным <c>truncated</c>. Байты сверяются с REST-эндпоинтами того же хоста:
-/// MCP не альтернативное хранилище, а другой транспорт к тем же файлам.
+/// <c>get_attachment</c> (P2d, token-economy): превью по умолчанию, байты видео не уходят никогда, текст —
+/// страницами. Байты сверяются с REST того же хоста: MCP — другой транспорт к тем же файлам, не хранилище.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class McpAttachmentContentContractTests(AppContractFixture fixture)
     : IClassFixture<AppContractFixture>, IAsyncDisposable
 {
-    private readonly List<HttpClientTransport> _transports = [];
+    private McpPatClients? _mcp;
+
+    private McpPatClients Mcp => _mcp ??= new McpPatClients(fixture);
 
     [Fact(DisplayName = "Картинка по умолчанию: превью, и байты равны REST-превью")]
     public async Task ImageDefaultsToPreviewBytes()
@@ -28,7 +27,7 @@ public sealed class McpAttachmentContentContractTests(AppContractFixture fixture
         var bugId = await scenario.CreateBugAsync(reportId);
         var attachmentId = await scenario.UploadBugAttachmentAsync(reportId, bugId);
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         var result = await CallAsync(client, "get_attachment",
             Args(("reportId", reportId), ("attachmentId", attachmentId)));
 
@@ -52,7 +51,7 @@ public sealed class McpAttachmentContentContractTests(AppContractFixture fixture
         var bugId = await scenario.CreateBugAsync(reportId);
         var attachmentId = await scenario.UploadBugAttachmentAsync(reportId, bugId);
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         var result = await CallAsync(client, "get_attachment",
             Args(("reportId", reportId), ("attachmentId", attachmentId), ("original", true)));
 
@@ -71,7 +70,7 @@ public sealed class McpAttachmentContentContractTests(AppContractFixture fixture
         const string text = "Ошибка: файл «отчёт.xlsx» не найден.\nПовторите попытку позже — сервис недоступен.";
         var attachmentId = await UploadTextAsync(scenario, reportId, bugId, text);
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         var result = await CallAsync(client, "get_attachment",
             Args(("reportId", reportId), ("attachmentId", attachmentId)));
 
@@ -94,7 +93,7 @@ public sealed class McpAttachmentContentContractTests(AppContractFixture fixture
         const string text = "абвгдеёжзи";
         var attachmentId = await UploadTextAsync(scenario, reportId, bugId, text);
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
 
         var assembled = new StringBuilder();
         var offset = 0;
@@ -125,7 +124,7 @@ public sealed class McpAttachmentContentContractTests(AppContractFixture fixture
         var bugId = await scenario.CreateBugAsync(reportId);
         var attachmentId = await UploadVideoAsync(scenario, reportId, bugId);
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         var result = await CallAsync(client, "get_attachment",
             Args(("reportId", reportId), ("attachmentId", attachmentId)));
 
@@ -136,9 +135,7 @@ public sealed class McpAttachmentContentContractTests(AppContractFixture fixture
             $"/v2/reports/{reportId}/bugs/{bugId}/attachments/{attachmentId}/content",
             meta.GetProperty("download_path").GetString());
 
-        // Оригинал видео крупнее любого кадра-превью; если картинка и есть, это
-        // не байты ролика. Здесь превью не построено (ffmpeg на минимальном mp4
-        // не отрабатывает), поэтому image-блоков нет вовсе.
+        // Превью здесь не построено (ffmpeg на минимальном mp4 не отрабатывает), поэтому image-блоков нет вовсе.
         Assert.Empty(result.Content.OfType<ImageContentBlock>());
 
         var refusal = await client.CallToolAsync(
@@ -148,18 +145,9 @@ public sealed class McpAttachmentContentContractTests(AppContractFixture fixture
         Assert.Contains("download_path", TextOf(refusal), StringComparison.Ordinal);
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        foreach (var transport in _transports)
-        {
-            await transport.DisposeAsync();
-        }
-    }
+    public ValueTask DisposeAsync() => _mcp?.DisposeAsync() ?? ValueTask.CompletedTask;
 
-    /// <summary>
-    /// Текстовое вложение. Тип определяется сервером по содержимому (libmagic),
-    /// заголовок клиента — только подсказка.
-    /// </summary>
+    /// <summary>Тип сервер определяет по содержимому (libmagic), заголовок клиента — только подсказка.</summary>
     private static async Task<int> UploadTextAsync(
         ContractScenario scenario, string reportId, int bugId, string text)
     {
@@ -173,11 +161,8 @@ public sealed class McpAttachmentContentContractTests(AppContractFixture fixture
         return (await ContractScenario.ReadJsonAsync(response)).GetProperty("id").GetInt32();
     }
 
-    /// <summary>
-    /// Минимальный валидный mp4: один ftyp-box, по которому libmagic узнаёт
-    /// video/mp4. Дальше ffmpeg на нём превью не построит — и не должен: тест
-    /// проверяет именно путь «байты видео не уходят», а не перекодирование.
-    /// </summary>
+    /// <summary>Минимальный mp4: один ftyp-box, по которому libmagic узнаёт video/mp4. Превью ffmpeg на нём
+    /// не построит — и не должен: проверяется путь «байты видео не уходят».</summary>
     private static async Task<int> UploadVideoAsync(ContractScenario scenario, string reportId, int bugId)
     {
         var ftyp = new byte[]
@@ -196,30 +181,6 @@ public sealed class McpAttachmentContentContractTests(AppContractFixture fixture
         return (await ContractScenario.ReadJsonAsync(response)).GetProperty("id").GetInt32();
     }
 
-    private async Task<McpClient> CreateMcpClientAsync(ContractScenario scenario)
-    {
-        var transport = new HttpClientTransport(
-            new HttpClientTransportOptions
-            {
-                Endpoint = new Uri(fixture.BaseAddress, "/v1/mcp"),
-                AdditionalHeaders = new Dictionary<string, string>
-                {
-                    [ContractHeaders.UserId] = scenario.UserId,
-                    [ContractHeaders.TeamId] = scenario.TeamId,
-                    [ContractHeaders.WorkspaceId] = scenario.WorkspaceId,
-                    [ContractHeaders.WorkspaceRole] = "owner",
-                    [ContractHeaders.AuthMethod] = "pat",
-                },
-            },
-            fixture.CreateAnonymousClient(),
-            loggerFactory: null,
-            ownsHttpClient: true);
-
-        _transports.Add(transport);
-
-        return await McpClient.CreateAsync(transport);
-    }
-
     private static async Task<CallToolResult> CallAsync(
         McpClient client, string tool, IReadOnlyDictionary<string, object?> arguments)
     {
@@ -232,10 +193,7 @@ public sealed class McpAttachmentContentContractTests(AppContractFixture fixture
     private static JsonElement MetaOf(CallToolResult result) =>
         JsonDocument.Parse(result.Content.OfType<TextContentBlock>().First().Text).RootElement.Clone();
 
-    /// <summary>
-    /// Для текста блоки идут так: метаданные вложения, страница пагинации,
-    /// сырое содержимое.
-    /// </summary>
+    /// <summary>Блоки текста: метаданные вложения, страница пагинации, сырое содержимое.</summary>
     private static (JsonElement Page, string Body) TextBlocks(CallToolResult result)
     {
         var texts = result.Content.OfType<TextContentBlock>().ToArray();

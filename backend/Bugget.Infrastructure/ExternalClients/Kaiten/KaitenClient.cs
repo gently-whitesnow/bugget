@@ -3,10 +3,7 @@ using Bugget.Infrastructure.ExternalClients.Kaiten.Models;
 
 namespace Bugget.Infrastructure.ExternalClients.Kaiten;
 
-/// <summary>
-/// Клиент для работы с Kaiten API.
-/// Использует IHttpClientFactory для управления HttpClient.
-/// </summary>
+/// <summary>Клиент Kaiten API; HttpClient берётся из IHttpClientFactory.</summary>
 public sealed class KaitenClient
 {
     private readonly IHttpClientFactory _httpClientFactory;
@@ -58,9 +55,7 @@ public sealed class KaitenClient
         return JsonSerializer.Deserialize<KaitenSpaceResponse[]>(content, JsonOptions) ?? [];
     }
 
-    /// <summary>
-    /// Добавляет внешнюю ссылку к карточке.
-    /// </summary>
+    /// <summary>Добавляет внешнюю ссылку к карточке.</summary>
     public async Task AddExternalLinkAsync(string cardId, string url, string description)
     {
         var requestUrl = $"{_baseUrl}/api/latest/cards/{cardId}/external-links";
@@ -76,9 +71,7 @@ public sealed class KaitenClient
         response.EnsureSuccessStatusCode();
     }
 
-    /// <summary>
-    /// Добавляет комментарий к карточке.
-    /// </summary>
+    /// <summary>Добавляет комментарий к карточке.</summary>
     public async Task AddCommentAsync(string cardId, string text)
     {
         var requestUrl = $"{_baseUrl}/api/latest/cards/{cardId}/comments";

@@ -3,30 +3,20 @@ using System.Collections.Concurrent;
 namespace Bugget.Application.Services;
 
 /// <summary>
-/// Счётчик «не больше N событий на ключ за окно» — общий для троттлинга неудачных
-/// PAT-попыток и write-инструментов агента. Состояние процесса, а не БД: контур
-/// одноинстансный, а после рестарта счёт честно начинается заново.
+/// «Не больше N событий на ключ за окно» — для неудачных PAT-попыток и write-инструментов агента.
+/// Состояние процесса, а не БД: контур одноинстансный, после рестарта счёт начинается заново.
 /// </summary>
 public sealed class FixedWindowLimiter(TimeProvider timeProvider, int limit, TimeSpan window)
 {
-    /// <summary>
-    /// Порог уборки отработавших окон: без неё словарь рос бы на ключ за каждый
-    /// когда-либо виденный субъект.
-    /// </summary>
+    /// <summary>Порог уборки отработавших окон: иначе словарь рос бы на каждый виденный ключ.</summary>
     private const int SweepThreshold = 1024;
 
     private readonly ConcurrentDictionary<string, Window> _windows = new();
 
-    /// <summary>
-    /// Учитывает событие и отвечает, укладывается ли ключ в лимит. Отказ события
-    /// не откатывает: переполненное окно продолжает копить счёт.
-    /// </summary>
+    /// <summary>Учитывает событие и отвечает, в лимите ли ключ. Отказ событие не откатывает.</summary>
     public bool TryAcquire(string key) => Record(key) <= limit;
 
-    /// <summary>
-    /// Переполнено ли окно ключа — без записи события. Нужно там, где считаются
-    /// только неудачи: проверка стоит до работы, запись — после её провала.
-    /// </summary>
+    /// <summary>Переполнено ли окно — без записи события: там, где считаются только неудачи.</summary>
     public bool IsLimited(string key)
     {
         var now = timeProvider.GetUtcNow();

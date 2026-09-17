@@ -11,17 +11,8 @@ using HttpProblemDetailsFactory = Bugget.Api.Http.ProblemDetailsFactory;
 namespace Bugget.Api.Controllers;
 
 /// <summary>
-/// v2 API для аналитики. Наследует <see cref="AnalyticsControllerBase"/> —
-/// маршруты/HTTP-методы и <c>[Authorize]</c> приходят оттуда. Тонкий маппер
-/// UserIdentity → <see cref="IAnalyticsService"/> → Contracts.
-///
-/// Контракт после R6:
-///   * <c>GET /v2/analytics/summary?period=...&amp;teamId=...</c> — единый summary;
-///     <c>teamId</c> опциональный (фильтр <c>creator_team_id</c>).
-///   * <c>GET /v2/analytics/responsible/{userId}?period=...</c> — отдельный
-///     shape <c>AnalyticsResponsible</c>.
-/// Detail-эндпоинт <c>/v2/analytics/reports/{id}</c> переехал на sub-resource
-/// <c>/v2/reports/{id}/analytics</c> (см. ReportsController).
+/// v2 API аналитики: маршруты и <c>[Authorize]</c> — из <see cref="AnalyticsControllerBase"/>, здесь только маппинг
+/// UserIdentity → <see cref="IAnalyticsService"/> → Contracts. Detail по репорту живёт в <c>/v2/reports/{id}/analytics</c>.
 /// </summary>
 [ApiController]
 public sealed class AnalyticsController(IAnalyticsService analyticsService) : AnalyticsControllerBase
@@ -73,12 +64,10 @@ public sealed class AnalyticsController(IAnalyticsService analyticsService) : An
     }
 
     /// <summary>
-    /// Причина отказа собирается из публичного списка допустимых значений, а не из
-    /// текста исключения: сообщение исключения — внутренняя деталь, и вдобавок оно
-    /// отражает обратно присланное клиентом значение. Наружу уходит только то, что
-    /// и так записано в контракте.
+    /// Причина отказа собирается из публичного списка допустимых значений, а не из текста исключения:
+    /// тот — внутренняя деталь и отражает обратно присланное клиентом значение.
     /// </summary>
-    private ActionResult InvalidPeriod() =>
+    private ObjectResult InvalidPeriod() =>
         HttpProblemDetailsFactory.Create(
             HttpContext,
             ProblemDescriptors.InvalidPeriod,

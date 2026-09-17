@@ -4,7 +4,7 @@ using Bugget.Api.Generated.External;
 using Bugget.Api.Mappers;
 using Bugget.Application.Errors;
 using Bugget.Application.Ports;
-using Bugget.Application.Services.External;
+using Bugget.Application.Services.ExternalSearch;
 using Bugget.Contracts.External.Generated;
 using Bugget.Domain.Authentication;
 using Microsoft.AspNetCore.Mvc;

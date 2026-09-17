@@ -7,18 +7,9 @@ using DomainModel = Bugget.Domain;
 namespace Bugget.Api.Mappers;
 
 /// <summary>
-/// Домен/View → Contracts для эндпоинтов модуля reports. Контрактные DTO
-/// сгенерированы из <c>specs/contracts/reports/openapi.yaml</c> и видны только
-/// в проекте Bugget, поэтому маппер живёт здесь, а не в Bugget.Api.BO.
-///
-/// Формы намеренно повторяют то, что уходило фронту до перехода на contract-first:
-/// контракт описан с работающего API, а не наоборот. Доказательство — снимки в
-/// <c>Bugget.IntegrationTests/Contract/Snapshots</c>. Единственное осознанное сужение —
-/// вложения и элемент списка репортов (ADR-0005, «Сужение wire-контракта reports»).
-///
-/// Лишний хоп (доменная модель → ViewModel → Contract) сохранён сознательно: те же
-/// ViewModel'и уходят в SignalR-хаб, и схлопывать хопы имеет смысл вместе с
-/// контрактом realtime-событий, а не в этом PR.
+/// Домен/View → Contracts модуля reports. Формы повторяют то, что уходило фронту до contract-first (снимки в
+/// <c>Bugget.IntegrationTests/Contract/Snapshots</c>); осознанное сужение — вложения и элемент списка (ADR-0005).
+/// Хоп через ViewModel сохранён: те же ViewModel уходят в SignalR-хаб, схлопывать — вместе с контрактом realtime.
 /// </summary>
 internal static class ReportsMapper
 {
@@ -71,12 +62,8 @@ internal static class ReportsMapper
         Bugs = view.Bugs?.Select(ToContract).ToArray(),
     };
 
-    /// <remarks>
-    /// LIST отдаёт свою форму, а не <see cref="Report"/>: ссылки, вложения багов
-    /// и шаги воспроизведения список не загружает (см. <c>list_reports_internal</c>
-    /// и соседние запросы в <c>ReportsDbClient</c>), и раньше они уходили наружу
-    /// только как `null`. Причина и последствия — ADR-0005.
-    /// </remarks>
+    /// <remarks>LIST отдаёт свою форму, а не <see cref="Report"/>: ссылки, вложения багов и шаги список
+    /// не загружает, раньше они уходили наружу только как null (ADR-0005).</remarks>
     public static ReportListItem ToListContract(this ReportViewModel view) => new()
     {
         Id = view.Id,
@@ -91,7 +78,6 @@ internal static class ReportsMapper
         Creator_type = WireEnumMapper.ToCreatorTypeWire(view.CreatorType),
         Is_excluded_from_analytics = view.IsExcludedFromAnalytics,
         Participants_user_ids = view.ParticipantsUserIds,
-        // null здесь — часть контракта: «не запрашивали», в отличие от пустого списка.
         Bugs = view.Bugs?.Select(ToListContract).ToArray(),
     };
 
@@ -118,10 +104,8 @@ internal static class ReportsMapper
         Reports = views.Reports.Select(ToListContract).ToArray(),
     };
 
-    /// <summary>
-    /// Счётчики уходят массивом в порядке срезов запроса: ключ среза задаёт клиент,
-    /// и в объекте со свободными ключами он был бы неотличим от имени поля (ADR-0009).
-    /// </summary>
+    /// <summary>Счётчики уходят массивом в порядке срезов запроса: ключ среза задаёт клиент, и в объекте
+    /// со свободными ключами он был бы неотличим от имени поля (ADR-0009).</summary>
     public static ReportCountsBatchResponse ToCountsContract(this IEnumerable<KeyValuePair<string, long>> counts) => new()
     {
         Counts = counts
@@ -216,12 +200,8 @@ internal static class ReportsMapper
         Attachments = model.Attachments?.Select(ToSummaryContract).ToArray(),
     };
 
-    /// <remarks>
-    /// Единственная публичная форма вложения в модуле: и ручки загрузки и
-    /// переименования, и вложения внутри репорта отдают её. Поля хранилища
-    /// (`storage_key`, `storage_kind`, `length_bytes`, `mime_type`,
-    /// `is_gzip_compressed`) наружу не уходят — причина в ADR-0005.
-    /// </remarks>
+    /// <remarks>Единственная публичная форма вложения в модуле; поля хранилища (storage_key, mime_type и т.п.)
+    /// наружу не уходят — ADR-0005.</remarks>
     public static AttachmentSummary ToSummaryContract(this DomainModel.Attachments.Attachment model) => new()
     {
         Id = model.Id,

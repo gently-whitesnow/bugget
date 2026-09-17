@@ -7,10 +7,8 @@ using Microsoft.Extensions.Options;
 namespace Bugget.Application.DomainEvents.Consumer;
 
 /// <summary>
-/// Polling-консьюмер `domain_events`: читает события по cursor, диспатчит в handler'ы по
-/// EventType, двигает cursor в той же транзакции, что side-effects (per-event tx → at-least-once
-/// с откатом на handler exception). Транзакция берётся портом <see cref="IUnitOfWork"/> —
-/// драйвер БД в BO не виден.
+/// Polling-консьюмер `domain_events`: cursor двигается в той же транзакции, что side-effects handler'а
+/// (per-event tx, at-least-once). Транзакция — через порт <see cref="IUnitOfWork"/>, драйвер БД в BO не виден.
 /// </summary>
 public sealed class DomainEventsPoller(
     IUnitOfWork unitOfWork,
@@ -23,7 +21,6 @@ public sealed class DomainEventsPoller(
 {
     private readonly DomainEventsConsumerOptions _options = options.Value;
     private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
-    // Дубликат EventType → ArgumentException на старте (fail-fast).
     private readonly Dictionary<string, IDomainEventHandler> _handlers = handlers.ToDictionary(h => h.EventType);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -67,12 +64,8 @@ public sealed class DomainEventsPoller(
         }
     }
 
-    /// <summary>
-    /// Один тик: читает batch событий по cursor'у и обрабатывает их per-event-tx.
-    /// Возвращает число успешно обработанных событий (≤ <c>BatchSize</c>).
-    /// Public для smoke-тестов: интеграционный тест вызывает напрямую,
-    /// без запуска <see cref="ExecuteAsync"/>.
-    /// </summary>
+    /// <summary>Один тик; возвращает число обработанных событий (≤ <c>BatchSize</c>).</summary>
+    /// <remarks>Public — интеграционный тест вызывает напрямую, без <see cref="ExecuteAsync"/>.</remarks>
     public async Task<int> TickAsync(CancellationToken ct)
     {
         var cursor = await cursorClient.GetAsync(_options.ConsumerName, ct);
@@ -108,8 +101,7 @@ public sealed class DomainEventsPoller(
             }
             catch (Exception ex)
             {
-                // Handler упал — не двигаем cursor дальше по batch'у, иначе нарушим порядок:
-                // событие переедет на следующем тике.
+                // Handler упал — cursor по batch'у дальше не двигаем (иначе нарушим порядок); событие переедет на следующий тик.
                 logger.LogError(
                     ex,
                     "domain_events handler failed: event_id={EventId} event_type={EventType} aggregate={AggregateType}:{AggregateId}; stopping batch",
@@ -147,8 +139,7 @@ public sealed class DomainEventsPoller(
             var updated = await cursorClient.UpdateAsync(_options.ConsumerName, evt.Id, scope, innerCt);
             if (updated == 0)
             {
-                // Monotonic guard в UPDATE отклонил движение cursor'а назад. UNIQUE(source_event_id)
-                // в read-model защищает от дублей, идём дальше.
+                // Monotonic guard в UPDATE отклонил движение cursor'а назад; от дублей защищает UNIQUE(source_event_id).
                 logger.LogWarning(
                     "domain_events cursor monotonic guard rejected update: event_id={EventId} consumer={ConsumerName}",
                     evt.Id, _options.ConsumerName);

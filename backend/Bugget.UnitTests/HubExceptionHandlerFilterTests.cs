@@ -76,7 +76,7 @@ public sealed class HubExceptionHandlerFilterTests
 
     private sealed class StubHub : Hub
     {
-        public Task DoAsync() => Task.CompletedTask;
+        public static Task DoAsync() => Task.CompletedTask;
     }
 
     private sealed class StubCallerContext : HubCallerContext

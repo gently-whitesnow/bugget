@@ -6,9 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Bugget.UnitTests;
 
 /// <summary>
-/// Приоритет источников корреляционного идентификатора и его fallback вынесены отдельно от
-/// остальных проверок фабрики: у них общая подготовка Activity и свой инвариант — traceId
-/// обязателен и обязан совпадать с тем, что видит остальной контекст запроса.
+/// Источники корреляционного идентификатора и fallback: traceId обязателен и совпадает с контекстом запроса.
 /// </summary>
 public sealed class ProblemDetailsTraceIdTests
 {
@@ -34,10 +32,7 @@ public sealed class ProblemDetailsTraceIdTests
         }
     }
 
-    /// <summary>
-    /// Fallback — только для пустых источников: непустой TraceIdentifier остаётся и в ответе,
-    /// и в контексте, иначе голый контекст получал бы новый id на каждой ошибке.
-    /// </summary>
+    // Fallback — только для пустых источников: иначе голый контекст получал бы новый id на каждой ошибке.
     [Fact]
     public void Trace_identifier_is_kept_as_is_when_it_is_not_empty()
     {
@@ -58,10 +53,7 @@ public sealed class ProblemDetailsTraceIdTests
         }
     }
 
-    /// <summary>
-    /// В настоящем пайплайне запрос идёт под Activity, и корреляция строится по её id, а не по
-    /// TraceIdentifier: fallback — это ветка для голого контекста, а не основной путь.
-    /// </summary>
+    // В настоящем пайплайне корреляция строится по Activity.Id; TraceIdentifier — ветка для голого контекста.
     [Fact]
     public void Trace_id_comes_from_the_current_activity_when_there_is_one()
     {

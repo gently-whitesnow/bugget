@@ -8,9 +8,8 @@ using UsersModule = Bugget.Api.Users.Extensions.ServiceCollectionExtensions;
 namespace Bugget.Api.Modules;
 
 /// <summary>
-/// Подключение модулей users и authorization к хосту объединённого bugget-api.
-/// Модули остаются отдельными проектами и сохраняют свои HTTP-контракты, но живут
-/// в одном процессе: межсервисные вызовы заменены на адаптеры из <see cref="InProcess"/>.
+/// Подключение модулей users и authorization к хосту объединённого bugget-api. Модули живут в одном процессе:
+/// межсервисные вызовы заменены на адаптеры из <see cref="InProcess"/>.
 /// </summary>
 public static class ModulesExtensions
 {
@@ -35,8 +34,7 @@ public static class ModulesExtensions
         AuthorizationModule.AddWebApi(services, configuration);
         AuthorizationModule.AddJwtAuthentication(services, configuration);
 
-        // Провайдеры входа. В OSS-сборке их два: OIDC для боевого контура и
-        // fake-логин для локальной разработки.
+        // В OSS-сборке провайдеров входа два: OIDC для боевого контура и fake-логин для локальной разработки.
         if (configuration.GetSection(nameof(OidcAuthOptions)).Get<OidcAuthOptions>()?.Enabled == true)
         {
             services.AddOidcAuth(configuration);
@@ -50,10 +48,7 @@ public static class ModulesExtensions
         return services;
     }
 
-    /// <summary>
-    /// Адаптеры вместо межсервисных HTTP-вызовов. Регистрируются в хосте: только он
-    /// видит сразу все модули, сами модули друг о друге по-прежнему не знают.
-    /// </summary>
+    /// <summary>Адаптеры вместо межсервисных HTTP-вызовов; регистрирует хост — только он видит все модули сразу.</summary>
     public static IServiceCollection AddInProcessModuleIntegrations(this IServiceCollection services)
     {
         services.AddSingleton<Bugget.Application.Ports.IUsersClient, UsersClientAdapter>();

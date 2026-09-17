@@ -8,36 +8,22 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 
 namespace Bugget.Api.Extensions;
 
-/// <summary>
-/// Настройка MVC: конвенции, биндеры, сериализация, формат ответа на невалидную
-/// модель. Вынесено из <see cref="ServiceCollectionExtensions"/> — тот файл и так
-/// связан с половиной решения, и каждая новая настройка тянула туда ещё один using.
-/// </summary>
 public static class MvcServiceCollectionExtensions
 {
     public static IServiceCollection AddMvcPipeline(this IServiceCollection services)
     {
         services.AddControllers(options =>
         {
-            // Модуль reports исторически требует аутентификации на всех своих контроллерах.
-            // Контроллеры модулей users и authorization живут в том же процессе и объявляют
-            // авторизацию сами ([Auth] / [JwtAuth]), поэтому фильтр вешается по модулю,
-            // а не глобально.
+            // Фильтр по модулю, а не глобально: users и authorization объявляют авторизацию сами ([Auth] / [JwtAuth]).
             options.Conventions.Add(new ReportsModuleAuthorizationConvention());
 
-            // Первым: параметр сгенерированного типа FileParameter иначе уедет в
-            // BodyModelBinder — [ApiController] выводит источник сложного типа как тело.
+            // Первым: иначе FileParameter уедет в BodyModelBinder — [ApiController] считает сложный тип телом.
             options.ModelBinderProviders.Insert(0, new FileParameterModelBinderProvider());
 
-            // Тоже до штатных: enum контракта приходит в query строкой из `enum`
-            // OpenAPI, а не именем CLR-члена, и разбор у него строгий.
+            // Тоже до штатных: enum контракта приходит строкой из `enum` OpenAPI, а не именем CLR-члена.
             options.ModelBinderProviders.Insert(1, new WireEnumModelBinderProvider());
 
-            // Ключи ModelState по умолчанию — CLR-имена свойств, и клиент получал бы
-            // `Scopes[0].Key` вместо поля, которое сам отправил. Провайдер подставляет
-            // JSON-имя (JsonPropertyName, иначе политика) на каждом сегменте пути, включая
-            // вложенные объекты и элементы массивов; индексы и ключи query/route он не
-            // трогает. Политика та же, что у сериализации ниже, — второго источника имён нет.
+            // Ключи ModelState — JSON-имена полей, а не CLR-имена; политика та же, что у сериализации ниже.
             options.ModelMetadataDetailsProviders.Add(
                 new SystemTextJsonValidationMetadataProvider(JsonNamingPolicy.SnakeCaseLower));
         })
@@ -45,9 +31,8 @@ public static class MvcServiceCollectionExtensions
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
 
-            // Enum'ы контракта уходят на провод строкой из `enum` OpenAPI. Фабрика
-            // накрывает элементы массивов, модификатор — скалярные свойства, на
-            // которых генератор уже поставил свой конвертер (ADR-0013).
+            // Enum'ы контракта идут строкой из OpenAPI: фабрика накрывает элементы массивов,
+            // модификатор — скалярные свойства с конвертером генератора (ADR-0013).
             options.JsonSerializerOptions.Converters.Add(new WireEnumJsonConverterFactory());
             options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver
             {
@@ -58,10 +43,8 @@ public static class MvcServiceCollectionExtensions
         {
             o.InvalidModelStateResponseFactory = context => ProblemDetailsFactory.CreateValidation(context);
 
-            // MVC сам превращает пустые 4xx (`NotFound()`, `Unauthorized()`, 415) в свой
-            // ProblemDetails — с чужим `type` и без нашего `code`. Это третья форма ошибки
-            // на проводе. Отключаем: пустой результат доезжает до UseProblemStatusCodes,
-            // и адаптер в контуре остаётся один (ADR-0008).
+            // Иначе MVC превращает пустые 4xx в свой ProblemDetails без нашего `code`; пустой результат
+            // должен доехать до UseProblemStatusCodes — адаптер в контуре один (ADR-0008).
             o.SuppressMapClientErrors = true;
         });
 

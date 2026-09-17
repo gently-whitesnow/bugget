@@ -63,7 +63,7 @@ public class BetaBotMutationEmissionArchitectureTests
     {
         // Тесты исполняются из Bugget.UnitTests/bin/<Configuration>/<tfm>/. Поднимаемся к solution-root и идём в Bugget.Api.BO.
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Bugget.sln")))
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Bugget.slnx")))
         {
             dir = dir.Parent;
         }

@@ -16,9 +16,7 @@ namespace Bugget.Api.Users.Controllers;
 [Auth(Roles = "admin")]
 public sealed class TeamsAdminController(ITeamsService teamsService) : TeamsAdminControllerBase
 {
-    /// <summary>
-    /// Создать команду
-    /// </summary>
+    /// <summary>Создать команду</summary>
     [WorkspaceRequired]
     public override Task<ActionResult<Team>> CreateTeam(
         int workspaceId,
@@ -31,9 +29,7 @@ public sealed class TeamsAdminController(ITeamsService teamsService) : TeamsAdmi
             .AsContractResultAsync(HttpContext, model => model.ToContract());
     }
 
-    /// <summary>
-    /// Обновить команду
-    /// </summary>
+    /// <summary>Обновить команду</summary>
     [WorkspaceRequired]
     public override async Task<ActionResult<Team>> UpdateTeam(
         int workspaceId,
@@ -45,9 +41,7 @@ public sealed class TeamsAdminController(ITeamsService teamsService) : TeamsAdmi
         return team.ToContract();
     }
 
-    /// <summary>
-    /// Удалить команду
-    /// </summary>
+    /// <summary>Удалить команду</summary>
     [WorkspaceRequired]
     public override async Task<IActionResult> DeleteTeam(
         int workspaceId,

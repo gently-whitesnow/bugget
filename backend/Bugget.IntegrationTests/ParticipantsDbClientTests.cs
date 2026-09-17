@@ -22,15 +22,12 @@ public class ParticipantsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Добавление первого участника к репорту")]
     public async Task AddParticipantIfNotExistAsync_FirstParticipant_ShouldAddParticipant()
     {
-        // Arrange
         var creatorUserId = $"user_{Guid.NewGuid()}";
         var participantUserId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(creatorUserId);
 
-        // Act
         var result = await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participantUserId);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Contains(participantUserId, result);
     }
@@ -38,16 +35,13 @@ public class ParticipantsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Добавление того же участника дважды возвращает null")]
     public async Task AddParticipantIfNotExistAsync_SameParticipantTwice_ShouldReturnNull()
     {
-        // Arrange
         var creatorUserId = $"user_{Guid.NewGuid()}";
         var participantUserId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(creatorUserId);
 
-        // Act
         var result1 = await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participantUserId);
         var result2 = await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participantUserId);
 
-        // Assert
         Assert.NotNull(result1); // Первое добавление успешно
         Assert.Contains(participantUserId, result1);
 
@@ -57,19 +51,16 @@ public class ParticipantsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Добавление нескольких разных участников к репорту")]
     public async Task AddParticipantIfNotExistAsync_MultipleParticipants_ShouldAddAll()
     {
-        // Arrange
         var creatorUserId = $"user_{Guid.NewGuid()}";
         var participant1 = $"user_{Guid.NewGuid()}";
         var participant2 = $"user_{Guid.NewGuid()}";
         var participant3 = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(creatorUserId);
 
-        // Act
         var result1 = await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participant1);
         var result2 = await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participant2);
         var result3 = await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participant3);
 
-        // Assert
         Assert.NotNull(result3);
         Assert.Contains(participant1, result3);
         Assert.Contains(participant2, result3);
@@ -80,17 +71,14 @@ public class ParticipantsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Добавление нового участника после первого")]
     public async Task AddParticipantIfNotExistAsync_SecondParticipant_ShouldAddToList()
     {
-        // Arrange
         var creatorUserId = $"user_{Guid.NewGuid()}";
         var participant1 = $"user_{Guid.NewGuid()}";
         var participant2 = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(creatorUserId);
 
-        // Act
         var result1 = await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participant1);
         var result2 = await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participant2);
 
-        // Assert
         Assert.NotNull(result1);
         Assert.NotNull(result2);
         Assert.Contains(participant1, result1);
@@ -101,7 +89,6 @@ public class ParticipantsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Добавление участников к разным репортам")]
     public async Task AddParticipantIfNotExistAsync_DifferentReports_ShouldKeepSeparate()
     {
-        // Arrange
         var user1 = $"user_{Guid.NewGuid()}";
         var user2 = $"user_{Guid.NewGuid()}";
         var participant1 = $"user_{Guid.NewGuid()}";
@@ -109,11 +96,9 @@ public class ParticipantsDbClientTests : IClassFixture<AppWithPostgresFixture>
         var report1 = await CreateTestReportAsync(user1);
         var report2 = await CreateTestReportAsync(user2);
 
-        // Act
         var result1 = await _participantsDbClient.AddParticipantIfNotExistAsync(report1.Id, participant1);
         var result2 = await _participantsDbClient.AddParticipantIfNotExistAsync(report2.Id, participant2);
 
-        // Assert
         Assert.NotNull(result1);
         Assert.NotNull(result2);
         Assert.Contains(participant1, result1);
@@ -125,15 +110,12 @@ public class ParticipantsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Проверка что список участников не null даже для нового репорта")]
     public async Task AddParticipantIfNotExistAsync_NewReport_ShouldReturnNonNullArray()
     {
-        // Arrange
         var creatorUserId = $"user_{Guid.NewGuid()}";
         var participantUserId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(creatorUserId);
 
-        // Act
         var result = await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participantUserId);
 
-        // Assert
         Assert.NotNull(result);
         Assert.NotEmpty(result);
     }
@@ -153,4 +135,3 @@ public class ParticipantsDbClientTests : IClassFixture<AppWithPostgresFixture>
 
     #endregion
 }
-

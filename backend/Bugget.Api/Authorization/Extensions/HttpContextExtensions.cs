@@ -16,7 +16,7 @@ public static class HttpContextExtensions
 {
     public const string AuthMethodHeaderName = "Auth-Request-Auth-Method";
 
-    public static bool IsDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+    public static readonly bool IsDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
     public static string BuildCookieHeader(string name, string value, TimeSpan lifetime)
     {

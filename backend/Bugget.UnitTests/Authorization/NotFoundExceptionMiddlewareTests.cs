@@ -6,12 +6,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Bugget.UnitTests.Authorization;
 
 /// <summary>
-/// Граница модуля authorization отдаёт ту же форму, что и весь остальной HTTP-контур,
-/// и не публикует текст исключения: до MAIN-69 здесь уходило <c>{ error: ex.Message }</c>.
-///
-/// Внешний обработчик «любое исключение -> 500» живёт в хосте, и его половину проверяет
-/// <c>Bugget.UnitTests.UnhandledExceptionPipelineTests</c>: сюда он не дотягивается, потому что
-/// хост ссылается на этот модуль, а не наоборот.
+/// Граница модуля authorization отдаёт ту же форму, что и весь HTTP-контур, и не публикует текст исключения.
+/// Обработчик «любое исключение -> 500» живёт в хосте и проверяется в <c>UnhandledExceptionPipelineTests</c>.
 /// </summary>
 public sealed class NotFoundExceptionMiddlewareTests
 {

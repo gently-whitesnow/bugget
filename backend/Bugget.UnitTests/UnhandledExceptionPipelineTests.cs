@@ -7,10 +7,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Bugget.UnitTests;
 
 /// <summary>
-/// Внешний обработчик необработанных исключений в хосте — один на весь процесс,
-/// включая модули users и authorization (у них был свой, дублировавший этот, ADR-0004).
-/// Проверяем то же, что раньше проверял тест модуля authorization: наружу уходит
-/// problem+json единой формы, текст исключения в тело не попадает.
+/// Внешний обработчик необработанных исключений — один на весь процесс, включая модули users и authorization
+/// (ADR-0004): наружу уходит problem+json единой формы, текст исключения в тело не попадает.
 /// </summary>
 public sealed class UnhandledExceptionPipelineTests
 {
@@ -45,10 +43,7 @@ public sealed class UnhandledExceptionPipelineTests
         Assert.Equal("not_found", document.RootElement.GetProperty("code").GetString());
     }
 
-    /// <summary>
-    /// Повторяет порядок production pipeline: общий обработчик хоста снаружи,
-    /// authorization NotFound-handler внутри него.
-    /// </summary>
+    /// <summary>Повторяет порядок production pipeline: обработчик хоста снаружи, authorization NotFound-handler внутри.</summary>
     private static async Task<DefaultHttpContext> InvokeHostPipelineAsync(Exception exception)
     {
         var authorization = new NotFoundExceptionMiddleware(

@@ -26,12 +26,9 @@ public sealed class CommentsController(
         string aliasId,
         int bugId,
         CommentRequest body,
-        CancellationToken cancellationToken = default)
-    {
-        var user = User.GetIdentity();
-        return commentsService.CreateCommentAsync(user, aliasId, bugId, ToDto(body))
+        CancellationToken cancellationToken = default) =>
+        commentsService.CreateCommentAsync(User.GetIdentity(), aliasId, bugId, ToDto(body))
             .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract(), 201);
-    }
 
     public override async Task<ActionResult<Comment>> CreateCommentWithAttachments(
         string aliasId,
@@ -59,22 +56,16 @@ public sealed class CommentsController(
         int bugId,
         int commentId,
         CommentRequest body,
-        CancellationToken cancellationToken = default)
-    {
-        var user = User.GetIdentity();
-        return commentsService.UpdateCommentAsync(user, aliasId, bugId, commentId, ToDto(body))
+        CancellationToken cancellationToken = default) =>
+        commentsService.UpdateCommentAsync(User.GetIdentity(), aliasId, bugId, commentId, ToDto(body))
             .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract());
-    }
 
     public override Task<IActionResult> DeleteComment(
         string aliasId,
         int bugId,
         int commentId,
-        CancellationToken cancellationToken = default)
-    {
-        var user = User.GetIdentity();
-        return commentsService.DeleteCommentAsync(user, aliasId, bugId, commentId).AsActionResultAsync(HttpContext);
-    }
+        CancellationToken cancellationToken = default) =>
+        commentsService.DeleteCommentAsync(User.GetIdentity(), aliasId, bugId, commentId).AsActionResultAsync(HttpContext);
 
     private static CommentDto ToDto(CommentRequest body) => new()
     {

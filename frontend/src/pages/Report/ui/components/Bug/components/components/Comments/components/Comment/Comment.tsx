@@ -11,7 +11,7 @@ import {
   deleteCommentAttachmentFx,
   renameCommentAttachmentFx,
 } from "@/pages/Report/model-comment";
-import { Avatar, FilePreview, AutoLinkText, InlineTextEdit } from "@/shared/ui";
+import { Avatar, FilePreview, MarkdownText, InlineTextEdit } from "@/shared/ui";
 import { $usersStore, Attachment } from "@/entities/report";
 import {
   getHighlightClasses,
@@ -206,10 +206,7 @@ const Comment = memo((props: Props) => {
               maxLength={commentMaxLength}
             />
           ) : (
-            <AutoLinkText
-              text={text}
-              className="whitespace-pre-wrap break-words text-base-content text-sm"
-            />
+            <MarkdownText text={text} className="text-base-content text-sm" />
           )}
         </div>
         <div className="mt-2">

@@ -1,0 +1,113 @@
+/* Markdown в плотных блоках карточки: заголовки не крупнее {typography.title},
+   отступы — половина строки, чтобы комментарий не расползался. */
+.markdown-text {
+  overflow-wrap: anywhere;
+}
+
+.markdown-text > :first-child {
+  margin-top: 0;
+}
+
+.markdown-text > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-text
+  :where(p, ul, ol, blockquote, pre, table, h1, h2, h3, h4, h5, h6) {
+  margin-block: 0.5em;
+}
+
+.markdown-text :where(h1, h2, h3, h4, h5, h6) {
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.markdown-text h1 {
+  font-size: 1.125rem;
+}
+
+.markdown-text h2 {
+  font-size: 1rem;
+}
+
+.markdown-text :where(h3, h4, h5, h6) {
+  font-size: 0.875rem;
+}
+
+.markdown-text :where(ul, ol) {
+  padding-inline-start: 1.5em;
+}
+
+.markdown-text ul {
+  list-style: disc;
+}
+
+.markdown-text ol {
+  list-style: decimal;
+}
+
+.markdown-text :where(ul ul, ol ul) {
+  list-style: circle;
+}
+
+.markdown-text :where(ul, ol) :where(ul, ol) {
+  margin-block: 0;
+}
+
+.markdown-text li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-inline-start: -1.5em;
+}
+
+.markdown-text li > input[type="checkbox"] {
+  margin-inline-end: 0.5em;
+  vertical-align: -0.125em;
+}
+
+.markdown-text blockquote {
+  border-inline-start: 2px solid
+    color-mix(in oklab, var(--color-base-content) 20%, transparent);
+  padding-inline-start: 0.75em;
+  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+}
+
+.markdown-text code {
+  border-radius: 0.25rem;
+  background: var(--color-base-200);
+  padding: 0.1em 0.3em;
+  font-size: 0.9em;
+}
+
+.markdown-text pre {
+  overflow-x: auto;
+  border-radius: 0.25rem;
+  background: var(--color-base-200);
+  padding: 0.5em 0.75em;
+  white-space: pre;
+}
+
+.markdown-text pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+.markdown-text hr {
+  margin-block: 0.75em;
+  border-color: color-mix(in oklab, var(--color-base-content) 15%, transparent);
+}
+
+.markdown-text table {
+  border-collapse: collapse;
+}
+
+.markdown-text :where(th, td) {
+  border: 1px solid
+    color-mix(in oklab, var(--color-base-content) 15%, transparent);
+  padding: 0.25em 0.5em;
+  text-align: start;
+}
+
+.markdown-text th {
+  font-weight: 600;
+}

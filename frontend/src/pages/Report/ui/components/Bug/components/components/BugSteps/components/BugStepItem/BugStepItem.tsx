@@ -3,7 +3,7 @@ import { GripVertical, Link, Pencil, Trash2 } from "lucide-react";
 import { useUnit } from "effector-react";
 import ActionDropdown, { ActionItem } from "@/shared/ui/ActionDropdown";
 
-import { AutoLinkText, InlineTextEdit, FilePreview } from "@/shared/ui";
+import { MarkdownText, InlineTextEdit, FilePreview } from "@/shared/ui";
 import { usePasteFile } from "@/shared/lib";
 import { $authUserStore } from "@/entities/user";
 import {
@@ -179,9 +179,9 @@ const BugStepItem = ({
             />
           ) : (
             <div className="">
-              <AutoLinkText
+              <MarkdownText
                 text={step.text}
-                className="whitespace-pre-wrap break-words text-base-content text-sm leading-none"
+                className="text-base-content text-sm leading-none"
               />
             </div>
           )}

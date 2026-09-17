@@ -1,4 +1,4 @@
-import { normalizeUrl } from "@/shared/lib/markdown";
+import { normalizeUrl } from "./normalizeUrl";
 
 /**
  * Известные домены с нестандартными путями к фавиконам

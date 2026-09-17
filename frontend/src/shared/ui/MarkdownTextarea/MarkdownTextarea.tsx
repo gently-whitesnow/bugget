@@ -27,6 +27,7 @@ type Props = {
   enableLinkInsertion?: boolean;
   onBlur?: (value: string) => void;
   onInput?: (value: string) => void;
+  onFocus?: () => void;
   onPaste?: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   /** Enter и ⌘Enter. Без него Enter переносит строку. */
@@ -49,6 +50,7 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
       enableLinkInsertion = true,
       onBlur,
       onInput,
+      onFocus,
       onPaste,
       onKeyDown,
       onSubmit,
@@ -70,14 +72,19 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
     // Поле неконтролируемое: часть владельцев обновляет value только на blur.
     const lastEmittedRef = useRef(value);
 
+    const baseMinHeight = `${rows * 2.5}rem`;
+
+    // Растим min-height, а не height: владелец может растянуть поле выше текста (self-stretch).
     const adjustHeight = useCallback(() => {
       const textarea = textareaRef.current;
       if (!textarea) return;
       textarea.style.height = "auto";
+      textarea.style.minHeight = baseMinHeight;
       // scrollHeight не включает бордер: без поправки последняя строка обрезается.
       const border = textarea.offsetHeight - textarea.clientHeight;
-      textarea.style.height = `${textarea.scrollHeight + border}px`;
-    }, []);
+      textarea.style.minHeight = `max(${baseMinHeight}, ${textarea.scrollHeight + border}px)`;
+      textarea.style.height = "";
+    }, [baseMinHeight]);
 
     useLayoutEffect(() => {
       const textarea = textareaRef.current;
@@ -150,11 +157,12 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
         maxLength={maxLength}
         placeholder={placeholder}
         onChange={handleChange}
+        onFocus={onFocus}
         onBlur={(event) => onBlur?.(event.currentTarget.value)}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         className={`resize-none overflow-hidden ${className}`.trim()}
-        style={{ minHeight: `${rows * 2.5}rem`, ...style }}
+        style={{ minHeight: baseMinHeight, ...style }}
       />
     );
   }

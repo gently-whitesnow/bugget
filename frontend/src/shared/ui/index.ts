@@ -3,7 +3,7 @@ export { default as ActionDropdown } from "./ActionDropdown/ActionDropdown";
 export type { ActionItem } from "./ActionDropdown/ActionDropdown";
 export { AutoResizeTextarea } from "./AutoResizeTextarea";
 export { AttachFileButton } from "./AttachFileButton";
-export { AutoLinkText } from "./AutoLinkText";
+export { default as MarkdownText } from "./MarkdownText";
 export { Autosuggest } from "./Autosuggest";
 export type { AutocompleteEntity } from "./Autosuggest";
 export { Avatar } from "./Avatar";

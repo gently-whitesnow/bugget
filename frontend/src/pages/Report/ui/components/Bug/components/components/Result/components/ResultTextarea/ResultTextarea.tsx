@@ -1,50 +1,95 @@
-import { forwardRef } from "react";
+import {
+  useEffect,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 import { resultMaxLength } from "@/shared/config";
-import { MarkdownTextarea } from "@/shared/ui";
+import { MarkdownText, MarkdownTextarea } from "@/shared/ui";
 
 type Props = {
   value: string;
   placeholder: string;
   autoFocus: boolean;
-  rows?: number;
   maxLength?: number;
   onBlur: (value: string) => void;
   onInput: (value: string) => void;
   onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
 };
 
-const ResultTextarea = forwardRef<HTMLTextAreaElement, Props>(
-  (
-    {
-      value,
-      placeholder,
-      autoFocus,
-      maxLength = resultMaxLength,
-      onBlur,
-      onInput,
-      onPaste,
-    },
-    ref
-  ) => {
+const boxClassName =
+  "w-full self-stretch textarea textarea-bordered text-sm bg-base-100 px-4 py-2";
+
+/** Без фокуса результат отрисован, по клику или Enter открывается исходный markdown. */
+const ResultTextarea = ({
+  value,
+  placeholder,
+  autoFocus,
+  maxLength = resultMaxLength,
+  onBlur,
+  onInput,
+  onPaste,
+}: Props) => {
+  // Store существующего бага обновляется только после сохранения — до него показываем черновик.
+  const [draft, setDraft] = useState(value);
+  const [isEditing, setIsEditing] = useState(autoFocus);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  const startEditing = () => setIsEditing(true);
+
+  if (isEditing || !draft.trim()) {
     return (
       <MarkdownTextarea
-        ref={ref}
-        value={value}
+        value={draft}
         placeholder={placeholder}
-        autoFocus={autoFocus}
+        autoFocus={isEditing}
         maxLength={maxLength}
-        onBlur={onBlur}
-        onInput={onInput}
+        onFocus={startEditing}
+        onInput={(next) => {
+          setDraft(next);
+          onInput(next);
+        }}
+        onBlur={(next) => {
+          setDraft(next);
+          setIsEditing(false);
+          onBlur(next);
+        }}
         onPaste={onPaste}
         // Сохранение результата висит на blur, поэтому Enter просто снимает фокус.
         onSubmit={() => (document.activeElement as HTMLElement | null)?.blur()}
         rows={3}
-        className="w-full textarea textarea-bordered text-sm bg-base-100 min-h-[2.5rem] px-4 py-2 break-words focus:outline-none focus:ring-primary focus:ring-offset-0"
+        className={`${boxClassName} focus:outline-none focus:ring-primary focus:ring-offset-0`}
       />
     );
   }
-);
 
-ResultTextarea.displayName = "ResultTextarea";
+  const handleClick = (event: MouseEvent<HTMLDivElement>) => {
+    // Выделение текста мышью — не повод открывать редактор.
+    if (window.getSelection()?.toString()) return;
+    event.preventDefault();
+    startEditing();
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget || event.key !== "Enter") return;
+    event.preventDefault();
+    startEditing();
+  };
+
+  return (
+    <div
+      tabIndex={0}
+      aria-label={`Редактировать: ${placeholder}`}
+      className={`${boxClassName} h-auto min-h-[7.5rem] cursor-text`}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+    >
+      <MarkdownText text={draft} />
+    </div>
+  );
+};
 
 export default ResultTextarea;

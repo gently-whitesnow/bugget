@@ -9,19 +9,8 @@ import type {
 } from "@/shared/api/operation";
 
 /**
- * Ядро единственной транспортной границы модуля `analytics`.
- *
- * Ручки объявлены рядом (`analytics.ts`) как операции контракта: ключ пути из
- * `paths` плюс метод, объявленный у этого пути. Query и тип ответа выведены из
- * той же операции, поэтому правка `specs/contracts/analytics/openapi.yaml`
- * ломает компиляцию здесь, а не отвечает 400 у заказчика.
- *
- * Detail по репорту (`/v2/reports/{id}/analytics`) — sub-resource модуля
- * `reports` и живёт в его границе; здесь он только переэкспортируется.
- *
- * Прямых `appApi.get("/v2/analytics/...")` вне этого каталога быть не должно —
- * за этим следит правило линтера `no-restricted-syntax` (гейт `frontend-lint`),
- * краснота которого закрыта тестом `transportBoundary.gate.test.ts`.
+ * Единственная транспортная граница `analytics`: типы выведены из операций
+ * контракта. Прямые `appApi.get("/v2/analytics/...")` вне каталога ловит lint.
  */
 export const request = createOperationRequest<paths>(appApi);
 

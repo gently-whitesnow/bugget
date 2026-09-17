@@ -6,11 +6,8 @@ import type { components } from "@/shared/api/generated/authorization";
 import { logout } from "./session";
 
 /**
- * Провод модуля `authorization`.
- *
- * Ручка одна, но адрес у неё собирался руками (`authorizationPath("/logout")`),
- * а теперь берётся из контракта, а префикс модуля дописывает интерсептор
- * инстанса. На проводе обязан остаться тот же URL и тот же метод.
+ * Адрес берётся из контракта, префикс модуля дописывает интерсептор инстанса:
+ * на проводе обязан остаться тот же URL и тот же метод.
  */
 
 let captured: InternalAxiosRequestConfig | null = null;

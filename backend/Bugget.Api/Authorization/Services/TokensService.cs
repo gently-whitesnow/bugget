@@ -27,10 +27,10 @@ public sealed class TokensService(
 
     public async Task<(string AccessToken, string RefreshToken)> GenerateTokensAsync(
         long userId,
-        string refresh)
+        string refreshToken)
     {
         // 1) Валидация refresh (БЕЗ проверки revoked) + извлечение JTI/EXP
-        var principal = await ValidateRefreshTokenWithoutRevocationCheckAsync(refresh);
+        var principal = await ValidateRefreshTokenWithoutRevocationCheckAsync(refreshToken);
         if (principal.FindFirstValue(ClaimTypes.NameIdentifier) != userId.ToString())
         {
             throw new SecurityTokenException("userId mismatch");

@@ -1,5 +1,0 @@
-{
-  "$schema": "https://example.invalid/bugget-suppress-baseline.schema.json",
-  "description": "Per-file analyzer suppression baseline. Ratcheted: count can only decrease.",
-  "entries": []
-}

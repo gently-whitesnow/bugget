@@ -7,7 +7,7 @@ openapi: 3.0.3
 # к репорту и справочник досок для автокомплита.
 #
 # DTO генерируются в проект Bugget: их потребитель — только слой API.
-# Правится этот файл, а не .g.cs: перегенерация — scripts/quality/openapi-generate.sh.
+# Правится этот файл, а не .g.cs: перегенерация — scripts/contracts/openapi-generate.sh.
 
 info:
   title: Bugget External sources API

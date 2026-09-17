@@ -35,7 +35,6 @@ public class TeamsServiceTests
     [Fact]
     public async Task AutocompleteTeamsAsync_ReturnsRepositoryResult()
     {
-        // Arrange
         var workspaceId = 1;
         var search = "core";
         var skip = 0;
@@ -57,10 +56,8 @@ public class TeamsServiceTests
             .Setup(r => r.AutocompleteTeamsAsync(workspaceId, search, skip, take))
             .ReturnsAsync(expected);
 
-        // Act
         var result = await _sut.AutocompleteTeamsAsync(workspaceId, search, skip, take);
 
-        // Assert
         Assert.Single(result);
         Assert.Equal(expected[0].Id, result[0].Id);
         Assert.Equal(expected[0].Name, result[0].Name);
@@ -72,7 +69,6 @@ public class TeamsServiceTests
     [Fact]
     public async Task CreateTeamAsync_CreatesTeam_WhenUserHasTeam()
     {
-        // Arrange
         var workspaceId = 1;
         var name = "Test Team";
         var userId = 42L;
@@ -92,10 +88,8 @@ public class TeamsServiceTests
             .Setup(r => r.CreateTeamAsync(workspaceId, name))
             .ReturnsAsync(expectedTeam);
 
-        // Act
         var result = await _sut.CreateTeamAsync(workspaceId, name, userId, userTeamId);
 
-        // Assert
         Assert.Null(result.Error);
         Assert.Equal(expectedTeam.Id, result.Value!.Id);
         Assert.Equal(expectedTeam.Name, result.Value!.Name);
@@ -108,7 +102,6 @@ public class TeamsServiceTests
     [Fact]
     public async Task CreateTeamAsync_CreatesTeamAndAddsUser_WhenUserHasNoTeam()
     {
-        // Arrange
         var workspaceId = 1;
         var name = "Test Team";
         var userId = 42L;
@@ -141,10 +134,8 @@ public class TeamsServiceTests
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask);
 
-        // Act
         var result = await _sut.CreateTeamAsync(workspaceId, name, userId, userTeamId);
 
-        // Assert
         Assert.Null(result.Error);
         Assert.Equal(expectedTeam.Id, result.Value!.Id);
         Assert.Equal(expectedTeam.Name, result.Value!.Name);
@@ -158,7 +149,6 @@ public class TeamsServiceTests
     [Fact]
     public async Task CreateTeamAsync_AddsUserToCorrectTeam()
     {
-        // Arrange
         var workspaceId = 1;
         var name = "Test Team";
         var userId = 100L;
@@ -192,10 +182,8 @@ public class TeamsServiceTests
             .Setup(r => r.InvalidateUserCacheAsync(userId))
             .Returns(Task.CompletedTask);
 
-        // Act
         await _sut.CreateTeamAsync(workspaceId, name, userId, userTeamId);
 
-        // Assert
         _teamMembersDbClient.Verify(r => r.CreateTeamMemberAsync(userId, createdTeam.Id, 10), Times.Once);
         _userCacheInvalidator.Verify(r => r.InvalidateUserCacheAsync(userId), Times.Once);
     }
@@ -203,7 +191,6 @@ public class TeamsServiceTests
     [Fact]
     public async Task UpdateTeamAsync_UpdatesTeam()
     {
-        // Arrange
         var workspaceId = 1;
         var teamId = 7;
         var name = "Updated Team";
@@ -222,10 +209,8 @@ public class TeamsServiceTests
             .Setup(r => r.UpdateTeamAsync(workspaceId, teamId, name))
             .ReturnsAsync(expectedTeam);
 
-        // Act
         var result = await _sut.UpdateTeamAsync(workspaceId, teamId, name);
 
-        // Assert
         Assert.Equal(expectedTeam.Id, result.Id);
         Assert.Equal(expectedTeam.Name, result.Name);
         Assert.Equal(expectedTeam.WorkspaceId, result.WorkspaceId);
@@ -238,7 +223,6 @@ public class TeamsServiceTests
     [Fact]
     public async Task DeleteTeamAsync_DeletesTeam()
     {
-        // Arrange
         var workspaceId = 2;
         var teamId = 11;
 
@@ -246,10 +230,8 @@ public class TeamsServiceTests
             .Setup(r => r.DeleteTeamAsync(workspaceId, teamId))
             .Returns(Task.CompletedTask);
 
-        // Act
         await _sut.DeleteTeamAsync(workspaceId, teamId);
 
-        // Assert
         _teamsDbClient.Verify(r => r.DeleteTeamAsync(workspaceId, teamId), Times.Once);
         _teamMembersDbClient.VerifyNoOtherCalls();
         _userCacheInvalidator.VerifyNoOtherCalls();

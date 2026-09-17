@@ -46,9 +46,9 @@ public sealed class TextOptimizeWriter(
             try
             {
                 int read;
-                while ((read = await originalStream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+                while ((read = await originalStream.ReadAsync(buffer.AsMemory(0, buffer.Length), ct)) > 0)
                 {
-                    await gzip.WriteAsync(buffer, 0, read, ct);
+                    await gzip.WriteAsync(buffer.AsMemory(0, read), ct);
                 }
             }
             finally

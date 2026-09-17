@@ -3,14 +3,9 @@ using FluentAssertions;
 namespace Bugget.Architecture.Tests;
 
 /// <summary>
-/// Правила уровня графа проектов: что кому разрешено объявлять в .csproj.
-///
-/// Все правила написаны белым списком: перечислено разрешённое, всё остальное — нарушение.
-/// Чёрный список здесь не работает: он ловит только те пакеты, о которых кто-то заранее
-/// подумал, и молча пропускает новый.
-///
-/// Здесь проверяется объявленное, а не использованное: зависимость видна даже тогда, когда
-/// код ей ещё не пользуется. Правила уровня сборок живут в <see cref="LayerDependencyRulesTests"/>.
+/// Правила графа проектов: что кому разрешено объявлять в .csproj. Только белым списком — чёрный молча
+/// пропускает новый пакет. Проверяется объявленное, а не использованное; правила уровня сборок —
+/// в <see cref="LayerDependencyRulesTests"/>.
 /// </summary>
 public class SolutionGraphRulesTests
 {
@@ -37,7 +32,6 @@ public class SolutionGraphRulesTests
         ],
     };
 
-    /// <summary>Пакеты драйвера БД: разрешены только там, где перечислено.</summary>
     private static readonly string[] PersistencePackages = ["Npgsql", "Dapper"];
 
     [Fact(DisplayName = "В решении остались только проекты квартета и тестовые")]
@@ -62,7 +56,7 @@ public class SolutionGraphRulesTests
         var cycle = SolutionGraph.FindCycle();
 
         cycle.Should().BeNull(
-            "граф проектов обязан оставаться ациклическим (ROOT.md → «Правила, которые нельзя " +
+            "граф проектов обязан оставаться ациклическим (AGENTS.md → «Правила, которые нельзя " +
             "нарушать молча», ADR-0001). Найден цикл: {0}. " +
             "Чинится не удалением ссылки наугад: вынеси общий контракт в нижний проект " +
             "(интерфейс — в тот слой, который его вызывает) и оставь ровно одно направление ссылки.",
@@ -165,10 +159,8 @@ public class SolutionGraphRulesTests
     [Fact(DisplayName = "Правило транзитивной зависимости краснеет на подсунутом ребре")]
     public void Transitive_persistence_rule_is_provably_red()
     {
-        // Гейт без доказательства красноты — это гейт, про который никто не знает,
-        // работает ли он (ADR-0002). Создаём настоящие SDK-style .csproj с тем же
-        // синтаксисом Include, который используется в решении, затем прогоняем полный
-        // production path: XML -> ProjectNode -> транзитивный обход.
+        // Гейт без доказательства красноты — гейт, про который неизвестно, работает ли он (ADR-0002).
+        // Настоящие SDK-style .csproj прогоняются через полный production path: XML -> ProjectNode -> обход.
         var fixtureRoot = Path.Combine(Path.GetTempPath(), $"bugget-graph-{Guid.NewGuid():N}");
         Directory.CreateDirectory(fixtureRoot);
 

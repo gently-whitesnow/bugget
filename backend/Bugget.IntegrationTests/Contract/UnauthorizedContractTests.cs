@@ -4,9 +4,8 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Поведение на запросе без identity. В бою заголовки <c>Auth-Request-*</c> ставит
-/// nginx после успешного <c>auth_request</c>; запрос без них — это запрос, который
-/// авторизацию не прошёл, и отвечать на него данными нельзя.
+/// Запрос без identity: в бою заголовки <c>Auth-Request-*</c> ставит nginx после успешного <c>auth_request</c>,
+/// без них запрос авторизацию не прошёл, и отвечать на него данными нельзя.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class UnauthorizedContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
@@ -91,11 +90,8 @@ public sealed class UnauthorizedContractTests(AppContractFixture fixture) : ICla
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    /// <summary>
-    /// Модуль users на неавторизованный запрос отвечает 401 либо 404: часть его ручек
-    /// закрыта фильтрами <c>WorkspaceRequired</c>/<c>TeamRequired</c>, которые прячут
-    /// существование ресурса. Оба варианта означают одно: данных без identity нет.
-    /// </summary>
+    // Users отвечает 401 либо 404: фильтры WorkspaceRequired/TeamRequired прячут существование ресурса.
+    // Оба варианта означают одно: данных без identity нет.
     [Theory(DisplayName = "Без identity-заголовков модуль users не отдаёт данные")]
     [MemberData(nameof(UsersModulePaths))]
     public async Task UsersModuleRequiresIdentity(string method, string path)

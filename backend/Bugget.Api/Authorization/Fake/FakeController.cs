@@ -50,13 +50,7 @@ public sealed class FakeController(
             externalId,
             name ?? "no name");
 
-        // MAIN-20: контракт помечен [Obsolete] намеренно (миграция на provider-required API —
-        // отдельная задача). До слияния проектов предупреждение было не видно: у модулей
-        // authorization/oidc был выключен TreatWarningsAsErrors. Функциональных правок в PR
-        // слияния нет, поэтому вызов оставлен как есть под точечным подавлением.
-#pragma warning disable CS0618
         await externalAuth.AuthorizeAsync(HttpContext, externalUser);
-#pragma warning restore CS0618
 
         var redirectPath = SanitizeHelper.SanitizeLocalPath(next) ?? _options.DefaultRedirectPath;
 

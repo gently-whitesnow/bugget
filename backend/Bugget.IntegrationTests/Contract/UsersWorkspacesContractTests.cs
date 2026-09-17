@@ -6,18 +6,12 @@ using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
 
-/// <summary>
-/// Контракт модуля users в части рабочих пространств, команд, участников и приглашений.
-/// Фронт ходит по этим путям через <c>/api/users/v1/*</c>: nginx срезает префикс,
-/// поэтому здесь пути без него.
-/// </summary>
+/// <summary>Контракт users: workspace, команды, участники, приглашения. Пути без <c>/api/users/v1</c> — префикс срезает nginx.</summary>
 [Collection("PostgresCollection")]
 public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
     /// <summary>
-    /// В self-hosted сборке (SelfHostedOptions.Enabled = true в appsettings.json)
-    /// рабочее пространство одно и создаётся на старте, поэтому ручка отвечает 403
-    /// с кодом <c>self_hosted_mode_error</c>: путь живой, но действие закрыто.
+    /// В self-hosted сборке workspace один и создаётся на старте: ручка жива, но отвечает 403 <c>self_hosted_mode_error</c>.
     /// </summary>
     [Fact(DisplayName = "POST /v1/workspaces: в self-hosted режиме 403")]
     public async Task CreateWorkspace()
@@ -39,9 +33,7 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
 
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
 
-        // В контексте идентификаторы приходят строками (в соседних ручках модуля
-        // встречаются и числа) — фронт разбирает каждую ручку по её схеме, поэтому
-        // тип фиксируется поимённо.
+        // Идентификаторы в контексте — строки (в соседних ручках бывают числа), поэтому тип фиксируется поимённо.
         var workspace = Assert.Single(
             body.GetProperty("workspaces").EnumerateArray().ToArray(),
             item => item.GetProperty("id").GetString()
@@ -81,7 +73,6 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
         var response = await client.PostAsync($"/v1/workspaces/{scenario.WorkspaceId}/members/join", null);
 
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
-        // `user_id` — канонический Int64 строкой (shared.yaml `Int64String`).
         Assert.Equal(
             otherUser.ToString(CultureInfo.InvariantCulture),
             body.GetProperty("user_id").GetString());
@@ -100,8 +91,7 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
             $"/v1/workspaces/{scenario.WorkspaceId}/teams",
             new { name = "команда " + Guid.NewGuid().ToString("N")[..8] });
 
-        // Создание команды отдаёт идентификаторы числами — в отличие от строковых
-        // в контексте рабочих пространств и в batch/list.
+        // Создание команды отдаёт идентификаторы числами — в отличие от строк в контексте и batch/list.
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
         Assert.True(body.GetProperty("id").GetInt32() > 0);
         Assert.Equal(scenario.WorkspaceId, body.GetProperty("workspace_id").GetInt32());
@@ -155,8 +145,7 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
 
         var response = await scenario.Client.GetAsync(scenario.TeamPath("/members"));
 
-        // size_limit фронт использует как границу для приглашений и получает его
-        // вместе со списком, а не отдельной ручкой. В self-hosted сборке лимита нет,
+        // size_limit фронт берёт как границу приглашений вместе со списком; в self-hosted лимита нет,
         // и на провод уходит 0 (TeamMembersController).
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
         Assert.Equal(0, body.GetProperty("size_limit").GetInt32());
@@ -166,16 +155,13 @@ public sealed class UsersWorkspacesContractTests(AppContractFixture fixture) : I
     [Fact(DisplayName = "GET .../teams/{teamId}/members: нечисловой workspaceId в пути — ответ тот же, не 400")]
     public async Task ListTeamMembersWithNonNumericWorkspace()
     {
-        // Команду ручка берёт из пути, а рабочее пространство — из identity: сегмент
-        // workspaceId до contract-first не связывался, и мусор в нём доезжал до
-        // действия. Контракт описывает его строкой, чтобы так и осталось.
+        // Команда — из пути, workspace — из identity: сегмент workspaceId раньше не связывался, и мусор
+        // в нём доезжал до действия. Контракт описывает его строкой, чтобы так и осталось.
         var scenario = await UsersScenario.CreateAsync(fixture);
 
         var response = await scenario.Client.GetAsync($"/v1/workspaces/not-a-number/teams/{scenario.TeamId}/members");
 
-        // Состав участников здесь не проверяется: команда по умолчанию общая на
-        // прогон и зависит от соседних сценариев. Проверяется ровно то, ради чего
-        // тест написан, — запрос доезжает до действия.
+        // Состав участников не проверяется (команда общая на прогон) — только то, что запрос доезжает до действия.
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 

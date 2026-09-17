@@ -6,13 +6,8 @@ import { createOperationRequest } from "./operation";
 import type { OperationCallArgs, ResponseValidator } from "./operation";
 import type { paths } from "@/shared/api/generated/reports";
 
-/**
- * Граница «операция контракта → HTTP».
- *
- * Две вещи, которые она обязана сохранять и которые не видны из типов вызова:
- * обязательность query там, где её требует контракт, и адрес на проводе — включая
- * разницу между «query не передан» и «query передан, но пуст».
- */
+// Граница обязана сохранять обязательность query из контракта и адрес провода,
+// включая разницу между «query не передан» и «query передан, но пуст».
 
 /** Строгое равенство типов: при расхождении `false` не присвоится `true`. */
 type Equal<A, B> =
@@ -26,10 +21,8 @@ type UploadArgs = OperationCallArgs<paths, UploadAttachment, "post">;
 type ListArgs = OperationCallArgs<paths, "/v2/reports", "get">;
 
 /**
- * Контракт объявляет `attachType` обязательным query-параметром загрузки
- * вложения. Аргументы без `query` не должны подходить под тип вызова: если
- * обязательность снова потеряется, `extends` станет истинным и `false` не
- * присвоится в `true` — гейт `frontend-typecheck` покраснеет.
+ * `attachType` обязателен: аргументы без `query` не должны подходить под тип
+ * вызова, иначе `false` не присвоится в `true` и typecheck покраснеет.
  */
 type UploadArgsWithoutQuery = {
   path: { aliasId: string; bugId: number };
@@ -40,13 +33,11 @@ const requiredQueryCannotBeOmitted: UploadArgsWithoutQuery extends UploadArgs
   ? false
   : true = true;
 
-/** А сам query у этой операции обязателен и по типу свойства. */
 const uploadQueryIsRequired: Equal<
   undefined extends UploadArgs["query"] ? true : false,
   false
 > = true;
 
-/** У списка фильтры необязательны — вызов без query остаётся законным. */
 const optionalQueryStaysOptional: object extends ListArgs ? true : false = true;
 
 const instanceCapturingRequest = (validateResponse?: ResponseValidator) => {

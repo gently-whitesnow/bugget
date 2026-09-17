@@ -17,9 +17,6 @@ namespace Bugget.Api.Users.Controllers;
 [Auth]
 public sealed class WorkspacesController(IWorkspacesService workspacesService) : WorkspacesControllerBase
 {
-    /// <summary>
-    /// Создать рабочую область
-    /// </summary>
     public override Task<ActionResult<Workspace>> CreateWorkspace(
         WorkspaceCreateRequest body,
         CancellationToken cancellationToken = default)
@@ -30,9 +27,6 @@ public sealed class WorkspacesController(IWorkspacesService workspacesService) :
             .AsContractResultAsync(HttpContext, model => model.ToContract());
     }
 
-    /// <summary>
-    /// Получить рабочие области
-    /// </summary>
     public override async Task<ActionResult<WorkspacesContext>> GetWorkspacesContext(
         CancellationToken cancellationToken = default)
     {

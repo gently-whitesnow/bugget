@@ -1,10 +1,3 @@
-/**
- * Утилиты для работы с selection и курсором в contentEditable элементах
- */
-
-/**
- * Сохраняет текущую позицию курсора
- */
 export const saveSelection = (): Range | null => {
   const selection = window.getSelection();
   if (selection && selection.rangeCount > 0) {
@@ -13,9 +6,6 @@ export const saveSelection = (): Range | null => {
   return null;
 };
 
-/**
- * Восстанавливает позицию курсора
- */
 export const restoreSelection = (range: Range | null): void => {
   if (!range) return;
 
@@ -30,9 +20,6 @@ export const restoreSelection = (range: Range | null): void => {
   }
 };
 
-/**
- * Перемещает курсор в конец элемента
- */
 export const moveCursorToEnd = (element: HTMLElement): void => {
   const range = document.createRange();
   const selection = window.getSelection();
@@ -44,9 +31,6 @@ export const moveCursorToEnd = (element: HTMLElement): void => {
   }
 };
 
-/**
- * Перемещает курсор после указанного узла
- */
 export const moveCursorAfterNode = (node: Node): void => {
   const range = document.createRange();
   const selection = window.getSelection();

@@ -6,17 +6,11 @@ namespace Bugget.Application.Ports;
 /// </summary>
 public interface IUnitOfWork
 {
-    /// <summary>
-    /// Открывает соединение и транзакцию, выполняет <paramref name="action"/>
-    /// и коммитит. При исключении транзакция откатывается (через Dispose).
-    /// </summary>
+    /// <summary>Выполняет <paramref name="action"/> в транзакции и коммитит; при исключении — откат через Dispose.</summary>
     Task<T> ExecuteAsync<T>(
         Func<ITransactionScope, CancellationToken, Task<T>> action,
         CancellationToken ct = default);
 
-    /// <summary>
-    /// Не-возвращающий вариант <see cref="ExecuteAsync{T}"/>.
-    /// </summary>
     Task ExecuteAsync(
         Func<ITransactionScope, CancellationToken, Task> action,
         CancellationToken ct = default);

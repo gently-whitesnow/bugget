@@ -14,14 +14,14 @@ namespace Bugget.Api.Authorization;
 /// </summary>
 public class NotFoundExceptionMiddleware(ILogger<NotFoundExceptionMiddleware> logger) : IMiddleware
 {
-    public async Task InvokeAsync(HttpContext ctx, RequestDelegate next)
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         try
-        { await next(ctx); }
+        { await next(context); }
         catch (KeyNotFoundException ex)
         {
             logger.LogError(ex, "KeyNotFoundException: {Message}", ex.Message);
-            await ProblemDetailsFactory.WriteAsync(ctx, CommonProblemDescriptors.NotFound);
+            await ProblemDetailsFactory.WriteAsync(context, CommonProblemDescriptors.NotFound);
         }
     }
 }

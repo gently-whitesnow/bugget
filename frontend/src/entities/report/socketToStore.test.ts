@@ -9,14 +9,9 @@ import {
   commentUpdateFromSocket,
 } from "./lib/fromSocket";
 
-/**
- * Шов realtime → стор.
- *
- * `ReceiveBugCreate` публикует `BugSummaryDbModel`, где `CreatorType` обязателен.
- * Раньше зеркало SignalR это поле теряло, а стор подставлял константу — тест
- * падает, если поле снова пропадёт из payload'а или в сторе опять появится
- * значение по умолчанию: `SYSTEM` не совпадёт с `USER`.
- */
+// `ReceiveBugCreate` публикует `BugSummaryDbModel` с обязательным `CreatorType`.
+// Тест падает, если поле пропадёт из payload'а или стор подставит значение по
+// умолчанию: `SYSTEM` не совпадёт с `USER`.
 
 /** Строгое равенство типов: при расхождении `false` не присвоится `true`. */
 type Equal<A, B> =
@@ -30,10 +25,8 @@ const payloadCarriesCreatorType: Equal<
   number
 > = true;
 
-/**
- * Числа realtime-контракта: SignalR остался числовым (ADR-0007), а стор держит
- * значения провода — перевод делает адаптер, и именно он здесь проверяется.
- */
+// SignalR остался числовым (ADR-0007), стор держит значения провода — перевод
+// делает адаптер, он здесь и проверяется.
 const socketCreatorType = { user: 0, system: 1 } as const;
 
 const socketBug = (creatorType: number): CreateBugSocketResponse => ({

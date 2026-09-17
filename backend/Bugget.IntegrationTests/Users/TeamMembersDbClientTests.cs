@@ -70,7 +70,7 @@ public class TeamMembersDbClientTests : IClassFixture<AppWithPostgresFixture>
         var team = await _teamsDbClient.CreateTeamAsync(ws.Id, "Team");
 
         // Добавляем 3 участника с лимитом 10
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             var member = await _usersDbClient.TryInsertUserAsync(new CreateUserDto
             {

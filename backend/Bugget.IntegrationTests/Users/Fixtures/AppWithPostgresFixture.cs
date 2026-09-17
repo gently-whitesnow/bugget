@@ -12,10 +12,8 @@ using Testcontainers.PostgreSql;
 namespace Bugget.IntegrationTests.Users.Fixtures;
 
 /// <summary>
-/// Поднимает хост объединённого bugget-api для тестов модуля users. Контейнер — общий
-/// с остальными интеграционными тестами: обе схемы (reports и users) накатываются в него
-/// один раз в <see cref="PostgresContainerFixture"/>, поэтому второй Postgres в прогоне
-/// не нужен, а процессные переменные окружения не перетирают друг друга.
+/// Хост bugget-api для тестов users. Контейнер общий: обе схемы накатывает <see cref="PostgresContainerFixture"/>,
+/// второй Postgres не нужен, а процессные переменные окружения не перетирают друг друга.
 /// </summary>
 public class AppWithPostgresFixture(PostgresContainerFixture fixture)
         : WebApplicationFactory<Program>

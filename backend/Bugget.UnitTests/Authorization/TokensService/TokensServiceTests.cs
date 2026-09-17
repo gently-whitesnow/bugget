@@ -4,10 +4,11 @@ using Bugget.Api.Authorization.Options;
 using Bugget.Api.Authorization.Services;
 using Bugget.Application.Authorization;
 using Bugget.Application.Authorization.Ports;
-using Bugget.UnitTests.Authorization.TokensService;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using Microsoft.IdentityModel.Tokens;
+
+namespace Bugget.UnitTests.Authorization.TokensService;
 
 public sealed class TokensServiceTests
 {
@@ -17,7 +18,7 @@ public sealed class TokensServiceTests
     private readonly RsaSecurityKey _refreshPrivateKey;
 
     // С-префикс: System Under Test
-    private readonly TokensService _sut;
+    private readonly Api.Authorization.Services.TokensService _sut;
     private readonly FakeTimeProvider _timeProvider = new(
         new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
     private readonly JwtOptions _opts = new()
@@ -36,7 +37,7 @@ public sealed class TokensServiceTests
         _refreshPub = refPub;
         _refreshPrivateKey = refPriv;
 
-        _sut = new TokensService(
+        _sut = new Api.Authorization.Services.TokensService(
             Options.Create(_opts),
             new PrivateKeyStorageMock(accPriv),
             new PrivateKeyStorageMock(refPriv),

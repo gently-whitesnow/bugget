@@ -14,12 +14,9 @@ const escapeHtml = (value: string): string =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-/**
- * Парсит Markdown ссылки в формате [текст](url) из строки
- */
+/** Парсит Markdown ссылки в формате [текст](url) из строки */
 export const parseMarkdownLinks = (text: string): MarkdownLink[] => {
   const links: MarkdownLink[] = [];
-  // Регулярное выражение для поиска Markdown ссылок [текст](url)
   const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
   let match;
 
@@ -36,9 +33,6 @@ export const parseMarkdownLinks = (text: string): MarkdownLink[] => {
   return links;
 };
 
-/**
- * Проверяет, является ли строка валидным URL
- */
 export const isValidUrl = (string: string): boolean => {
   try {
     const url = new URL(string);
@@ -49,9 +43,7 @@ export const isValidUrl = (string: string): boolean => {
   }
 };
 
-/**
- * Нормализует URL (добавляет https:// если отсутствует протокол)
- */
+/** Добавляет https://, если отсутствует протокол */
 export const normalizeUrl = (url: string): string => {
   if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
@@ -87,7 +79,6 @@ export const markdownToHtml = (text: string): string => {
   let lastIndex = 0;
 
   links.forEach((link) => {
-    // Добавляем текст до ссылки
     if (link.startIndex > lastIndex) {
       html += escapeHtml(text.substring(lastIndex, link.startIndex)).replace(
         /\n/g,
@@ -95,7 +86,6 @@ export const markdownToHtml = (text: string): string => {
       );
     }
 
-    // Добавляем ссылку
     const href = toSafeHref(link.url);
     const escapedText = escapeHtml(link.text);
 
@@ -109,7 +99,6 @@ export const markdownToHtml = (text: string): string => {
     lastIndex = link.endIndex;
   });
 
-  // Добавляем оставшийся текст
   if (lastIndex < text.length) {
     html += escapeHtml(text.substring(lastIndex)).replace(/\n/g, "<br>");
   }
@@ -134,8 +123,7 @@ export const htmlToMarkdown = (element: HTMLElement): string => {
       } else if (el.tagName === "BR") {
         markdown += "\n";
       } else if (el.tagName === "DIV" || el.tagName === "P") {
-        // DIV и P теги создают перенос строки
-        // Добавляем перенос перед содержимым, если это не первый элемент
+        // DIV и P создают перенос строки, кроме первого элемента блока
         if (
           !isFirstInBlock &&
           markdown.length > 0 &&
@@ -143,17 +131,14 @@ export const htmlToMarkdown = (element: HTMLElement): string => {
         ) {
           markdown += "\n";
         }
-        // Обрабатываем дочерние узлы
         const childNodes = Array.from(el.childNodes);
         childNodes.forEach((child, index) => {
           processNode(child, index === 0);
         });
-        // Добавляем перенос после блока, если есть следующий элемент
         if (el.nextSibling) {
           markdown += "\n";
         }
       } else {
-        // Обрабатываем дочерние узлы
         Array.from(el.childNodes).forEach((child, index) => {
           processNode(child, index === 0);
         });
@@ -166,7 +151,5 @@ export const htmlToMarkdown = (element: HTMLElement): string => {
     processNode(child, index === 0);
   });
 
-  // Нормализуем результат: убираем лишние переносы строк в начале и конце
-  // и заменяем множественные переносы на один
   return markdown.trim();
 };

@@ -10,15 +10,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace Bugget.Api.Controllers;
 
 /// <summary>
-/// Api для управления пользовательскими, командными и рабочими настройками.
-/// Маршруты и формы приходят из <c>specs/contracts/settings/openapi.yaml</c>
-/// через <see cref="SettingsControllerBase"/>.
+/// Пользовательские, командные и рабочие настройки. Маршруты и формы — из
+/// <c>specs/contracts/settings/openapi.yaml</c> через <see cref="SettingsControllerBase"/>.
 /// </summary>
 /// <remarks>
-/// Авторизация по политикам (RequireOrganizationIdHeader и соседи) здесь
-/// намеренно не навешана — так было и до contract-first: в self-hosted-контуре
-/// заголовки приходят не всегда. Уровень доступа проверяется по identity в теле
-/// метода.
+/// Политики (RequireOrganizationIdHeader и соседи) намеренно не навешаны: в self-hosted-контуре
+/// заголовки приходят не всегда. Уровень доступа проверяется по identity в теле метода.
 /// </remarks>
 [ApiController]
 public sealed class SettingsController(ISettingsService settingsService) : SettingsControllerBase

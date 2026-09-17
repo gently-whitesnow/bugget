@@ -6,25 +6,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Bugget.Api.Users.Controllers.TeamMembers;
 
-/// <summary>
-/// Управление составом команды. Маршрут приходит из
-/// <c>specs/contracts/users/openapi.yaml</c> через
-/// <see cref="TeamMembersAdminControllerBase"/>.
-/// </summary>
+/// <summary>Управление составом команды; маршрут — из <c>specs/contracts/users/openapi.yaml</c>.</summary>
 [ApiController]
 [Auth(Roles = "admin")]
 [TeamRequired]
 public sealed class TeamMembersAdminController(ITeamMembersService teamMembersService) : TeamMembersAdminControllerBase
 {
-    /// <summary>
-    /// Удалить участника команды
-    /// </summary>
+    /// <summary>Удалить участника команды.</summary>
     /// <remarks>
-    /// Сегмент объявлен строкой канонического Int64 (shared.yaml
-    /// <c>Int64String</c>), внутрь уходит <c>long</c>. Ограничения маршрута
-    /// у этого пути не было и нет: несвязываемый сегмент и раньше отбивало
-    /// связывание модели как 400, и <see cref="WireInt64"/> отвечает тем же
-    /// классом ошибки — удаление на «соседнего» участника не уезжает.
+    /// Сегмент — строка канонического Int64 (shared.yaml <c>Int64String</c>), внутрь уходит <c>long</c>.
+    /// Несвязываемый сегмент <see cref="WireInt64"/> отбивает как 400 — удаление на «соседнего» участника не уезжает.
     /// </remarks>
     public override async Task<IActionResult> DeleteTeamMember(
         string workspaceId,

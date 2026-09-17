@@ -7,24 +7,15 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace Bugget.Api.Controllers.Attachments;
 
-/// <summary>
-/// Общая подготовка загруженного файла для трёх контроллеров вложений: бага,
-/// шага и комментария. Раньше этот кусок был скопирован в каждый из них.
-/// </summary>
+/// <summary>Общая подготовка загруженного файла для контроллеров вложений бага, шага и комментария.</summary>
 internal static class AttachmentUploadReader
 {
     private static readonly bool IsDevelopment =
         Environment.GetEnvironmentVariable(EnvironmentConstants.AspnetcoreEnvironment)?
             .Equals("development", StringComparison.OrdinalIgnoreCase) ?? false;
 
-    /// <summary>
-    /// Возвращает перематываемый поток файла и его метаданные.
-    /// </summary>
-    /// <remarks>
-    /// MIME определяется по содержимому, а не по заголовку клиента: заголовку
-    /// нельзя верить, он приходит снаружи. В development берётся заявленный —
-    /// иначе локальная разработка требует настоящих файлов нужных форматов.
-    /// </remarks>
+    /// <summary>MIME определяется по содержимому: заголовок клиента приходит снаружи, верить ему нельзя.
+    /// В development берётся заявленный — иначе локально нужны настоящие файлы нужных форматов.</summary>
     public static async Task<(Stream Content, FileMeta Meta)> ReadAsync(
         FileParameter file,
         IMimeTypeDetector mimeTypeDetector,
@@ -68,10 +59,8 @@ internal static class AttachmentUploadReader
         return uploads;
     }
 
-    /// <summary>
-    /// Белый список сравнивает MIME целиком, поэтому <c>text/plain;charset=utf-8</c>
-    /// от браузера не проходил бы как <c>text/plain</c>.
-    /// </summary>
+    /// <summary>Белый список сравнивает MIME целиком: <c>text/plain;charset=utf-8</c> от браузера
+    /// без нормализации не прошёл бы как <c>text/plain</c>.</summary>
     internal static string StripMimeParameters(string contentType)
     {
         var separator = contentType.IndexOf(';');

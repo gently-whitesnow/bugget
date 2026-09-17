@@ -34,7 +34,6 @@ const ReportCard = ({ report, usersStore = {}, className = "" }: Props) => {
   const navigate = useNavigate();
   const statusMeta = reportStatusMap[report.status];
 
-  // Обработчик клика с поддержкой открытия в новой вкладке
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const reportPath = `reports/${report.id}`;
     const fullUrl = buildFullAppUrl(reportPath, {
@@ -55,7 +54,6 @@ const ReportCard = ({ report, usersStore = {}, className = "" }: Props) => {
     }
   };
 
-  // Подсчитываем открытые и всего багов
   const bugStats = report.bugs?.length
     ? {
         resolved: report.bugs.filter((b) => b.status !== BugStatuses.OPEN)
@@ -64,11 +62,9 @@ const ReportCard = ({ report, usersStore = {}, className = "" }: Props) => {
       }
     : null;
 
-  // Подсчитываем количество комментариев
   const commentsCount =
     report.bugs?.reduce((sum, b) => sum + (b.comments?.length || 0), 0) ?? 0;
 
-  // Получаем имя ответственного
   const responsibleUser = usersStore[report.responsibleUserId];
   const responsibleUserName = responsibleUser?.name;
   const responsibleUserAvatar = responsibleUser?.imageUrl ?? null;
@@ -87,7 +83,6 @@ const ReportCard = ({ report, usersStore = {}, className = "" }: Props) => {
     (id) => id !== report.responsibleUserId
   ).length;
 
-  // Форматируем дату в формате "4 апр"
   const formattedDate = new Date(report.createdAt).toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "short",
@@ -100,10 +95,8 @@ const ReportCard = ({ report, usersStore = {}, className = "" }: Props) => {
       onMouseDown={handleMouseDown}
     >
       <div className="card-body p-3 gap-2">
-        {/* Верхняя строка: номер, статус, заголовок, дата */}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-2 flex-1 min-w-0">
-            {/* Номер отчета и статус */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className="text-sm font-semibold text-base-content/70">
                 #{report.id}
@@ -113,7 +106,6 @@ const ReportCard = ({ report, usersStore = {}, className = "" }: Props) => {
               <statusMeta.icon className={`w-4 h-4 ${statusMeta.iconColor}`} />
             </div>
 
-            {/* Заголовок */}
             <h3
               className="text-sm font-bold line-clamp-1 flex-1 min-w-0 break-all"
               title={report.title}
@@ -122,17 +114,14 @@ const ReportCard = ({ report, usersStore = {}, className = "" }: Props) => {
             </h3>
           </div>
 
-          {/* Дата */}
           <span className="text-sm text-base-content/50 flex-shrink-0">
             {formattedDate}
           </span>
         </div>
 
-        {/* Нижняя строка: метаданные */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Ответственный и участники */}
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            {/* Ответственный */}
             {responsibleUserName && (
               <div className="flex min-w-0 items-center gap-2">
                 <div
@@ -156,7 +145,6 @@ const ReportCard = ({ report, usersStore = {}, className = "" }: Props) => {
               </div>
             )}
 
-            {/* Участники */}
             {participants.length > 0 && (
               <div className="flex items-center ml-2">
                 <div className="flex -space-x-2 overflow-visible">
@@ -207,7 +195,6 @@ const ReportCard = ({ report, usersStore = {}, className = "" }: Props) => {
 
           {/* Правый блок: баги, комментарии */}
           <div className="flex shrink-0 items-center gap-2">
-            {/* Баги */}
             {bugStats && (
               <div className="flex items-center gap-1.5">
                 <Bug className="h-4 w-4 text-base-content/60" />
@@ -220,7 +207,6 @@ const ReportCard = ({ report, usersStore = {}, className = "" }: Props) => {
               </div>
             )}
 
-            {/* Комментарии */}
             {commentsCount > 0 && (
               <div className="flex items-center gap-1.5">
                 <MessageCircle className="h-4 w-4 text-base-content/60" />

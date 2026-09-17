@@ -1,9 +1,6 @@
 import { normalizeUrl } from "@/shared/lib/markdown";
 
-/**
- * Известные домены с нестандартными путями к фавиконам
- * Ключ — нормализованный домен (без www)
- */
+// Нестандартные пути к фавиконам; ключ — домен без www.
 const knownFavicons: Record<string, string[]> = {
   "figma.com": [
     "https://static.figma.com/app/icon/1/favicon.png",
@@ -11,9 +8,6 @@ const knownFavicons: Record<string, string[]> = {
   ],
 };
 
-/**
- * Извлекает имя домена из URL для отображения
- */
 export const extractDomainName = (url: string): string => {
   try {
     const urlObj = new URL(url);
@@ -34,9 +28,7 @@ export const extractDomainName = (url: string): string => {
   }
 };
 
-/**
- * Получает нормализованный домен из URL (без www для единообразия)
- */
+/** Домен из URL без www — для единообразия ключей. */
 export const getNormalizedDomain = (url: string): string | null => {
   try {
     const urlObj = new URL(url);
@@ -53,16 +45,10 @@ export const getNormalizedDomain = (url: string): string | null => {
   }
 };
 
-/**
- * Вспомогательная функция: безопасно создать URL
- */
 const ensureUrl = (raw: string): URL => {
   return new URL(normalizeUrl(raw));
 };
 
-/**
- * Генерирует URL для фавикона
- */
 export const getFaviconUrls = (url: string): string[] => {
   try {
     const urlObj = ensureUrl(url);

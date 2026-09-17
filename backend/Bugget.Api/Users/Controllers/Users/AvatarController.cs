@@ -11,15 +11,8 @@ using UsersModule = Bugget.Api.Users.Extensions.ServiceCollectionExtensions;
 
 namespace Bugget.Api.Users.Controllers.Users;
 
-/// <summary>
-/// Аватары пользователей. Маршруты и формы приходят из
-/// <c>specs/contracts/users/openapi.yaml</c> через <see cref="AvatarControllerBase"/>.
-/// </summary>
-/// <remarks>
-/// Как и профиль, все ручки живут по адресу с контекстом рабочего пространства
-/// и команды: по нему ходит фронт. Идентификаторы из пути не используются —
-/// пользователь берётся из identity.
-/// </remarks>
+/// <summary>Аватары пользователей; маршруты и формы — из <c>specs/contracts/users/openapi.yaml</c>.</summary>
+/// <remarks>Путь несёт контекст workspace и команды (по нему ходит фронт), но пользователь берётся из identity.</remarks>
 [ApiController]
 [Auth]
 public sealed class AvatarController(
@@ -27,7 +20,7 @@ public sealed class AvatarController(
     IAvatarDownloadService avatarService,
     [FromKeyedServices(UsersModule.FileStorageServiceKey)] IFileStorageClient fileStorageClient) : AvatarControllerBase
 {
-    private const long MaxAvatarSize = 200 * 1024; // 200 KB
+    private const long MaxAvatarSize = 200 * 1024;
     private static readonly HashSet<string> AllowedAvatarContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "image/jpeg", "image/png", "image/gif", "image/webp"
@@ -41,9 +34,6 @@ public sealed class AvatarController(
         [".webp"] = "image/webp"
     };
 
-    /// <summary>
-    /// Удалить свой аватар
-    /// </summary>
     public override async Task<IActionResult> DeleteAvatarInContext(
         string workspaceId,
         string teamId,
@@ -54,9 +44,6 @@ public sealed class AvatarController(
         return NoContent();
     }
 
-    /// <summary>
-    /// Загрузить свой аватар
-    /// </summary>
     public override async Task<IActionResult> UploadAvatarInContext(
         string workspaceId,
         string teamId,
@@ -80,9 +67,6 @@ public sealed class AvatarController(
         return Ok();
     }
 
-    /// <summary>
-    /// Получить свой аватар
-    /// </summary>
     public override async Task<IActionResult> GetAvatarContentInContext(
         string workspaceId,
         string teamId,
@@ -98,15 +82,10 @@ public sealed class AvatarController(
         return await StreamAvatarAsync(user.ImageUrl, cancellationToken);
     }
 
-    /// <summary>
-    /// Получить аватар пользователя из текущего workspace
-    /// </summary>
+    /// <summary>Получить аватар пользователя из текущего workspace.</summary>
     /// <remarks>
-    /// Сегмент объявлен строкой канонического Int64 (shared.yaml
-    /// <c>Int64String</c>), внутрь уходит <c>long</c>. Ограничение маршрута
-    /// <c>:long</c> оставлено: нечисловой и вылезающий за Int64 сегмент, как и
-    /// раньше, отбивается как 404, а неканоничный (<c>-5</c>, <c>007</c>) до
-    /// сервиса не доезжает — <see cref="WireInt64"/> отвечает 400.
+    /// Сегмент — строка канонического Int64, внутрь уходит <c>long</c>. Ограничение <c>:long</c> оставлено ради 404
+    /// на нечисловой сегмент; неканоничный (<c>-5</c>, <c>007</c>) отбивает <see cref="WireInt64"/> с 400.
     /// </remarks>
     [WorkspaceRequired]
     [RouteParameterConstraint("userId", "long")]

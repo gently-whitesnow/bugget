@@ -17,23 +17,10 @@ using Xunit;
 namespace Bugget.IntegrationTests;
 
 /// <summary>
-/// Characterization боевого обновления: журнал <c>schemaversions</c> у заказчика заполнен
-/// именами времён отдельных проектов <c>Bugget.DbUp</c> и <c>Users.DbUp</c>, а после слияния
-/// в <c>Bugget.Infrastructure</c> имена embedded-ресурсов стали другими. Раннеры
-/// переименовывают ресурс обратно в легаси-имя при записи в журнал — если это сломать,
-/// накат на существующую базу применит все миграции второй раз.
-///
-/// Ключевое здесь — откуда берётся «старый» журнал. Он берётся из снимка
-/// <c>data/dbup-legacy-journal/*.txt</c>, который ведётся руками и от проверяемого
-/// переименования не зависит. Журнал, созданный тем же переименованием, доказывал бы
-/// только самосогласованность: сдвиг префикса на сегмент прошёл бы незамеченным.
-///
-/// Сценарий разыгрывается на отдельных базах в том же контейнере, схема накатывается
-/// напрямую скриптами и после этого не портится: проверяется обновление валидной старой
-/// базы, а не восстановление после удаления таблицы.
-///
-/// Снимок — это baseline, а не список миграций: он совпадает с началом текущего набора,
-/// а всё добавленное после него обязано выбираться обновлением и в снимок не дописывается.
+/// Журнал <c>schemaversions</c> у заказчика заполнен именами времён <c>Bugget.DbUp</c>/<c>Users.DbUp</c>; раннеры переименовывают
+/// ресурс в легаси-имя при записи — если это сломать, накат на существующую базу применит все миграции второй раз.
+/// «Старый» журнал берётся из ручного снимка <c>data/dbup-legacy-journal/*.txt</c>: созданный тем же переименованием доказывал бы
+/// только самосогласованность. Снимок — baseline, а не список миграций: новое живёт после него и в снимок не дописывается.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
@@ -45,11 +32,7 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
     private const string UsersScriptsNamespace = "Bugget.Infrastructure.Users.DbUp.sql";
     private const string UsersLegacyJournalNamespace = "Users.DbUp.sql";
 
-    /// <summary>
-    /// Миграция, удаляющая TTL-инвайты: именно она обязана останавливаться на неизвестной
-    /// зависимости. Названа явно, а не как «единственная после baseline», — иначе тест
-    /// ломала бы любая следующая миграция, к самому сценарию отношения не имеющая.
-    /// </summary>
+    /// <summary>Названа явно, а не как «единственная после baseline»: иначе тест ломала бы любая следующая миграция.</summary>
     private const string UsersDropTeamInvitesJournalName =
         $"{UsersLegacyJournalNamespace}.022_drop_team_invites.sql";
 
@@ -65,17 +48,12 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
             Bugget.Infrastructure.DbUp.DbUpService.BuildMigrationsRunner(target),
             "миграции reports");
 
-        // На валидной старой схеме второй проход обязан проходить целиком: функции
-        // накатываются каждый раз заново и ссылаются на существующие таблицы.
+        // Второй проход обязан проходить целиком: функции накатываются каждый раз заново.
         var functions = Bugget.Infrastructure.DbUp.DbUpService.BuildFunctionsRunner(target).PerformUpgrade();
         Assert.True(functions.Successful, Describe(functions));
     }
 
-    /// <summary>
-    /// База заказчика стоит на baseline из снимка, поэтому обновление обязано выбрать ровно
-    /// миграции, добавленные после снимка, — не больше (иначе переименование в легаси-имя
-    /// сломано и legacy накатится повторно) и не меньше.
-    /// </summary>
+    /// <summary>Выбираются ровно миграции после снимка: больше — значит, переименование сломано и legacy накатится повторно.</summary>
     [Fact(DisplayName = "Обновление users с боевым журналом выбирает ровно миграции после baseline")]
     public async Task Users_upgrade_over_legacy_journal_selects_only_post_baseline_scripts()
     {
@@ -155,11 +133,6 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
         await AssertNoTeamInviteObjectsAsync(target);
     }
 
-    /// <summary>
-    /// Снимок боевого журнала — неизменяемый baseline, а не список миграций: он обязан
-    /// совпадать с началом текущего набора, а всё новое живёт после него и в снимок
-    /// не дописывается. Для reports снимок пока совпадает с набором целиком.
-    /// </summary>
     [Fact(DisplayName = "Снимок боевого журнала совпадает с началом текущего набора миграций")]
     public void Snapshots_are_the_baseline_prefix_of_the_current_migration_set()
     {
@@ -167,11 +140,7 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
         AssertSnapshotIsBaselinePrefix("users.txt", UsersScriptsNamespace);
     }
 
-    /// <summary>
-    /// Обновление существующей базы — это ноль выбранных скриптов и успешный проход.
-    /// Проверяются оба: пустой выбор без успеха ничего не значит, а успех сам по себе
-    /// бывает и у прохода, который заново применил всё подряд.
-    /// </summary>
+    /// <summary>Проверяются и ноль выбранных скриптов, и успех: по отдельности ни то, ни другое ничего не доказывает.</summary>
     private static void AssertNothingToUpgrade(UpgradeEngine runner, string what)
     {
         var pending = runner.GetScriptsToExecute().Select(script => script.Name).ToArray();
@@ -192,10 +161,6 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
             ? "проход успешен"
             : $"проход DbUp завершился ошибкой на скрипте {result.ErrorScript?.Name}: {result.Error}";
 
-    /// <summary>
-    /// Готовит базу в состоянии «до обновления»: схема накатана скриптами напрямую,
-    /// журнал заполнен каноническим снимком боевых имён средствами самого DbUp.
-    /// </summary>
     private async Task<string> PrepareLegacyDatabaseAsync(
         string databaseName,
         string snapshotFile,
@@ -205,8 +170,7 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
 
         var legacyNames = ReadSnapshot(snapshotFile);
 
-        // Схема накатывается ровно теми же скриптами, что и в бою, но напрямую: журнал
-        // здесь ни при чём, поэтому проверяемое переименование в подготовку не попадает.
+        // Схема накатывается боевыми скриптами напрямую, мимо журнала: проверяемое переименование в подготовку не попадает.
         foreach (var name in legacyNames)
         {
             await ExecuteAsync(target, ReadScript(scriptsNamespace, FileNameOf(name)));
@@ -226,10 +190,7 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
         return new NpgsqlConnectionStringBuilder(admin) { Database = databaseName }.ConnectionString;
     }
 
-    /// <summary>
-    /// Записывает канонические имена в журнал тем же классом DbUp, которым его ведёт
-    /// боевой запуск: форма таблицы получается настоящей, а не воспроизведённой в тесте.
-    /// </summary>
+    /// <summary>Журнал пишется тем же классом DbUp, что и в бою: форма таблицы настоящая, а не воспроизведённая.</summary>
     private static void SeedLegacyJournal(string connectionString, IReadOnlyList<string> legacyNames)
     {
         var log = new ConsoleUpgradeLog();
@@ -256,11 +217,7 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
         Assert.Equal(scripts, snapshot);
     }
 
-    /// <summary>
-    /// Снимок обязан совпадать с началом текущего набора скриптов. Это ловит и правку самого
-    /// снимка, и вставку новой миграции внутрь baseline — на базе заказчика такая миграция
-    /// уже числилась бы применённой и молча не накатилась бы.
-    /// </summary>
+    /// <summary>Ловит правку снимка и вставку миграции внутрь baseline: у заказчика она числилась бы применённой и не накатилась.</summary>
     private static void AssertSnapshotIsBaselinePrefix(string snapshotFile, string scriptsNamespace)
     {
         var snapshot = ReadSnapshot(snapshotFile).Select(FileNameOf).ToArray();
@@ -269,10 +226,6 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
         Assert.Equal(snapshot, scripts.Take(snapshot.Length));
     }
 
-    /// <summary>
-    /// Легаси-имена миграций, добавленных после снимка: ровно их обязано выбрать обновление
-    /// базы заказчика.
-    /// </summary>
     private static string[] UsersPostBaselineJournalNames() =>
     [
         .. ScriptFileNames(UsersScriptsNamespace)
@@ -280,11 +233,7 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
             .Select(fileName => $"{UsersLegacyJournalNamespace}.{fileName}")
     ];
 
-    /// <summary>
-    /// Читает снимок боевого журнала. Сверяется только состав файлов; сами имена в снимке
-    /// записаны целиком и намеренно не собираются из префикса — иначе сдвиг префикса
-    /// прошёл бы через проверку.
-    /// </summary>
+    /// <summary>Имена в снимке записаны целиком, а не собираются из префикса — иначе сдвиг префикса прошёл бы проверку.</summary>
     private static IReadOnlyList<string> ReadSnapshot(string snapshotFile) =>
     [
         .. File.ReadAllLines(Path.Combine(AppContext.BaseDirectory, "data", "dbup-legacy-journal", snapshotFile))
@@ -302,7 +251,6 @@ public sealed class DbUpLegacyJournalTests(PostgresContainerFixture postgres)
             .OrderBy(name => name, StringComparer.Ordinal)
     ];
 
-    /// <summary>Имя файла скрипта — всё, что стоит после последнего номера версии.</summary>
     private static string FileNameOf(string journalName)
     {
         var tail = journalName.Split('.');

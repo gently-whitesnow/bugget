@@ -10,18 +10,11 @@ public sealed class TokenRevocationRedisClient(IConnectionMultiplexer mux, TimeP
 {
     private const string Prefix = "jwt:revoked:";
 
-    /// <summary>
-    /// Маркер значения с границей ревокации. Отличает запись нового формата от значения
-    /// прежнего формата (<c>"1"</c>), которое границы не несёт.
-    /// </summary>
+    // Отличает запись с границей ревокации от прежнего формата ("1"), который границы не несёт.
     private const string UntilMarker = "until:";
 
-    /// <summary>
-    /// TTL — только физическая уборка ключа: он не должен обнулиться раньше, чем
-    /// наступит граница <c>revokedUntil</c>, поэтому у уже наступившей границы остаётся
-    /// минимальный ненулевой TTL. Решение о ревокации принимает не он, а сохранённая
-    /// граница относительно внедрённого <see cref="TimeProvider"/>.
-    /// </summary>
+    // TTL — только уборка ключа: он не должен истечь раньше границы revokedUntil, поэтому у наступившей
+    // границы остаётся минимальный ненулевой TTL. Ревокацию решает сохранённая граница, а не TTL.
     private static readonly TimeSpan MinTtl = TimeSpan.FromMilliseconds(1);
 
     private readonly IDatabase _db = mux.GetDatabase();

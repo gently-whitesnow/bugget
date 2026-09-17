@@ -4,20 +4,13 @@ using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
 
-/// <summary>
-/// Явные проверки ответа: статус, media type и — для проблемных ответов — общий
-/// каталог ошибок (ADR-0008).
-/// </summary>
+/// <summary>Явные проверки ответа: статус, media type и общий каталог ошибок (ADR-0008).</summary>
 /// <remarks>
-/// Форму тела целиком здесь не сравнивает никто и сравнивать не нужно: полное описание
-/// провода живёт в <c>specs/contracts/**/openapi.yaml</c>, соответствие кода контракту
-/// держит гейт <c>backend-contracts</c> плюс наследование сгенерированных абстрактных
-/// баз, а потребление на фронте — <c>frontend-contracts</c>. Тесты проверяют поведение:
-/// что именно уходит клиенту в конкретном сценарии.
+/// Форму тела целиком здесь не сравнивают: провод описан в <c>specs/contracts/**/openapi.yaml</c>, соответствие
+/// держат гейты <c>backend-contracts</c> и <c>frontend-contracts</c>. Тесты проверяют поведение в сценарии.
 /// </remarks>
 internal static class ContractResponse
 {
-    /// <summary>JSON-ответ с ожидаемым статусом; возвращает разобранное тело.</summary>
     public static async Task<JsonElement> JsonAsync(HttpResponseMessage response, HttpStatusCode expected)
     {
         var body = await response.Content.ReadAsStringAsync();
@@ -27,7 +20,6 @@ internal static class ContractResponse
         return JsonDocument.Parse(body).RootElement.Clone();
     }
 
-    /// <summary>Ответ с ожидаемым статусом и пустым телом.</summary>
     public static async Task EmptyAsync(HttpResponseMessage response, HttpStatusCode expected)
     {
         var body = await response.Content.ReadAsStringAsync();
@@ -36,9 +28,8 @@ internal static class ContractResponse
     }
 
     /// <summary>
-    /// Отказ по общему каталогу: <c>application/problem+json</c>, стабильный
-    /// <c>code</c>, выведенный из него <c>type</c>, непустые <c>title</c> и
-    /// <c>traceId</c>. Возвращает тело — прикладные поля отказа проверяет вызывающий.
+    /// Отказ по общему каталогу: <c>application/problem+json</c>, стабильный <c>code</c>, выведенный из него
+    /// <c>type</c>, непустые <c>title</c> и <c>traceId</c>. Прикладные поля отказа проверяет вызывающий.
     /// </summary>
     public static async Task<JsonElement> ProblemAsync(
         HttpResponseMessage response,

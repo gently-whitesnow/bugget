@@ -15,7 +15,8 @@ using Bugget.Application.Services.Analytics;
 using Bugget.Application.Services.Attachments;
 using Bugget.Application.Services.Bugs;
 using Bugget.Application.Services.Comments;
-using Bugget.Application.Services.External;
+using Bugget.Application.Services.ExternalProducer;
+using Bugget.Application.Services.ExternalSearch;
 using Bugget.Application.Services.ReportLinks;
 using Bugget.Application.Services.Reports;
 using Bugget.Application.Services.Settings;
@@ -60,9 +61,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddSerilog((ctx, lc) => lc
             .ReadFrom.Configuration(configuration)
-            // Значение PAT в любом строковом свойстве события маскируется до
-            // открытого префикса — страховка на случай будущего логирования
-            // заголовков или тел запросов.
+            // Страховка: значение PAT в любом строковом свойстве события маскируется до открытого префикса.
             .Enrich.With(new Configurations.PatSecretMaskingEnricher()));
         return services;
     }
@@ -72,7 +71,7 @@ public static class ServiceCollectionExtensions
         services
             .AddSingleton(_ => NpgsqlDataSource.Create(
                 Environment.GetEnvironmentVariable(EnvironmentConstants.PostgresConnectionString)
-                ?? throw new ApplicationException($"Не задана строка подключения к Postgres, env=[{EnvironmentConstants.PostgresConnectionString}]")))
+                ?? throw new InvalidOperationException($"Не задана строка подключения к Postgres, env=[{EnvironmentConstants.PostgresConnectionString}]")))
             .AddSingleton<IReportsDbClient, ReportsDbClient>()
             .AddSingleton<ICommentsDbClient, CommentsDbClient>()
             .AddSingleton<IBugsDbClient, BugsDbClient>()
@@ -91,8 +90,7 @@ public static class ServiceCollectionExtensions
         // Миграции накатываются в любой среде — так же, как в модуле users.
         services.AddHostedService<DbUpService>();
 
-        // Пережатие вложений и определение mime: реализации портов и всё, что знает
-        // про ImageSharp, ffmpeg и libmagic, регистрирует сама инфраструктура.
+        // Реализации портов (ImageSharp, ffmpeg, libmagic) регистрирует сама инфраструктура.
         services.AddAttachmentOptimization(configuration);
 
         return services;
@@ -133,12 +131,10 @@ public static class ServiceCollectionExtensions
             ;
 
 
-        // T06: локальный outbox-консьюмер. Конкретные handler'ы регистрируются ниже.
+        // Локальный outbox-консьюмер; handler'ы регистрируются ниже.
         services.AddHostedService<DomainEventsPoller>();
 
-        // T07: handler для ReportStatusChanged → report_phase_intervals (read-model аналитики).
-        // Poller диспатчит через ILookup<EventType, IDomainEventHandler> — handler сам
-        // объявляет, на какой EventType подписан.
+        // ReportStatusChanged → report_phase_intervals. Handler сам объявляет, на какой EventType подписан.
         services.AddSingleton<IDomainEventHandler, ReportPhaseProjectionHandler>();
 
         return services;
@@ -206,20 +202,18 @@ public static class ServiceCollectionExtensions
 
         services.AddAuthorization(o =>
         {
-            // Требовать НЕ дефолтного юзера (т.е. чтобы user_id header был настроен и реально использовался)
             o.AddPolicy(AuthPolicies.RequireUserIdHeader, p =>
                 p.RequireAuthenticatedUser()
                 .RequireClaim(AuthClaims.UserIdHeaderConfigured, "true")
                 .RequireClaim(AuthClaims.UserId, "header"));
 
-            // Требовать team_id именно из header (не через usersClient)
+            // team_id именно из header (не через usersClient)
             o.AddPolicy(AuthPolicies.RequireTeamIdHeader, p =>
                 p.RequireAuthenticatedUser()
                 .RequireClaim(AuthClaims.TeamIdHeaderConfigured, "true")
                 .RequireClaim(AuthClaims.TeamId, "header")
                 .RequireClaim("team_id"));
 
-            // Требовать organization_id из header
             o.AddPolicy(AuthPolicies.RequireOrganizationIdHeader, p =>
                 p.RequireAuthenticatedUser()
                 .RequireClaim(AuthClaims.OrganizationIdHeaderConfigured, "true")

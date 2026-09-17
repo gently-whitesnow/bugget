@@ -6,9 +6,6 @@ import {
 } from "@/entities/report";
 import type { ReportLink, ReportLinkDto } from "@/entities/report";
 
-/**
- * Эффекты
- */
 export const createReportLinkFx = createEffect<
   { reportId: string; dto: ReportLinkDto },
   ReportLink
@@ -31,9 +28,6 @@ export const deleteReportLinkFx = createEffect<
   return { linkId };
 });
 
-/**
- * События
- */
 export const createLinkEvent = createEvent<ReportLinkDto>();
 export const updateLinkEvent = createEvent<{
   linkId: number;
@@ -47,9 +41,6 @@ export const createLinkSocketEvent = createEvent<ReportLink>();
 export const updateLinkSocketEvent = createEvent<ReportLink>();
 export const deleteLinkSocketEvent = createEvent<number>();
 
-/**
- * Стор
- */
 export const $reportLinksStore = createStore<ReportLink[]>([])
   .on(setReportLinksEvent, (_, links) => links)
   .on(createReportLinkFx.doneData, (state, link) => [...state, link])

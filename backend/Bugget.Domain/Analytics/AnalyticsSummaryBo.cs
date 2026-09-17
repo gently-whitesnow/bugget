@@ -19,18 +19,3 @@ public sealed class AnalyticsSummaryBo
     public required IReadOnlyList<TopRegressionReportBo> TopRegressionReports { get; init; }
     public required IReadOnlyList<PhaseTrendWeeklyBo> PhaseTrendsWeekly { get; init; }
 }
-
-public sealed class TopRegressionReportBo
-{
-    public required long ReportId { get; init; }
-    public required string Title { get; init; }
-    public required int RegressionCycles { get; init; }
-}
-
-public sealed class PhaseTrendWeeklyBo
-{
-    public required string IsoWeek { get; init; }
-    public required double TestDays { get; init; }
-    public required double FixDays { get; init; }
-    public required int ReportsClosed { get; init; }
-}

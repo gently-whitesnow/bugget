@@ -9,7 +9,7 @@ openapi: 3.0.3
 # удалены в MAIN-17: потребителей у них не осталось. Суффикс `InContext`
 # в operationId сохранён, чтобы не переименовывать сгенерированные методы.
 #
-# Правится этот файл, а не .g.cs: перегенерация — scripts/quality/openapi-generate.sh.
+# Правится этот файл, а не .g.cs: перегенерация — scripts/contracts/openapi-generate.sh.
 
 info:
   title: Bugget Users API

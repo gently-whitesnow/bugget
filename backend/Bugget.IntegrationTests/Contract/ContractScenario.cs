@@ -6,11 +6,8 @@ using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
 
-/// <summary>
-/// Данные для одного contract-теста, созданные только через публичный API.
-/// Прямых INSERT'ов здесь нет намеренно: если сломается создание репорта, тесты
-/// формы ответа обязаны падать вместе с ним, а не работать на подложенных строках.
-/// </summary>
+/// <summary>Данные contract-теста, созданные только через публичный API. Прямых INSERT'ов нет намеренно:
+/// если сломается создание репорта, тесты формы ответа обязаны падать вместе с ним.</summary>
 internal sealed class ContractScenario
 {
     private ContractScenario(HttpClient client, string workspaceId, string teamId, string userId)
@@ -31,8 +28,7 @@ internal sealed class ContractScenario
 
     public static ContractScenario Create(AppContractFixture fixture)
     {
-        // Идентификаторы workspace/team — числа: nginx достаёт их из пути регуляркой
-        // `workspaces/(\d+)` и `teams/(\d+)`, других значений в боевом контуре не бывает.
+        // Идентификаторы workspace/team — числа: nginx достаёт их из пути регуляркой `(\d+)`.
         var seed = Random.Shared.Next(100_000, 999_999);
         var workspaceId = seed.ToString(CultureInfo.InvariantCulture);
         var teamId = (seed + 1).ToString(CultureInfo.InvariantCulture);
@@ -63,11 +59,7 @@ internal sealed class ContractScenario
         return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
     }
 
-    /// <summary>
-    /// Баг, у которого заполнено ровно одно поле из пары <c>receive</c>/<c>expect</c>
-    /// и не заполнен <c>title</c>. Бизнес-правило требует хотя бы одно из двух, а не оба,
-    /// поэтому такой баг — законный, и наружу он уходит с <c>null</c> во втором ключе.
-    /// </summary>
+    /// <summary>Баг с одним полем из пары <c>receive</c>/<c>expect</c> и без <c>title</c> — законный: правило требует хотя бы одно.</summary>
     public async Task<int> CreateOneFieldBugAsync(string reportId, string? receive = null, string? expect = null)
     {
         var response = await Client.PostAsJsonAsync(
@@ -89,12 +81,7 @@ internal sealed class ContractScenario
         return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
     }
 
-    /// <summary>
-    /// Вложение бага. <c>attachType</c> здесь — параметр запроса, и он же уходит
-    /// на провод: <c>fact</c> — факт (<c>receive</c>), <c>expected</c> — ожидаемый
-    /// результат. Оба значения законны и попадают в один и тот же
-    /// <c>bugs[].attachments</c>.
-    /// </summary>
+    /// <summary>Вложение бага. <c>attachType</c> уходит на провод: <c>fact</c> — факт, <c>expected</c> — ожидаемый результат.</summary>
     public async Task<int> UploadBugAttachmentAsync(
         string reportId,
         int bugId,
@@ -109,10 +96,7 @@ internal sealed class ContractScenario
         return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
     }
 
-    /// <summary>
-    /// Вложение комментария. Тип вложения здесь не параметр запроса: сервер сам ставит
-    /// <c>attach_type = 2</c>, а <c>entity_id</c> — идентификатор комментария.
-    /// </summary>
+    /// <summary>Вложение комментария: сервер сам ставит <c>attach_type = 2</c>, <c>entity_id</c> — id комментария.</summary>
     public async Task<int> UploadCommentAttachmentAsync(
         string reportId,
         int bugId,
@@ -127,9 +111,7 @@ internal sealed class ContractScenario
         return (await ReadJsonAsync(response)).GetProperty("id").GetInt32();
     }
 
-    /// <summary>
-    /// Вложение шага. Сервер ставит <c>attach_type = 3</c>, <c>entity_id</c> — идентификатор шага.
-    /// </summary>
+    /// <summary>Вложение шага: сервер ставит <c>attach_type = 3</c>, <c>entity_id</c> — id шага.</summary>
     public async Task<int> UploadBugStepAttachmentAsync(
         string reportId,
         int bugId,

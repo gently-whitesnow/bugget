@@ -11,11 +11,7 @@ import type {
   LegacyReportResolveResponse,
 } from "./contracts";
 
-/**
- * Ручки репорта. Транспорт живёт в `shared/api/reports`: путь, метод, query и
- * типы приходят из сгенерированной операции. Здесь остаётся только то, чего у
- * транспорта нет и быть не должно — логирование для отладки страницы.
- */
+// Транспорт живёт в `shared/api/reports`; здесь только логирование для отладки.
 
 export const fetchReport = async (id: string): Promise<ReportResponse> => {
   try {
@@ -49,10 +45,7 @@ export const patchReport = async (
   }
 };
 
-/**
- * Список репортов. Реализация операции одна — `reportsApi.listReports`; здесь
- * только значения по умолчанию для дашборда.
- */
+/** Реализация одна — `reportsApi.listReports`; здесь умолчания дашборда. */
 export const fetchReportsList = async (
   userId: string | null = null,
   teamId: string | null = null,

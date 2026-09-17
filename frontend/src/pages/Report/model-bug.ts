@@ -17,9 +17,6 @@ import {
   updateBugFxDoneDataEvent,
 } from "@/entities/report";
 
-/**
- * Эффекты для API
- */
 export const createBugFx = createEffect<
   { reportId: string; data: CreateBugRequest; clientId?: number },
   CreateBugResponse & { reportId: string; clientId: number }
@@ -76,9 +73,6 @@ export const updateBugFx = createEffect<
   }
 });
 
-/**
- * События
- */
 export const createBugEvent = createEvent<{
   reportId: string;
   data: BugFormData;
@@ -111,9 +105,6 @@ sample({
   target: updateBugFxDoneDataEvent,
 });
 
-/**
- * Сэмплы для обработки пользовательских действий
- */
 sample({
   clock: createBugEvent,
   fn: ({ reportId, data }) => ({

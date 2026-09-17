@@ -13,11 +13,8 @@ using Xunit;
 namespace Bugget.IntegrationTests;
 
 /// <summary>
-/// Smoke-тесты <see cref="DomainEventsPoller"/> через реальный Postgres
-/// (Testcontainers): миграция применилась, cursor продвигается после успешного
-/// handler-вызова и остаётся на месте при исключении handler'а. Вызываем
-/// <see cref="DomainEventsPoller.TickAsync"/> напрямую, чтобы избежать гонок с
-/// фоновой сборкой Web App'а.
+/// Smoke-тесты <see cref="DomainEventsPoller"/> на реальном Postgres. <see cref="DomainEventsPoller.TickAsync"/>
+/// зовётся напрямую, чтобы избежать гонок с фоновой сборкой Web App'а.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class DomainEventsPollerTests : IClassFixture<AppWithPostgresFixture>
@@ -52,22 +49,18 @@ SELECT EXISTS (SELECT 1 FROM information_schema.tables
     [Fact(DisplayName = "Poller продвигает cursor после успешного no-op handler'а")]
     public async Task Poller_AdvancesCursor_After_NoOp_Handler()
     {
-        // Arrange — уникальный consumer на тест, чтобы не пересекаться с seed'ом миграции
         var consumerName = $"test_advance_{Guid.NewGuid():N}";
         await EnsureConsumerStartsFromZero(consumerName);
 
-        // вставляем 2 события через UoW (тот же путь, что и в проде)
         var id1 = await InsertEventAsync(BuggetEventTypes.ReportStatusChanged, payload: "{}");
         var id2 = await InsertEventAsync(BuggetEventTypes.ReportStatusChanged, payload: "{}");
 
         var handler = new CountingHandler(BuggetEventTypes.ReportStatusChanged);
         var poller = BuildPoller(consumerName, [handler]);
 
-        // Act — два тика, потому что после первого тика cursor продвинется только
-        // на конкретно эти события (тестовая БД может содержать seed-события).
+        // Уникальный consumer и проверка конкретных id: тестовая БД может содержать seed-события.
         await poller.TickAsync(CancellationToken.None);
 
-        // Assert
         Assert.Contains(id1, handler.HandledIds);
         Assert.Contains(id2, handler.HandledIds);
         var cursorNow = await _cursorClient.GetAsync(consumerName, CancellationToken.None);
@@ -114,13 +107,9 @@ SELECT EXISTS (SELECT 1 FROM information_schema.tables
         Assert.True(cursorNow.Value >= id1);
     }
 
-    // --- helpers ---
-
     private async Task EnsureConsumerStartsFromZero(string consumerName)
     {
-        // Bootstrap cursor от 0 — для теста нам нужно «увидеть» только что вставленные события.
-        // (Логика prod-bootstrap'а живёт в seed'е миграции 040; тут мы forсируем 0,
-        // чтобы тест был детерминирован.)
+        // Prod-bootstrap cursor'а живёт в seed'е миграции 040; тут форсируем 0 ради детерминизма.
         await _cursorClient.TryInitAsync(consumerName, 0, CancellationToken.None);
     }
 

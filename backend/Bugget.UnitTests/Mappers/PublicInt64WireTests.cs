@@ -10,18 +10,10 @@ using DomainUsers = Bugget.Domain.Users;
 namespace Bugget.UnitTests.Mappers;
 
 /// <summary>
-/// Публичный неотрицательный Int64 уходит на провод строкой канона
-/// <c>Int64String</c>. Здесь проверяется не тип поля (его держит генерация из
-/// контракта), а то, ради чего он менялся: значение доезжает до JSON цифра
-/// в цифру.
-///
-/// Проверка идёт по сериализованному телу, а не по свойству DTO: между
-/// маппером и клиентом стоит System.Text.Json, и «строка в DTO» ещё не значит
-/// «строка на проводе».
-///
-/// <c>9007199254740993</c> — первое целое, которое клиент теряет в double
-/// (доезжало бы как <c>...992</c>); <c>long.MaxValue</c> — верхняя граница
-/// канона.
+/// Публичный Int64 уходит на провод строкой канона <c>Int64String</c>; тип поля держит генерация, а здесь проверяется,
+/// что значение доезжает до JSON цифра в цифру. Проверка по сериализованному телу: между маппером и клиентом стоит
+/// System.Text.Json, и «строка в DTO» ещё не значит «строка на проводе». <c>9007199254740993</c> — первое целое,
+/// которое клиент теряет в double; <c>long.MaxValue</c> — верхняя граница канона.
 /// </summary>
 public class PublicInt64WireTests
 {
@@ -32,7 +24,7 @@ public class PublicInt64WireTests
     private static readonly DateTimeOffset Moment = DateTimeOffset.UnixEpoch;
 
     private static string Wire<T>(T contract) =>
-        JsonSerializer.Serialize(contract, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        JsonSerializer.Serialize(contract, JsonSerializerOptions.Web);
 
     [Fact(DisplayName = "reports: total и count уходят строкой без округления")]
     public void Reports_total_and_count_survive_serialization()

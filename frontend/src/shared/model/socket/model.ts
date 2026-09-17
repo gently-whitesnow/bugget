@@ -19,16 +19,11 @@ export const stopTimeoutMs = 3_000;
 
 const socket = createDomain();
 
-/**
- * Номер поколения сокета: растёт при каждой попытке подключиться. Попытка с
- * устаревшим номером никому не нужна — её колбэки игнорируются, а соединение
- * закрывается. Благодаря этому новая попытка никогда не ждёт зависшую старую
- * (в фоновой вкладке setTimeout зажат до 1 раза в минуту, и ожидание может
- * длиться минутами).
- */
+// Поколение сокета растёт с каждой попыткой подключения; колбэки устаревшей
+// попытки игнорируются, поэтому новая никогда не ждёт зависшую старую.
 let socketGeneration = 0;
 
-/** Ждём промис, но не дольше timeoutMs — мёртвый транспорт может не ответить никогда */
+/** Мёртвый транспорт может не ответить никогда — ждём не дольше timeoutMs */
 const waitAtMost = (createPromise: () => Promise<unknown>, timeoutMs: number) =>
   new Promise<void>((resolve) => {
     const timeoutId = setTimeout(resolve, timeoutMs);
@@ -47,13 +42,7 @@ export const connectionClosed = socket.createEvent<Error | undefined>();
 export const connectionReconnecting = socket.createEvent<Error | undefined>();
 export const connectionReconnected = socket.createEvent<string | null>();
 
-/** Сигналы окружения, по которым поднимаем упавшее соединение */
-
-/**
- * Пользователь вернулся к странице: вкладка стала видимой, окно получило
- * фокус или страницу достали из bfcache. Все три случая лечатся одинаково,
- * поэтому различать их незачем.
- */
+/** Вкладка видима, окно в фокусе или страница из bfcache — лечатся одинаково */
 export const appWokeUp = socket.createEvent();
 
 /** Машина спала: соединение могло остаться Connected, но уже не работает */
@@ -63,10 +52,7 @@ export const browserWentOffline = socket.createEvent();
 export const connectionRecoveryStarted = socket.createEvent();
 export const reconnectStuckDetected = socket.createEvent();
 
-/**
- * Связь восстановлена после разрыва (в отличие от первого подключения).
- * Пока связи не было, серверные события уходили в никуда — данные надо перезабрать.
- */
+/** Связь восстановлена после разрыва: пропущенные события надо перезабрать */
 export const connectionRestored = socket.createEvent();
 
 export const socketEventReceived = socket.createEvent<{
@@ -113,10 +99,7 @@ export const $isConnected = $socketConnectionStatus.map(
   (status) => status === SocketConnectionStatus.CONNECTED
 );
 
-/**
- * connectionId текущего соединения. Меняется и при первом старте, и при каждом
- * реконнекте — членство в группах хаба привязано к нему и после смены теряется.
- */
+/** Меняется при каждом реконнекте — членство в группах хаба теряется */
 export const $connectionId = socket
   .createStore<string | null>(null)
   .on(connectionStarted, (_, conn) => conn.connectionId)
@@ -129,13 +112,11 @@ export const $isOnline = socket
   .on(browserWentOnline, () => true)
   .on(browserWentOffline, () => false);
 
-/** Пауза перед повторным подъёмом соединения после окончательного закрытия */
 export const waitBeforeRevivalFx = socket.createEffect(
   (delayMs: number) =>
     new Promise<void>((resolve) => setTimeout(resolve, delayMs))
 );
 
-/** Таймер фоллбэк-баннера; создаётся один раз на цикл восстановления. */
 export const waitForReconnectStuckFx = socket.createEffect(
   (recoveryId: number) =>
     new Promise<number>((resolve) =>
@@ -143,17 +124,12 @@ export const waitForReconnectStuckFx = socket.createEffect(
     )
 );
 
-/**
- * Счётчик пауз перед попытками поднять соединение. Растёт, пока сервер
- * недоступен, и обнуляется удачным стартом: после него обрывами занимается
- * retry-политика SignalR, так что до этой цепочки они уже не доходят.
- */
+/** Обнуляется удачным стартом: дальше обрывами занимается retry SignalR */
 export const $revivalAttempts = socket
   .createStore(0)
   .on(waitBeforeRevivalFx, (count) => count + 1)
   .reset(connectionStarted);
 
-/** Было ли соединение потеряно — чтобы отличить восстановление от первого старта */
 export const $wasDisconnected = socket
   .createStore(false)
   .on(connectionClosed, () => true)
@@ -169,7 +145,6 @@ export const $isRecoveryInProgress = socket
   .reset(connectionStarted)
   .reset(connectionReconnected);
 
-/** Восстановление длится больше двух минут — показываем безопасный фоллбэк. */
 export const $reconnectStuck = socket
   .createStore(false)
   .on(reconnectStuckDetected, () => true)
@@ -187,10 +162,8 @@ export const initSocketFx = socket.createEffect(async () => {
 
   const conn = buildConnection();
 
-  /** Карта handlers, нужна чтобы затем корректно вызвать `conn.off` */
   const handlers = new Map<SocketEvent, (p: unknown) => void>();
 
-  // регистрируем единый набор хендлеров
   Object.values(SocketEvent).forEach((event) => {
     const customParser = customParsers[event];
 
@@ -200,10 +173,8 @@ export const initSocketFx = socket.createEffect(async () => {
       let payload: SocketPayload[SocketEvent];
 
       if (customParser) {
-        // кастомный парсер знает как распаковать args
         payload = customParser(...args) as SocketPayload[SocketEvent];
       } else {
-        // дефолт: берём первый аргумент как payload
         const [first] = args;
         payload = first as SocketPayload[SocketEvent];
       }
@@ -222,7 +193,6 @@ export const initSocketFx = socket.createEffect(async () => {
 
   const releaseHandlers = () => handlers.forEach((h, ev) => conn.off(ev, h));
 
-  // системные события соединения
   conn.onreconnecting((error) => {
     if (isStale()) return;
     connectionReconnecting(error);
@@ -235,7 +205,7 @@ export const initSocketFx = socket.createEffect(async () => {
   });
 
   conn.onclose((e) => {
-    releaseHandlers(); // clean-up
+    releaseHandlers();
     if (isStale()) return;
 
     if ($connection.getState() === (conn as ConnectionReady)) {
@@ -267,22 +237,17 @@ export const initSocketFx = socket.createEffect(async () => {
   connectionStarted(Object.assign(conn, { started: true }) as ConnectionReady);
 });
 
-/**
- * Принудительно пересоздаёт застрявший HubConnection. Нужен после сна, когда
- * браузер оставляет объект в памяти, но его сетевой канал уже не жизнеспособен.
- */
+/** Пересоздаёт HubConnection, чей сетевой канал умер после сна машины */
 export const restartSocketFx = socket.createEffect(async () => {
   const staleConnection = $connection.getState();
 
   if (staleConnection) {
-    // Обесцениваем текущую попытку до stop(): даже если транспорт мёртв и
-    // stop() не ответит никогда, её колбэки уже ни на что не влияют.
+    // Обесцениваем попытку до stop(): мёртвый транспорт может не ответить.
     socketGeneration++;
 
     await waitAtMost(() => staleConnection.stop(), stopTimeoutMs);
 
-    // stop() штатно вызывает onclose. Это страховка на случай оборванного
-    // транспорта, который не доставил callback.
+    // Страховка: оборванный транспорт мог не доставить onclose.
     if ($connection.getState() === staleConnection) {
       connectionClosed(undefined);
       setSignalRConnectionId(null);

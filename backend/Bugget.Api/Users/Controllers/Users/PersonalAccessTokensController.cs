@@ -9,23 +9,16 @@ using Microsoft.AspNetCore.Mvc;
 namespace Bugget.Api.Users.Controllers;
 
 /// <summary>
-/// Personal access tokens текущего пользователя. Маршруты и формы приходят из
-/// <c>specs/contracts/users/openapi.yaml</c> через
-/// <see cref="PersonalAccessTokensControllerBase"/>.
+/// Personal access tokens текущего пользователя; контракт — <c>specs/contracts/users/openapi.yaml</c>.
+/// Токены строго личные: владелец берётся из identity, admin-доступа к чужим нет. Сегменты
+/// <c>workspaceId</c>/<c>teamId</c> из адреса не используются — контекст берётся из identity.
 /// </summary>
-/// <remarks>
-/// Токены строго личные: владелец берётся из identity, admin-доступа к чужим токенам
-/// нет. Сегменты <c>workspaceId</c>/<c>teamId</c> из адреса не используются — токен
-/// привязывается к контексту identity, как и везде в модуле users.
-/// </remarks>
 [ApiController]
 [Auth]
 public sealed class PersonalAccessTokensController(
     IPersonalAccessTokensService tokensService) : PersonalAccessTokensControllerBase
 {
-    /// <summary>
-    /// Токены пользователя по всем его командам — без секрета
-    /// </summary>
+    /// <summary>Токены пользователя по всем его командам — без секрета.</summary>
     public override async Task<ActionResult<ICollection<PersonalAccessToken>>> ListInContext(
         string workspaceId,
         string teamId,
@@ -36,9 +29,7 @@ public sealed class PersonalAccessTokensController(
         return tokens.Select(t => t.ToContract()).ToList();
     }
 
-    /// <summary>
-    /// Выпустить токен: значение возвращается один раз
-    /// </summary>
+    /// <summary>Выпустить токен: значение возвращается один раз.</summary>
     [WorkspaceRequired]
     [TeamRequired]
     public override async Task<ActionResult<PersonalAccessTokenCreated>> CreateInContext(
@@ -62,9 +53,7 @@ public sealed class PersonalAccessTokensController(
         };
     }
 
-    /// <summary>
-    /// Отозвать свой токен: чужой и несуществующий неразличимы — 404
-    /// </summary>
+    /// <summary>Отозвать свой токен: чужой и несуществующий неразличимы — 404.</summary>
     [RouteParameterConstraint("tokenId", "long")]
     public override async Task<IActionResult> RevokeInContext(
         string workspaceId,

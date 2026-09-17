@@ -63,7 +63,6 @@ public class ConfigureJwtBearerOptions(
     {
         var tokensService = ctx.HttpContext.RequestServices.GetRequiredService<ITokensService>();
 
-        // валидация refresh + userId
         var principal = await tokensService.ValidateRefreshTokenAsync(refresh);
         var userIdStr = principal.FindFirstValue(ClaimTypes.NameIdentifier)
                        ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub)
@@ -73,7 +72,6 @@ public class ConfigureJwtBearerOptions(
             throw new SecurityTokenException("refresh has no user");
         }
 
-        // ротация
         var (acc, refh) = await tokensService.GenerateTokensAsync(userId, refresh);
 
         ApplyTokenPair(ctx, acc, refh);
@@ -97,7 +95,7 @@ public class ConfigureJwtBearerOptions(
             ctx.HttpContext.SetJsonWebTokensCookie(access, refresh, jwtOptions.AccessLifetime, jwtOptions.RefreshLifetime);
         }
 
-        ctx.Token = access; // кладём новый access в пайплайн
+        ctx.Token = access;
     }
 
     /// <summary>
@@ -143,7 +141,6 @@ public class ConfigureJwtBearerOptions(
             {
                 var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<ConfigureJwtBearerOptions>>();
 
-                // 1) Bearer
                 var authHeader = ctx.Request.Headers.Authorization.ToString();
                 if (!string.IsNullOrWhiteSpace(authHeader) &&
                     authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
@@ -153,10 +150,8 @@ public class ConfigureJwtBearerOptions(
                     return;
                 }
 
-                // 2) access_token из cookie
                 if (ctx.Request.Cookies.TryGetValue("access_token", out var access))
                 {
-                    // если скоро истекает — сразу рефрешимся
                     if (AccessExpiringSoon(access, ProactiveWindow, out _)
                         && ctx.Request.Cookies.TryGetValue("refresh_token", out var refreshForSoon))
                     {
@@ -164,7 +159,7 @@ public class ConfigureJwtBearerOptions(
                         {
                             await DoSilentRefreshAsync(ctx, refreshForSoon);
                             logger.LogInformation("OnMessageReceived: proactive refresh succeeded");
-                            return; // уже положили новый access в ctx.Token
+                            return;
                         }
                         catch (SecurityTokenException ex) when (ex.Message.Contains("revoked", StringComparison.OrdinalIgnoreCase))
                         {
@@ -186,7 +181,6 @@ public class ConfigureJwtBearerOptions(
                     return;
                 }
 
-                // 3) Пытаемся тихо рефрешнуть по refresh_token
                 if (!ctx.Request.Cookies.TryGetValue("refresh_token", out var refresh))
                 {
                     return;
@@ -205,12 +199,10 @@ public class ConfigureJwtBearerOptions(
                         return;
                     }
                     logger.LogInformation("OnMessageReceived: silent refresh failed (revoked, no cache entry)");
-                    // пусть будет 401
                 }
                 catch (Exception ex)
                 {
                     logger.LogInformation("OnMessageReceived: silent refresh failed: {Message}", ex.Message);
-                    // пусть будет 401
                 }
             },
 
@@ -277,7 +269,6 @@ public class ConfigureJwtBearerOptions(
                 }
                 catch (SecurityTokenException ex) when (ex.Message.Contains("revoked", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Попытка получить пару из кэша ротаций при гонке
                     var rotationCache = http.RequestServices.GetRequiredService<IRefreshRotationCache>();
                     try
                     {
@@ -289,7 +280,6 @@ public class ConfigureJwtBearerOptions(
                             var jwtOpts = http.RequestServices.GetRequiredService<IOptions<JwtOptions>>().Value;
                             http.SetJsonWebTokensCookie(acc, refh, jwtOpts.AccessLifetime, jwtOpts.RefreshLifetime);
 
-                            // Получим userId для SetAuthHeaders
                             var handler = new JwtSecurityTokenHandler();
                             var newPrincipal = handler.ReadJwtToken(acc);
                             var userIdStr = newPrincipal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;

@@ -12,12 +12,8 @@ using DomainModel = Bugget.Domain.Users;
 namespace Bugget.Api.Users.Mappers;
 
 /// <summary>
-/// Домен/View → Contracts для фронтовой поверхности модуля users. Контрактные
-/// DTO сгенерированы из <c>specs/contracts/users/openapi.yaml</c>.
-///
-/// Формы намеренно повторяют то, что уходило фронту до перехода на contract-first:
-/// контракт описан с работающего API, а не наоборот. Доказательство — снимки в
-/// <c>Bugget.IntegrationTests/Contract/Snapshots</c>.
+/// Домен/View → Contracts фронтовой поверхности users. Формы повторяют то, что уходило фронту до
+/// contract-first; доказательство — снимки в <c>Bugget.IntegrationTests/Contract/Snapshots</c>.
 /// </summary>
 internal static class UsersContractMapper
 {

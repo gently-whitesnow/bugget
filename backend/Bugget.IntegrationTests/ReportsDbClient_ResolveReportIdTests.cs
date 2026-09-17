@@ -29,14 +29,11 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
     [InlineData(ResolveBy.PublicId)]
     public async Task ResolveReportIdAsync_WithoutFilters_ShouldReturnCorrectId(ResolveBy resolveBy)
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
 
-        // Act
         var result = await ResolveByAsync(resolveBy, workspaceId: null, report);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(report.Id, result.Id);
     }
@@ -51,7 +48,6 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
         bool workspaceIdMatches,
         bool shouldResolve)
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var workspaceId = $"workspace_{Guid.NewGuid()}";
         var wrongWorkspaceId = $"wrong_workspace_{Guid.NewGuid()}";
@@ -59,10 +55,8 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
 
         var filterWorkspaceId = workspaceIdMatches ? workspaceId : wrongWorkspaceId;
 
-        // Act
         var result = await ResolveByAsync(resolveBy, workspaceId: filterWorkspaceId, report);
 
-        // Assert
         if (shouldResolve)
         {
             Assert.NotNull(result);
@@ -77,43 +71,34 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
     [Fact(DisplayName = "Разрешение ID отчета по несуществующему reportId")]
     public async Task ResolveReportIdAsync_ByNonExistentReportId_ShouldReturnNull()
     {
-        // Arrange
         var nonExistentId = 999999;
 
-        // Act
         var result = await _reportsDbClient.ResolveReportIdAsync(null, null, nonExistentId, null, null);
 
-        // Assert
         Assert.Null(result);
     }
 
     [Fact(DisplayName = "Разрешение ID отчета по несуществующему public_id")]
     public async Task ResolveReportIdAsync_ByNonExistentPublicId_ShouldReturnNull()
     {
-        // Arrange
         var nonExistentPublicId = Guid.NewGuid();
 
-        // Act
         var result = await _reportsDbClient.ResolveReportIdAsync(null, null, null, nonExistentPublicId, null);
 
-        // Assert
         Assert.Null(result);
     }
 
     [Fact(DisplayName = "Разрешение ID отчета без параметров - null")]
     public async Task ResolveReportIdAsync_WithAllNullParameters_ShouldReturnNull()
     {
-        // Act
         var result = await _reportsDbClient.ResolveReportIdAsync(null, null, null, null, null);
 
-        // Assert
         Assert.Null(result);
     }
 
     [Fact(DisplayName = "Разрешение ID отчета по reportId имеет приоритет над public_id")]
     public async Task ResolveReportIdAsync_ReportIdHasPriorityOverPublicId_ShouldUseReportId()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report1 = await CreateTestReportAsync(userId);
         var report2 = await CreateTestReportAsync(userId);
@@ -129,7 +114,6 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
     [Fact(DisplayName = "Разрешение team_report_id учитывает teamId и не путает репорты разных команд")]
     public async Task ResolveReportIdAsync_ByTeamReportId_WithTeamFilter_ShouldResolveCorrectTeamReport()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var workspaceId = $"workspace_{Guid.NewGuid()}";
         var teamId1 = $"team_{Guid.NewGuid()}";
@@ -142,7 +126,6 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
         Assert.NotNull(teamReport2.TeamReportId);
         Assert.Equal(teamReport1.TeamReportId, teamReport2.TeamReportId);
 
-        // Act
         var team1Result = await _reportsDbClient.ResolveReportIdAsync(
             workspaceId,
             teamId1,
@@ -162,7 +145,6 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
             publicId: null,
             teamReportId: teamReport1.TeamReportId);
 
-        // Assert
         Assert.NotNull(team1Result);
         Assert.Equal(teamReport1.Id, team1Result.Id);
 
@@ -178,12 +160,10 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
     public async Task ResolveReportIdAsync_WorkspaceScopedReport_WithTeamFilterInSameWorkspace_ShouldResolve(
         ResolveBy resolveBy)
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var workspaceId = $"workspace_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId, teamId: null, organizationId: workspaceId);
 
-        // Act
         var result = await _reportsDbClient.ResolveReportIdAsync(
             workspaceId,
             $"team_{Guid.NewGuid()}",
@@ -191,7 +171,6 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
             publicId: resolveBy == ResolveBy.PublicId ? report.PublicId : null,
             teamReportId: null);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(report.Id, result.Id);
         Assert.Null(result.CreatorTeamId);
@@ -203,7 +182,6 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
     public async Task ResolveReportIdAsync_TeamScopedReport_WithWrongTeamFilter_ShouldReturnNull(
         ResolveBy resolveBy)
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var workspaceId = $"workspace_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(
@@ -211,7 +189,6 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
             teamId: $"team_{Guid.NewGuid()}",
             organizationId: workspaceId);
 
-        // Act
         var result = await _reportsDbClient.ResolveReportIdAsync(
             workspaceId,
             $"team_{Guid.NewGuid()}",
@@ -219,7 +196,6 @@ public class ReportsDbClient_ResolveReportIdTests : IClassFixture<AppWithPostgre
             publicId: resolveBy == ResolveBy.PublicId ? report.PublicId : null,
             teamReportId: null);
 
-        // Assert
         Assert.Null(result);
     }
 

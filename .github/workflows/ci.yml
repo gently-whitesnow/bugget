@@ -3,8 +3,7 @@
 #
 # Проверки качества на pull request.
 #
-# Набор проверок здесь не описывается: единственный источник правды —
-# .quality/quality.config.json, запускает его scripts/quality/verify.sh.
+# Набор проверок здесь не описывается: шаги перечислены в scripts/verify.sh.
 # Ту же команду локально запускают человек и агент.
 #
 # Шаги ниже только готовят тулчейн (dotnet, node). Новая проверка добавляется
@@ -95,19 +94,14 @@ jobs:
               [ -n "$file" ] || continue
               case "$file" in
                 # Общие пути: затрагивают обе области.
-                specs/contracts/*|scripts/*|.github/workflows/ci.yml|.quality/quality.config.json)
+                specs/contracts/*|scripts/*|.github/workflows/ci.yml)
                   backend=true
                   frontend=true
                   ;;
-                backend/*|global.json|.config/dotnet-tools.json|.quality/backend-*)
+                backend/*|global.json|.config/dotnet-tools.json|.editorconfig)
                   backend=true
                   ;;
-                frontend/*|.quality/frontend-*)
-                  frontend=true
-                  ;;
-                # Неизвестный файл .quality/** без известного префикса — общий, fail-open.
-                .quality/*)
-                  backend=true
+                frontend/*)
                   frontend=true
                   ;;
                 # Остальное (docs, deploy, landing, README и т.п.) тяжёлые job не запускает.
@@ -121,6 +115,21 @@ jobs:
           echo "backend=$backend" >> "$GITHUB_OUTPUT"
           echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
           echo "Области: backend=$backend frontend=$frontend"
+
+  # Рамка репозитория (.harness.json): дешёвая и не зависит от областей, поэтому идёт всегда.
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install harness
+        run: curl -fsSL https://raw.githubusercontent.com/gently-whitesnow/harness-cli/master/install.sh | sh
+
+      - name: Harness check
+        run: ~/.local/bin/harness check --verbose
 
   backend:
     needs: changes
@@ -136,18 +145,8 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Verify
-        run: ./scripts/quality/verify.sh --scope backend
+        run: ./scripts/verify.sh backend
 
-      # Отчёт о покрытии нужен и когда прогон красный: по нему выбирают, что покрывать
-      # дальше, а гейт backend-coverage краснеет ровно на падении покрытия.
-      - name: Upload coverage report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage
-          path: artifacts/coverage/report
-          if-no-files-found: warn
-          retention-days: 14
 
   frontend:
     needs: changes
@@ -165,11 +164,11 @@ jobs:
           cache-dependency-path: ./frontend/package-lock.json
 
       - name: Verify
-        run: ./scripts/quality/verify.sh --scope frontend
+        run: ./scripts/verify.sh frontend
 
   # Агрегирующий гейт: ровно один контекст, по которому судят весь прогон.
   ci-ok:
-    needs: [changes, backend, frontend]
+    needs: [changes, harness, backend, frontend]
     # always() — иначе job сам пропустится вслед за упавшей зависимостью и гейт
     # окажется «пройденным».
     if: always()
@@ -182,12 +181,13 @@ jobs:
           RESULT_CHANGES: ${{ needs.changes.result }}
           RESULT_BACKEND: ${{ needs.backend.result }}
           RESULT_FRONTEND: ${{ needs.frontend.result }}
+          RESULT_HARNESS: ${{ needs.harness.result }}
         run: |
           set -uo pipefail
 
           failed=0
 
-          for entry in "changes:$RESULT_CHANGES" "backend:$RESULT_BACKEND" "frontend:$RESULT_FRONTEND"; do
+          for entry in "changes:$RESULT_CHANGES" "harness:$RESULT_HARNESS" "backend:$RESULT_BACKEND" "frontend:$RESULT_FRONTEND"; do
             job="${entry%%:*}"
             result="${entry#*:}"
             case "$result" in

@@ -17,6 +17,11 @@ namespace Bugget.UnitTests;
 
 public sealed class ProblemDetailsFactoryTests
 {
+    private static readonly JsonSerializerOptions SnakeCaseOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+    };
+
     [Fact]
     public void Catalog_and_ad_hoc_descriptors_keep_all_existing_http_statuses()
     {
@@ -135,10 +140,7 @@ public sealed class ProblemDetailsFactoryTests
     [Fact]
     public void Rfc_fields_and_extensions_preserve_their_wire_names_under_snake_case_policy()
     {
-        var json = JsonSerializer.Serialize(GetProblem(global::Bugget.Api.ProblemDescriptors.InvalidPeriod, "Некорректный период"), new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        });
+        var json = JsonSerializer.Serialize(GetProblem(global::Bugget.Api.ProblemDescriptors.InvalidPeriod, "Некорректный период"), SnakeCaseOptions);
 
         Assert.Contains("\"type\"", json);
         Assert.Contains("\"title\"", json);
@@ -170,10 +172,7 @@ public sealed class ProblemDetailsFactoryTests
         var problem = Assert.IsType<ValidationProblemDetails>(
             ProblemDetailsFactory.CreateValidation(new DefaultHttpContext(), modelState).Value);
 
-        var json = JsonSerializer.Serialize(problem, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        });
+        var json = JsonSerializer.Serialize(problem, SnakeCaseOptions);
 
         using var document = JsonDocument.Parse(json);
         var errors = document.RootElement.GetProperty("errors");

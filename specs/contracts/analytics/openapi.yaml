@@ -3,7 +3,7 @@ openapi: 3.0.3
 # Контракт модуля Analytics. Источник правды для Bugget/Generated/AnalyticsControllerBase.g.cs
 # и Bugget.Analytics.Contracts/Generated/AnalyticsContracts.g.cs.
 #
-# Правится этот файл, а не .g.cs: перегенерация — scripts/quality/openapi-generate.sh.
+# Правится этот файл, а не .g.cs: перегенерация — scripts/contracts/openapi-generate.sh.
 # Порядок схем в components/schemas определяет порядок типов в сгенерированном файле.
 
 info:

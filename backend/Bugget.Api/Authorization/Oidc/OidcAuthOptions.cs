@@ -1,62 +1,32 @@
 namespace Bugget.Api.Authorization.Oidc;
 
-/// <summary>
-/// Configuration for external OIDC provider token validation.
-/// </summary>
 public sealed class OidcAuthOptions
 {
-    public bool Enabled { get; init; } = false;
+    public bool Enabled { get; init; }
 
-    /// <summary>
-    /// OIDC provider authority URL (e.g., https://keycloak.example.com/realms/myrealm).
-    /// Used to discover JWKS endpoint via .well-known/openid-configuration.
-    /// </summary>
+    /// <summary>OIDC authority URL (e.g. https://keycloak.example.com/realms/myrealm); JWKS is discovered via .well-known.</summary>
     public string Authority { get; init; } = default!;
 
-    /// <summary>
-    /// Expected audience (client_id). If null, audience validation is skipped.
-    /// </summary>
+    /// <summary>Expected audience (client_id). If null, audience validation is skipped.</summary>
     public string? Audience { get; init; }
 
-    /// <summary>
-    /// Whether to validate the token audience. Default: true.
-    /// Set to false when the Keycloak client_id is unknown or differs from Audience.
-    /// </summary>
+    /// <summary>Set to false when the Keycloak client_id is unknown or differs from Audience.</summary>
     public bool ValidateAudience { get; init; } = true;
 
-    /// <summary>
-    /// Header name containing Bearer token (e.g., "Authorization" or "X-Id-Token").
-    /// If null, header extraction is skipped.
-    /// </summary>
+    /// <summary>Header with the Bearer token (e.g. "Authorization" or "X-Id-Token"). If null, header extraction is skipped.</summary>
     public string? TokenHeaderName { get; init; }
 
-    /// <summary>
-    /// Cookie name containing the OIDC token (set by oauth2-proxy).
-    /// Default: "_oauth2_proxy"
-    /// </summary>
+    /// <summary>Cookie with the OIDC token (set by oauth2-proxy).</summary>
     public string CookieName { get; init; } = "_oauth2_proxy";
 
-    /// <summary>
-    /// Whether to validate token lifetime. Default: true.
-    /// </summary>
     public bool ValidateLifetime { get; init; } = true;
 
-    /// <summary>
-    /// Whether to require HTTPS for OIDC metadata endpoint.
-    /// Default: true. Set to false only for local development/testing.
-    /// </summary>
+    /// <summary>Set to false only for local development/testing.</summary>
     public bool RequireHttpsMetadata { get; init; } = true;
 
-    /// <summary>
-    /// Path to redirect after successful authorization.
-    /// Used when 'next' query parameter is not provided.
-    /// Default: "/"
-    /// </summary>
+    /// <summary>Redirect path after successful authorization when the 'next' query parameter is absent.</summary>
     public string DefaultRedirectPath { get; init; } = "/";
 
-    /// <summary>
-    /// Claim type used to extract the user identifier (externalId) from the token.
-    /// Default: "sub"
-    /// </summary>
+    /// <summary>Claim type used to extract the user identifier (externalId) from the token.</summary>
     public string IdKey { get; init; } = "sub";
 }

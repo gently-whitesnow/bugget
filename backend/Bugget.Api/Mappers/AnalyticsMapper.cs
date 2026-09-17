@@ -8,18 +8,10 @@ using ReportContracts = Bugget.Contracts.Reports.Generated;
 namespace Bugget.Api.Mappers;
 
 /// <summary>
-/// BO → Contracts маппер для эндпоинтов <c>/v2/analytics/*</c> + sub-resource
-/// <c>/v2/reports/{id}/analytics</c>. Контрактные DTO видны только в Bugget,
-/// поэтому маппер живёт в Web-проекте, не в Bugget.Api.BO.
-///
-/// Особенность: после R6 detail-DTO (`AnalyticsReport*`) переехали в
-/// <see cref="ReportContracts"/> (модуль reports), а summary/responsible-DTO
-/// остались в <c>Bugget.Contracts.Analytics.Generated</c>. Алиасим оба
-/// namespaces, чтобы не вводить ambiguity.
-///
-/// `report_id` во всех четырёх формах уходит каноническим Int64 строкой
-/// (shared.yaml <c>Int64String</c>): внутри он остаётся <c>long</c>,
-/// конверсия живёт только здесь, на HTTP-границе.
+/// BO → Contracts маппер для <c>/v2/analytics/*</c> и <c>/v2/reports/{id}/analytics</c>.
+/// После R6 detail-DTO живут в <see cref="ReportContracts"/>, а summary/responsible-DTO — в
+/// <c>Bugget.Contracts.Analytics.Generated</c>: оба namespace под алиасами, чтобы не было ambiguity.
+/// <c>report_id</c> уходит Int64 строкой (shared.yaml <c>Int64String</c>); конверсия из <c>long</c> — только здесь.
 /// </summary>
 internal static class AnalyticsMapper
 {

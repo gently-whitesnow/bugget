@@ -3,11 +3,8 @@ using Microsoft.Extensions.Options;
 namespace Bugget.Infrastructure.Attachments;
 
 /// <summary>
-/// Проверка профиля оптимизации на старте (<c>ValidateOnStart</c>). Смысл — не дать
-/// установке молча уехать в OOM: нулевой или отрицательный потолок раньше означал
-/// «без ограничений», а перемноженные потоки — несколько тяжёлых ffmpeg-ов сразу
-/// (MAIN-188). Настройки приходят из external_settings.json, править их будет человек,
-/// поэтому отказ должен быть громким и с причиной.
+/// Проверка профиля оптимизации на старте (<c>ValidateOnStart</c>), чтобы установка не уехала молча в OOM (MAIN-188).
+/// Настройки из external_settings.json правит человек, поэтому отказ громкий и с причиной.
 /// </summary>
 public sealed class OptimizatorSettingsValidator : IValidateOptions<OptimizatorSettings>
 {
@@ -18,17 +15,10 @@ public sealed class OptimizatorSettingsValidator : IValidateOptions<OptimizatorS
         "medium", "slow", "slower", "veryslow", "placebo"
     ];
 
-    /// <summary>
-    /// Во сколько раз суммарный бюджет потоков ffmpeg может превышать число ядер.
-    /// Двукратный запас оставляет место обычному oversubscribe и режет заведомо
-    /// невыполнимые сочетания вроде «4 процесса по 8 потоков» на двух ядрах.
-    /// </summary>
+    /// <summary>Во сколько раз бюджет потоков ffmpeg может превышать число ядер: запас под обычный oversubscribe.</summary>
     private const int ThreadBudgetOversubscribeFactor = 2;
 
-    /// <summary>
-    /// Нижняя граница бюджета: безопасный профиль — по одному потоку на декодер,
-    /// кодировщик и фильтры — обязан подниматься даже на одноядерной машине.
-    /// </summary>
+    /// <summary>Нижняя граница бюджета: безопасный профиль обязан подниматься даже на одноядерной машине.</summary>
     private const int MinThreadBudget = 3;
 
     public ValidateOptionsResult Validate(string? name, OptimizatorSettings options)
@@ -60,10 +50,8 @@ public sealed class OptimizatorSettingsValidator : IValidateOptions<OptimizatorS
                 string.Join(", ", KnownVideoPresets) + ".");
         }
 
-        // Считаем в long: external_settings.json приходит от человека, и произведение
-        // int-ов из него переполняется в маленькое (а то и отрицательное) число, которое
-        // проходит проверку бюджета (MAIN-240).
-        long threadsPerJob = (long)options.VideoDecoderThreads + options.VideoEncoderThreads + options.VideoFilterThreads;
+        // Считаем в long: произведение int-ов из настроек переполняется и проходит проверку бюджета (MAIN-240).
+        var threadsPerJob = (long)options.VideoDecoderThreads + options.VideoEncoderThreads + options.VideoFilterThreads;
         var threadBudget = MultiplySaturating(options.VideoMaxConcurrency, threadsPerJob);
         var allowedThreads = Math.Max(
             MinThreadBudget,
@@ -81,10 +69,7 @@ public sealed class OptimizatorSettingsValidator : IValidateOptions<OptimizatorS
             : ValidateOptionsResult.Fail(failures);
     }
 
-    /// <summary>
-    /// Насыщающее умножение: переполнение обязано выглядеть как «бюджет исчерпан», а не
-    /// как маленькое число, которое проходит проверку.
-    /// </summary>
+    /// <summary>Насыщающее умножение: переполнение обязано выглядеть как «бюджет исчерпан».</summary>
     private static long MultiplySaturating(long left, long right)
     {
         try

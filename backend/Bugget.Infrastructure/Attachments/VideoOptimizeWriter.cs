@@ -8,11 +8,8 @@ using Microsoft.Extensions.Options;
 
 namespace Bugget.Infrastructure.Attachments;
 
-/// <summary>
-/// Фоновая оптимизация видео: перекодирование в mp4 и превью. Загрузка к этому моменту
-/// уже завершена и оригинал доступен, поэтому задача может ждать сколько нужно — важнее
-/// удержать память процесса, чем ускорить кодирование (MAIN-188, MAIN-194).
-/// </summary>
+/// <summary>Фоновое перекодирование видео в mp4 и превью. Оригинал уже доступен, поэтому важнее удержать
+/// память процесса, чем ускорить кодирование (MAIN-188, MAIN-194).</summary>
 public sealed class VideoOptimizeWriter(
     IFileStorageClient fileStorageClient,
     IAttachmentKeyGenerator keyGen,
@@ -79,7 +76,6 @@ public sealed class VideoOptimizeWriter(
         {
             await WriteStreamToFileAsync(originalStream, inputPath, ct);
 
-            // Проверяем, что файл был записан и не пустой
             if (!File.Exists(inputPath) || new FileInfo(inputPath).Length == 0)
             {
                 // Путь во временном каталоге наружу не отдаём — исключение фоновой задачи уходит в общий лог.
@@ -120,10 +116,8 @@ public sealed class VideoOptimizeWriter(
         }
     }
 
-    /// <summary>
-    /// Видеооптимизация выключена: оригинал переезжает из временного ключа в постоянный
-    /// как есть. Так вложение не остаётся навсегда в состоянии «ждёт обработки».
-    /// </summary>
+    /// <summary>Оптимизация выключена: оригинал переезжает из временного ключа в постоянный как есть,
+    /// чтобы вложение не осталось навсегда в состоянии «ждёт обработки».</summary>
     private async Task<OptimizationResult> WriteOriginalAsync(
         string? organizationId,
         int reportId,
@@ -151,11 +145,9 @@ public sealed class VideoOptimizeWriter(
         );
     }
 
-    /// <summary>
-    /// Потолки потоков — главный рычаг памяти, и их три, а не один: <c>-filter_threads</c>
-    /// глобальный, <c>-threads</c> до <c>-i</c> ограничивает декодер, <c>-threads</c> перед
-    /// выходом — кодировщик. Декодер самый дорогой: на 4K он и держал лишние сотни мегабайт.
-    /// </summary>
+    /// <summary>Потолки потоков — главный рычаг памяти, и их три: <c>-filter_threads</c> глобальный,
+    /// <c>-threads</c> до <c>-i</c> — декодер, перед выходом — кодировщик. Декодер самый дорогой:
+    /// на 4K он и держал лишние сотни мегабайт.</summary>
     public static string[] BuildTranscodeArguments(OptimizatorSettings settings, string inputPath, string outputPath) =>
     [
         "-y",

@@ -6,11 +6,7 @@ using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
 
-/// <summary>
-/// Контракт репортов: <c>/v2/reports</c> и его под-ресурсы. Это то, с чего начинается
-/// любая страница фронта, поэтому здесь проверяются и статусы, и коды ошибок, и
-/// поведенческие инварианты ответа.
-/// </summary>
+/// <summary>Контракт <c>/v2/reports</c> и под-ресурсов: статусы, коды ошибок и поведенческие инварианты ответа.</summary>
 [Collection("PostgresCollection")]
 public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
@@ -83,12 +79,7 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         Assert.Null(response.Headers.Location);
     }
 
-    /// <summary>
-    /// В отличие от списка, GET репорта грузит и отдаёт всё дерево: ссылки, баги,
-    /// комментарии, шаги и вложения всех трёх контекстов. Это и есть разница между
-    /// двумя формами (см. <see cref="ListReportsOmitsKeysItDoesNotLoad"/>), поэтому
-    /// сид полный, а проверяется присутствие каждой ветки с нашими идентификаторами.
-    /// </summary>
+    /// <summary>В отличие от списка (<see cref="ListReportsOmitsKeysItDoesNotLoad"/>), GET отдаёт всё дерево — проверяется каждая ветка.</summary>
     [Fact(DisplayName = "GET /v2/reports/{aliasId}: 200 и всё дерево репорта")]
     public async Task GetReport()
     {
@@ -120,11 +111,7 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         Assert.NotEmpty(step.GetProperty("attachments").EnumerateArray().ToArray());
     }
 
-    /// <summary>
-    /// Инвариант `required` = присутствие ключа: у бага с одним заполненным полем
-    /// из пары `receive`/`expect` второй ключ обязан быть в объекте — со значением
-    /// `null`, а не исчезать (см. `required` + `nullable` в контракте).
-    /// </summary>
+    /// <summary>`required` = присутствие ключа: незаполненный из пары `receive`/`expect` приходит как `null`, а не исчезает.</summary>
     [Fact(DisplayName = "GET /v2/reports/{aliasId}: у бага с одним полем оба ключа присутствуют, пустой — null")]
     public async Task GetReportKeepsBothNullableBugKeys()
     {
@@ -151,10 +138,8 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
     }
 
     /// <summary>
-    /// Вложения всех трёх контекстов лежат в одной таблице и группируются по
-    /// <c>entity_id</c>, а идентификаторы багов, комментариев и шагов — независимые
-    /// последовательности. Единственное, что разводит их по владельцам, — <c>attach_type</c>.
-    /// Тест фиксирует значения провода: 0 — факт бага, 2 — комментарий, 3 — шаг.
+    /// Вложения трёх контекстов лежат в одной таблице, а id багов, комментариев и шагов — независимые последовательности:
+    /// по владельцам их разводит только <c>attach_type</c>. Значения провода: 0 — факт бага, 2 — комментарий, 3 — шаг.
     /// </summary>
     [Fact(DisplayName = "GET /v2/reports/{aliasId}: attach_type и entity_id вложения совпадают с владельцем")]
     public async Task GetReportKeepsAttachmentOwnership()
@@ -187,11 +172,8 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
 
 
     /// <summary>
-    /// Вложение внутри репорта отдаётся публичной формой <c>AttachmentSummary</c>:
-    /// служебные поля хранилища (<c>storage_key</c>, <c>storage_kind</c>,
-    /// <c>length_bytes</c>, <c>mime_type</c>, <c>is_gzip_compressed</c>) наружу
-    /// не уходят. Проверяется поимённо и во всех трёх контекстах сразу
-    /// (баг, комментарий, шаг).
+    /// Вложение отдаётся публичной формой <c>AttachmentSummary</c>: служебные поля хранилища (<c>storage_key</c>,
+    /// <c>storage_kind</c>, <c>length_bytes</c>, <c>mime_type</c>, <c>is_gzip_compressed</c>) наружу не уходят — во всех трёх контекстах.
     /// </summary>
     [Fact(DisplayName = "GET /v2/reports/{aliasId}: вложения отдают только публичные поля")]
     public async Task GetReportHidesAttachmentStorageFields()
@@ -243,10 +225,7 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
         Assert.Equal("переименовали", body.GetProperty("title").GetString());
     }
 
-    /// <summary>
-    /// Список отдаёт свой счётчик и элементы, у репорта без багов коллекция пустая,
-    /// а не отсутствует: фронт рисует её без проверки на <c>null</c>.
-    /// </summary>
+    /// <summary>У репорта без багов коллекция пустая, а не отсутствует: фронт рисует её без проверки на <c>null</c>.</summary>
     [Fact(DisplayName = "GET /v2/reports: 200, total и элементы списка")]
     public async Task ListReports()
     {
@@ -259,18 +238,13 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
 
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
         var reports = body.GetProperty("reports").EnumerateArray().ToArray();
-        // `total` — канон Int64String: строка, а не число (shared.yaml).
         Assert.Equal(reports.Length.ToString(CultureInfo.InvariantCulture), body.GetProperty("total").GetString());
 
         Assert.NotEmpty(FindReport(reports, reportId).GetProperty("bugs").EnumerateArray().ToArray());
         Assert.Empty(FindReport(reports, emptyReportId).GetProperty("bugs").EnumerateArray().ToArray());
     }
 
-    /// <summary>
-    /// LIST не загружает ссылки репорта, вложения багов и шаги воспроизведения
-    /// (см. <c>ReportsDbClient.ListReportsAsync</c>), и раньше отдавал их наружу
-    /// как `null`. Теперь у элемента списка своя форма — ключей нет вовсе.
-    /// </summary>
+    /// <summary>LIST не грузит ссылки, вложения багов и шаги (<c>ReportsDbClient.ListReportsAsync</c>) — у элемента списка этих ключей нет вовсе.</summary>
     [Fact(DisplayName = "GET /v2/reports: в элементе списка нет links, вложений бага и шагов")]
     public async Task ListReportsOmitsKeysItDoesNotLoad()
     {
@@ -340,8 +314,7 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
 
         var response = await scenario.Client.GetAsync($"/v2/reports/legacy/{reportId}");
 
-        // Фронт собирает из этой пары адрес нового URL репорта, поэтому оба поля
-        // обязаны приехать заполненными: без team_id редирект собрать не из чего.
+        // Фронт собирает из этой пары новый URL репорта: без team_id редирект собрать не из чего.
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
         Assert.Equal(scenario.TeamId, body.GetProperty("team_id").GetString());
         Assert.True(body.GetProperty("team_report_id").GetInt32() > 0);
@@ -360,8 +333,7 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
     [Fact(DisplayName = "GET /v2/reports/legacy/{legacyId}: нечисловой сегмент не совпадает с маршрутом — 404")]
     public async Task ResolveLegacyReportWithNonNumericId()
     {
-        // Ограничение маршрута (:int) держит поведение «мусорный сегмент — это не наш
-        // путь». Без него запрос доехал бы до действия и вернул 400 на связывании.
+        // Ограничение маршрута (:int): мусорный сегмент — не наш путь, иначе был бы 400 на связывании.
         var scenario = ContractScenario.Create(fixture);
 
         var response = await scenario.Client.GetAsync("/v2/reports/legacy/not-a-number");
@@ -394,8 +366,7 @@ public sealed class ReportsContractTests(AppContractFixture fixture) : IClassFix
             "/v2/reports/counts:batch",
             new { scopes = new[] { new { key = "all" }, new { key = "all" } } });
 
-        // `key` в теле отказа — прикладное расширение поверх общего каталога: фронт
-        // показывает, какой именно ключ повторился.
+        // `key` в теле отказа — прикладное расширение каталога: фронт показывает, какой ключ повторился.
         var problem = await ContractResponse.ProblemAsync(
             response,
             "duplicate_scope_key",

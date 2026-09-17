@@ -3,9 +3,6 @@ import { normalizeUrl } from "@/shared/lib/markdown";
 const linkClassName =
   "text-primary underline break-all hover:text-primary-focus cursor-pointer";
 
-/**
- * Проверяет, похож ли текст на URL
- */
 const looksLikeUrl = (text: string): boolean => {
   const normalizedText = text.trim();
   return (
@@ -15,9 +12,7 @@ const looksLikeUrl = (text: string): boolean => {
   );
 };
 
-/**
- * Валидирует и нормализует URL из буфера обмена
- */
+/** Валидирует и нормализует URL из буфера обмена */
 export const validateAndNormalizeUrl = (
   clipboardText: string
 ): string | null => {
@@ -28,7 +23,7 @@ export const validateAndNormalizeUrl = (
     }
 
     const url = normalizeUrl(normalizedText);
-    // Пытаемся создать URL объект для валидации
+    // new URL бросает на невалидной строке
     new URL(url);
     return url;
   } catch {
@@ -36,9 +31,6 @@ export const validateAndNormalizeUrl = (
   }
 };
 
-/**
- * Создает элемент ссылки
- */
 export const createLinkElement = (
   url: string,
   text: string

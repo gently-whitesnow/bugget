@@ -12,9 +12,6 @@ export type NewBug = {
   isLocalOnly: boolean;
 };
 
-/**
- * События
- */
 export const updateNewBugFieldEvent = createEvent<{
   clientId: number;
   field: ResultFieldTypes;
@@ -52,9 +49,6 @@ export const createBugOnBlurEvent = createEvent<{
 // cобытие для управления фокусом
 export const setFocusedBugEvent = createEvent<number>();
 
-/** Сторы */
-
-// Стор для одного локального бага
 export const $newBugStore = createStore<NewBug | null>(null)
   .on(createNewBugEvent, (state, { reportId, bugCount }) => {
     // Если баг уже есть, не создаем новый
@@ -96,9 +90,6 @@ export const $focusedBugClientId = createStore<number | null>(null)
     return null;
   });
 
-/** Сэмплы */
-
-// При создании бага сразу ставим фокус
 sample({
   clock: $newBugStore,
   filter: (bug): bug is NewBug => !!bug,
@@ -132,7 +123,6 @@ const $readyToCreateBugOnBlur = sample({
   },
 });
 
-// Создание бага по расфокусу
 sample({
   clock: $readyToCreateBugOnBlur,
   filter: (payload): payload is NonNullable<typeof payload> => payload !== null,

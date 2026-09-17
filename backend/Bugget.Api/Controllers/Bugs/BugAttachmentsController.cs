@@ -7,7 +7,6 @@ using Bugget.Application.Ports;
 using Bugget.Application.Services.Attachments;
 using Bugget.Contracts.Reports.Generated;
 using Bugget.Domain.Authentication;
-using Bugget.Domain.Constants;
 using Microsoft.AspNetCore.Mvc;
 // NSwag эмитит FileParameter и в файл контроллеров, и в файл DTO — берём тот,
 // что стоит в сигнатуре сгенерированной базы.
@@ -69,41 +68,19 @@ public sealed class BugAttachmentsController(
         return attachmentService.DeleteBugAttachmentAsync(user, aliasId, bugId, id).AsActionResultAsync(HttpContext);
     }
 
-    public override async Task<IActionResult> GetBugAttachmentContent(
+    public override Task<IActionResult> GetBugAttachmentContent(
         string aliasId,
         int bugId,
         int id,
-        CancellationToken cancellationToken = default)
-    {
-        var user = User.GetIdentity();
-        var (attachment, error) = await attachmentService.GetBugAttachmentContentAsync(user, aliasId, bugId, id);
-        if (error is not null)
-        {
-            return error.ToProblemDetails(HttpContext);
-        }
+        CancellationToken cancellationToken = default) =>
+        attachmentService.GetBugAttachmentContentAsync(User.GetIdentity(), aliasId, bugId, id)
+            .AsAttachmentContentAsync(HttpContext);
 
-        var (content, meta) = attachment!.Value;
-        if (meta.IsGzipCompressed == true)
-        {
-            Response.Headers["Content-Encoding"] = "gzip";
-        }
-
-        return new FileStreamResult(content, meta.MimeType);
-    }
-
-    public override async Task<IActionResult> GetBugAttachmentPreview(
+    public override Task<IActionResult> GetBugAttachmentPreview(
         string aliasId,
         int bugId,
         int id,
-        CancellationToken cancellationToken = default)
-    {
-        var user = User.GetIdentity();
-        var (content, error) = await attachmentService.GetBugAttachmentPreviewContentAsync(user, aliasId, bugId, id);
-        if (error is not null)
-        {
-            return error.ToProblemDetails(HttpContext);
-        }
-
-        return new FileStreamResult(content!, AttachmentConstants.PreviewMimeType);
-    }
+        CancellationToken cancellationToken = default) =>
+        attachmentService.GetBugAttachmentPreviewContentAsync(User.GetIdentity(), aliasId, bugId, id)
+            .AsAttachmentPreviewAsync(HttpContext);
 }

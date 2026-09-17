@@ -4,14 +4,8 @@ import { analyticsApi, type AnalyticsSummary } from "@/shared/api";
 import { type AnalyticsPeriod, defaultPeriod } from "@/shared/lib/time";
 
 /**
- * Effector-модель Разреза 1 (workspace-уровень):
- *
- * - `$periodStore` — текущий выбранный период; источник истины — page-level
- *   (URL ?period=...). Page прокидывает значение через `periodChanged`.
- * - `$summaryStore` — последний успешный ответ /v2/analytics/summary.
- * - `fetchSummaryFx` — запрос сводки по периоду.
- *
- * Любое изменение `$periodStore` запускает повторный fetch.
+ * Разрез 1 (workspace-уровень). Источник истины периода — URL ?period=...,
+ * page прокидывает его через `periodChanged`; смена периода даёт новый fetch.
  */
 
 export const periodChanged = createEvent<AnalyticsPeriod>();
@@ -40,7 +34,6 @@ const $isOverviewMounted = createStore(false)
   .on(overviewMounted, () => true)
   .on(overviewUnmounted, () => false);
 
-// При маунте секции — однократный fetch с текущим периодом.
 sample({
   clock: overviewMounted,
   source: $periodStore,

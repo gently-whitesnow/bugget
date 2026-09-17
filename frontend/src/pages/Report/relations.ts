@@ -66,7 +66,6 @@ sample({
   ],
 });
 
-// Initialize socket when reportId is available
 sample({
   clock: $reportIdStore,
   filter: (id) => id !== null,
@@ -84,7 +83,6 @@ sample({
   target: getReportFx,
 });
 
-// Set bug steps when report is loaded
 sample({
   clock: getReportFx.doneData,
   fn: (report: ReportResponse) => {
@@ -98,7 +96,6 @@ sample({
   target: setBugStepsEvent,
 });
 
-// Set bugs when report is loaded
 sample({
   clock: getReportFx.doneData,
   // `steps` в сторе багов не хранятся (у шагов свой стор), а `reportId` в сторе —
@@ -126,7 +123,6 @@ sample({
   target: setBugsEvent,
 });
 
-// Set comments when report is loaded
 sample({
   clock: getReportFx.doneData,
   fn: (report: ReportResponse) => {
@@ -183,20 +179,17 @@ sample({
   target: fetchUsersFx,
 });
 
-// Set report links when report is loaded
 sample({
   clock: getReportFx.doneData,
   fn: (report: ReportResponse) => report.links || [],
   target: setReportLinksEvent,
 });
 
-// Reset report links when report is cleared
 sample({
   clock: clearReport,
   target: resetReportLinksEvent,
 });
 
-// Create report link
 sample({
   clock: createLinkEvent,
   source: $reportIdStore,
@@ -205,7 +198,6 @@ sample({
   target: createReportLinkFx,
 });
 
-// Update report link
 sample({
   clock: updateLinkEvent,
   source: $reportIdStore,
@@ -218,7 +210,6 @@ sample({
   target: updateReportLinkFx,
 });
 
-// Delete report link
 sample({
   clock: deleteLinkEvent,
   source: $reportIdStore,

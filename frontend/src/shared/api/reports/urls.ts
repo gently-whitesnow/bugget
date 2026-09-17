@@ -2,21 +2,9 @@ import type { paths } from "@/shared/api/generated/reports";
 import { buildOperationPath } from "@/shared/api/operation";
 import { buildFullApiUrl } from "@/shared/lib/buildFullUrl";
 
-/* ── Адреса, которые нужны строкой ─────────────────────────────────────────── */
-
-/**
- * Содержимое вложения запрашивает браузер — оно уезжает в `src` картинки, в
- * `href` ссылки и в `fetch` за бинарным телом, а не в axios. Поэтому здесь нужен
- * адрес строкой, и шаблон его берётся из контракта, как у аватара в модуле
- * `users`: иначе адрес картинки расходится с адресом ручки молча.
- *
- * Оригинал и превью — шесть отдельных путей контракта, а не один путь с
- * дописанным суффиксом. Каждый объявлен литералом и проверен как `keyof paths`:
- * переименование любого из них в `specs/contracts/reports/openapi.yaml` ломает
- * компиляцию здесь, а не молча ведёт картинку в 404. Строковая конкатенация
- * `/preview` этого бы не дала — `buildOperationPath` принимает произвольную
- * строку, и склеенный путь остался бы зелёным для `tsc`.
- */
+// Содержимое вложения забирает браузер (`src`, `href`, `fetch`), а не axios,
+// поэтому адрес нужен строкой. Все шесть путей — литералы `keyof paths`, а не
+// конкатенация `/preview`: переименование в контракте ломает компиляцию.
 
 export const ATTACHMENT_CONTENT = {
   bug: {
@@ -43,25 +31,20 @@ export const ATTACHMENT_CONTENT = {
 
 type ContentRoutes = typeof ATTACHMENT_CONTENT;
 
-/** Шесть путей контракта, по которым браузер забирает содержимое вложения. */
 export type AttachmentContentRoute = ContentRoutes[keyof ContentRoutes][
   | "original"
   | "preview"];
 
 export type AttachmentContentTarget = {
-  /** Alias репорта — тот же сегмент, что и у операций модуля. */
   reportId: string;
   bugId: number;
   id: number;
-  /** Вложение комментария: у шага и у самого бага сегмента нет. */
   commentId?: number;
-  /** Вложение шага воспроизведения. */
   stepId?: number;
-  /** Превью вместо оригинала. */
   preview?: boolean;
 };
 
-/** Путь ручки без префикса контекста — в том виде, в каком он записан в контракте. */
+/** Путь ручки без префикса контекста — как в контракте. */
 export const attachmentContentPath = ({
   reportId,
   bugId,
@@ -84,17 +67,11 @@ export const attachmentContentPath = ({
     stepId,
   });
 
-  // Единственное, что к пути контракта добавляется, — хвостовой слэш у
-  // оригинала: рукописный адрес заканчивался сегментом после `content/`, и у
-  // оригинала этот сегмент был пустым. Маршрут ASP.NET отвечает одинаково и без
-  // слэша, но публичные URL в этой программе работ не меняются. Сам путь при
-  // этом остаётся тем, что объявлен в контракте.
+  // Хвостовой слэш у оригинала — наследие рукописного адреса: публичные URL
+  // не меняются, хотя маршрут ASP.NET отвечает и без него.
   return preview ? path : `${path}/`;
 };
 
-/**
- * Полный адрес для браузера: тот же путь плюс префикс рабочего пространства и
- * команды, который для axios дописывает интерсептор `instances/app.ts`.
- */
+/** Полный адрес: путь плюс префикс контекста, как у интерсептора appApi. */
 export const attachmentContentUrl = (target: AttachmentContentTarget): string =>
   buildFullApiUrl(attachmentContentPath(target));

@@ -4,16 +4,11 @@ import type { components } from "@/shared/api/generated/reports";
 import type { Camelized } from "@/shared/lib/types";
 
 /**
- * Проверки сужения контракта `reports` со стороны фронта — то, что не покрывает
- * `reports.test.ts`: полнота case-конверсии на всех уровнях вложенности.
- * Сверка рукописного DTO карточки с публичной формой вложения живёт в слое
- * `entities` (`entities/report/api/contracts.test.ts`) — `shared` не имеет права
- * туда смотреть.
+ * Полнота case-конверсии на всех уровнях вложенности. Сверка DTO карточки живёт
+ * в `entities/report/api/contracts.test.ts` — `shared` туда смотреть не вправе.
  */
 
-/**
- * Рекурсивно собирает все ключи объекта, включая элементы массивов.
- */
+/** Рекурсивно собирает все ключи объекта, включая элементы массивов. */
 const collectKeys = (value: unknown, acc: string[] = []): string[] => {
   if (value === null || typeof value !== "object") return acc;
 

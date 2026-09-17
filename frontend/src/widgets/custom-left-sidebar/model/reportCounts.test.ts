@@ -4,16 +4,9 @@ import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios";
 import { appApi, setAppContext } from "@/shared/api";
 import { fetchReportCountsFx } from "./reportCounts";
 
-/**
- * Счётчики приходят массивом `[{ key, count }]`, а не картой со свободными
- * ключами: ключ среза — данные клиента, и в объекте интерсептор переписал бы его
- * вместе с именами полей. Здесь проверяется, что ключ доезжает до стора
- * дословно — с `_` и заглавными, — а имена полей среза наоборот уходят на провод
- * в snake_case.
- *
- * Тест идёт через настоящий транспорт (подменён только адаптер axios), поэтому
- * проверяет и операцию из `shared/api/reports`, и интерсепторы, а не мок.
- */
+// Ключ среза — данные клиента: до стора он доезжает дословно, а имена полей
+// уходят на провод в snake_case. Подменён только адаптер axios, поэтому
+// проверяются и операция `shared/api/reports`, и интерсепторы.
 
 let captured: InternalAxiosRequestConfig | null = null;
 let originalAdapter: AxiosAdapter | undefined;

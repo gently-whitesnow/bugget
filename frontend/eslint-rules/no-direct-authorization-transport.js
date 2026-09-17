@@ -1,26 +1,12 @@
 import { transportBoundaryOptions } from "./transport-boundary.js";
 
 /**
- * Правило no-restricted-syntax: запрет прямых HTTP-вызовов путей модуля
- * `authorization` вне единственной транспортной границы
- * (`src/shared/api/authorization`).
- *
- * Форм адреса, как и у users, две — префикс модуля дописывает интерсептор
- * инстанса, а не call-site:
- *
- *   * полный путь `/api/authorization/v1/...` — интерсептор пропускает его как есть;
- *   * путь контракта `/v1/logout` — интерсептор дописывает префикс сам.
- *
- * Правило закрывает обе: гейт, который краснеет только на первой, оставляет
- * обход границы зелёным.
- *
- * Под правило не попадает браузерная навигация на вход
- * (`window.location.href = "/api/authorization/v1/..."`): это не HTTP-вызов
- * фронта, а переход страницы, и в контракте таких путей нет — осознанное
- * исключение перечислено в `scripts/quality/frontend-api-inventory.mjs`.
- *
- * Краснота правила закреплена тестом
- * `src/shared/api/authorization/transportBoundary.gate.test.ts`.
+ * Запрет прямых HTTP-вызовов путей `authorization` вне
+ * `src/shared/api/authorization`. Закрыты обе формы адреса: полный
+ * `/api/authorization/v1/...` и путь контракта `/v1/logout` (префикс допишет
+ * интерсептор). Навигация `window.location.href` — осознанное исключение,
+ * см. `scripts/quality/frontend-api-inventory.mjs`.
+ * Гейт-тест: `src/shared/api/authorization/transportBoundary.gate.test.ts`.
  */
 
 const message =

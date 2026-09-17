@@ -1,14 +1,7 @@
 import { useState, useEffect } from "react";
 import { getFaviconUrls } from "../domain";
 
-/**
- * Хук для загрузки фавикона по URL
- * Пробует несколько вариантов URL (с www и без) и возвращает первый успешно загруженный
- *
- * @param url - URL для получения фавикона
- * @param timeout - таймаут загрузки в миллисекундах (по умолчанию 2000)
- * @returns URL фавикона или null, если загрузка не удалась
- */
+// Перебирает варианты URL фавикона (с www и без), отдаёт первый загрузившийся.
 export const useFavicon = (
   url: string,
   timeout: number = 2000
@@ -24,7 +17,6 @@ export const useFavicon = (
           return;
         }
 
-        // Пробуем загрузить фавикон, перебирая варианты URL
         let loaded = false;
         for (const faviconUrl of faviconUrls) {
           const img = new Image();
@@ -53,12 +45,11 @@ export const useFavicon = (
           if (loaded) break;
         }
 
-        // Если ни один вариант не загрузился, оставляем null
         if (!loaded) {
           setFaviconUrl(null);
         }
       } catch {
-        // Если URL невалидный, оставляем null
+        // Невалидный URL — фавикона нет.
         setFaviconUrl(null);
       }
     };

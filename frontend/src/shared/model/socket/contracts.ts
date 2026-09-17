@@ -1,16 +1,10 @@
 import { ReportStatuses } from "@/shared/config";
 
 /**
- * Payload'ы realtime-событий.
- *
- * Это отдельный контракт: он описан в `specs/contracts/events.yaml`, ничего из
- * него не генерируется, форму сообщений менять нельзя (ADR-0007). Поэтому типы
- * здесь свои и HTTP-схемы модуля `reports` сюда не подставляются, даже когда
- * формы сегодня совпадают: изменение OpenAPI не должно молча менять типы
- * realtime-пути. Перевод payload'а в сущность стора делают явные адаптеры
- * (`entities/report/lib/fromSocket.ts`).
- *
- * Сообщения SignalR приходят в camelCase и конверсию регистра не проходят.
+ * Payload'ы realtime-событий — отдельный контракт
+ * (`specs/contracts/events.yaml`, ADR-0007). HTTP-схемы `reports` сюда не
+ * подставляются: изменение OpenAPI не должно молча менять realtime-типы.
+ * SignalR шлёт camelCase, конверсию регистра сообщения не проходят.
  */
 
 export type AttachmentSocketResponse = {
@@ -34,12 +28,7 @@ export type BugStepSocketResponse = {
   attachments: AttachmentSocketResponse[] | null;
 };
 
-/**
- * `reportId` — число: по SignalR уходит `ReportLinkDbModel` с `int ReportId`,
- * то же значение и того же типа, что в HTTP-ответе (`ReportLink` в контракте
- * модуля `reports`, снимок `v2.reports.get`). Раньше здесь стояла строка —
- * зеркало SignalR расходилось с фактическим проводом.
- */
+/** `reportId` — число: по SignalR уходит `int ReportId`, как и в HTTP. */
 export type ReportLinkSocketResponse = {
   id: number;
   reportId: number;
@@ -64,12 +53,7 @@ export type PatchBugSocketResponse = {
   status?: number | null;
 };
 
-/**
- * `ReceiveBugCreate` публикует `BugSummaryDbModel`, где `CreatorType` обязателен
- * (`backend/Bugget.Entities/DbModels/Bug/BugSummaryDbModel.cs`). Зеркало это поле
- * теряло, и в сторе на его месте стояла константа — расхождение, замаскированное
- * значением по умолчанию.
- */
+/** `ReceiveBugCreate` шлёт `BugSummaryDbModel`: `creatorType` обязателен. */
 export type CreateBugSocketResponse = {
   id: number;
   title: string | null;

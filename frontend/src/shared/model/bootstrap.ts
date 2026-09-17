@@ -8,16 +8,10 @@ import {
   fetchWorkspacesFx,
 } from "./workspaces";
 
-/**
- * Bootstrap model
- * Универсальная модель для определения состояния пользователя
- * Используется для Self-hosted и SaaS режимов
- */
+// Состояние пользователя для Self-hosted и SaaS режимов
 
-// Эффект загрузки workspaces
 export const fetchBootstrapFx = fetchWorkspacesFx;
 
-// Эффект присоединения к workspace
 export const joinWorkspaceFx = createEffect(
   async (workspaceId: string | number) => {
     await selfHostedApi.joinWorkspace(workspaceId);
@@ -25,7 +19,6 @@ export const joinWorkspaceFx = createEffect(
   }
 );
 
-// Эффект присоединения к команде
 export const joinTeamFx = createEffect(
   async ({
     workspaceId,
@@ -39,7 +32,6 @@ export const joinTeamFx = createEffect(
   }
 );
 
-// Эффект создания команды
 export const createTeamFx = createEffect(
   async ({
     workspaceId,
@@ -55,7 +47,6 @@ export const createTeamFx = createEffect(
   }
 );
 
-// Эффект переименования команды
 export const renameTeamFx = createEffect(
   async ({
     workspaceId,
@@ -71,7 +62,6 @@ export const renameTeamFx = createEffect(
   }
 );
 
-// Эффект удаления команды
 export const deleteTeamFx = createEffect(
   async ({
     workspaceId,
@@ -85,13 +75,11 @@ export const deleteTeamFx = createEffect(
   }
 );
 
-// Вычисляемые значения
 export const $bootstrapState = combine(
   $workspacesStore,
   $teamsMember,
   $workspacesMember,
   (workspaces, teamsMember, workspacesMember) => {
-    // Пустой массив - пользователь не в workspace
     if (workspaces.length === 0) {
       return { status: BootstrapStatus.NO_WORKSPACE as const };
     }
@@ -107,7 +95,6 @@ export const $bootstrapState = combine(
     );
 
     if (memberTeams.length === 0) {
-      // Не состоит ни в одной команде
       return {
         status: BootstrapStatus.NO_TEAM as const,
         workspace,
@@ -116,7 +103,6 @@ export const $bootstrapState = combine(
       };
     }
 
-    // Состоит в команде(ах)
     return {
       status: BootstrapStatus.READY as const,
       workspace,
@@ -127,19 +113,17 @@ export const $bootstrapState = combine(
   }
 );
 
-// После успешного join workspace - перезагружаем данные
+// После успешных мутаций перезагружаем данные
 sample({
   clock: joinWorkspaceFx.done,
   target: fetchBootstrapFx,
 });
 
-// После успешного join/create team - перезагружаем данные
 sample({
   clock: [joinTeamFx.done, createTeamFx.done],
   target: fetchBootstrapFx,
 });
 
-// После успешного rename/delete team - перезагружаем данные
 sample({
   clock: [renameTeamFx.done, deleteTeamFx.done],
   target: fetchBootstrapFx,

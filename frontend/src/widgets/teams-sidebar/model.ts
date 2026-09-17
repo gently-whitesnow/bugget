@@ -11,17 +11,11 @@ import { $teamsMember } from "@/shared/model";
 import type { TeamMembersResponse } from "@/shared/api";
 import type { CurrentUserResponse } from "@/entities/user";
 
-/**
- * Types
- */
 type TeamContext = {
   workspaceId: string | number;
   teamId: string | number;
 };
 
-/**
- * Effects
- */
 export const fetchTeamMembersFx = createEffect<
   TeamContext,
   TeamMembersResponse
@@ -34,8 +28,7 @@ export const fetchMemberDetailsFx = createEffect<
   CurrentUserResponse[]
 >(async ({ workspaceId, teamId, userIds }) => {
   if (userIds.length === 0) return [];
-  // Форма ответа теперь выведена из контракта целиком: перекладывать её поле за
-  // полем незачем — рукописная копия как раз и теряла `mattermostUserId`.
+  // Форма ответа выведена из контракта: поле за полем не перекладываем.
   return await getUsersByIds(workspaceId, teamId, userIds);
 });
 
@@ -52,9 +45,6 @@ export const leaveTeamFx = createEffect<TeamContext, void>(
   }
 );
 
-/**
- * Events
- */
 export const setTeamContext = createEvent<TeamContext>();
 export const clearTeamContext = createEvent<void>();
 export const deleteMember = createEvent<{
@@ -70,9 +60,6 @@ export const watchCopyToClipboard = (
   return copyToClipboard.watch(listener);
 };
 
-/**
- * Stores
- */
 export const $teamContext = createStore<TeamContext | null>(null)
   .on(setTeamContext, (_, context) => context)
   .reset(clearTeamContext);
@@ -105,7 +92,6 @@ export const $deletingUserId = createStore<string | null>(null)
 
 export const $isLeavingTeam = leaveTeamFx.pending;
 
-// Computed stores
 export const $membersCount = $teamMembers.map((data) => data.members.length);
 export const $teamSizeLimit = $teamMembers.map((data) => data.sizeLimit);
 export const $availableSlots = combine(
@@ -122,11 +108,6 @@ export const $isCurrentUserMember = combine(
   }
 );
 
-/**
- * Samples
- */
-
-// Load team data when context is set
 sample({
   clock: setTeamContext,
   target: fetchTeamMembersFx,
@@ -146,7 +127,6 @@ sample({
   target: fetchMemberDetailsFx,
 });
 
-// Delete member
 sample({
   clock: deleteMember,
   source: $teamContext,
@@ -167,7 +147,6 @@ sample({
   target: fetchTeamMembersFx,
 });
 
-// Leave team
 sample({
   clock: leaveTeamEvent,
   source: $teamContext,

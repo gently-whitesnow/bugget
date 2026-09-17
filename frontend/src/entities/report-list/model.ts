@@ -25,7 +25,6 @@ type LoadReportsParams = {
   take?: number;
 };
 
-// Общий эффект для загрузки репортов
 export const loadReportsFx = createEffect<
   LoadReportsParams,
   ListReportsResponse
@@ -51,7 +50,6 @@ export const loadReportsFx = createEffect<
   }
 );
 
-// Эффект для загрузки пользователей репортов
 export const fetchReportsUsersFx = createEffect<string[], UserResponse[]>(
   async (userIds) => {
     if (userIds.length === 0) return [];
@@ -59,7 +57,6 @@ export const fetchReportsUsersFx = createEffect<string[], UserResponse[]>(
   }
 );
 
-// Стор для репортов
 // `total` — канон Int64String с провода (`shared/lib/wireInt64`), поэтому и
 // пустое состояние держит строку: смешивать формы в одном сторе нечем.
 export const $reportsStore = createStore<ListReportsResponse>({
@@ -67,13 +64,11 @@ export const $reportsStore = createStore<ListReportsResponse>({
   reports: [],
 }).on(loadReportsFx.doneData, (_, reports) => reports);
 
-// Стор для отслеживания, загружены ли репорты дашборда
 export const $isDashboardReportsLoaded = createStore<boolean>(false).on(
   loadReportsFx.doneData,
   () => true
 );
 
-// Стор для хранения пользователей по ID
 export const $reportsUsersStore = createStore<Record<string, UserResponse>>(
   {}
 ).on(fetchReportsUsersFx.doneData, (state, users) => {

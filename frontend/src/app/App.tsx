@@ -22,7 +22,7 @@ import {
   ReportSidebarProvider,
 } from "@/widgets/report-sidebar";
 import "@/shared/styles/tailwind.css";
-import "./relations"; // Связи между слоями
+import "./relations";
 import { BootstrapStatus } from "@/shared/config";
 import { basePath } from "@/shared/config";
 import ApiBaseBoot from "./ApiBaseBoot";
@@ -32,7 +32,6 @@ import { CustomLeftSidebar } from "@/widgets/custom-left-sidebar";
 import { TeamsSidebar } from "@/widgets/teams-sidebar";
 import { AppLayout } from "./layouts/RouteLayouts";
 
-// Bootstrap imports
 import { WorkspaceJoinPage as WorkspaceJoin } from "@/pages/SelfHostedWorkspaceJoin";
 import {
   TeamSelectPage as TeamSelect,
@@ -48,14 +47,12 @@ import { $authUserStore, fetchCurrentUserFx } from "@/entities/user";
 import { userNameRequired, mattermostUserIdRequired } from "@/shared/config";
 import { NotificationProvider } from "@/app/providers";
 
-// Layout без сайдбара
 const LayoutWrapper = () => (
   <Layout>
     <Outlet />
   </Layout>
 );
 
-// Layout с сайдбаром для страницы репорта
 const LayoutWithSidebarWrapper = () => (
   <ReportSidebarProvider>
     <Layout
@@ -69,7 +66,6 @@ const LayoutWithSidebarWrapper = () => (
   </ReportSidebarProvider>
 );
 
-// Маршруты приложения с bootstrap логикой
 const AppRoutesRenderer = () => {
   const [bootstrapState, bootstrapPending, user, userPending] = useUnit([
     $bootstrapState,
@@ -80,7 +76,6 @@ const AppRoutesRenderer = () => {
 
   const requiresUserSettings = userNameRequired || mattermostUserIdRequired;
 
-  // Ждём загрузки данных
   if (bootstrapPending) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -124,7 +119,6 @@ const AppRoutesRenderer = () => {
   const defaultTeamId = bootstrapState.defaultTeamId;
 
   const routes: RouteObject[] = [
-    // Редирект с корня на команду пользователя
     {
       path: "/",
       element: <SelfHostedEntry defaultTeamId={defaultTeamId} />,
@@ -134,7 +128,6 @@ const AppRoutesRenderer = () => {
       path: "/reports/:legacyId",
       element: <LegacyReportRedirect />,
     },
-    // Основные маршруты внутри команды
     {
       path: "/teams/:teamId",
       element: (
@@ -178,7 +171,6 @@ function AppRoutes({ routes }: { routes: RouteObject[] }) {
   return element;
 }
 
-// Обёртка для основных роутов с bootstrap логикой
 const MainRoutes = () => {
   const runFetchBootstrap = useUnit(fetchBootstrapFx);
 
@@ -204,10 +196,8 @@ const App = () => {
     <NotificationProvider>
       <Router basename={basePath}>
         <Routes>
-          {/* Страница логина - доступна без авторизации */}
           <Route path="/login" element={<Login />} />
           <Route path="/dev/notifications" element={<DevNotifications />} />
-          {/* Все остальные маршруты */}
           <Route path="/*" element={<MainRoutes />} />
         </Routes>
       </Router>

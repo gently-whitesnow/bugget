@@ -1,42 +1,21 @@
 import { useEffect, useRef, useState, RefObject } from "react";
 
 type UseHeaderVisibilityOptions = {
-  /**
-   * Зона в пикселях от верха страницы, где хэдер всегда виден.
-   * Пока scrollTop < этого значения — хэдер показывается.
-   * @default 600
-   */
+  /** Зона от верха (px), где хэдер всегда виден. По умолчанию 600. */
   alwaysVisibleZone?: number;
 
-  /**
-   * Минимальная дельта скролла вниз (в пикселях), чтобы скрыть хэдер.
-   * Чем больше значение — тем "ленивее" хэдер скрывается.
-   * @default 5
-   */
+  /** Дельта скролла вниз (px), после которой хэдер скрывается. */
   hideThreshold?: number;
 
-  /**
-   * Минимальная дельта скролла вверх (в пикселях), чтобы показать хэдер.
-   * Чем больше значение — тем "ленивее" хэдер появляется.
-   * @default 40
-   */
+  /** Дельта скролла вверх (px), после которой хэдер появляется. */
   showThreshold?: number;
 };
 
 type UseHeaderVisibilityResult = {
-  /** Скрыт ли хэдер в данный момент */
   isHidden: boolean;
-  /** Ref для scroll-контейнера */
   scrollRef: RefObject<HTMLDivElement>;
 };
 
-/**
- * Хук для управления видимостью хэдера при скролле.
- *
- * - Скролл вниз → хэдер скрывается
- * - Скролл вверх → хэдер появляется
- * - В верхней зоне страницы → хэдер всегда виден
- */
 export const useHeaderVisibility = (
   options: UseHeaderVisibilityOptions = {}
 ): UseHeaderVisibilityResult => {

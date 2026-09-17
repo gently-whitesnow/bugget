@@ -1,32 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { parseApiError } from "./parseApiError";
 
-/**
- * Adversarial-проверка MAIN-66: парсер против ФАКТИЧЕСКИХ дефолтов ASP.NET Core,
- * а не против придуманных Problem Details.
- *
- * Значения ниже сняты запуском `ProblemDetailsFactory` и `ApiBehaviorOptions.
- * ClientErrorMapping` на net9.0 (та же версия, что в `Directory.Build.props`),
- * а не взяты из головы:
- *
- *   400 → title 'Bad Request',      type 'https://tools.ietf.org/html/rfc9110#section-15.5.1'
- *   405 → title 'Method Not Allowed', type '…#section-15.5.6'
- *   500 → title 'An error occurred while processing your request.', type '…#section-15.6.1'
- *   ValidationProblemDetails → title 'One or more validation errors occurred.',
- *                              type '…#section-15.5.1', detail отсутствует, code отсутствует
- *
- * Такие ответы попадают на провод везде, где кастомная фабрика из слайса 2 не
- * отработала: 405/406/415 от пайплайна MVC, необработанное 500, дефолтная
- * валидация `[ApiController]`. Толерантный парсер обязан переживать именно их.
- *
- */
+// MAIN-66: тела ниже — фактические дефолты ASP.NET Core net9.0
+// (`ProblemDetailsFactory`, `ClientErrorMapping`), а не придуманные: они
+// попадают на провод там, где кастомная фабрика не отработала.
 
 const axiosError = (status: number, data: unknown) => ({
   isAxiosError: true,
   response: { status, data },
 });
 
-/** Дефолтный ValidationProblemDetails ASP.NET: ни code, ни detail, английский title. */
 const aspNetValidationProblem = {
   type: "https://tools.ietf.org/html/rfc9110#section-15.5.1",
   title: "One or more validation errors occurred.",

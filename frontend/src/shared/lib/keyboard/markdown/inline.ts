@@ -204,3 +204,30 @@ export const toggleLink = ({ value, start, end }: TextSnapshot): TextEdit => {
     selectionEnd: urlStart + URL_PLACEHOLDER.length,
   };
 };
+
+// Голый домен с буквенной зоной: «ati.su/path» — ссылка, «v1.2» — нет.
+const BARE_DOMAIN_PATTERN = /^(?:[\p{L}\d-]+\.)+\p{L}{2,}(?:[/:?#]\S*)?$/u;
+
+/** Вставка URL поверх выделенного текста превращает его в ссылку. */
+export const linkFromPaste = (
+  { value, start, end }: TextSnapshot,
+  pastedText: string
+): TextEdit | null => {
+  const selected = value.slice(start, end);
+  const candidate = pastedText.trim();
+  if (!selected.trim() || selected.includes("\n")) return null;
+
+  let url: string;
+  if (URL_PATTERN.test(candidate)) url = candidate;
+  else if (BARE_DOMAIN_PATTERN.test(candidate)) url = `https://${candidate}`;
+  else return null;
+
+  const insert = `[${selected}](${url})`;
+  return {
+    from: start,
+    to: end,
+    insert,
+    selectionStart: start + insert.length,
+    selectionEnd: start + insert.length,
+  };
+};

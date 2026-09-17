@@ -1,4 +1,4 @@
-import { KeyboardEvent, useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { ArrowUp, Paperclip } from "lucide-react";
 import MarkdownTextarea from "@/shared/ui/MarkdownTextarea";
 import {
@@ -37,7 +37,6 @@ const ComposerInput = ({
   enableAttachments = false,
   maxLength,
 }: Props) => {
-  const textareaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nextAttachmentIdRef = useRef(0);
   const attachmentsRef = useRef<PendingAttachment[]>([]);
@@ -78,15 +77,6 @@ const ComposerInput = ({
       });
     };
   }, []);
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (!isSendDisabled && !disabled && !isSubmitting) {
-        handleSend();
-      }
-    }
-  };
 
   const handleSend = async () => {
     const sent = await onSend(attachments.map(getFileForUpload));
@@ -141,7 +131,7 @@ const ComposerInput = ({
   };
 
   const handlePaste = useCallback(
-    (event: React.ClipboardEvent<HTMLDivElement>) => {
+    (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
       if (!enableAttachments) return;
 
       const files = getClipboardFiles(event.clipboardData);
@@ -168,14 +158,17 @@ const ComposerInput = ({
 
   const isDisabled = disabled || isSubmitting;
 
+  const handleSubmit = () => {
+    if (!isDisabled && !sendButtonDisabled) handleSend();
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-2 items-center">
         <MarkdownTextarea
-          ref={textareaRef}
           value={value}
           onInput={onChange}
-          onKeyDown={handleKeyDown}
+          onSubmit={handleSubmit}
           onPaste={handlePaste}
           placeholder={placeholder}
           className="textarea textarea-bordered resize-none min-h-auto flex-1 focus:outline-none"

@@ -1,11 +1,11 @@
-import { useState, KeyboardEvent, useRef } from "react";
+import { useState } from "react";
 import MarkdownTextarea from "@/shared/ui/MarkdownTextarea";
 
 type Props = {
   initialValue: string;
   onSave: (text: string) => void;
   onCancel: () => void;
-  onPaste?: (event: React.ClipboardEvent<HTMLDivElement>) => void;
+  onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
   rows?: number;
   className?: string;
@@ -25,28 +25,17 @@ const InlineTextEdit = ({
   maxLength,
 }: Props) => {
   const [value, setValue] = useState(initialValue);
-  const textareaRef = useRef<HTMLDivElement>(null);
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      onSave(value);
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      onCancel();
-    }
-  };
 
   return (
     <div className={`space-y-2 ${className}`}>
       <MarkdownTextarea
-        ref={textareaRef}
         value={value}
         onInput={setValue}
-        onKeyDown={handleKeyDown}
+        onSubmit={onSave}
+        onCancel={onCancel}
         onPaste={onPaste}
-        className="textarea textarea-bordered w-full resize-none focus:outline-none"
-        style={{ minHeight: `${rows * 2.5}rem` }}
+        className="textarea textarea-bordered w-full focus:outline-none"
+        rows={rows}
         placeholder={placeholder}
         maxLength={maxLength}
         autoFocus={autoFocus}

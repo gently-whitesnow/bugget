@@ -10,10 +10,10 @@ type Props = {
   maxLength?: number;
   onBlur: (value: string) => void;
   onInput: (value: string) => void;
-  onPaste?: (event: React.ClipboardEvent<HTMLDivElement>) => void;
+  onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
 };
 
-const ResultTextarea = forwardRef<HTMLDivElement, Props>(
+const ResultTextarea = forwardRef<HTMLTextAreaElement, Props>(
   (
     {
       value,
@@ -36,8 +36,10 @@ const ResultTextarea = forwardRef<HTMLDivElement, Props>(
         onBlur={onBlur}
         onInput={onInput}
         onPaste={onPaste}
+        // Сохранение результата висит на blur, поэтому Enter просто снимает фокус.
+        onSubmit={() => (document.activeElement as HTMLElement | null)?.blur()}
         rows={3}
-        className="w-full textarea textarea-bordered text-sm resize-none bg-base-100 overflow-y-hidden min-h-[2.5rem] px-4 py-2 whitespace-pre-wrap break-words focus:outline-none focus:ring-primary focus:ring-offset-0 empty:before:content-[attr(data-placeholder)] empty:before:text-base-content/40"
+        className="w-full textarea textarea-bordered text-sm bg-base-100 min-h-[2.5rem] px-4 py-2 break-words focus:outline-none focus:ring-primary focus:ring-offset-0"
       />
     );
   }

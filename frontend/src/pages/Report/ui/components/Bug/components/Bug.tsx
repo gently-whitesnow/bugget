@@ -53,8 +53,8 @@ const Bug = ({ bug, totalBugsCount }: Props) => {
     deleteAttachmentEvent,
     renameAttachmentFx,
   });
-  const receiveTextareaRef = useRef<HTMLDivElement>(null);
-  const expectTextareaRef = useRef<HTMLDivElement>(null);
+  const receiveTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const expectTextareaRef = useRef<HTMLTextAreaElement>(null);
   const statusMeta = bugStatusMap[bug.status];
 
   const allAttachments = useStoreMap({
@@ -75,8 +75,15 @@ const Bug = ({ bug, totalBugsCount }: Props) => {
       receiveTextarea.style.height = "auto";
       expectTextarea.style.height = "auto";
 
-      const receiveHeight = receiveTextarea.scrollHeight;
-      const expectHeight = expectTextarea.scrollHeight;
+      // scrollHeight не включает бордер textarea.
+      const receiveHeight =
+        receiveTextarea.scrollHeight +
+        receiveTextarea.offsetHeight -
+        receiveTextarea.clientHeight;
+      const expectHeight =
+        expectTextarea.scrollHeight +
+        expectTextarea.offsetHeight -
+        expectTextarea.clientHeight;
 
       const maxHeight = Math.max(receiveHeight, expectHeight);
 

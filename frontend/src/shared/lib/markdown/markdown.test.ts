@@ -5,7 +5,6 @@ import {
   isValidUrl,
   normalizeUrl,
   markdownToHtml,
-  htmlToMarkdown,
 } from "./markdown";
 
 describe("parseMarkdownLinks", () => {
@@ -136,46 +135,5 @@ describe("markdownToHtml", () => {
     const html = markdownToHtml("before\n[link](https://x.com)\nafter");
     expect(html).toContain("<br>");
     expect(html).toContain("<a ");
-  });
-});
-
-describe("htmlToMarkdown", () => {
-  const parse = (html: string): string => {
-    const div = document.createElement("div");
-    // eslint-disable-next-line no-restricted-syntax
-    div.innerHTML = html;
-    return htmlToMarkdown(div);
-  };
-
-  it("extracts plain text", () => {
-    expect(parse("hello world")).toBe("hello world");
-  });
-
-  it("converts <br> to newline", () => {
-    expect(parse("line1<br>line2")).toBe("line1\nline2");
-  });
-
-  it("converts anchor to markdown link", () => {
-    expect(parse('<a href="https://google.com">Google</a>')).toBe(
-      "[Google](https://google.com)"
-    );
-  });
-
-  it("handles mixed content", () => {
-    const result = parse('text <a href="https://a.com">link</a> more');
-    expect(result).toBe("text [link](https://a.com) more");
-  });
-
-  it("handles div blocks", () => {
-    const result = parse("<div>line1</div><div>line2</div>");
-    expect(result).toBe("line1\nline2");
-  });
-
-  it("handles empty element", () => {
-    expect(parse("")).toBe("");
-  });
-
-  it("trims leading/trailing whitespace", () => {
-    expect(parse("  hello  ")).toBe("hello");
   });
 });

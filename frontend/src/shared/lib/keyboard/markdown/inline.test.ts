@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { toggleInlineFormat, toggleLink, type InlineFormat } from "./inline";
+import {
+  linkFromPaste,
+  toggleInlineFormat,
+  toggleLink,
+  type InlineFormat,
+} from "./inline";
 import { run } from "./testUtils";
 
 const format = (marked: string, kind: InlineFormat) =>
@@ -97,5 +102,30 @@ describe("toggleLink", () => {
 
   it("unwraps an existing link around selection", () => {
     expect(run("[{docs}](https://ati.su) x", toggleLink)).toBe("{docs} x");
+  });
+});
+
+describe("linkFromPaste", () => {
+  const paste = (marked: string, text: string) =>
+    run(marked, (s) => linkFromPaste(s, text));
+
+  it("turns selected text into link with pasted url", () => {
+    expect(paste("see {docs} here", " https://ati.su/a?b=1 ")).toBe(
+      "see [docs](https://ati.su/a?b=1)| here"
+    );
+  });
+
+  it("adds https to a bare domain", () => {
+    expect(paste("{сайт}", "ати.рф/путь")).toBe("[сайт](https://ати.рф/путь)|");
+  });
+
+  it("keeps regular paste for non-url text", () => {
+    expect(paste("{x}", "v1.2")).toBe("<no edit>");
+    expect(paste("{x}", "hello world")).toBe("<no edit>");
+  });
+
+  it("keeps regular paste without selection or across lines", () => {
+    expect(paste("a|", "https://ati.su")).toBe("<no edit>");
+    expect(paste("{a\nb}", "https://ati.su")).toBe("<no edit>");
   });
 });

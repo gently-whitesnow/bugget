@@ -24,6 +24,5 @@ export { SidebarContainer } from "./SidebarContainer";
 export { SortDropdown } from "./SortDropdown";
 export type { SortOption } from "./SortDropdown/SortDropdown";
 export { StatusIndicator } from "./StatusIndicator";
-export { default as LinkPreview } from "./LinkPreview";
 export { default as MarkdownTextarea } from "./MarkdownTextarea";
 export * from "./notifications";

@@ -1,7 +1,7 @@
 export { applyTextEdit } from "./applyTextEdit";
 export { toggleCodeBlock, toggleLineFormat, toggleQuote } from "./blocks";
 export type { LineFormat } from "./blocks";
-export { toggleInlineFormat, toggleLink } from "./inline";
+export { linkFromPaste, toggleInlineFormat, toggleLink } from "./inline";
 export type { InlineFormat } from "./inline";
 export { markdownCommands, resolveMarkdownKey } from "./keymap";
 export type { MarkdownCommand, MarkdownKeyAction } from "./keymap";

@@ -40,7 +40,7 @@ const getFileForUpload = (attachment: PendingAttachment) => {
   });
 };
 
-const Result = forwardRef<HTMLDivElement, Props>(
+const Result = forwardRef<HTMLTextAreaElement, Props>(
   (
     {
       title,
@@ -124,7 +124,7 @@ const Result = forwardRef<HTMLDivElement, Props>(
     };
 
     const handlePaste = useCallback(
-      (event: React.ClipboardEvent<HTMLDivElement>) => {
+      (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
         if (disabled) return;
 
         const files = getClipboardFiles(event.clipboardData);

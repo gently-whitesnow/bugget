@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getFaviconUrls } from "../domain";
+import { getFaviconUrls } from "../url/domain";
 
 /**
  * Хук для загрузки фавикона по URL

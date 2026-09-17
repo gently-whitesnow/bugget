@@ -1,6 +1,6 @@
 import type { paths } from "@/shared/api/generated/reports";
 import { buildOperationPath } from "@/shared/api/operation";
-import { buildFullApiUrl } from "@/shared/lib/buildFullUrl";
+import { buildFullApiUrl } from "@/shared/lib/url";
 
 /* ── Адреса, которые нужны строкой ─────────────────────────────────────────── */
 

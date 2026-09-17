@@ -1,9 +1,8 @@
 // Утилиты
-export * from "./buildFullUrl";
+export * from "./url";
 export * from "./clipboard";
 export * from "./convertCases";
 export * from "./cookies";
-export * from "./domain";
 export * from "./envLoader";
 export * from "./retry";
 

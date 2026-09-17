@@ -6,7 +6,7 @@ import { useUnit } from "effector-react";
 import { $reportsUsersStore } from "@/entities/report-list";
 import { ReportCard } from "@/entities/report";
 import { lastReportsDashboardTake } from "@/shared/config";
-import { buildFullAppUrl } from "@/shared/lib/buildFullUrl";
+import { buildFullAppUrl } from "@/shared/lib/url";
 import { compareWireInt64 } from "@/shared/api";
 import type { ListReportsResponse } from "@/entities/report-list";
 

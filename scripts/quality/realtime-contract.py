@@ -49,7 +49,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 
-import quality_csharp as q
+import quality_common as q
 
 CONTRACT = "specs/contracts/events.yaml"
 
@@ -762,7 +762,7 @@ def self_test() -> int:
         ),
         (
             "поле формы ошибки переименовано в коде",
-            mutation("backend/Bugget.Api/Http/RealtimeErrorPayload.cs", "string Title)", "string Reason)"),
+            mutation("backend/Bugget.Api/Http/RealtimeError.cs", "string Title)", "string Reason)"),
             True,
         ),
         (

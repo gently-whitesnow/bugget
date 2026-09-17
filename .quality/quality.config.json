@@ -1,14 +1,12 @@
 {
   "$comment": "Единственный источник правды о наборе проверок качества. Читается scripts/quality/verify.sh, который одинаково запускают агент, человек и CI. Отключение гейта (enabled: false) требует явного обоснования в коммите. Файлы области именуются .quality/backend-* и .quality/frontend-* — по этим префиксам job changes в .github/workflows/ci.yml выбирает области CI; файл .quality/** без известного префикса считается общим и запускает обе области (fail-open).",
-
   "stopOnFirstFail": false,
-
   "scopes": {
     "backend": {
       "workdir": "backend",
-      "description": "Серверная часть: .NET 9, решение backend/Bugget.sln.",
+      "description": "Серверная часть: .NET 9, решение backend/Bugget.slnx.",
       "prepare": [
-        "dotnet restore Bugget.sln"
+        "dotnet restore Bugget.slnx"
       ]
     },
     "frontend": {
@@ -19,16 +17,15 @@
       ]
     }
   },
-
   "gates": [
     {
       "id": "backend-build",
       "scope": "backend",
       "enabled": true,
       "slow": false,
-      "description": "Сборка Bugget.sln в Release. Предупреждения компилятора и анализаторов — ошибки (TreatWarningsAsErrors в backend/Directory.Build.props), поэтому новый варнинг валит гейт.",
+      "description": "Сборка Bugget.slnx в Release. Предупреждения компилятора и анализаторов — ошибки (TreatWarningsAsErrors в backend/Directory.Build.props), поэтому новый варнинг валит гейт.",
       "commands": [
-        "dotnet build Bugget.sln -c Release --no-restore"
+        "dotnet build Bugget.slnx -c Release --no-restore"
       ]
     },
     {
@@ -36,9 +33,9 @@
       "scope": "backend",
       "enabled": true,
       "slow": false,
-      "description": "Формат C# по backend/.editorconfig (dotnet format --verify-no-changes). Смысл гейта — не пускать косметику в диффы содержательных правок. Локально чинится одной командой: dotnet format Bugget.sln (из backend). Версия SDK закреплена в global.json — вывод dotnet format зависит от версии Roslyn.",
+      "description": "Формат C# по backend/.editorconfig (dotnet format --verify-no-changes). Смысл гейта — не пускать косметику в диффы содержательных правок. Локально чинится одной командой: dotnet format Bugget.slnx (из backend). Версия SDK закреплена в global.json — вывод dotnet format зависит от версии Roslyn.",
       "commands": [
-        "dotnet format Bugget.sln --verify-no-changes --no-restore"
+        "dotnet format Bugget.slnx --verify-no-changes --no-restore"
       ]
     },
     {
@@ -118,39 +115,6 @@
       "description": "Покрытие бекенда тестами с ratchet-бейзлайном. Абсолютной планки нет — гейт краснеет, когда покрытие падает ниже снимка .quality/backend-coverage.json: и по решению целиком, и по каждой сборке отдельно, чтобы рост в одном модуле не маскировал провал в другом. Гоняет все тестовые проекты (кроме архитектурных — coverlet ломает их белые списки зависимостей) с coverlet.collector и сливает отчёты ReportGenerator'ом в artifacts/coverage/report: HTML публикуется артефактом CI, по нему видно, что покрывать дальше. Помечен slow: поднимает Testcontainers и повторно прогоняет весь набор тестов. Список приоритетных дыр: --gaps. Пересобрать снимок: --update --skip-tests. Нужны python3 и Docker.",
       "commands": [
         "python3 scripts/quality/backend-coverage.py"
-      ]
-    },
-    {
-      "id": "backend-maintainability",
-      "scope": "backend",
-      "enabled": true,
-      "slow": false,
-      "workdir": ".",
-      "description": "Бюджет поддерживаемости C#-кода: строки в файле, в типе и в методе, цикломатическая сложность, зависимости конструктора, fan-out по using. Действует профиль legacy из .quality/backend-maintainability.json; целевой strict пока справочный (python3 scripts/quality/backend-maintainability.py --profile strict). Существующие превышения зафиксированы в .quality/backend-maintainability-baseline.json: они не блокируют, но расти им нельзя, а новых быть не должно. Пересобрать снимок после рефакторинга: --update. Нужен python3.",
-      "commands": [
-        "python3 scripts/quality/backend-maintainability.py"
-      ]
-    },
-    {
-      "id": "backend-duplicates",
-      "scope": "backend",
-      "enabled": true,
-      "slow": false,
-      "workdir": ".",
-      "description": "Кросс-файловое дублирование по нормализованным окнам: одинаковый код в разных файлах виден, даже если переименованы переменные. Гейт advisory — печатает группы и всегда возвращает 0; блокирующим станет, когда дублирование перестанет быть массовым. Настройки — .quality/backend-duplicates.json. Нужен python3.",
-      "commands": [
-        "python3 scripts/quality/backend-duplicates.py"
-      ]
-    },
-    {
-      "id": "backend-suppressions",
-      "scope": "backend",
-      "enabled": true,
-      "slow": false,
-      "workdir": ".",
-      "description": "Ratchet поверх послаблений: проекты с выключенным TreatWarningsAsErrors, коды в <NoWarn> и #pragma warning disable. Снимок — .quality/backend-suppress-baseline.json, он может только уменьшаться. Новое послабление требует ссылки на ADR или на задачу в комментарии выше и отдельного коммита с --update. Нужен python3.",
-      "commands": [
-        "python3 scripts/quality/backend-suppressions.py"
       ]
     },
     {
@@ -259,17 +223,6 @@
       "description": "Production-сборка Vite. Ловит то, что не видно типам и линтеру: битые импорты ассетов, циклы в рантайме, падения плагинов. Проверка типов вынесена в отдельный гейт frontend-typecheck, поэтому здесь запускается только бандлер.",
       "commands": [
         "npx vite build"
-      ]
-    },
-    {
-      "id": "frontend-maintainability",
-      "scope": "frontend",
-      "enabled": true,
-      "slow": false,
-      "workdir": ".",
-      "description": "LOC-бюджет на файл .ts/.tsx с ratchet-бейзлайном: новый файл сверх лимита валит гейт, уже существующие превышения зафиксированы в .quality/frontend-loc.json и могут только уменьшаться. Сгенерированное из OpenAPI и тесты не считаются.",
-      "commands": [
-        "scripts/quality/frontend-loc.sh"
       ]
     },
     {

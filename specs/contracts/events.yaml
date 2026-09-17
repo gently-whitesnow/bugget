@@ -76,7 +76,7 @@ hubs:
     # тип в C#, поменяли текст рамки здесь, поправили ожидание в тесте, ослабили фильтр
     # до базового HubException — красный.
     methodError:
-      source: backend/Bugget.Api/Http/RealtimeErrorPayload.cs
+      source: backend/Bugget.Api/Http/RealtimeError.cs
       type: RealtimeError
       description: "Ошибка вызова метода хаба. Наружу уходит только payload из каталога: любое другое исключение фильтр сводит к internal_server_error."
       envelope: "An unexpected error occurred invoking '<method>' on the server. <trustedException>: <payload>"

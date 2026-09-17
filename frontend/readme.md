@@ -36,16 +36,9 @@ TODO писать сюда все новые пакеты что добавля�
 
 ### Проверки качества
 
-Git-хуков в проекте нет: проверки живут в CI и запускаются той же командой локально.
-
 - `../scripts/quality/verify.sh --scope frontend` – все фронтовые гейты, ровно как в CI
 - `../scripts/quality/verify.sh --scope frontend --fast` – без медленных (без `npm audit`)
-- `../scripts/quality/verify.sh --list` – какие вообще есть гейты и что каждый проверяет
-
-Набор гейтов описан в `.quality/quality.config.json` — новая проверка добавляется туда.
-
-- LOC-бюджет: лимит и зафиксированные превышения в `.quality/frontend-loc.json`,
-  пересобрать после рефакторинга – `../scripts/quality/frontend-loc.sh --update`
+- `harness check` – рамка репозитория, подробности в [корневом README](../README.md#проверки-качества)
 - `npm audit`: принятые уязвимости с причинами в `.quality/frontend-audit-allowlist.json`
 - точечные отключения правил FSD – в `steiger.config.js`, каждое с причиной
 

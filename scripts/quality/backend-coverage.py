@@ -34,7 +34,7 @@ import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
-import quality_csharp as q
+import quality_common as q
 
 CONFIG = q.ROOT / ".quality" / "backend-coverage.json"
 BACKEND = q.ROOT / "backend"

@@ -99,7 +99,7 @@ jobs:
                   backend=true
                   frontend=true
                   ;;
-                backend/*|global.json|.config/dotnet-tools.json|.quality/backend-*)
+                backend/*|global.json|.config/dotnet-tools.json|.quality/backend-*|.editorconfig)
                   backend=true
                   ;;
                 frontend/*|.quality/frontend-*)
@@ -121,6 +121,21 @@ jobs:
           echo "backend=$backend" >> "$GITHUB_OUTPUT"
           echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
           echo "Области: backend=$backend frontend=$frontend"
+
+  # Рамка репозитория (.harness.json): дешёвая и не зависит от областей, поэтому идёт всегда.
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install harness
+        run: curl -fsSL https://raw.githubusercontent.com/gently-whitesnow/harness-cli/master/install.sh | sh
+
+      - name: Harness check
+        run: ~/.local/bin/harness check --verbose
 
   backend:
     needs: changes
@@ -169,7 +184,7 @@ jobs:
 
   # Агрегирующий гейт: ровно один контекст, по которому судят весь прогон.
   ci-ok:
-    needs: [changes, backend, frontend]
+    needs: [changes, harness, backend, frontend]
     # always() — иначе job сам пропустится вслед за упавшей зависимостью и гейт
     # окажется «пройденным».
     if: always()
@@ -182,12 +197,13 @@ jobs:
           RESULT_CHANGES: ${{ needs.changes.result }}
           RESULT_BACKEND: ${{ needs.backend.result }}
           RESULT_FRONTEND: ${{ needs.frontend.result }}
+          RESULT_HARNESS: ${{ needs.harness.result }}
         run: |
           set -uo pipefail
 
           failed=0
 
-          for entry in "changes:$RESULT_CHANGES" "backend:$RESULT_BACKEND" "frontend:$RESULT_FRONTEND"; do
+          for entry in "changes:$RESULT_CHANGES" "harness:$RESULT_HARNESS" "backend:$RESULT_BACKEND" "frontend:$RESULT_FRONTEND"; do
             job="${entry%%:*}"
             result="${entry#*:}"
             case "$result" in

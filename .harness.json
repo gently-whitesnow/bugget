@@ -1,0 +1,127 @@
+{
+  "version": "latest",
+  "architecture": {
+    "standard": "sliced-dotnet/1"
+  },
+  "answers": {
+    "tests.unit": {
+      "paths": [
+        "backend/Bugget.UnitTests",
+        "frontend/src"
+      ]
+    },
+    "tests.integration": {
+      "paths": [
+        "backend/Bugget.IntegrationTests"
+      ]
+    },
+    "tests.architecture": {
+      "paths": [
+        "backend/Bugget.Architecture.Tests",
+        "frontend/steiger.config.js"
+      ]
+    },
+    "format": {
+      "paths": [
+        "backend/.editorconfig",
+        "frontend/.prettierrc"
+      ]
+    },
+    "lint": {
+      "paths": [
+        "backend/Directory.Build.props",
+        "frontend/eslint.config.js"
+      ]
+    },
+    "build": {
+      "paths": [
+        "backend/Bugget.slnx",
+        "frontend/vite.config.ts"
+      ]
+    },
+    "typecheck": {
+      "paths": [
+        "frontend/tsconfig.json"
+      ]
+    },
+    "verify": {
+      "paths": [
+        "scripts/quality/verify.sh"
+      ]
+    }
+  },
+  "applicability": {
+    "csharp": {
+      "applicable": true
+    },
+    "yaml": {
+      "applicable": true
+    },
+    "typescript": {
+      "applicable": true
+    },
+    "dotnet": {
+      "applicable": true
+    }
+  },
+  "settings": {
+    "complexity.csharp": {
+      "averageReachableFiles": 8.0,
+      "largestCyclicGroupSize": 0
+    },
+    "comments.csharp": {
+      "minimumCommentLines": 10,
+      "percentageLimit": 8
+    },
+    "comments.yaml": {
+      "minimumCommentLines": 10,
+      "percentageLimit": 8
+    },
+    "comments.typescript": {
+      "minimumCommentLines": 10,
+      "percentageLimit": 8
+    },
+    "duplication.csharp": {
+      "windowLines": 30,
+      "minimumTokens": 90
+    },
+    "commits": {
+      "language": "ru",
+      "requireSetup": true
+    }
+  },
+  "policy": {
+    "harness.config": "required",
+    "harness.coverage": "required",
+    "architecture.sliced-dotnet.zone-shape": "off",
+    "architecture.sliced-dotnet.slice-shape": "off",
+    "architecture.sliced-dotnet.segment-names": "off",
+    "architecture.sliced-dotnet.layer-assemblies": "off",
+    "architecture.sliced-dotnet.dependency-direction": "off",
+    "architecture.sliced-dotnet.slice-isolation": "off",
+    "architecture.sliced-dotnet.public-api": "off",
+    "architecture.sliced-dotnet.cross-api": "off",
+    "complexity.csharp": "required",
+    "docs.policy": "required",
+    "commits.setup": "required",
+    "comments.csharp": "required",
+    "comments.yaml": "required",
+    "comments.typescript": "required",
+    "types-per-file.csharp": "required",
+    "dependencies.csharp": "required",
+    "duplication.csharp": "required",
+    "build-properties.dotnet": "required",
+    "central-packages.dotnet": "required",
+    "solution-format.dotnet": "required",
+    "editorconfig.dotnet": "required",
+    "warning-suppressions.dotnet": "required",
+    "frame.tests.unit": "required",
+    "frame.tests.integration": "required",
+    "frame.tests.architecture": "required",
+    "frame.format": "required",
+    "frame.lint": "required",
+    "frame.build": "required",
+    "frame.typecheck": "required",
+    "frame.verify": "required"
+  }
+}

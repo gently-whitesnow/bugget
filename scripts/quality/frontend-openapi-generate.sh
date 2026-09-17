@@ -9,8 +9,7 @@
 #
 # Результат ложится в frontend/src/shared/api/generated/<module>.d.ts. Эти файлы
 # только генерируются: правки в них перетираются следующим прогоном. Они
-# исключены из prettier (frontend/.prettierignore), eslint (frontend/eslint.config.js)
-# и LOC-бюджета (.quality/frontend-loc.json).
+# исключены из prettier (frontend/.prettierignore) и eslint (frontend/eslint.config.js).
 #
 # specs/contracts/shared.yaml отдельным файлом не генерируется: модули ссылаются
 # на него относительным $ref, и openapi-typescript инлайнит общие схемы в каждый

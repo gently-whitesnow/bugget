@@ -37,5 +37,6 @@ dotnet test Bugget.Architecture.Tests/Bugget.Architecture.Tests.csproj   # гр�
 dotnet test Bugget.IntegrationTests/Bugget.IntegrationTests.csproj   # нужен Docker (Testcontainers)
 ```
 
-Тестовые проекты делятся по имени: `*.IntegrationTests` идут в медленный гейт, остальные —
-в быстрый. Списки не ведутся: новый тестовый проект находится поиском и запускается сам.
+`./scripts/verify.sh backend` из корня репозитория запускает все тестовые проекты из
+`backend/Bugget.slnx` одним вызовом `dotnet test`, без разделения на быстрый и медленный
+гейты. Новые тестовые проекты нужно добавлять в solution, иначе этот прогон их не запустит.

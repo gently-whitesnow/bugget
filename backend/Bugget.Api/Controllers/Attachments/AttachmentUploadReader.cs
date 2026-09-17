@@ -1,5 +1,6 @@
 using Bugget.Api.Generated.Reports;
 using Bugget.Application.Ports;
+using Bugget.Application.Services.Attachments;
 using Bugget.Domain.Attachments;
 using Bugget.Domain.Constants;
 using Microsoft.AspNetCore.WebUtilities;
@@ -50,6 +51,21 @@ internal static class AttachmentUploadReader
             : await mimeTypeDetector.DetectAsync(content, cancellationToken);
 
         return (content, new FileMeta(file.FileName, content.Length, mimeType));
+    }
+
+    public static async Task<IReadOnlyList<AttachmentUpload>> ReadManyAsync(
+        IEnumerable<FileParameter>? files,
+        IMimeTypeDetector mimeTypeDetector,
+        CancellationToken cancellationToken)
+    {
+        var uploads = new List<AttachmentUpload>();
+        foreach (var file in files ?? [])
+        {
+            var (content, meta) = await ReadAsync(file, mimeTypeDetector, cancellationToken);
+            uploads.Add(new AttachmentUpload(content, meta));
+        }
+
+        return uploads;
     }
 
     /// <summary>

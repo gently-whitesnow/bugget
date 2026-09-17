@@ -1,11 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+using Bugget.Api.Controllers.Attachments;
 using Bugget.Api.Extensions;
 using Bugget.Api.Generated.Reports;
 using Bugget.Api.Mappers;
 using Bugget.Application.Commands.Comment;
+using Bugget.Application.Ports;
 using Bugget.Application.Services.Comments;
 using Bugget.Contracts.Reports.Generated;
 using Bugget.Domain.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using FileParameter = Bugget.Api.Generated.Reports.FileParameter;
 
 namespace Bugget.Api.Controllers.Comments;
 
@@ -14,7 +18,9 @@ namespace Bugget.Api.Controllers.Comments;
 /// <c>specs/contracts/reports/openapi.yaml</c> через <see cref="CommentsControllerBase"/>.
 /// </summary>
 [ApiController]
-public sealed class CommentsController(ICommentsService commentsService) : CommentsControllerBase
+public sealed class CommentsController(
+    ICommentsService commentsService,
+    IMimeTypeDetector mimeTypeDetector) : CommentsControllerBase
 {
     public override Task<ActionResult<CommentSummary>> CreateComment(
         string aliasId,
@@ -25,6 +31,27 @@ public sealed class CommentsController(ICommentsService commentsService) : Comme
         var user = User.GetIdentity();
         return commentsService.CreateCommentAsync(user, aliasId, bugId, ToDto(body))
             .AsContractResultAsync(HttpContext, dbModel => dbModel.ToSummaryContract(), 201);
+    }
+
+    public override async Task<ActionResult<Comment>> CreateCommentWithAttachments(
+        string aliasId,
+        int bugId,
+        [FromForm, Required, StringLength(2048, MinimumLength = 1)] string text,
+        [FromForm] CommentAudience? audience,
+        [FromForm] IEnumerable<FileParameter> files,
+        CancellationToken cancellationToken = default)
+    {
+        var uploads = await AttachmentUploadReader.ReadManyAsync(files, mimeTypeDetector, cancellationToken);
+        var dto = new CommentDto { Text = text, Audience = (short?)audience?.ToDomainValue() };
+
+        return await commentsService.CreateCommentWithAttachmentsAsync(
+            User.GetIdentity(),
+            aliasId,
+            bugId,
+            dto,
+            uploads,
+            cancellationToken)
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToContract(), 201);
     }
 
     public override Task<ActionResult<CommentSummary>> UpdateComment(

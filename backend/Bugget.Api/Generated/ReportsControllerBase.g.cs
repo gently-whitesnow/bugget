@@ -229,6 +229,23 @@ namespace Bugget.Api.Generated.Reports
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<BugStep>> CreateBugStep(string aliasId, int bugId, [Microsoft.AspNetCore.Mvc.FromBody] BugStepRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
+        /// Добавить шаг воспроизведения вместе с вложениями.
+        /// </summary>
+        /// <remarks>
+        /// Запись и её вложения создаются одной транзакцией: если хотя бы один файл
+        /// <br/>не прошёл проверку или не сохранился, не создаётся ничего, и другие
+        /// <br/>участники репорта не получают ни одного realtime-события (ADR-0015).
+        /// </remarks>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="text">Текст шага.</param>
+        /// <param name="files">Файлы шага. Имя поля формы повторяется для каждого файла.</param>
+        /// <returns>Шаг и все вложения сохранены.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/steps/with-attachments")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<BugStep>> CreateBugStepWithAttachments(string aliasId, int bugId, string text = null, System.Collections.Generic.IEnumerable<FileParameter> files = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
         /// Переупорядочить шаги воспроизведения.
         /// </summary>
         /// <remarks>
@@ -278,6 +295,24 @@ namespace Bugget.Api.Generated.Reports
         /// <returns>Комментарий добавлен.</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/comments")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<CommentSummary>> CreateComment(string aliasId, int bugId, [Microsoft.AspNetCore.Mvc.FromBody] CommentRequest body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <summary>
+        /// Добавить комментарий вместе с вложениями.
+        /// </summary>
+        /// <remarks>
+        /// Запись и её вложения создаются одной транзакцией: если хотя бы один файл
+        /// <br/>не прошёл проверку или не сохранился, не создаётся ничего, и другие
+        /// <br/>участники репорта не получают ни одного realtime-события (ADR-0015).
+        /// </remarks>
+        /// <param name="aliasId">Адрес репорта в URL. Строка, а не число: это alias вида `&lt;team&gt;-&lt;номер&gt;`,
+        /// <br/>по которому фронт строит ссылки.</param>
+        /// <param name="bugId">Идентификатор бага внутри репорта.</param>
+        /// <param name="text">Текст комментария.</param>
+        /// <param name="audience">Пропущенное поле трактуется как `internal`, как и в `CommentRequest`.</param>
+        /// <param name="files">Файлы комментария. Имя поля формы повторяется для каждого файла.</param>
+        /// <returns>Комментарий и все вложения сохранены.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("v2/reports/{aliasId}/bugs/{bugId}/comments/with-attachments")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<Comment>> CreateCommentWithAttachments(string aliasId, int bugId, string text = null, CommentAudience? audience = null, System.Collections.Generic.IEnumerable<FileParameter> files = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <summary>
         /// Обновить свой комментарий.

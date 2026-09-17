@@ -22,6 +22,7 @@
 | [0012](0012-public-int64-decimal-string.md) | Публичный неотрицательный Int64 — каноническая decimal string | Accepted | 2026-08-02 |
 | [0013](0013-string-enum-wire-contract.md) | Enum-like значения публичного HTTP API — строки `snake_case`, домен и БД остаются числовыми | Accepted | 2026-08-01 |
 | [0014](0014-agent-access-pat-and-inprocess-mcp.md) | Доступ агента — personal access tokens и in-process MCP | Accepted | 2026-08-07 |
+| [0015](0015-record-with-attachments-one-transaction.md) | Комментарий и шаг с вложениями создаются одним запросом и одной транзакцией | Accepted | 2026-09-17 |
 
 Идентификатор `ADR-20260518`, который встречается в описаниях контрактов и в
 сгенерированных `.g.cs`, — из старой схемы нумерации по дате. Он относится к решению

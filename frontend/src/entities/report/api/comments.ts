@@ -1,21 +1,31 @@
 import { reportsApi } from "@/shared/api";
 import type {
+  CommentResponse,
   CommentSummaryResponse,
   CreateCommentRequest,
   UpdateCommentRequest,
 } from "./contracts";
 
 /**
- * Создание и обновление комментария отдают `CommentSummary` — без `attachments`:
- * у только что созданного комментария вложений ещё нет, и контракт их не
- * обещает. Вложения приезжают отдельными ручками и своими событиями.
+ * Без файлов создание отдаёт `CommentSummary` — без `attachments`. С файлами
+ * комментарий и вложения создаются одной транзакцией (ADR-0015), и ответ —
+ * полный `Comment`.
  */
 export const createComment = async (
   reportId: string,
   bugId: number,
-  request: CreateCommentRequest
-): Promise<CommentSummaryResponse> =>
-  reportsApi.createComment(reportId, bugId, request);
+  request: CreateCommentRequest,
+  files: File[] = []
+): Promise<CommentSummaryResponse | CommentResponse> =>
+  files.length === 0
+    ? reportsApi.createComment(reportId, bugId, request)
+    : reportsApi.createCommentWithAttachments(
+        reportId,
+        bugId,
+        request.text,
+        files,
+        request.audience ?? undefined
+      );
 
 export const updateComment = async (
   reportId: string,

@@ -1,11 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+using Bugget.Api.Controllers.Attachments;
 using Bugget.Api.Extensions;
 using Bugget.Api.Generated.Reports;
 using Bugget.Api.Mappers;
 using Bugget.Application.Commands.BugStep;
+using Bugget.Application.Ports;
 using Bugget.Application.Services.Bugs;
 using Bugget.Contracts.Reports.Generated;
 using Bugget.Domain.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using FileParameter = Bugget.Api.Generated.Reports.FileParameter;
 
 namespace Bugget.Api.Controllers.Bugs;
 
@@ -14,7 +18,9 @@ namespace Bugget.Api.Controllers.Bugs;
 /// <c>specs/contracts/reports/openapi.yaml</c> через <see cref="BugStepsControllerBase"/>.
 /// </summary>
 [ApiController]
-public sealed class BugStepsController(IBugStepsService bugStepsService) : BugStepsControllerBase
+public sealed class BugStepsController(
+    IBugStepsService bugStepsService,
+    IMimeTypeDetector mimeTypeDetector) : BugStepsControllerBase
 {
     public override Task<ActionResult<BugStep>> CreateBugStep(
         string aliasId,
@@ -24,6 +30,25 @@ public sealed class BugStepsController(IBugStepsService bugStepsService) : BugSt
     {
         var user = User.GetIdentity();
         return bugStepsService.CreateBugStepAsync(user, aliasId, bugId, ToDto(body))
+            .AsContractResultAsync(HttpContext, dbModel => dbModel.ToContract(), 201);
+    }
+
+    public override async Task<ActionResult<BugStep>> CreateBugStepWithAttachments(
+        string aliasId,
+        int bugId,
+        [FromForm, Required, StringLength(2048, MinimumLength = 1)] string text,
+        [FromForm] IEnumerable<FileParameter> files,
+        CancellationToken cancellationToken = default)
+    {
+        var uploads = await AttachmentUploadReader.ReadManyAsync(files, mimeTypeDetector, cancellationToken);
+
+        return await bugStepsService.CreateBugStepWithAttachmentsAsync(
+            User.GetIdentity(),
+            aliasId,
+            bugId,
+            new BugStepDto { Text = text },
+            uploads,
+            cancellationToken)
             .AsContractResultAsync(HttpContext, dbModel => dbModel.ToContract(), 201);
     }
 

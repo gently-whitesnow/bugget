@@ -24,6 +24,8 @@ public interface IAttachmentDbClient
 
     Task<Attachment> CreateAttachment(AttachmentCreate create);
 
+    Task<Attachment> CreateAttachmentAsync(ITransactionScope scope, AttachmentCreate create);
+
     Task<Attachment?> DeleteBugAttachmentInternalAsync(int reportId, int bugId, int attachmentId);
 
     Task<Attachment?> DeleteCommentAttachmentInternalAsync(int reportId, int bugId, int commentId, int attachmentId);

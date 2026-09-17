@@ -3,8 +3,11 @@ using Bugget.Application.Commands.Comment;
 using Bugget.Application.DomainEvents;
 using Bugget.Application.Errors;
 using Bugget.Application.Ports;
+using Bugget.Application.Services.Attachments;
 using Bugget.Application.Services.Bugs;
 using Bugget.Application.Services.Reports;
+using Bugget.Domain;
+using Bugget.Domain.Attachments;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Comments;
 using Bugget.Domain.Common;
@@ -17,6 +20,7 @@ namespace Bugget.Application.Services.Comments;
 public sealed class CommentsService(
     ICommentsDbClient commentsDbClient,
     CommentEventsService commentEventsService,
+    AttachmentBatchWriter attachmentBatchWriter,
     ITaskQueue taskQueue,
     IReportsService reportsService,
     IBugsService bugsService,
@@ -25,6 +29,58 @@ public sealed class CommentsService(
 {
     public async Task<(CommentSummary? Value, Error? Error)> CreateCommentAsync(UserIdentity user, string aliasId, int bugId, CommentDto commentDto)
     {
+        var (resolvedReport, error) = await ResolveBugReportAsync(user, aliasId, bugId);
+        if (resolvedReport == null)
+        {
+            return (null, error);
+        }
+
+        var comment = await unitOfWork.ExecuteAsync((scope, ct) =>
+            CreateInScopeAsync(scope, user, resolvedReport, bugId, commentDto, ct));
+
+        var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
+        await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentCreateEventAsync(reportIdContext, user, comment));
+
+        return (comment, null);
+    }
+
+    public async Task<(Comment? Value, Error? Error)> CreateCommentWithAttachmentsAsync(
+        UserIdentity user,
+        string aliasId,
+        int bugId,
+        CommentDto commentDto,
+        IReadOnlyList<AttachmentUpload> files,
+        CancellationToken ct)
+    {
+        var (resolvedReport, error) = await ResolveBugReportAsync(user, aliasId, bugId);
+        error ??= AttachmentBatchWriter.Validate(files);
+        if (resolvedReport == null || error != null)
+        {
+            return (null, error);
+        }
+
+        var (summary, attachments) = await attachmentBatchWriter.CreateAsync(
+            new AttachmentBatchTarget(user, resolvedReport.Id, AttachType.Comment),
+            files,
+            async (scope, token) =>
+            {
+                var created = await CreateInScopeAsync(scope, user, resolvedReport, bugId, commentDto, token);
+                return (created, created.Id);
+            },
+            ct);
+
+        var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
+        await taskQueue.EnqueueAsync(async queueToken =>
+        {
+            await commentEventsService.HandleCommentCreateEventAsync(reportIdContext, user, summary);
+            await attachmentBatchWriter.PublishCreatedAsync(reportIdContext, user, attachments, queueToken);
+        });
+
+        return (ToComment(summary, attachments), null);
+    }
+
+    private async Task<(ResolvedReportId? Report, Error? Error)> ResolveBugReportAsync(UserIdentity user, string aliasId, int bugId)
+    {
         var resolvedReport = await reportsService.ResolveReportByAliasAsync(aliasId, user);
         if (resolvedReport == null)
         {
@@ -32,56 +88,65 @@ public sealed class CommentsService(
         }
 
         var bug = await bugsService.GetBugAsync(resolvedReport.Id, bugId);
-        if (bug == null)
+        return bug == null ? (null, BoErrors.BugNotFoundError) : (resolvedReport, null);
+    }
+
+    private async Task<CommentSummary> CreateInScopeAsync(
+        ITransactionScope scope,
+        UserIdentity user,
+        ResolvedReportId resolvedReport,
+        int bugId,
+        CommentDto commentDto,
+        CancellationToken ct)
+    {
+        var audience = (int)(commentDto.Audience.HasValue
+            ? (CommentAudience)commentDto.Audience.Value
+            : CommentAudience.Internal);
+
+        var summary = await commentsDbClient.CreateCommentAsync(
+            scope, user.Id, bugId, commentDto.Text,
+            creatorType: (int)user.ActorCreatorType,
+            audience: audience);
+
+        var payload = JsonSerializer.Serialize(new
         {
-            return (null, BoErrors.BugNotFoundError);
-        }
-
-        var creatorType = (int)user.ActorCreatorType;
-
-        var comment = await unitOfWork.ExecuteAsync(async (scope, ct) =>
-        {
-            var audience = (int)(commentDto.Audience.HasValue
-                ? (CommentAudience)commentDto.Audience.Value
-                : CommentAudience.Internal);
-
-            var summary = await commentsDbClient.CreateCommentAsync(
-                scope, user.Id, bugId, commentDto.Text,
-                creatorType: creatorType,
-                audience: audience);
-
-            var payload = JsonSerializer.Serialize(new
-            {
-                commentId = summary.Id,
-                bugId = summary.BugId,
-                text = summary.Text,
-                audience = summary.Audience,
-                creatorType = summary.CreatorType,
-                creatorUserId = summary.CreatorUserId,
-                attachments = Array.Empty<object>(),
-            });
-
-            await domainEventPublisher.PublishAsync(new DomainEvent
-            {
-                WorkspaceId = BugsService.ResolveWorkspaceId(resolvedReport.CreatorTeamId, user.OrganizationId),
-                AggregateType = BuggetAggregateTypes.Comment,
-                AggregateId = summary.Id.ToString(),
-                EventType = BuggetEventTypes.CommentCreated,
-                Payload = payload,
-                ActorUserId = user.Id,
-                ActorCreatorType = (short)summary.CreatorType,
-                OccurredAt = DateTimeOffset.UtcNow,
-                CorrelationId = Guid.NewGuid(),
-            }, scope, ct);
-
-            return summary;
+            commentId = summary.Id,
+            bugId = summary.BugId,
+            text = summary.Text,
+            audience = summary.Audience,
+            creatorType = summary.CreatorType,
+            creatorUserId = summary.CreatorUserId,
+            attachments = Array.Empty<object>(),
         });
 
-        var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
-        await taskQueue.EnqueueAsync(async () => await commentEventsService.HandleCommentCreateEventAsync(reportIdContext, user, comment));
+        await domainEventPublisher.PublishAsync(new DomainEvent
+        {
+            WorkspaceId = BugsService.ResolveWorkspaceId(resolvedReport.CreatorTeamId, user.OrganizationId),
+            AggregateType = BuggetAggregateTypes.Comment,
+            AggregateId = summary.Id.ToString(),
+            EventType = BuggetEventTypes.CommentCreated,
+            Payload = payload,
+            ActorUserId = user.Id,
+            ActorCreatorType = (short)summary.CreatorType,
+            OccurredAt = DateTimeOffset.UtcNow,
+            CorrelationId = Guid.NewGuid(),
+        }, scope, ct);
 
-        return (comment, null);
+        return summary;
     }
+
+    private static Comment ToComment(CommentSummary summary, Attachment[] attachments) => new()
+    {
+        Id = summary.Id,
+        BugId = summary.BugId,
+        Text = summary.Text,
+        CreatorUserId = summary.CreatorUserId,
+        CreatorType = summary.CreatorType,
+        Audience = summary.Audience,
+        CreatedAt = summary.CreatedAt,
+        UpdatedAt = summary.UpdatedAt,
+        Attachments = attachments,
+    };
 
     public async Task<Error?> DeleteCommentAsync(UserIdentity user, string aliasId, int bugId, int commentId)
     {

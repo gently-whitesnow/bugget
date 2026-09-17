@@ -148,3 +148,25 @@ describe("адрес на проводе", () => {
     ).rejects.toThrow("Не задан path-параметр aliasId");
   });
 });
+
+describe("multipart", () => {
+  it("массив уходит повторяющимся полем, пропущенное поле не уходит вовсе", async () => {
+    const { request, sent } = instanceCapturingRequest();
+    const first = new File(["a"], "a.png");
+    const second = new File(["b"], "b.png");
+
+    await request(
+      "/v2/reports/{aliasId}/bugs/{bugId}/comments/with-attachments",
+      "post",
+      {
+        path: { aliasId: "team-42", bugId: 7 },
+        multipart: { text: "текст", files: [first, second] },
+      }
+    );
+
+    const form = sent().data as FormData;
+    expect(form.getAll("files")).toEqual([first, second]);
+    expect(form.get("text")).toBe("текст");
+    expect(form.has("audience")).toBe(false);
+  });
+});

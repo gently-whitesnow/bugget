@@ -109,6 +109,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<AttachmentOptimizator>()
             .AddSingleton<IAttachmentService, AttachmentService>()
             .AddSingleton<AttachmentEventsService>()
+            .AddSingleton<AttachmentBatchWriter>()
             .AddSingleton<IAttachmentKeyGenerator, LocalAttachmentKeyGenerator>()
             .AddSingleton<ICommentsService, CommentsService>()
             .AddSingleton<CommentEventsService>()

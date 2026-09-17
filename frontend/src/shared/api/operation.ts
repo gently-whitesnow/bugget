@@ -112,9 +112,14 @@ type JsonResponseOf<O> = [SuccessResponseOf<O>] extends [never]
 /**
  * Поля multipart-тела: имена — из схемы контракта, значения — то, что кладётся
  * в `FormData`. Тело multipart регистр не конвертирует, поэтому имя поля здесь
- * то же, что на проводе.
+ * то же, что на проводе. Массив в схеме — повторяющееся поле формы.
  */
-type MultipartFields<B> = { [K in keyof B]: File | Blob | string };
+type MultipartValue = File | Blob | string;
+type MultipartFields<B> = {
+  [K in keyof B]: NonNullable<B[K]> extends unknown[]
+    ? MultipartValue[]
+    : MultipartValue;
+};
 
 type PathArg<O> = [PathParamsOf<O>] extends [never]
   ? object
@@ -205,10 +210,18 @@ export const buildOperationPath = (
     return String(value);
   });
 
-const toFormData = (fields: Record<string, File | Blob | string>): FormData => {
+type RuntimeMultipart = Record<
+  string,
+  MultipartValue | MultipartValue[] | undefined
+>;
+
+const toFormData = (fields: RuntimeMultipart): FormData => {
   const formData = new FormData();
   for (const [name, value] of Object.entries(fields)) {
-    formData.append(name, value);
+    if (value === undefined) continue;
+    for (const item of Array.isArray(value) ? value : [value]) {
+      formData.append(name, item);
+    }
   }
   return formData;
 };
@@ -217,7 +230,7 @@ type RuntimeArgs = {
   path?: Record<string, unknown>;
   query?: Record<string, QueryValue>;
   body?: unknown;
-  multipart?: Record<string, File | Blob | string>;
+  multipart?: RuntimeMultipart;
 };
 
 /**

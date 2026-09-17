@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Bugget.Api.Authorization.Oidc;
 using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Protocols;
@@ -34,6 +35,14 @@ public class KeycloakContainerFixture : IAsyncLifetime
     public const string TestUsername = "testuser";
     public const string TestPassword = "testpass";
 
+    private static readonly TimeSpan ReadinessTimeout = TimeSpan.FromMinutes(3);
+
+    private const string DisableMasterSslRequirementCommand =
+        "/opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin"
+        + " && /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE";
+
+    private static void WithReadinessTimeout(IWaitStrategy strategy) => strategy.WithTimeout(ReadinessTimeout);
+
     public async Task InitializeAsync()
     {
         Container = new ContainerBuilder()
@@ -44,11 +53,22 @@ public class KeycloakContainerFixture : IAsyncLifetime
             .WithPortBinding(8080, true)
             // Строка «Listening on» в логе появляется раньше, чем admin-API начинает
             // отвечать, поэтому ждём готовность именно по HTTP, а не паузой в тесте.
+            // У realm master по умолчанию sslRequired=external: по HTTP Keycloak отвечает только
+            // «локальным» адресам (loopback и приватные сети). На Linux запрос с хоста приходит
+            // с адреса docker-моста и проходит, а Docker Desktop может подставить источником
+            // адрес вне приватных диапазонов — тогда любой запрос к master получает
+            // 403 «HTTPS required», и проверка готовности ниже не выполнится никогда.
+            // Поэтому требование снимается изнутри контейнера (loopback локален всегда), и
+            // только после этого готовность проверяется снаружи. Команда заодно ждёт admin-API:
+            // пока он не отвечает, kcadm завершается с ошибкой, и стратегия повторяет попытку.
+            // Таймаут на каждом шаге — чтобы неготовый Keycloak ронял фикстуру, а не подвешивал
+            // testhost навсегда.
             .WithWaitStrategy(Wait.ForUnixContainer()
-                .UntilMessageIsLogged("Listening on: http://0.0.0.0:8080")
+                .UntilMessageIsLogged("Listening on: http://0.0.0.0:8080", WithReadinessTimeout)
+                .UntilCommandIsCompleted(["/bin/sh", "-c", DisableMasterSslRequirementCommand], WithReadinessTimeout)
                 .UntilHttpRequestIsSucceeded(request => request
                     .ForPath("/realms/master/.well-known/openid-configuration")
-                    .ForPort(8080)))
+                    .ForPort(8080), WithReadinessTimeout))
             .Build();
 
         await Container.StartAsync();

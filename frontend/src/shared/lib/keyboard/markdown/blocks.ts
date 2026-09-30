@@ -13,11 +13,11 @@ export type LineFormat =
   | { kind: "orderedList" };
 
 // lead — цитаты и отступ: они остаются на месте, меняется только маркер после них.
-const LINE_PATTERN =
+const linePattern =
   /^((?:[ \t]*> ?)*[ \t]*)(#{1,6} |[-*+] (?:\[[ xX]\] )?|\d{1,9}[.)] )?/;
 
 const parseLine = (line: string) => {
-  const match = LINE_PATTERN.exec(line)!;
+  const match = linePattern.exec(line)!;
   const lead = match[1];
   const marker = match[2] ?? "";
   return { lead, marker, content: line.slice(lead.length + marker.length) };
@@ -80,18 +80,18 @@ export const toggleLineFormat = (
   return replaceLines(value, from, to, changes, start, end);
 };
 
-const QUOTE_PATTERN = /^[ \t]*> ?/;
+const quotePattern = /^[ \t]*> ?/;
 
 export const toggleQuote = ({ value, start, end }: TextSnapshot): TextEdit => {
   const { from, to } = getLineRange(value, start, end);
   const lines = value.slice(from, to).split("\n");
   const targets = new Set(targetIndexes(lines));
-  const isActive = [...targets].every((i) => QUOTE_PATTERN.test(lines[i]));
+  const isActive = [...targets].every((i) => quotePattern.test(lines[i]));
 
   const changes: LineChange[] = lines.map((line, i) => {
     if (!targets.has(i)) return { text: line, oldPrefix: 0, newPrefix: 0 };
     if (isActive) {
-      const prefix = QUOTE_PATTERN.exec(line)![0].length;
+      const prefix = quotePattern.exec(line)![0].length;
       return { text: line.slice(prefix), oldPrefix: prefix, newPrefix: 0 };
     }
     return { text: `> ${line}`, oldPrefix: 0, newPrefix: 2 };
@@ -100,9 +100,9 @@ export const toggleQuote = ({ value, start, end }: TextSnapshot): TextEdit => {
   return replaceLines(value, from, to, changes, start, end);
 };
 
-const FENCE_OPEN_PATTERN = /^[ \t]*```[^`]*$/;
-const FENCE_CLOSE_PATTERN = /^[ \t]*```[ \t]*$/;
-const FENCE = "```";
+const fenceOpenPattern = /^[ \t]*```[^`]*$/;
+const fenceClosePattern = /^[ \t]*```[ \t]*$/;
+const fence = "```";
 
 export const toggleCodeBlock = ({
   value,
@@ -117,10 +117,7 @@ export const toggleCodeBlock = ({
     const closeEnd = lineEndOf(value, to + 1);
     const openLine = value.slice(openStart, from - 1);
     const closeLine = value.slice(to + 1, closeEnd);
-    if (
-      FENCE_OPEN_PATTERN.test(openLine) &&
-      FENCE_CLOSE_PATTERN.test(closeLine)
-    ) {
+    if (fenceOpenPattern.test(openLine) && fenceClosePattern.test(closeLine)) {
       const shift = from - openStart;
       return {
         from: openStart,
@@ -132,11 +129,11 @@ export const toggleCodeBlock = ({
     }
   }
 
-  const shift = FENCE.length + 1;
+  const shift = fence.length + 1;
   return {
     from,
     to,
-    insert: `${FENCE}\n${value.slice(from, to)}\n${FENCE}`,
+    insert: `${fence}\n${value.slice(from, to)}\n${fence}`,
     selectionStart: start + shift,
     selectionEnd: selectionEnd + shift,
   };

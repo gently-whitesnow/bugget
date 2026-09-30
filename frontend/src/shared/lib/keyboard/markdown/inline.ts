@@ -2,7 +2,7 @@ import type { TextEdit, TextSnapshot } from "./types";
 
 export type InlineFormat = "bold" | "italic" | "strikethrough" | "code";
 
-const MARKERS: Record<InlineFormat, string[]> = {
+const markers: Record<InlineFormat, string[]> = {
   bold: ["**"],
   italic: ["_", "*"],
   strikethrough: ["~~"],
@@ -51,7 +51,7 @@ const pickWrapMarker = (
   ) {
     return "*";
   }
-  return MARKERS[format][0];
+  return markers[format][0];
 };
 
 const toggleRange = (
@@ -62,7 +62,7 @@ const toggleRange = (
 ): TextEdit => {
   const selected = value.slice(start, end);
 
-  for (const marker of MARKERS[format]) {
+  for (const marker of markers[format]) {
     const size = marker.length;
     if (isWrappedBy(value, start, end, marker, format)) {
       return {
@@ -119,7 +119,7 @@ export const toggleInlineFormat = (
     return toggleRange(value, trimmedStart, trimmedEnd, format);
   }
 
-  for (const marker of MARKERS[format]) {
+  for (const marker of markers[format]) {
     const size = marker.length;
     if (
       value.slice(start - size, start) === marker &&
@@ -157,13 +157,13 @@ export const toggleInlineFormat = (
   };
 };
 
-const URL_PATTERN = /^https?:\/\/\S+$/i;
-const LINK_TAIL_PATTERN = /^\]\([^)\s]*\)/;
-const URL_PLACEHOLDER = "url";
+const urlPattern = /^https?:\/\/\S+$/i;
+const linkTailPattern = /^\]\([^)\s]*\)/;
+const urlPlaceholder = "url";
 
 export const toggleLink = ({ value, start, end }: TextSnapshot): TextEdit => {
   const selected = value.slice(start, end);
-  const tail = LINK_TAIL_PATTERN.exec(value.slice(end));
+  const tail = linkTailPattern.exec(value.slice(end));
 
   if (selected && value[start - 1] === "[" && tail) {
     return {
@@ -175,7 +175,7 @@ export const toggleLink = ({ value, start, end }: TextSnapshot): TextEdit => {
     };
   }
 
-  if (URL_PATTERN.test(selected)) {
+  if (urlPattern.test(selected)) {
     return {
       from: start,
       to: end,
@@ -199,14 +199,14 @@ export const toggleLink = ({ value, start, end }: TextSnapshot): TextEdit => {
   return {
     from: start,
     to: end,
-    insert: `[${selected}](${URL_PLACEHOLDER})`,
+    insert: `[${selected}](${urlPlaceholder})`,
     selectionStart: urlStart,
-    selectionEnd: urlStart + URL_PLACEHOLDER.length,
+    selectionEnd: urlStart + urlPlaceholder.length,
   };
 };
 
 // Голый домен с буквенной зоной: «ati.su/path» — ссылка, «v1.2» — нет.
-const BARE_DOMAIN_PATTERN = /^(?:[\p{L}\d-]+\.)+\p{L}{2,}(?:[/:?#]\S*)?$/u;
+const bareDomainPattern = /^(?:[\p{L}\d-]+\.)+\p{L}{2,}(?:[/:?#]\S*)?$/u;
 
 /** Вставка URL поверх выделенного текста превращает его в ссылку. */
 export const linkFromPaste = (
@@ -218,8 +218,8 @@ export const linkFromPaste = (
   if (!selected.trim() || selected.includes("\n")) return null;
 
   let url: string;
-  if (URL_PATTERN.test(candidate)) url = candidate;
-  else if (BARE_DOMAIN_PATTERN.test(candidate)) url = `https://${candidate}`;
+  if (urlPattern.test(candidate)) url = candidate;
+  else if (bareDomainPattern.test(candidate)) url = `https://${candidate}`;
   else return null;
 
   const insert = `[${selected}](${url})`;

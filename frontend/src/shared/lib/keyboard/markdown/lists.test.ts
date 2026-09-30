@@ -59,8 +59,17 @@ describe("shiftIndent", () => {
     expect(indent("- a\n- b|")).toBe("- a\n  - b|");
   });
 
-  it("nests under ordered item by its marker width", () => {
-    expect(indent("1. a\n2. b|")).toBe("1. a\n   2. b|");
+  it("nests under ordered item by its marker width and restarts numbering", () => {
+    expect(indent("1. a\n2. b|")).toBe("1. a\n   1. b|");
+  });
+
+  it("continues numbering of the level it returns to", () => {
+    expect(outdent("1. a\n   1. b|")).toBe("1. a\n2. b|");
+    expect(outdent("1. a\n2. b\n   1. c|")).toBe("1. a\n2. b\n3. c|");
+  });
+
+  it("keeps bullet markers as they are", () => {
+    expect(indent("- a\n- b|")).toBe("- a\n  - b|");
   });
 
   it("does not nest deeper than one level", () => {

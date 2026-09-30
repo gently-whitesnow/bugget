@@ -14,7 +14,12 @@ type Key = {
 const press = (
   marked: string,
   key: Key,
-  { canSubmit = false, isApple = true } = {}
+  {
+    canSubmit = false,
+    submitOnEnter = true,
+    canAttach = false,
+    isApple = true,
+  } = {}
 ) => {
   const snapshot = snap(marked);
   const action = resolveMarkdownKey(
@@ -27,7 +32,7 @@ const press = (
       ...key,
     },
     snapshot,
-    { canSubmit, isApple }
+    { canSubmit, submitOnEnter, canAttach, isApple }
   );
   if (action?.type === "edit") return render(snapshot, action.edit);
   return action?.type ?? null;
@@ -60,6 +65,15 @@ describe("resolveMarkdownKey", () => {
       expect(press("a|", { key: "Enter", metaKey: true })).toBeNull();
     });
 
+    it("breaks line on Enter and submits on ⌘Enter when submitOnEnter is off", () => {
+      const options = { canSubmit: true, submitOnEnter: false };
+      expect(press("a|", { key: "Enter" }, options)).toBe("a\n|");
+      expect(press("- x|", { key: "Enter" }, options)).toBe("- x\n- |");
+      expect(press("a|", { key: "Enter", metaKey: true }, options)).toBe(
+        "submit"
+      );
+    });
+
     it("uses Ctrl as modifier outside Apple platforms", () => {
       const options = { canSubmit: true, isApple: false };
       expect(press("a|", { key: "Enter", ctrlKey: true }, options)).toBe(
@@ -80,8 +94,9 @@ describe("resolveMarkdownKey", () => {
       );
     });
 
-    it("keeps focus navigation outside of list without selection", () => {
+    it("keeps focus navigation outside of list", () => {
       expect(press("plain|", { key: "Tab" })).toBeNull();
+      expect(press("{plain\ntext}", { key: "Tab" })).toBeNull();
     });
 
     it("consumes Tab in list even when nothing changes", () => {
@@ -115,10 +130,24 @@ describe("resolveMarkdownKey", () => {
       expect(press("{x}", { key: "b", code: "KeyB" })).toBeNull();
     });
 
+    it("accepts the second shortcut of a command", () => {
+      const key = { key: "e", code: "KeyE", metaKey: true };
+      expect(press("{x}", key)).toBe("`{x}`");
+      expect(press("{x}", { ...key, shiftKey: true })).toBe("`{x}`");
+    });
+
     it("consumes shortcut that has nothing to edit", () => {
       expect(press("a{  }", { key: "b", code: "KeyB", metaKey: true })).toBe(
         "consume"
       );
+    });
+  });
+
+  describe("attach", () => {
+    it("opens file picker on ⌘U when attachments are available", () => {
+      const key = { key: "u", code: "KeyU", metaKey: true };
+      expect(press("a|", key, { canAttach: true })).toBe("attach");
+      expect(press("a|", key)).toBeNull();
     });
   });
 });

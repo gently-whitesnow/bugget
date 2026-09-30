@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ArrowUp, Paperclip } from "lucide-react";
 import MarkdownTextarea from "@/shared/ui/MarkdownTextarea";
+import { appHotkeys, ariaHotkey, formatHotkey } from "@/shared/lib/keyboard";
 import {
   copyToClipboard,
   createCurlAttachmentFile,
@@ -169,6 +170,9 @@ const ComposerInput = ({
           value={value}
           onInput={onChange}
           onSubmit={handleSubmit}
+          onAttachFile={
+            enableAttachments && !isDisabled ? handleFileSelect : undefined
+          }
           onPaste={handlePaste}
           placeholder={placeholder}
           className="textarea textarea-bordered resize-none min-h-auto flex-1 focus:outline-none"
@@ -182,7 +186,9 @@ const ComposerInput = ({
             className="btn btn-primary p-2 btn-circle"
             onClick={handleSend}
             disabled={isDisabled || sendButtonDisabled}
-            title="Отправить"
+            title="Отправить (Enter)"
+            aria-label="Отправить"
+            aria-keyshortcuts="Enter"
           >
             <ArrowUp />
           </button>
@@ -193,7 +199,9 @@ const ComposerInput = ({
                 className="btn btn-ghost p-2 btn-circle text-base-content/70 hover:text-base-content"
                 onClick={handleFileSelect}
                 disabled={isDisabled}
-                title="Прикрепить файл"
+                title={`Прикрепить файл (${formatHotkey(appHotkeys.attachFile)})`}
+                aria-label="Прикрепить файл"
+                aria-keyshortcuts={ariaHotkey(appHotkeys.attachFile)}
               >
                 <Paperclip className="w-5 h-5" />
               </button>

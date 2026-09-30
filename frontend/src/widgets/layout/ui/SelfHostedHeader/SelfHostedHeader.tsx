@@ -1,16 +1,23 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { useUnit } from "effector-react";
-import { BarChart3, Search, Settings } from "lucide-react";
+import { BarChart3, Keyboard, Search, Settings } from "lucide-react";
 
 import { $breadcrumbs, setBreadcrumbs } from "../../model";
 import { $workspaces } from "@/shared/model";
 import { useLayout } from "@/shared/lib";
+import {
+  appHotkeys,
+  ariaHotkey,
+  formatHotkey,
+  useHotkey,
+} from "@/shared/lib/keyboard";
 import { Avatar, HeaderContainer } from "@/shared/ui";
 import { CreateReportButton } from "@/features/create-report";
 import { Breadcrumbs } from "../breadcrumbs";
 import HeaderActionsMenu from "../components/HeaderActionsMenu";
+import HotkeysDialog from "../components/HotkeysDialog";
 
 type Props = {
   sidebarAction?: ReactNode;
@@ -89,6 +96,21 @@ const SelfHostedHeader = ({ sidebarAction }: Props) => {
     location.pathname === teamBasePath ||
     location.pathname === `${teamBasePath}/`;
   const showAnalytics = Boolean(teamId) && !isOnAnalyticsPage;
+  const hotkeysDialogRef = useRef<HTMLDialogElement>(null);
+  const openHotkeys = () => {
+    const dialog = hotkeysDialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+  };
+  const openSearch = () => navigate(`${teamBasePath}/search`);
+
+  useHotkey([appHotkeys.search, appHotkeys.searchSlash], openSearch, {
+    // На странице поиска те же клавиши ставят фокус в строку — это делает сама страница.
+    enabled: Boolean(teamId) && !isOnSearchPage,
+  });
+  useHotkey(appHotkeys.help, openHotkeys, {
+    inEditable: true,
+  });
+  useHotkey(appHotkeys.helpQuestion, openHotkeys);
 
   return (
     <HeaderContainer hidden={isHeaderHidden}>
@@ -120,13 +142,34 @@ const SelfHostedHeader = ({ sidebarAction }: Props) => {
         )}
 
         {!isOnSearchPage && (
-          <button
-            className="btn bg-base-100 mr-2"
-            onClick={() => navigate(`${teamBasePath}/search`)}
+          <div
+            className="tooltip tooltip-bottom mr-2"
+            data-tip={`Поиск ${formatHotkey(appHotkeys.search)}`}
           >
-            <Search className="w-4 h-4" />
-          </button>
+            <button
+              className="btn bg-base-100"
+              onClick={openSearch}
+              aria-label="Поиск"
+              aria-keyshortcuts={`${ariaHotkey(appHotkeys.search)} /`}
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          </div>
         )}
+
+        <div
+          className="tooltip tooltip-bottom mr-2"
+          data-tip={`Горячие клавиши ${formatHotkey(appHotkeys.help)}`}
+        >
+          <button
+            className="btn bg-base-100"
+            onClick={openHotkeys}
+            aria-label="Горячие клавиши"
+            aria-keyshortcuts={ariaHotkey(appHotkeys.help)}
+          >
+            <Keyboard className="w-4 h-4" />
+          </button>
+        </div>
 
         {(!isOnReportsPage || reportId) && (
           <CreateReportButton className="btn btn-primary" />
@@ -160,7 +203,7 @@ const SelfHostedHeader = ({ sidebarAction }: Props) => {
           <button
             type="button"
             className="btn w-full justify-start bg-base-100"
-            onClick={() => navigate(`${teamBasePath}/search`)}
+            onClick={openSearch}
           >
             <Search className="h-4 w-4" />
             Поиск
@@ -171,6 +214,8 @@ const SelfHostedHeader = ({ sidebarAction }: Props) => {
           <CreateReportButton className="btn btn-primary w-full justify-start" />
         )}
       </HeaderActionsMenu>
+
+      <HotkeysDialog ref={hotkeysDialogRef} />
     </HeaderContainer>
   );
 };

@@ -2,7 +2,11 @@ import { memo, useState, useMemo, useCallback } from "react";
 import { Bot, Link, Pencil, Trash2 } from "lucide-react";
 import { useUnit } from "effector-react";
 import ActionDropdown, { ActionItem } from "@/shared/ui/ActionDropdown";
-import { usePasteFile, getCommentTimeDisplay } from "@/shared/lib";
+import {
+  useFilePicker,
+  usePasteFile,
+  getCommentTimeDisplay,
+} from "@/shared/lib";
 import { $authUserStore } from "@/entities/user";
 import {
   deleteCommentEvent,
@@ -121,15 +125,9 @@ const Comment = memo((props: Props) => {
   });
 
   const { handlePaste } = usePasteFile({
-    onFileUpload: (file) => {
-      return addAttachment({
-        reportId,
-        bugId,
-        commentId: id,
-        file,
-      });
-    },
+    onFileUpload: handleUploadAttachment,
   });
+  const openFilePicker = useFilePicker(handleUploadAttachment);
 
   const actionItems: ActionItem[] = useMemo(() => {
     const items: ActionItem[] = [
@@ -200,6 +198,7 @@ const Comment = memo((props: Props) => {
               onSave={handleUpdate}
               onCancel={() => setIsEditing(false)}
               onPaste={handlePaste}
+              onAttachFile={openFilePicker}
               rows={1}
               placeholder="Введите текст комментария... (Enter для сохранения)"
               autoFocus

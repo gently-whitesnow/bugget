@@ -1,7 +1,6 @@
 import {
   forwardRef,
   useCallback,
-  useEffect,
   useLayoutEffect,
   useRef,
   type ChangeEvent,
@@ -23,6 +22,8 @@ type Props = {
   className?: string;
   style?: CSSProperties;
   rows?: number;
+  /** Минимальная высота вместо rows: владелец может держать её постоянной между режимами. */
+  minHeight?: string;
   /** Вставка URL поверх выделения делает из него ссылку. */
   enableLinkInsertion?: boolean;
   onBlur?: (value: string) => void;
@@ -32,8 +33,12 @@ type Props = {
   onKeyDown?: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   /** Enter и ⌘Enter. Без него Enter переносит строку. */
   onSubmit?: (value: string) => void;
+  /** false — отправляет только ⌘Enter: для длинных текстов Enter нужен под перенос. */
+  submitOnEnter?: boolean;
   /** Esc. Без него поле просто теряет фокус. */
   onCancel?: () => void;
+  /** ⌘U. Без него сочетание достаётся браузеру. */
+  onAttachFile?: () => void;
 };
 
 /** Поле с исходным markdown: разметка видна как есть, форматирование — с клавиатуры. */
@@ -47,6 +52,7 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
       className = "",
       style,
       rows = 1,
+      minHeight,
       enableLinkInsertion = true,
       onBlur,
       onInput,
@@ -54,7 +60,9 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
       onPaste,
       onKeyDown,
       onSubmit,
+      submitOnEnter = true,
       onCancel,
+      onAttachFile,
     },
     ref
   ) => {
@@ -72,14 +80,15 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
     // Поле неконтролируемое: часть владельцев обновляет value только на blur.
     const lastEmittedRef = useRef(value);
 
-    const baseMinHeight = `${rows * 2.5}rem`;
+    const baseMinHeight = minHeight ?? `${rows * 2.5}rem`;
 
     // Растим min-height, а не height: владелец может растянуть поле выше текста (self-stretch).
     const adjustHeight = useCallback(() => {
       const textarea = textareaRef.current;
       if (!textarea) return;
-      textarea.style.height = "auto";
-      textarea.style.minHeight = baseMinHeight;
+      // Ноль, а не auto: у растянутого поля auto даёт высоту ячейки, а не текста.
+      textarea.style.height = "0px";
+      textarea.style.minHeight = "0px";
       // scrollHeight не включает бордер: без поправки последняя строка обрезается.
       const border = textarea.offsetHeight - textarea.clientHeight;
       textarea.style.minHeight = `max(${baseMinHeight}, ${textarea.scrollHeight + border}px)`;
@@ -95,7 +104,8 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
       adjustHeight();
     }, [value, adjustHeight]);
 
-    useEffect(() => {
+    // Именно layout-эффект: фокус после отрисовки даёт кадр без подсветки — обводка мигает.
+    useLayoutEffect(() => {
       const textarea = textareaRef.current;
       if (!autoFocus || !textarea) return;
       textarea.focus();
@@ -108,6 +118,8 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
 
     const handleMarkdownKeys = useMarkdownHotkeys({
       onSubmit: onSubmit ? handleSubmit : undefined,
+      submitOnEnter,
+      onAttachFile,
     });
 
     const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {

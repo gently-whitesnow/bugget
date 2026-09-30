@@ -6,6 +6,7 @@ type Props = {
   onSave: (text: string) => void;
   onCancel: () => void;
   onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
+  onAttachFile?: () => void;
   placeholder?: string;
   rows?: number;
   className?: string;
@@ -18,6 +19,7 @@ const InlineTextEdit = ({
   onSave,
   onCancel,
   onPaste,
+  onAttachFile,
   placeholder,
   rows = 2,
   className = "",
@@ -34,6 +36,7 @@ const InlineTextEdit = ({
         onSubmit={onSave}
         onCancel={onCancel}
         onPaste={onPaste}
+        onAttachFile={onAttachFile}
         className="textarea textarea-bordered w-full focus:outline-none"
         rows={rows}
         placeholder={placeholder}

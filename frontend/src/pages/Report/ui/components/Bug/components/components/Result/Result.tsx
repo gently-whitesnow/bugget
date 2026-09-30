@@ -6,7 +6,11 @@ import { $authUserStore } from "@/entities/user";
 
 import { AttachmentChip, FilePreview } from "@/shared/ui";
 import type { AttachmentTypes } from "@/shared/config";
-import { createCurlAttachmentFile, getClipboardFiles } from "@/shared/lib";
+import {
+  createCurlAttachmentFile,
+  getClipboardFiles,
+  useFilePicker,
+} from "@/shared/lib";
 import { PendingAttachment } from "@/shared/ui";
 import Title from "./components/Title/Title";
 import ResultTextarea from "./components/ResultTextarea/ResultTextarea";
@@ -107,6 +111,8 @@ const Result = ({
     [onAttachmentUpload]
   );
 
+  const openFilePicker = useFilePicker(onAttachmentUpload);
+
   const handleRemovePendingAttachment = (index: number) => {
     setPendingAttachments((prev) => prev.filter((_, i) => i !== index));
   };
@@ -150,6 +156,7 @@ const Result = ({
         autoFocus={autoFocus}
         onInput={onInput}
         onPaste={handlePaste}
+        onAttachFile={disabled ? undefined : openFilePicker}
       />
       <div className="flex flex-col gap-2">
         {pendingAttachments.length > 0 && (

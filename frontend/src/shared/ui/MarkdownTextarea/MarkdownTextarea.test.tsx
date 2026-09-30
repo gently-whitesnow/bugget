@@ -116,4 +116,16 @@ describe("MarkdownTextarea", () => {
 
     expect(textarea.value).toBe("see docs");
   });
+
+  it("opens file picker on ⌘U only when attachments are supported", () => {
+    const onAttachFile = vi.fn();
+    const { rerender } = render(<MarkdownTextarea value="" />);
+    const key = { key: "u", code: "KeyU", ctrlKey: true };
+
+    expect(fireEvent.keyDown(getTextarea(), key)).toBe(true);
+
+    rerender(<MarkdownTextarea value="" onAttachFile={onAttachFile} />);
+    expect(fireEvent.keyDown(getTextarea(), key)).toBe(false);
+    expect(onAttachFile).toHaveBeenCalledTimes(1);
+  });
 });

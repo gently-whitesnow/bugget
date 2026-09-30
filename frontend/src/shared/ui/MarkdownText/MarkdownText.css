@@ -1,5 +1,6 @@
-/* Markdown в плотных блоках карточки: заголовки не крупнее {typography.title},
-   отступы — половина строки, чтобы комментарий не расползался. */
+/* Markdown в плотных блоках карточки: заголовки не крупнее {typography.title}.
+   Отступ между блоками 0.75em — меньше пустой строки исходника, но структура видна;
+   у заголовка сверху больше, чтобы он держался за свой текст, а не висел между блоками. */
 .markdown-text {
   overflow-wrap: anywhere;
 }
@@ -14,10 +15,11 @@
 
 .markdown-text
   :where(p, ul, ol, blockquote, pre, table, h1, h2, h3, h4, h5, h6) {
-  margin-block: 0.5em;
+  margin-block: 0.75em;
 }
 
 .markdown-text :where(h1, h2, h3, h4, h5, h6) {
+  margin-top: 1em;
   font-weight: 600;
   line-height: 1.4;
 }

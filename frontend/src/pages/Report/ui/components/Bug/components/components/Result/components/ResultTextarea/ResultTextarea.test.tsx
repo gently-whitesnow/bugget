@@ -56,6 +56,36 @@ describe("ResultTextarea", () => {
     expect((await screen.findByText("новое")).tagName).toBe("EM");
   });
 
+  it("breaks line on Enter and saves on Ctrl+Enter", () => {
+    const { onBlur } = setup("");
+    const textarea = queryTextarea() as HTMLTextAreaElement;
+    fireEvent.focus(textarea);
+    fireEvent.change(textarea, { target: { value: "строка" } });
+    textarea.setSelectionRange(6, 6);
+
+    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter" });
+    expect(textarea.value).toBe("строка\n");
+    expect(onBlur).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", ctrlKey: true });
+    fireEvent.blur(textarea);
+    expect(onBlur).toHaveBeenCalledWith("строка\n");
+  });
+
+  it("does not keep the height of erased text", () => {
+    setup("**важно**");
+    fireEvent.click(
+      screen.getByLabelText("Редактировать: Опишите результат...")
+    );
+    const textarea = queryTextarea() as HTMLTextAreaElement;
+    fireEvent.focus(textarea);
+    expect(textarea.style.minHeight).not.toBe("");
+
+    fireEvent.change(textarea, { target: { value: "" } });
+
+    expect(textarea.style.minHeight).toBe("max(7.5rem, 0px)");
+  });
+
   it("opens source on Enter", () => {
     setup("text");
 

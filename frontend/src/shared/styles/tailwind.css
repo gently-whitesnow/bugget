@@ -445,3 +445,22 @@
     );
   }
 }
+
+/* daisyUI рисует у полей кольцо `outline: 2px` по :focus и объявляет его позже нашего
+   блока в @layer components, поэтому перекрываем вне слоя: неслоёное правило сильнее
+   любого слоя. Каретки хватает, чтобы понять, где фокус, а обводка на всю коробку
+   читалась как ошибка. */
+.input:focus,
+.input:focus-visible,
+.input:focus-within,
+.textarea:focus,
+.textarea:focus-visible,
+.textarea:focus-within,
+.select:focus,
+.select:focus-visible,
+.select:focus-within,
+.file-input:focus,
+.file-input:focus-visible,
+.file-input:focus-within {
+  outline: none;
+}

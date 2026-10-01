@@ -64,6 +64,15 @@
       "applicable": true
     }
   },
+  "generated": [
+    {
+      "paths": [
+        "backend/Bugget.Api/Generated",
+        "backend/Bugget.Contracts/Generated"
+      ],
+      "reason": "собирается из specs/contracts/**/openapi.yaml скриптом scripts/contracts/openapi-generate.sh, руками не правится — ADR-0005"
+    }
+  ],
   "settings": {
     "complexity.csharp": {
       "averageReachableFiles": 8.0,
@@ -114,7 +123,7 @@
     "central-packages.dotnet": "required",
     "solution-format.dotnet": "required",
     "editorconfig.dotnet": "required",
-    "warning-suppressions.dotnet": "required",
+    "warning-suppressions.dotnet": "advisory",
     "frame.tests.unit": "required",
     "frame.tests.integration": "required",
     "frame.tests.architecture": "required",

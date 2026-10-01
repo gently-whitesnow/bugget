@@ -1,32 +1,12 @@
-/**
- * Единственная точка разбора тела HTTP-ошибки на фронте.
- *
- * Backend перешёл на RFC 9457 Problem Details целиком (ADR-0008): весь периметр, включая
- * ответы фреймворка, отдаёт одну форму. Парсер продолжает понимать три:
- *
- * 1. Problem Details — `{type, title, status, detail, instance, code}`,
- *    `Content-Type: application/problem+json`;
- * 2. legacy — `{error, reason}`. Бекенд монорепозитория её больше не отдаёт; ветка
- *    оставлена на время раскатки, когда фронт новее развёрнутого бекенда;
- * 3. не-JSON или пустое тело — в частности 401 от внешнего nginx, который в этом
- *    монорепозитории остаётся документированным исключением.
- *
- * Парсер ничего не бросает: на любой вход он возвращает `ApiError` с теми полями,
- * которые удалось доказать.
- */
+// Единственный разбор тела HTTP-ошибки (ADR-0008). Понимает Problem Details,
+// legacy `{error, reason}` (на время раскатки) и не-JSON/пустое тело (401 от
+// nginx). Ничего не бросает: возвращает только доказанные поля.
 
-/** Разобранная ошибка API в терминах, независимых от формы провода. */
 export interface ApiError {
-  /** HTTP-статус ответа, если он вообще был (у сетевой ошибки его нет). */
   status?: number;
-  /**
-   * Стабильный машинный код ошибки: `code` из Problem Details,
-   * `error` из legacy-формы. По нему ветвится UI.
-   */
+  /** `code` из Problem Details или `error` из legacy; по нему ветвится UI. */
   code?: string;
-  /** Человекочитаемая причина: `detail` из Problem Details, `reason` из legacy. */
   detail?: string;
-  /** Заголовок класса ошибки из Problem Details, безопасный для показа (см. ниже). */
   title?: string;
   /** Готовый текст для тоста: `detail`, иначе безопасный `title`. */
   message?: string;
@@ -54,18 +34,13 @@ const toSafeTitle = (
   return !type || type.startsWith(BUGGET_ERROR_TYPE_PREFIX) ? title : undefined;
 };
 
-/**
- * `type` в Problem Details — URI вида `urn:bugget:error:<code>`. `code` обязателен,
- * но если конкретный ответ его потерял, хвост `type` — единственный машинный код,
- * который у нас есть.
- */
+// Если ответ потерял `code`, хвост `urn:bugget:error:<code>` — единственный код.
 const codeFromType = (type: string | undefined): string | undefined => {
   return type?.startsWith(BUGGET_ERROR_TYPE_PREFIX)
     ? asFilledString(type.slice(BUGGET_ERROR_TYPE_PREFIX.length))
     : undefined;
 };
 
-/** Разбирает ошибку axios (или что угодно другое) в `ApiError`. */
 export const parseApiError = (error: unknown): ApiError => {
   const response = asRecord(asRecord(error)?.response);
   const status =

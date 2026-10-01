@@ -42,7 +42,7 @@ public sealed class ReportsService(
 
         var (patchResult, effectivePatch) = await unitOfWork.ExecuteAsync(
             (scope, ct) => ApplyStatusPatchInTxAsync(
-                scope, ct, resolvedReport.Id, workspaceId, user, patchDto, actorCreatorType));
+                scope, resolvedReport.Id, workspaceId, user, patchDto, actorCreatorType, ct));
 
         var reportIdContext = new ReportIdContext(resolvedReport.Id, aliasId, resolvedReport.CreatorTeamId);
         await taskQueue.EnqueueAsync(() => reportEventsService.HandlePatchReportEventAsync(reportIdContext, user, effectivePatch, patchResult));
@@ -63,14 +63,14 @@ public sealed class ReportsService(
 
     private async Task<(ReportPatchResult PatchResult, ReportPatchDto EffectivePatch)> ApplyStatusPatchInTxAsync(
         ITransactionScope scope,
-        CancellationToken ct,
         int reportId,
         string workspaceId,
         UserIdentity user,
         ReportPatchDto patchDto,
-        short actorCreatorType)
+        short actorCreatorType,
+        CancellationToken ct)
     {
-        var snapshot = await PreFetchPatchSnapshotAsync(scope, ct, reportId, patchDto);
+        var snapshot = await PreFetchPatchSnapshotAsync(scope, reportId, patchDto, ct);
         var oldStatus = snapshot?.Status;
 
         // Снимок `is_excluded_from_analytics` ДО UPDATE и под FOR UPDATE row lock
@@ -79,7 +79,7 @@ public sealed class ReportsService(
         // и чтобы сериализовать concurrent PATCH-toggle на одну строку —
         // второй PATCH дождётся первой tx и прочитает уже обновлённое значение,
         // правильно решив no-op vs emit.
-        bool? oldIsExcluded = patchDto.IsExcludedFromAnalytics.HasValue
+        var oldIsExcluded = patchDto.IsExcludedFromAnalytics.HasValue
             ? await reportsDbClient.GetIsExcludedFromAnalyticsAsync(scope, reportId, ct)
             : null;
 
@@ -125,9 +125,9 @@ public sealed class ReportsService(
 
     private async Task<ReportPatchSnapshot?> PreFetchPatchSnapshotAsync(
         ITransactionScope scope,
-        CancellationToken ct,
         int reportId,
-        ReportPatchDto patchDto)
+        ReportPatchDto patchDto,
+        CancellationToken ct)
     {
         var needsPreFetch = patchDto.Status.HasValue || patchDto.ResponsibleUserId != null;
         if (!needsPreFetch)

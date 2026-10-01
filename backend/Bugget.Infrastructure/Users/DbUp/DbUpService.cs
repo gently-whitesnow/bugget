@@ -25,7 +25,7 @@ public sealed class DbUpService(ILogger<DbUpService> logger) : IHostedService
     public Task StartAsync(CancellationToken cancellationToken)
     {
         var connectionString = Environment.GetEnvironmentVariable(Constants.PostgresConnectionStringEnv)
-                                                                            ?? throw new ApplicationException($"Не задана строка подключения к Postgres, env=[{Constants.PostgresConnectionStringEnv}]");
+                                                                            ?? throw new InvalidOperationException($"Не задана строка подключения к Postgres, env=[{Constants.PostgresConnectionStringEnv}]");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             logger.LogError("No connection string provided.");

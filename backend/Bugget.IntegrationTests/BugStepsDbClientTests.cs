@@ -26,7 +26,6 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное создание шага с минимальными параметрами")]
     public async Task CreateBugStepAsync_WithMinimalParameters_ShouldCreateBugStep()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -35,10 +34,8 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Text = "Step 1: Open the application"
         };
 
-        // Act
         var result = await _bugStepsDbClient.CreateBugStepAsync(userId, bug.Id, stepDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(bug.Id, result.BugId);
@@ -53,7 +50,6 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное создание шага с organizationId")]
     public async Task CreateBugStepAsync_WithOrganizationId_ShouldCreateBugStep()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var organizationId = $"org_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId, organizationId);
@@ -63,10 +59,8 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Text = "Step with organization"
         };
 
-        // Act
         var result = await _bugStepsDbClient.CreateBugStepAsync(userId, bug.Id, stepDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(bug.Id, result.BugId);
@@ -78,7 +72,6 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Создание нескольких шагов для одного бага")]
     public async Task CreateBugStepAsync_MultipleStepsForOneBug_ShouldCreateSeparateSteps()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -86,12 +79,10 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
         var stepDto2 = new BugStepDto { Text = "Step 2: Click button" };
         var stepDto3 = new BugStepDto { Text = "Step 3: Verify result" };
 
-        // Act
         var result1 = await _bugStepsDbClient.CreateBugStepAsync(userId, bug.Id, stepDto1);
         var result2 = await _bugStepsDbClient.CreateBugStepAsync(userId, bug.Id, stepDto2);
         var result3 = await _bugStepsDbClient.CreateBugStepAsync(userId, bug.Id, stepDto3);
 
-        // Assert
         Assert.NotNull(result1);
         Assert.NotNull(result2);
         Assert.NotNull(result3);
@@ -112,17 +103,14 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Создание шагов разными пользователями")]
     public async Task CreateBugStepAsync_DifferentUsers_ShouldCreateSteps()
     {
-        // Arrange
         var user1 = $"user_{Guid.NewGuid()}";
         var user2 = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(user1);
         var bug = await CreateTestBugAsync(user1, report.Id);
 
-        // Act
         var step1 = await _bugStepsDbClient.CreateBugStepAsync(user1, bug.Id, new BugStepDto { Text = "Step by user1" });
         var step2 = await _bugStepsDbClient.CreateBugStepAsync(user2, bug.Id, new BugStepDto { Text = "Step by user2" });
 
-        // Assert
         Assert.NotNull(step1);
         Assert.NotNull(step2);
         Assert.NotEqual(step1.Id, step2.Id);
@@ -135,7 +123,6 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное обновление текста шага")]
     public async Task PatchBugStepAsync_WithNewText_ShouldUpdateBugStep()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -145,10 +132,8 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Text = "Updated text"
         };
 
-        // Act
         var result = await _bugStepsDbClient.PatchBugStepInternalAsync(report.Id, bug.Id, step.Id, patchDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(step.Id, result.Id);
         Assert.Equal(patchDto.Text, result.Text);
@@ -162,7 +147,6 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Обновление шага с organizationId")]
     public async Task PatchBugStepAsync_WithOrganizationId_ShouldUpdateBugStep()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var organizationId = $"org_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId, organizationId);
@@ -173,10 +157,8 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Text = "Updated with org"
         };
 
-        // Act
         var result = await _bugStepsDbClient.PatchBugStepInternalAsync(report.Id, bug.Id, step.Id, patchDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(step.Id, result.Id);
         Assert.Equal(patchDto.Text, result.Text);
@@ -185,40 +167,33 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное удаление шага")]
     public async Task DeleteBugStepAsync_WithValidStep_ShouldDeleteStep()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var step = await CreateTestBugStepAsync(userId, bug.Id, "To be deleted");
 
-        // Act
         var result = await _bugStepsDbClient.DeleteBugStepInternalAsync(report.Id, bug.Id, step.Id);
 
-        // Assert
         Assert.NotNull(result);
     }
 
     [Fact(DisplayName = "Удаление шага с organizationId")]
     public async Task DeleteBugStepAsync_WithOrganizationId_ShouldDeleteStep()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var organizationId = $"org_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId, organizationId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var step = await CreateTestBugStepAsync(userId, bug.Id, "To be deleted");
 
-        // Act
         var result = await _bugStepsDbClient.DeleteBugStepInternalAsync(report.Id, bug.Id, step.Id);
 
-        // Assert
         Assert.NotNull(result);
     }
 
     [Fact(DisplayName = "Удаление одного из нескольких шагов")]
     public async Task DeleteBugStepAsync_OneOfMultiple_ShouldDeleteOnlyOne()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -226,13 +201,10 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
         var step2 = await CreateTestBugStepAsync(userId, bug.Id, "Step 2");
         var step3 = await CreateTestBugStepAsync(userId, bug.Id, "Step 3");
 
-        // Act - удаляем второй шаг
         var result = await _bugStepsDbClient.DeleteBugStepInternalAsync(report.Id, bug.Id, step2.Id);
 
-        // Assert - проверяем что step2 удален
         Assert.NotNull(result);
 
-        // Assert - проверяем что step1 и step3 все еще существуют
         var updateResult1 = await _bugStepsDbClient.PatchBugStepInternalAsync(report.Id, bug.Id, step1.Id, new BugStepDto { Text = "Updated 1" });
         var updateResult3 = await _bugStepsDbClient.PatchBugStepInternalAsync(report.Id, bug.Id, step3.Id, new BugStepDto { Text = "Updated 3" });
         Assert.NotNull(updateResult1);
@@ -244,20 +216,17 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Удаление несуществующего шага не должно вернуть null")]
     public async Task DeleteBugStepAsync_NonExistentStep_ShouldReturnNull()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var nonExistentStepId = 999999;
 
-        // Act
         await _bugStepsDbClient.DeleteBugStepInternalAsync(report.Id, bug.Id, nonExistentStepId);
     }
 
     [Fact(DisplayName = "Успешное изменение порядка шагов")]
     public async Task UpdateBugStepsOrderAsync_WithValidOrder_ShouldUpdateOrder()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -272,10 +241,8 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
             StepIds = new[] { step3.Id, step2.Id, step1.Id }
         };
 
-        // Act
         var result = await _bugStepsDbClient.UpdateBugStepsOrderInternalAsync(report.Id, bug.Id, orderDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(3, result.Length);
         Assert.Equal(step3.Id, result[0].Id);
@@ -289,7 +256,6 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Изменение порядка шагов с organizationId")]
     public async Task UpdateBugStepsOrderAsync_WithOrganizationId_ShouldUpdateOrder()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var organizationId = $"org_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId, organizationId);
@@ -302,10 +268,8 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
             StepIds = new[] { step2.Id, step1.Id }
         };
 
-        // Act
         var result = await _bugStepsDbClient.UpdateBugStepsOrderInternalAsync(report.Id, bug.Id, orderDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Length);
         Assert.Equal(step2.Id, result[0].Id);
@@ -317,7 +281,6 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Изменение порядка одного шага")]
     public async Task UpdateBugStepsOrderAsync_SingleStep_ShouldUpdateOrder()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -328,10 +291,8 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
             StepIds = new[] { step1.Id }
         };
 
-        // Act
         var result = await _bugStepsDbClient.UpdateBugStepsOrderInternalAsync(report.Id, bug.Id, orderDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Single(result);
         Assert.Equal(step1.Id, result[0].Id);
@@ -341,7 +302,6 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Изменение порядка всех шагов в обратном порядке")]
     public async Task UpdateBugStepsOrderAsync_ReverseOrder_ShouldUpdateOrder()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -356,10 +316,8 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
             StepIds = new[] { step4.Id, step3.Id, step2.Id, step1.Id }
         };
 
-        // Act
         var result = await _bugStepsDbClient.UpdateBugStepsOrderInternalAsync(report.Id, bug.Id, orderDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(4, result.Length);
         Assert.Equal(step4.Id, result[0].Id);
@@ -375,7 +333,6 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Изменение порядка части шагов")]
     public async Task UpdateBugStepsOrderAsync_PartialOrder_ShouldUpdateOrder()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -389,10 +346,8 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
             StepIds = new[] { step2.Id, step1.Id, step3.Id }
         };
 
-        // Act
         var result = await _bugStepsDbClient.UpdateBugStepsOrderInternalAsync(report.Id, bug.Id, orderDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(3, result.Length);
         Assert.Equal(step2.Id, result[0].Id);
@@ -403,15 +358,12 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение списка шагов без шагов возвращает пустой массив")]
     public async Task ListBugStepsInternalAsync_NoSteps_ShouldReturnEmpty()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
 
-        // Act
         var result = await _bugStepsDbClient.ListBugStepsInternalAsync(report.Id, bug.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Empty(result);
     }
@@ -419,7 +371,6 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение списка шагов возвращает шаги в порядке step_number")]
     public async Task ListBugStepsInternalAsync_WithSteps_ShouldReturnOrderedSteps()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -427,10 +378,8 @@ public class BugStepsDbClientTests : IClassFixture<AppWithPostgresFixture>
         var step2 = await CreateTestBugStepAsync(userId, bug.Id, "Step 2");
         var step3 = await CreateTestBugStepAsync(userId, bug.Id, "Step 3");
 
-        // Act
         var result = await _bugStepsDbClient.ListBugStepsInternalAsync(report.Id, bug.Id);
 
-        // Assert
         Assert.Equal(3, result.Length);
         Assert.Equal(step1.Id, result[0].Id);
         Assert.Equal(step2.Id, result[1].Id);

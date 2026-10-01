@@ -14,11 +14,8 @@ import { noDirectSettingsTransportOptions } from "./eslint-rules/no-direct-setti
 import { noDirectAuthorizationTransportOptions } from "./eslint-rules/no-direct-authorization-transport.js";
 
 export default tseslint.config(
-  // src/shared/api/generated — вывод openapi-typescript из specs/contracts/**.
-  // Правится он перегенерацией (scripts/quality/frontend-openapi-generate.sh),
-  // а не руками, поэтому замечания линтера по нему нечинимы и только шумят.
-  // Так же он исключён из prettier (.prettierignore) и из LOC-бюджета
-  // (.quality/frontend-loc.json).
+  // src/shared/api/generated — вывод openapi-typescript, правится только
+  // перегенерацией (scripts/contracts/frontend-openapi-generate.sh).
   { ignores: ["dist", "src/shared/api/generated"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
@@ -47,11 +44,8 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      // eslint-plugin-react-hooks 7 добавил в recommended правила React Compiler.
-      // Они находят реальный долг (22 setState в эффектах и три точечных места),
-      // но чинится он переписыванием компонентов, а не обновлением зависимости,
-      // ради которого плагин подняли. Отключены здесь, чтобы долг не смешивался с
-      // security-обновлением; включать обратно по одному правилу за проход.
+      // Правила React Compiler из react-hooks 7 находят реальный долг, но он
+      // чинится переписыванием компонентов; включать по одному за проход.
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/purity": "off",
       "react-hooks/refs": "off",
@@ -81,12 +75,8 @@ export default tseslint.config(
     },
   },
   {
-    // Исключения из запрета на прямой вызов путей модуля, все узкие:
-    //   * транспортная граница самого модуля — то самое единственное место;
-    //   * тесты интерсепторов (`shared/api/instances`), где адрес и есть предмет
-    //     проверки: ADR-0009 требует, чтобы форма данных не зависела от URL, и
-    //     доказывается это сравнением ответов по разным адресам.
-    // Остальные ограничения (innerHTML) здесь остаются в силе.
+    // Узкие исключения: сама транспортная граница модуля и тесты интерсепторов,
+    // где адрес — предмет проверки (ADR-0009). Запрет innerHTML остаётся в силе.
     files: [
       "src/shared/api/reports/**/*.ts",
       "src/shared/api/users/**/*.ts",

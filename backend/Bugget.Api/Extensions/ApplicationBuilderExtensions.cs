@@ -13,8 +13,7 @@ public static class ApplicationBuilderExtensions
     {
         app.UseSwaggerConfiguration();
         app.UseSerilogRequestLogging();
-        // Необработанное исключение -> 500 в общем формате problem+json. Один обработчик
-        // на весь процесс: у модулей users и authorization был свой, дублировавший этот.
+        // Необработанное исключение -> 500 problem+json; один обработчик на весь процесс.
         app.UseMiddleware<ResultExceptionHandlerMiddleware>();
         // KeyNotFoundException модулей users и authorization -> 404.
         app.UseMiddleware<Bugget.Api.Authorization.NotFoundExceptionMiddleware>();
@@ -32,10 +31,8 @@ public static class ApplicationBuilderExtensions
         {
             endpoints.MapControllers();
             endpoints.MapHub<ReportPageHub>("/v1/report-page-hub");
-            // MCP-эндпоинт (Streamable HTTP) — не MVC-контроллер, конвенция модуля
-            // reports его не достаёт, поэтому та же политика вешается явно. Через nginx
-            // путь проходит тем же location, что и остальной API: auth_request уже
-            // отработал, identity пришла заголовками.
+            // MCP-эндпоинт — не MVC-контроллер, конвенция модуля reports его не достаёт:
+            // политика вешается явно. identity приходит заголовками после auth_request nginx.
             endpoints.MapMcp("/v1/mcp").RequireAuthorization(ReportsModuleAuthorizationConvention.Policy);
             endpoints.MapHealthChecks("/_internal/ping");
             // Контракт self-hosted-контура: healthcheck контейнера ходит на /health.

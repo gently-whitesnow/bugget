@@ -6,17 +6,10 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Write-инструменты MCP: <c>create_report</c>, <c>create_bug</c>,
-/// <c>patch_report</c>, <c>patch_bug</c>, <c>create_comment</c>,
-/// <c>update_comment</c>. Инструменты шагов воспроизведения — в
-/// <see cref="McpBugStepToolsContractTests"/>; точный список инструментов
-/// сервер отвечает здесь.
-///
-/// Клиент здесь ходит с identity, в которой способ входа — PAT
-/// (<c>Auth-Request-Auth-Method: pat</c>, ровно как выставляет
-/// <c>/_internal/auth</c>): записи обязаны ложиться в историю как действия
-/// агента, а не человека-владельца токена. Изоляция данных — та же, что у REST:
-/// её держат сервисы, и тесты проверяют, что write-инструменты её не ослабили.
+/// Write-инструменты MCP; инструменты шагов воспроизведения — в <see cref="McpBugStepToolsContractTests"/>.
+/// Клиент ходит с identity, где способ входа — PAT (<c>Auth-Request-Auth-Method: pat</c>, как выставляет <c>/_internal/auth</c>):
+/// записи обязаны ложиться в историю как действия агента, а не владельца токена. Изоляцию данных держат сервисы, как у REST;
+/// тесты проверяют, что write-инструменты её не ослабили.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
@@ -59,7 +52,6 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
         Assert.Equal(reportId, patched.GetProperty("id").GetString());
         Assert.Equal("fix", patched.GetProperty("status").GetString());
 
-        // Правка через MCP — это правка того же репорта, который видит фронт.
         var rest = await ContractScenario.ReadJsonAsync(await scenario.Client.GetAsync($"/v2/reports/{reportId}"));
         Assert.Equal("fix", rest.GetProperty("status").GetString());
     }
@@ -83,8 +75,7 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
         Assert.Equal("fix", inFix.GetProperty("status").GetString());
         Assert.Equal(ownerUserId, inFix.GetProperty("responsible_user_id").GetString());
 
-        // Агент запушил: репорт в test, ответственность возвращается тестировщику —
-        // тому, кто держал репорт до агента (автору-создателю сценария).
+        // Агент запушил: репорт в test, ответственность возвращается тому, кто держал репорт до агента.
         var inTest = await CallAsync(
             client,
             "patch_report",
@@ -136,8 +127,7 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
         Assert.Equal(scenario.UserId, comment.GetProperty("creator_user_id").GetString());
         Assert.Equal("internal", comment.GetProperty("audience").GetString());
 
-        // И в дереве репорта — там, где историю читают люди и модель — тоже agent,
-        // рядом с обычным человеческим комментарием это различимо.
+        // И в дереве репорта, где историю читают люди и модель, — тоже agent, отличимо от человеческого комментария.
         var restCommentId = await scenario.CreateCommentAsync(reportId, bugId);
         var report = await CallAsync(client, "get_report", Args(("reportId", reportId)));
         var comments = Single(report, "bugs").GetProperty("comments").EnumerateArray().ToArray();
@@ -161,11 +151,8 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
         await using var client = await CreateMcpClientAsync(scenario);
         await CallAsync(client, "patch_report", Args(("reportId", reportId), ("status", "fix")));
 
-        // История статусов живёт в domain_events; actor_creator_type там — уже
-        // числовое значение домена: CreatorType.Agent = 3. Это чтение служебной
-        // таблицы для проверки атрибуции, а не подготовка данных — данные выше
-        // созданы только публичным API. Фильтр по актору: user id сценария уникален
-        // на каждый тест, поэтому событие гарантированно наше, а не соседнего теста.
+        // actor_creator_type в domain_events — числовое значение домена: CreatorType.Agent = 3. Это чтение служебной таблицы
+        // для проверки атрибуции, данные созданы только публичным API. User id сценария уникален — событие точно наше.
         await using var connection = new Npgsql.NpgsqlConnection(
             Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING"));
         await connection.OpenAsync();
@@ -299,12 +286,7 @@ public sealed class McpWriteToolsContractTests(AppContractFixture fixture)
         }
     }
 
-    /// <summary>
-    /// Identity того вида, что выставляет <c>/_internal/auth</c> после входа по
-    /// PAT — включая <c>Auth-Request-Auth-Method: pat</c>. Сам обмен PAT на
-    /// заголовки проверяет <see cref="McpEndpointContractTests"/>; здесь важно,
-    /// что write-запись под такой identity атрибутируется агенту.
-    /// </summary>
+    // Identity как после входа по PAT через /_internal/auth; сам обмен PAT на заголовки проверяет McpEndpointContractTests.
     private async Task<McpClient> CreateMcpClientAsync(ContractScenario scenario, string? userId = null)
     {
         var transport = new HttpClientTransport(

@@ -1,11 +1,8 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { HubConnectionState } from "@microsoft/signalr";
 
-/**
- * Тесты гоняют настоящие initSocketFx/restartSocketFx поверх фейкового
- * HubConnection — подмена самих эффектов моками скрыла бы взаимные блокировки
- * между попытками подключения.
- */
+// Эффекты настоящие, фейковый только HubConnection: моки эффектов скрыли бы
+// взаимные блокировки между попытками подключения.
 type FakeConnection = {
   state: HubConnectionState;
   connectionId: string;
@@ -104,10 +101,8 @@ describe("initSocketFx", () => {
 });
 
 describe("restartSocketFx", () => {
-  /**
-   * Регрессия: раньше вторая попытка ждала промис первой. В фоновой вкладке
-   * та висела минутами, и возврат пользователя не поднимал соединение.
-   */
+  // Регрессия: вторая попытка ждала промис первой, а та в фоновой вкладке
+  // висела минутами.
   it("supersedes a connection attempt that hangs instead of waiting for it", async () => {
     startBehavior = hangForever;
     void initSocketFx();
@@ -115,7 +110,6 @@ describe("restartSocketFx", () => {
     expect(connections).toHaveLength(1);
     expect($connection.getState()).toBeNull();
 
-    // пользователь вернулся на вкладку
     startBehavior = () => Promise.resolve();
     await restartSocketFx();
 

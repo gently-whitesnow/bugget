@@ -10,14 +10,13 @@ using Xunit;
 namespace Bugget.IntegrationTests.Authorization;
 
 /// <summary>
-/// Redis-реализация ревокации должна брать время из внедрённого <see cref="TimeProvider"/>
-/// и держать запись ровно до границы, до которой lifetime-валидатор ещё принимает токен
-/// (<c>exp + ClockSkew</c>) — так же, как in-memory реализация.
+/// Redis-ревокация берёт время из внедрённого <see cref="TimeProvider"/> и держит запись ровно до
+/// <c>exp + ClockSkew</c>, пока валидатор ещё принимает токен — как in-memory реализация.
 /// </summary>
 [Collection("PostgresCollection")]
 public class TokenRevocationRedisClientTests
 {
-    private readonly IConnectionMultiplexer _mux;
+    private readonly ConnectionMultiplexer _mux;
     private readonly FakeTimeProvider _timeProvider = new(
         new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
 
@@ -82,8 +81,7 @@ public class TokenRevocationRedisClientTests
         var sut = new TokenRevocationRedisClient(_mux, _timeProvider);
         var jti = $"jti_{Guid.NewGuid():N}";
 
-        // Ключи, записанные прежней версией, границы не несут: до истечения их TTL
-        // токен обязан оставаться отозванным.
+        // Ключи прежней версии границы не несут: до истечения их TTL токен остаётся отозванным.
         await _mux.GetDatabase().StringSetAsync("jwt:revoked:" + jti, "1", TimeSpan.FromMinutes(5));
 
         Assert.True(await sut.IsRevokedAsync(jti));

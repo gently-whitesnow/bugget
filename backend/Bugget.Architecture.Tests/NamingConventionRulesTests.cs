@@ -4,12 +4,7 @@ using NetArchTest.Rules;
 
 namespace Bugget.Architecture.Tests;
 
-/// <summary>
-/// Соглашения именования квартета: по имени типа должно быть понятно, в каком слое он живёт.
-///
-/// Цель — чтобы расположение типа предсказывалось по имени, а у каждого адаптера персистенса
-/// был порт: это и есть то, что открывает тестирование прикладного слоя без БД.
-/// </summary>
+/// <summary>Именование квартета: слой типа предсказывается по имени, а у каждого адаптера персистенса есть порт.</summary>
 public class NamingConventionRulesTests
 {
     private const string ServicesNamespace = "Bugget.Application.Services";
@@ -21,8 +16,7 @@ public class NamingConventionRulesTests
     [Fact(DisplayName = "*Service прикладного слоя живёт в Bugget.Application.Services.* или .Users.*")]
     public void Services_reside_in_application_services_namespace()
     {
-        // Сервис — единица оркестрации прикладного слоя. Модуль users сохранил свою
-        // раскладку внутри Bugget.Application.Users — это тот же прикладной слой.
+        // Модуль users сохранил свою раскладку внутри Bugget.Application.Users — это тот же прикладной слой.
         var violations = Quartet.ApplicationAsm.GetTypes()
             .Where(type => type.IsClass && !type.IsAbstract)
             .Where(type => type.Name.EndsWith("Service", StringComparison.Ordinal))
@@ -43,8 +37,7 @@ public class NamingConventionRulesTests
     [Fact(DisplayName = "*DbClient живёт в Bugget.Infrastructure.*")]
     public void DbClients_reside_in_infrastructure()
     {
-        // *DbClient — это Dapper/Npgsql клиент к Postgres. DbClient вне инфраструктуры —
-        // либо неудачное имя, либо нарушение слоистости.
+        // DbClient (Dapper/Npgsql) вне инфраструктуры — либо неудачное имя, либо нарушение слоистости.
         var strayLayers = new[] { Quartet.ApplicationAsm, Quartet.DomainAsm, Quartet.ContractsAsm, Quartet.ApiAsm }
             .SelectMany(assembly => assembly.GetTypes())
             .Where(type => type.IsClass && type.Name.EndsWith("DbClient", StringComparison.Ordinal))
@@ -60,8 +53,7 @@ public class NamingConventionRulesTests
     [Fact(DisplayName = "Все *DbClient реализуют порт из *.Ports прикладного слоя")]
     public void DbClients_implement_application_port()
     {
-        // Порт объявляет прикладной слой, инфраструктура его реализует (ADR-0001). Без порта
-        // сервис нельзя подменить через DI и протестировать без БД.
+        // ADR-0001: без порта сервис нельзя подменить через DI и протестировать без БД.
         var violations = FindDbClientsWithoutApplicationPort(Quartet.InfrastructureAsm.GetTypes());
 
         violations.Should().BeEmpty(
@@ -74,10 +66,8 @@ public class NamingConventionRulesTests
     [Fact(DisplayName = "Все Postgres-адаптеры следуют соглашению *DbClient")]
     public void Postgres_adapters_follow_DbClient_naming()
     {
-        // Предыдущее правило начинается с имени *DbClient. Эта обратная проверка гарантирует,
-        // что конкретный наследник общей Postgres-базы не сможет обойти правило
-        // и порт, назвавшись просто *Client или *Repository. NpgsqlTransactionScope и
-        // NpgsqlUnitOfWork реализуют отдельные транзакционные порты и в этот naming-rule не входят.
+        // Обратная проверка: наследник общей Postgres-базы не обойдёт порт, назвавшись *Client или *Repository.
+        // NpgsqlTransactionScope и NpgsqlUnitOfWork реализуют транзакционные порты и сюда не входят.
         var postgresBaseTypes = ResolveRequiredTypes(Quartet.InfrastructureAsm, PostgresBaseTypeNames);
         var violations = FindPostgresAdaptersWithoutDbClientSuffix(
             Quartet.InfrastructureAsm.GetTypes(),
@@ -121,11 +111,9 @@ public class NamingConventionRulesTests
     [Fact(DisplayName = "Вызываемая внешняя зависимость Application объявлена портом в **/Ports")]
     public void Callable_application_contracts_reside_in_ports()
     {
-        // Признак порта — не суффикс имени, а направление реализации плюс наличие операции:
-        // интерфейс прикладного слоя, который реализует конкретный тип инфраструктуры или
-        // транспорта и у которого есть хотя бы один обычный метод, — это вызываемая внешняя
-        // зависимость (ADR-0001). Интерфейс, описывающий только форму данных (одни
-        // property-getters, как IExternalSearchItem), портом не является и в **/Ports не едет.
+        // Признак порта — не суффикс, а направление реализации плюс операция: интерфейс прикладного слоя,
+        // реализованный инфраструктурой или транспортом, хотя бы с одним обычным методом (ADR-0001).
+        // Интерфейс только с property-getters (IExternalSearchItem) — форма данных, не порт.
         var violations = FindCallableContractsOutsidePorts(
             [.. Quartet.InfrastructureAsm.GetTypes(), .. Quartet.ApiAsm.GetTypes()],
             Quartet.ApplicationAsm);
@@ -169,10 +157,8 @@ public class NamingConventionRulesTests
     [Fact(DisplayName = "*Controller в Bugget.Api наследует ApiController или сгенерированную базу")]
     public void Controllers_inherit_api_base()
     {
-        // ApiController — общая база, поверх которой навешан [ApiController] и общий filter
-        // pipeline. Голый ControllerBase — это либо забытое наследование, либо самопальная точка.
-        // Контроллеры, унаследованные от NSwag-сгенерированного *ControllerBase
-        // (Bugget.Api.Generated.*), базой не управляют: её задаёт codegen (ADR-0005).
+        // Голый ControllerBase — забытое наследование либо самопальная точка. Наследники NSwag-сгенерированного
+        // *ControllerBase базой не управляют: её задаёт codegen (ADR-0005).
         var result = Types
             .InAssembly(Quartet.ApiAsm)
             .That()
@@ -193,8 +179,7 @@ public class NamingConventionRulesTests
             .Select(type => type.FullName ?? type.Name)
             .ToArray();
 
-        // Модули users, authorization, oidc и fake живут на собственных базах ASP.NET:
-        // их контроллеры приехали отдельными сервисами и общего фильтра Bugget не знают.
+        // users, authorization, oidc и fake приехали отдельными сервисами и общего фильтра Bugget не знают.
         var moduleControllers = Quartet.ApiAsm.GetTypes()
             .Where(type => type.IsClass && type.Name.EndsWith("Controller", StringComparison.Ordinal))
             .Where(type => type.Namespace is { } ns
@@ -247,11 +232,7 @@ public class NamingConventionRulesTests
         ];
     }
 
-    /// <summary>
-    /// Пары «адаптер → контракт», где адаптер реализует вызываемый интерфейс прикладного слоя,
-    /// объявленный вне <c>**/Ports</c>. Отдельная функция, а не тело теста: тем же алгоритмом
-    /// прогоняются красная и разрешённая фикстуры.
-    /// </summary>
+    /// <summary>Пары «адаптер → вызываемый контракт вне <c>**/Ports</c>»; функция общая для красной и разрешённой фикстур.</summary>
     private static string[] FindCallableContractsOutsidePorts(
         IEnumerable<Type> adapters,
         Assembly contractAssembly) =>
@@ -267,11 +248,7 @@ public class NamingConventionRulesTests
             .OrderBy(value => value, StringComparer.Ordinal)
     ];
 
-    /// <summary>
-    /// Вызываемый контракт — тот, у которого есть хотя бы одна собственная операция.
-    /// Аксессоры свойств и событий (<c>IsSpecialName</c>) операциями не считаются: интерфейс
-    /// только со свойствами описывает форму данных, а не зависимость.
-    /// </summary>
+    /// <summary>Вызываемый контракт имеет собственную операцию; аксессоры (<c>IsSpecialName</c>) не в счёт.</summary>
     private static bool IsCallableContract(Type contract) =>
         contract.GetMethods().Any(method => !method.IsSpecialName);
 
@@ -290,7 +267,6 @@ public class NamingConventionRulesTests
 
     private sealed class EscapingPersistenceClient : FixturePostgresClient;
 
-    /// <summary>Красная фикстура портового гейта: вызываемый контракт вне <c>*.Ports</c>.</summary>
     private interface IFixtureCallableContract
     {
         Task ExecuteAsync();
@@ -301,7 +277,6 @@ public class NamingConventionRulesTests
         public Task ExecuteAsync() => Task.CompletedTask;
     }
 
-    /// <summary>Разрешённая фикстура: интерфейс результата — только форма данных.</summary>
     private interface IFixtureResultItem
     {
         string Id { get; }

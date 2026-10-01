@@ -67,7 +67,7 @@ public class WorkspaceMembersDbClientTests : IClassFixture<AppWithPostgresFixtur
         var ws = await _workspacesDbClient.CreateWorkspaceAsync(owner.Id, "WS");
 
         // Добавляем 3 участника с лимитом 10
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             var member = await _usersDbClient.TryInsertUserAsync(new CreateUserDto
             {

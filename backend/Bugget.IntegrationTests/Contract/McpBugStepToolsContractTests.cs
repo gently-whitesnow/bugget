@@ -16,7 +16,9 @@ namespace Bugget.IntegrationTests.Contract;
 public sealed class McpBugStepToolsContractTests(AppContractFixture fixture)
     : IClassFixture<AppContractFixture>, IAsyncDisposable
 {
-    private readonly List<HttpClientTransport> _transports = [];
+    private McpPatClients? _mcp;
+
+    private McpPatClients Mcp => _mcp ??= new McpPatClients(fixture);
 
     [Fact(DisplayName = "create_bug_step: шаги нумеруются по порядку вызовов и видны и в MCP, и в REST")]
     public async Task CreateBugStepNumbersStepsInCallOrder()
@@ -25,7 +27,7 @@ public sealed class McpBugStepToolsContractTests(AppContractFixture fixture)
         var reportId = await scenario.CreateReportAsync();
         var bugId = await scenario.CreateBugAsync(reportId);
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         var first = await CallAsync(
             client,
             "create_bug_step",
@@ -62,7 +64,7 @@ public sealed class McpBugStepToolsContractTests(AppContractFixture fixture)
         var reportId = await scenario.CreateReportAsync();
         var bugId = await scenario.CreateBugAsync(reportId);
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         var created = await CallAsync(
             client,
             "create_bug_step",
@@ -89,7 +91,7 @@ public sealed class McpBugStepToolsContractTests(AppContractFixture fixture)
         var reportId = await scenario.CreateReportAsync();
         var bugId = await scenario.CreateBugAsync(reportId);
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         var first = await CallAsync(
             client,
             "create_bug_step",
@@ -121,7 +123,7 @@ public sealed class McpBugStepToolsContractTests(AppContractFixture fixture)
         var foreignBugId = await owner.CreateBugAsync(foreignReportId);
         var foreignStepId = await owner.CreateStepAsync(foreignReportId, foreignBugId);
 
-        await using var client = await CreateMcpClientAsync(ContractScenario.Create(fixture));
+        await using var client = await Mcp.CreateAsync(ContractScenario.Create(fixture));
 
         await AssertToolFailsAsync(
             client,
@@ -155,48 +157,14 @@ public sealed class McpBugStepToolsContractTests(AppContractFixture fixture)
         var reportId = await scenario.CreateReportAsync();
         var bugId = await scenario.CreateBugAsync(reportId);
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         await AssertToolFailsAsync(
             client,
             "create_bug_step",
             Args(("reportId", reportId), ("bugId", bugId), ("text", new string('в', 2049))));
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        foreach (var transport in _transports)
-        {
-            await transport.DisposeAsync();
-        }
-    }
-
-    /// <summary>
-    /// Та же identity вида «после /_internal/auth по PAT», что и у остальных
-    /// write-инструментов: шаги — часть одной write-поверхности агента.
-    /// </summary>
-    private async Task<McpClient> CreateMcpClientAsync(ContractScenario scenario)
-    {
-        var transport = new HttpClientTransport(
-            new HttpClientTransportOptions
-            {
-                Endpoint = new Uri(fixture.BaseAddress, "/v1/mcp"),
-                AdditionalHeaders = new Dictionary<string, string>
-                {
-                    [ContractHeaders.UserId] = scenario.UserId,
-                    [ContractHeaders.TeamId] = scenario.TeamId,
-                    [ContractHeaders.WorkspaceId] = scenario.WorkspaceId,
-                    [ContractHeaders.WorkspaceRole] = "owner",
-                    [ContractHeaders.AuthMethod] = "pat",
-                },
-            },
-            fixture.CreateAnonymousClient(),
-            loggerFactory: null,
-            ownsHttpClient: true);
-
-        _transports.Add(transport);
-
-        return await McpClient.CreateAsync(transport);
-    }
+    public ValueTask DisposeAsync() => _mcp?.DisposeAsync() ?? ValueTask.CompletedTask;
 
     private static async Task<JsonElement> CallAsync(
         McpClient client,

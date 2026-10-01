@@ -4,7 +4,6 @@ namespace Bugget.Infrastructure.Logging;
 
 public sealed class TelegramLoggingOptions
 {
-    /// <summary>Глобально включает/выключает телеграм-логирование.</summary>
     public bool Enabled { get; set; } = true;
 
     /// <summary>Bot token от @BotFather.</summary>

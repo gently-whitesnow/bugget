@@ -8,7 +8,7 @@
     "  2. Заменить <module> на slug (kebab-case) и <Module> на PascalCase.",
     "  3. Убедиться, что Bugget.Contracts и Bugget.Api уже в решении: отдельные",
     "     проекты под модуль не заводятся (ADR-0001).",
-    "  4. Прогнать `bash scripts/quality/openapi-generate.sh`.",
+    "  4. Прогнать `bash scripts/contracts/openapi-generate.sh`.",
     "",
     "Архитектура одного прохода:",
     "  - openApiToCSharpClient запущен с отключённым client-классом и эмитит",

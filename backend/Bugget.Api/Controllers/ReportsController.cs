@@ -17,11 +17,7 @@ using Microsoft.Extensions.Options;
 
 namespace Bugget.Api.Controllers;
 
-/// <summary>
-/// v2 Api для работы с репортами. Наследует <see cref="ReportsControllerBase"/> —
-/// маршруты, HTTP-методы, валидация тела и типы ответов приходят из
-/// <c>specs/contracts/reports/openapi.yaml</c>.
-/// </summary>
+/// <summary>v2 Api репортов; маршруты, валидация тела и типы ответов — из <c>specs/contracts/reports/openapi.yaml</c>.</summary>
 [ApiController]
 public sealed class ReportsController(
     IReportsService reportsService,
@@ -70,11 +66,7 @@ public sealed class ReportsController(
             .AsContractResultAsync(HttpContext, result => result.ToPatchResultViewModel(reportAliasOptions.Value).ToContract());
     }
 
-    /// <remarks>
-    /// Диапазоны <c>skip</c>/<c>take</c> объявлены здесь, а не в базе: NSwag не переносит
-    /// <c>minimum</c>/<c>maximum</c> параметров запроса в атрибуты. Значения совпадают
-    /// с контрактом, расхождение видно на ревью одного файла.
-    /// </remarks>
+    // skip/take ограничены здесь, а не в базе: NSwag не переносит minimum/maximum query-параметров в атрибуты.
     public override async Task<ActionResult<ReportList>> ListReports(
         string? userId = null,
         string? teamId = null,
@@ -102,17 +94,10 @@ public sealed class ReportsController(
         }.ToContract();
     }
 
-    /// <summary>
-    /// Детальная фазовая аналитика по конкретному репорту (sub-resource).
-    /// </summary>
     /// <remarks>
-    /// Сегмент объявлен строкой канонического Int64 (shared.yaml
-    /// <c>Int64String</c>), внутрь уходит <c>long</c>: конверсия живёт здесь, на
-    /// границе. Ограничение маршрута <c>:long</c> оставлено — оно и раньше
-    /// отбивало нечисловой и вылезающий за Int64 сегмент как 404, и менять этот
-    /// ответ незачем. Всё, что через него проходит, но каноном не является
-    /// (<c>-5</c>, <c>007</c>), до сервиса не доезжает: <see cref="WireInt64"/>
-    /// отвечает тем же 400, каким такой сегмент отбивало связывание модели.
+    /// Сегмент — строка канонического Int64 (shared.yaml <c>Int64String</c>), конверсия в <c>long</c> живёт здесь.
+    /// Ограничение <c>:long</c> оставлено: нечисловой сегмент по-прежнему 404, а неканоничный
+    /// (<c>-5</c>, <c>007</c>) до сервиса не доезжает — <see cref="WireInt64"/> отвечает 400.
     /// </remarks>
     [RouteParameterConstraint("id", "long")]
     public override async Task<ActionResult<AnalyticsReport>> GetReportAnalytics(
@@ -140,9 +125,7 @@ public sealed class ReportsController(
         return Ok(bo.ToContract());
     }
 
-    /// <summary>
-    /// Разрешить legacy reportId и вернуть teamId + teamReportId для редиректа.
-    /// </summary>
+    /// <summary>Разрешить legacy reportId и вернуть teamId + teamReportId для редиректа.</summary>
     [RouteParameterConstraint("legacyId", "int")]
     public override async Task<ActionResult<LegacyReportResolve>> ResolveLegacyReport(
         int legacyId,

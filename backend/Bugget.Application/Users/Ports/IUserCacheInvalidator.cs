@@ -7,5 +7,5 @@ namespace Bugget.Application.Users.Ports;
 /// </summary>
 public interface IUserCacheInvalidator
 {
-    public Task InvalidateUserCacheAsync(long userId);
+    Task InvalidateUserCacheAsync(long userId);
 }

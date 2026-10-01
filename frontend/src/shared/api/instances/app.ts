@@ -1,13 +1,8 @@
 import { createApiInstance } from "./base";
 import { parseAppContextFromPath } from "./appContext";
 
-/**
- * App API
- * Путь: /api/app/workspaces/{workspaceId}/teams/{teamId}/v2/...
- * Бэкенд: app-api
- */
+/** App API (бэкенд app-api): /api/app/workspaces/{wId}/teams/{tId}/v2/... */
 
-// Глобальный контекст приложения
 let currentWorkspaceId: string | number | null = null;
 let currentTeamId: string | number | null = null;
 
@@ -56,7 +51,6 @@ appApi.interceptors.request.use((config) => {
     return config;
   }
 
-  // Формируем полный путь
   const path = config.url.startsWith("/") ? config.url : `/${config.url}`;
 
   const { workspaceId, teamId } = resolveAppContext();
@@ -65,15 +59,12 @@ appApi.interceptors.request.use((config) => {
     throw new Error(`App context not set for request: ${path}`);
   }
 
-  // /api/app/workspaces/{wId}/teams/{tId}/v2/...
   config.url = `/api/app/workspaces/${workspaceId}/teams/${teamId}${path}`;
 
   return config;
 });
 
-/**
- * Хелпер для WebSocket URL (нужен полный путь сразу)
- */
+/** Хелпер для WebSocket URL (нужен полный путь сразу) */
 export const getAppWebSocketUrl = (
   path: string,
   version: "v1" | "v2" = "v1"

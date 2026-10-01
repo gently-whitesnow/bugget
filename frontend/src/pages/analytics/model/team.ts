@@ -4,14 +4,7 @@ import { analyticsApi, type AnalyticsSummary } from "@/shared/api";
 import { type AnalyticsPeriod, defaultPeriod } from "@/shared/lib/time";
 
 /**
- * Effector-модель Разреза 3 (team-уровень).
- *
- * - `$teamIdStore` — выбранный team (источник истины — URL ?team=...).
- * - `$periodStore` — выбранный период.
- * - `$summaryStore` — последний успешный ответ /v2/analytics/summary?teamId=...
- *   (после R6 единый summary-эндпоинт с опциональным фильтром по команде).
- * - `fetchTeamSummaryFx` — запрос сводки.
- *
+ * Effector-модель Разреза 3 (team-уровень); источник истины teamId — URL.
  * Любое изменение teamId/period перезапускает fetch (если виджет смонтирован).
  */
 

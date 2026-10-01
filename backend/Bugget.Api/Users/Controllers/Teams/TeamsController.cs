@@ -18,9 +18,7 @@ namespace Bugget.Api.Users.Controllers;
 [Auth]
 public sealed class TeamsController(ITeamsService teamsService) : TeamsControllerBase
 {
-    /// <summary>
-    /// Получение команд по массиву id
-    /// </summary>
+    /// <summary>Получение команд по массиву id</summary>
     [WorkspaceRequired]
     public override async Task<ActionResult<ICollection<TeamSummary>>> ListTeams(
         int workspaceId,
@@ -46,13 +44,8 @@ public sealed class TeamsController(ITeamsService teamsService) : TeamsControlle
         }).Select(UsersContractMapper.ToContract).ToList();
     }
 
-    /// <summary>
-    /// Поиск команд по имени в текущем workspace
-    /// </summary>
-    /// <remarks>
-    /// Диапазоны skip/take объявлены здесь: генератор minimum/maximum
-    /// query-параметров в атрибуты не переносит.
-    /// </remarks>
+    /// <summary>Поиск команд по имени в текущем workspace</summary>
+    /// <remarks>Диапазоны skip/take объявлены здесь: генератор minimum/maximum в атрибуты не переносит.</remarks>
     [WorkspaceRequired]
     public override async Task<ActionResult<AutocompleteTeams>> AutocompleteTeams(
         int workspaceId,

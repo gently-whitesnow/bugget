@@ -31,7 +31,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск с фильтром по teamId - возвращает только отчеты данной команды и отчеты без команды")]
     public async Task SearchReportsAsync_FilterByTeamId_ShouldReturnOnlyTeamReports()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var team1 = $"team_{Guid.NewGuid()}";
         var team2 = $"team_{Guid.NewGuid()}";
@@ -54,10 +53,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(3, total);
         Assert.Equal(3, reports.Length);
         Assert.DoesNotContain(reports, r => r.Id == report3.Id);
@@ -66,7 +63,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск с teamId = null - возвращает отчеты без команды и всех команд")]
     public async Task SearchReportsAsync_TeamIdNull_ShouldReturnAllReports()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var team1 = $"team_{Guid.NewGuid()}";
 
@@ -85,10 +81,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.True(total >= 2);
         Assert.Contains(reports, r => r.Id == report1.Id);
         Assert.Contains(reports, r => r.Id == report2.Id);
@@ -97,7 +91,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск с текстом и фильтром по teamId - применяются оба условия")]
     public async Task SearchReportsAsync_QueryAndTeamId_ShouldApplyBothFilters()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var team1 = $"team_{Guid.NewGuid()}";
         var team2 = $"team_{Guid.NewGuid()}";
@@ -118,10 +111,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(report1.Id, reports[0].Id);
@@ -131,7 +122,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск с teamId и статусами - применяются оба фильтра")]
     public async Task SearchReportsAsync_TeamIdAndStatuses_ShouldApplyBothFilters()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var team1 = $"team_{Guid.NewGuid()}";
         var org = $"org_{Guid.NewGuid()}";
@@ -152,10 +142,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(report1.Id, reports[0].Id);
@@ -166,7 +154,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск с teamId и userIds - применяются оба фильтра")]
     public async Task SearchReportsAsync_TeamIdAndUserIds_ShouldApplyBothFilters()
     {
-        // Arrange
         var user1 = $"user_{Guid.NewGuid()}";
         var user2 = $"user_{Guid.NewGuid()}";
         var team1 = $"team_{Guid.NewGuid()}";
@@ -189,10 +176,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(2, total);
         Assert.Equal(2, reports.Length);
         Assert.All(reports, r => Assert.Equal(team1, r.CreatorTeamId));
@@ -204,7 +189,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск с teamId и organizationId - применяются оба фильтра")]
     public async Task SearchReportsAsync_TeamIdAndOrganizationId_ShouldApplyBothFilters()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var team1 = $"team_{Guid.NewGuid()}";
         var team2 = $"team_{Guid.NewGuid()}";
@@ -227,10 +211,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(report1.Id, reports[0].Id);
@@ -244,7 +226,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск без параметров - возвращает все отчеты")]
     public async Task SearchReportsAsync_NoFilters_ShouldReturnAll()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report1 = await CreateTestReportAsync(userId, "Report 1");
         var report2 = await CreateTestReportAsync(userId, "Report 2");
@@ -261,10 +242,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.True(total >= 2);
         Assert.Contains(reports, r => r.Id == report1.Id);
         Assert.Contains(reports, r => r.Id == report2.Id);
@@ -273,7 +252,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск по тексту в заголовке отчета")]
     public async Task SearchReportsAsync_QueryInTitle_ShouldReturnMatchingReports()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report1 = await CreateTestReportAsync(userId, "Critical bug in authentication");
         var report2 = await CreateTestReportAsync(userId, "Bug in payment system");
@@ -291,10 +269,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(report1.Id, reports[0].Id);
@@ -303,7 +279,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск по тексту в описании бага")]
     public async Task SearchReportsAsync_QueryInBugDescription_ShouldReturnMatchingReports()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report1 = await CreateTestReportAsync(userId, "Report 1");
         var report2 = await CreateTestReportAsync(userId, "Report 2");
@@ -323,10 +298,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(report1.Id, reports[0].Id);
@@ -335,7 +308,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск по тексту в комментариях")]
     public async Task SearchReportsAsync_QueryInComments_ShouldReturnMatchingReports()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report1 = await CreateTestReportAsync(userId, "Report 1");
         var report2 = await CreateTestReportAsync(userId, "Report 2");
@@ -358,10 +330,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(report1.Id, reports[0].Id);
@@ -370,7 +340,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск по статусам")]
     public async Task SearchReportsAsync_FilterByStatus_ShouldReturnMatchingReports()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report1 = await CreateTestReportAsync(userId, "Report 1");
         var report2 = await CreateTestReportAsync(userId, "Report 2");
@@ -391,10 +360,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.True(total >= 2);
         Assert.Contains(reports, r => r.Id == report1.Id);
         Assert.Contains(reports, r => r.Id == report2.Id);
@@ -404,7 +371,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск по участникам (userIds)")]
     public async Task SearchReportsAsync_FilterByUserIds_ShouldReturnReportsWithParticipants()
     {
-        // Arrange
         var creator = $"user_{Guid.NewGuid()}";
         var participant1 = $"user_{Guid.NewGuid()}";
         var participant2 = $"user_{Guid.NewGuid()}";
@@ -428,10 +394,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(report1.Id, reports[0].Id);
@@ -440,7 +404,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск по organizationId")]
     public async Task SearchReportsAsync_FilterByOrganizationId_ShouldReturnOrgReports()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var org1 = $"org_{Guid.NewGuid()}";
         var org2 = $"org_{Guid.NewGuid()}";
@@ -460,10 +423,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(report1.Id, reports[0].Id);
@@ -473,7 +434,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Сортировка по дате создания (descending)")]
     public async Task SearchReportsAsync_SortByCreatedDesc_ShouldReturnOrderedResults()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report1 = await CreateTestReportAsync(userId, "Report 1");
         await Task.Delay(100); // Ensure different timestamps
@@ -493,10 +453,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         var relevantReports = reports.Where(r => r.Id == report1.Id || r.Id == report2.Id || r.Id == report3.Id).ToArray();
         Assert.True(relevantReports.Length >= 3);
         Assert.True(relevantReports[0].CreatedAt >= relevantReports[1].CreatedAt);
@@ -506,9 +464,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Пагинация работает корректно")]
     public async Task SearchReportsAsync_Pagination_ShouldReturnCorrectPage()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             await CreateTestReportAsync(userId, $"Report {i}");
         }
@@ -525,10 +482,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 2
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.True(total >= 5);
         Assert.Equal(2, reports.Length);
     }
@@ -536,7 +491,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Полный граф данных возвращается корректно")]
     public async Task SearchReportsAsync_CompleteGraph_ShouldReturnFullData()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId, "Full Graph Report");
 
@@ -558,10 +512,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             Take = 10
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         var result = reports.FirstOrDefault(r => r.Id == report.Id);
         Assert.NotNull(result);
         Assert.Contains(participant, result.ParticipantsUserIds);
@@ -580,7 +532,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск с фильтром creatorTypes=[2] - возвращает только beta-tester reports")]
     public async Task SearchReportsAsync_FilterByCreatorTypes_ShouldReturnOnlyMatching()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var org = $"org_{Guid.NewGuid()}";
 
@@ -601,10 +552,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             CreatorTypes = new short[] { (short)Bugget.Domain.Common.CreatorType.TgBetaTester }
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(betaReport.Id, reports[0].Id);
@@ -614,7 +563,6 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
     [Fact(DisplayName = "Поиск без creatorTypes - поведение не меняется, возвращает все reports")]
     public async Task SearchReportsAsync_NoCreatorTypesFilter_ShouldReturnAll()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var org = $"org_{Guid.NewGuid()}";
 
@@ -635,10 +583,8 @@ public class ReportsDbClient_SearchReportsTests : IClassFixture<AppWithPostgresF
             CreatorTypes = null
         };
 
-        // Act
         var (total, reports) = await _reportsDbClient.SearchReportsAsync(searchRequest);
 
-        // Assert
         Assert.Equal(2, total);
         Assert.Contains(reports, r => r.Id == userReport.Id);
         Assert.Contains(reports, r => r.Id == betaReport.Id);

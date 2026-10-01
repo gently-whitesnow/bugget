@@ -14,14 +14,11 @@ namespace Bugget.Infrastructure.Postgres;
 
 public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
 {
-    /// <summary>
-    /// Получает отчет по ID.
-    /// </summary>
+    /// <summary>Получает отчет по ID.</summary>
     public async Task<Report?> GetReportInternalAsync(int reportId)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
 
-        // Получаем отчет по уже разрешенному ID
         var report = await conn.QuerySingleOrDefaultAsync<Report>(
             "SELECT * FROM public.get_report_internal(@reportId);",
             new { reportId });
@@ -31,7 +28,6 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
             return null;
         }
 
-        // Теперь используем id отчета для получения дочерних сущностей
         await using var multi = await conn.QueryMultipleAsync(@"
   SELECT * FROM public.list_bugs_internal(@reportIds);
   SELECT * FROM public.list_participants_internal(@reportIds);
@@ -41,7 +37,6 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
   SELECT * FROM public.list_report_links_internal(@reportIds);
 ", new { reportIds = new[] { report.Id } });
 
-        // 2. Дочерние сущности
         report.Bugs = (await multi.ReadAsync<Bug>()).ToArray();
         var participants = await multi.ReadAsync<(int ReportId, string UserId)>();
         report.ParticipantsUserIds = participants.Select(p => p.UserId).ToArray();
@@ -50,7 +45,6 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
         var bugSteps = (await multi.ReadAsync<BugStepSummary>()).ToArray();
         var reportLinks = (await multi.ReadAsync<ReportLink>()).ToArray();
 
-        // 3. Группируем по багам
         var commentsByBug = comments.GroupBy(c => c.BugId).ToDictionary(g => g.Key, g => g.ToArray());
         var attachmentsByEntity = attachments.GroupBy(a => a.EntityId).ToDictionary(g => g.Key, g => g.ToArray());
         var stepsByBug = bugSteps.GroupBy(s => s.BugId).ToDictionary(g => g.Key, g => g.ToArray());
@@ -126,7 +120,6 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
             .GroupBy(c => c.BugId)
             .ToDictionary(g => g.Key, g => g.ToArray());
 
-        // сборка
         foreach (var r in reports)
         {
             r.ParticipantsUserIds = participantsByReport.GetValueOrDefault(r.Id) ?? Array.Empty<string>();
@@ -142,9 +135,7 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
         return (total, reports);
     }
 
-    /// <summary>
-    /// Создает новый отчет и возвращает его краткую структуру.
-    /// </summary>
+    /// <summary>Создает новый отчет и возвращает его краткую структуру.</summary>
     public async Task<ReportSummary> CreateReportAsync(string userId, string? teamId, string? organizationId, ReportCreateDto dto, short creatorType = (short)CreatorType.User)
     {
         await using var conn = await DataSource.OpenConnectionAsync();
@@ -168,10 +159,7 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
             transaction: tx));
     }
 
-    /// <summary>
-    /// Возвращает текущий статус отчёта в рамках переданной транзакции.
-    /// Используется Internal*-сервисами для I-3 проверки (не дописывать в закрытый отчёт).
-    /// </summary>
+    /// <summary>Статус отчёта в переданной транзакции; нужен для I-3 (не дописывать в закрытый отчёт).</summary>
     public Task<int?> GetStatusInternalAsync(
         ITransactionScope scope,
         int reportId,
@@ -210,15 +198,9 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
         CancellationToken ct = default)
     {
         var (connection, tx) = scope.Unwrap();
-        // P1.2 (review): SELECT ... FOR UPDATE сериализует concurrent PATCH-toggle
-        // в рамках одной строки. Без блокировки два параллельных PATCH с разными
-        // значениями могли прочитать одно и то же исходное состояние, оба считать
-        // переход «изменение» и оба эмитнуть `excluded_from_analytics_toggled` —
-        // дубль события. FOR UPDATE удерживает row lock до конца транзакции
-        // (UnitOfWork.ExecuteAsync), второй PATCH ждёт, читает уже обновлённое
-        // значение и корректно решает no-op vs emit.
-        //
-        // Нужен row lock, поэтому читаем прямо из reports с FOR UPDATE.
+        // FOR UPDATE сериализует параллельные PATCH-toggle одной строки: без row lock оба прочитали бы одно
+        // исходное состояние и оба эмитнули `excluded_from_analytics_toggled` — дубль события. Lock держится
+        // до конца транзакции UnitOfWork, второй PATCH читает уже обновлённое значение.
         return connection.QuerySingleOrDefaultAsync<bool?>(new CommandDefinition(
             "SELECT is_excluded_from_analytics FROM public.reports WHERE id = @reportId FOR UPDATE;",
             new { reportId },
@@ -231,10 +213,8 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
         int reportId,
         CancellationToken ct = default)
     {
-        // Нетранзакционный SELECT без FOR UPDATE: эмиссия события
-        // `excluded_from_analytics_toggled` чисто аудитная, projection её не читает.
-        // Гонка между параллельными PATCH здесь даст максимум дубль/потерю одной
-        // строки domain_events — допустимо (бета-фича TECHSPEC §4.5).
+        // Без транзакции и FOR UPDATE: событие `excluded_from_analytics_toggled` чисто аудитное, projection его
+        // не читает; гонка даст максимум дубль/потерю одной строки domain_events — допустимо (TECHSPEC §4.5).
         await using var connection = await DataSource.OpenConnectionAsync(ct);
         return await connection.QuerySingleOrDefaultAsync<bool?>(new CommandDefinition(
             "SELECT is_excluded_from_analytics FROM public.reports WHERE id = @reportId;",
@@ -243,10 +223,7 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
     }
 
 
-    /// <summary>
-    /// Список репортов тестера для команды <c>/my</c> (TECHSPEC §4.3.5).
-    /// I-11: возвращается только Bug, созданный этим <c>creatorUserId</c>+<c>creatorType</c>.
-    /// </summary>
+    /// <summary>Репорты тестера для <c>/my</c> (TECHSPEC §4.3.5). I-11: только созданные этим creatorUserId+creatorType.</summary>
     public async Task<ReportListItem[]> ListByCreatorInternalAsync(
         string organizationId,
         string creatorUserId,
@@ -283,10 +260,8 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
     }
 
     /// <summary>
-    /// Обновляет краткую информацию об отчете и возвращает его краткую структуру.
-    /// Если <paramref name="scope"/> передан — операция идёт в его транзакции
-    /// (для эмиссии domain events в той же транзакции, что и UPDATE); иначе клиент
-    /// открывает собственное соединение.
+    /// Обновляет краткую информацию об отчете. С <paramref name="scope"/> идёт в его транзакции (domain events
+    /// в одной транзакции с UPDATE); иначе открывает собственное соединение.
     /// </summary>
     public async Task<ReportPatchResult> PatchReportAsync(
         int reportId,
@@ -343,7 +318,6 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
 
         var reports = (await grid.ReadAsync<Report>()).ToArray();
 
-        // Восстанавливаем порядок сортировки из ids
         var reportDict = reports.ToDictionary(r => r.Id);
         reports = ids.Select(id => reportDict.GetValueOrDefault(id)).Where(r => r != null).ToArray()!;
 
@@ -454,10 +428,7 @@ public sealed class ReportsDbClient : PostgresClient, IReportsDbClient
         );
     }
 
-    /// <summary>
-    /// Tx-aware вариант <see cref="ChangeStatusAsync(int, int)"/>: выполняется в
-    /// переданной транзакции вместе с публикацией domain event.
-    /// </summary>
+    /// <summary>Tx-aware вариант <see cref="ChangeStatusAsync(int, int)"/>: в одной транзакции с публикацией domain event.</summary>
     public Task ChangeStatusAsync(
         ITransactionScope scope,
         int reportId,

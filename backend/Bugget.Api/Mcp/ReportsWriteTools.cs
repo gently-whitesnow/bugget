@@ -18,24 +18,13 @@ using ModelContextProtocol.Server;
 namespace Bugget.Api.Mcp;
 
 /// <summary>
-/// Write-инструменты MCP над репортами: создание репорта и бага, статус репорта,
-/// содержимое бага, шаги воспроизведения, комментарии. Создание нужно, чтобы
-/// найденный баг заводился тем же PAT, что и правки, — а не выходом в
-/// неавторизованный CLI (kaiten 237700); шаги — чтобы заведённый агентом баг
-/// не оставался без пути воспроизведения (kaiten 238350). Перестановка шагов
-/// (order) сознательно не выносится: агент пишет шаги по порядку, а
-/// перетасовка — жест человека в UI.
-///
-/// Адаптер того же рода, что <see cref="ReportsReadTools"/>: identity — из
-/// запроса, изоляция workspace/team — в application-сервисах, как у REST.
-/// Атрибуты валидации DTO здесь срабатывать некому (MVC-биндинга нет), поэтому
-/// те же границы длин проверяются явно до вызова сервиса.
-///
-/// Кто автор записи, инструменты не решают: сервисы штампуют
-/// <see cref="Bugget.Domain.Common.CreatorType"/> из
-/// <see cref="UserIdentity.ActorCreatorType"/>, а тот выводится из способа
-/// аутентификации запроса — запись, пришедшая по PAT, видна в истории как
-/// действие агента без единой строки кода в этом классе.
+/// Write-инструменты MCP над репортами. Создание — чтобы баг заводился тем же PAT, что и правки (kaiten 237700);
+/// шаги — чтобы баг агента не оставался без пути воспроизведения (kaiten 238350). Перестановка шагов сознательно
+/// не выносится: это жест человека в UI.
+/// Как и <see cref="ReportsReadTools"/>: identity — из запроса, изоляция workspace/team — в application-сервисах.
+/// MVC-биндинга нет, поэтому границы длин DTO проверяются явно до вызова сервиса.
+/// Автора записи штампуют сервисы из <see cref="UserIdentity.ActorCreatorType"/> (способ аутентификации):
+/// запись по PAT видна в истории как действие агента.
 /// </summary>
 [McpServerToolType]
 internal sealed class ReportsWriteTools(
@@ -47,10 +36,8 @@ internal sealed class ReportsWriteTools(
     IOptions<ReportAliasOptions> aliasOptions)
 {
     /// <summary>
-    /// Потолок write-вызовов на пользователя: сошедший с ума или скомпрометированный
-    /// агент не зальёт репорты сотнями правок, а нормальной работе (несколько правок
-    /// и комментариев на баг) лимит не виден. Static: инструменты создаются на вызов,
-    /// окно живёт с процессом.
+    /// Потолок write-вызовов на пользователя: обезумевший или скомпрометированный агент не зальёт репорты правками.
+    /// Static: инструменты создаются на вызов, окно живёт с процессом.
     /// </summary>
     private static readonly FixedWindowLimiter WriteLimiter =
         new(TimeProvider.System, limit: 30, window: TimeSpan.FromMinutes(1));
@@ -83,9 +70,8 @@ internal sealed class ReportsWriteTools(
         [Description("Что получили по факту, от 1 до 2048 символов.")] string? receive = null,
         [Description("Что ожидали, от 1 до 2048 символов.")] string? expect = null)
     {
-        // Доменное правило (BugsService): баг обязан нести receive или expect;
-        // одного title мало. Проверяем здесь тем же критерием, чтобы отказ был
-        // понятным, а не приходил из сервиса на уже принятый инструментом вызов.
+        // Доменное правило (BugsService): баг обязан нести receive или expect. Проверяем тем же
+        // критерием здесь, чтобы отказ был понятным, а не приходил из сервиса.
         if (receive is null && expect is null)
         {
             throw new McpException(
@@ -314,19 +300,15 @@ internal sealed class ReportsWriteTools(
     }
 
     /// <summary>
-    /// Отказ сервиса уходит модели заголовком прикладной ошибки — тем же текстом,
-    /// что REST кладёт в problem+json. «Нет» и «не твой» здесь уже неразличимы:
-    /// это гарантия сервисов, инструмент её просто не портит.
+    /// Отказ сервиса уходит модели тем же текстом, что REST кладёт в problem+json. «Нет» и «не твой»
+    /// неразличимы — это гарантия сервисов, инструмент её не портит.
     /// </summary>
     private static T Unwrap<T>(T? value, Error? error) where T : class =>
         error is null && value is not null
             ? value
             : throw new McpException(error?.Title ?? "Операция не выполнена.");
 
-    /// <summary>
-    /// Те же границы, что у REST в атрибутах DTO: без MVC-биндинга атрибут — просто
-    /// украшение, а ослаблять валидацию относительно REST инструментам нельзя.
-    /// </summary>
+    /// <summary>Те же границы, что у REST в атрибутах DTO: ослаблять валидацию относительно REST нельзя.</summary>
     private static void ValidateLength(string? value, int max, string parameter)
     {
         if (value is { Length: 0 })

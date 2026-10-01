@@ -11,10 +11,8 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Контракт MCP-эндпоинта <c>/v1/mcp</c>: transport поднят, защищён той же
-/// header-trust схемой, что и остальной модуль reports. Happy path повторяет боевую
-/// цепочку целиком, только без nginx: PAT → <c>/_internal/auth</c> → заголовки
-/// <c>Auth-Request-*</c> → настоящий MCP-клиент делает initialize и tools/list.
+/// <c>/v1/mcp</c> защищён той же header-trust схемой, что reports. Happy path — боевая цепочка без nginx:
+/// PAT → <c>/_internal/auth</c> → заголовки <c>Auth-Request-*</c> → настоящий MCP-клиент (initialize, tools/list).
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class McpEndpointContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
@@ -25,8 +23,7 @@ public sealed class McpEndpointContractTests(AppContractFixture fixture) : IClas
         var scenario = await UsersScenario.CreateAsync(fixture);
         var patValue = await IssuePatAsync(scenario);
 
-        // То, что в бою делает nginx auth_request: Bearer PAT уходит на /_internal/auth,
-        // обратно приходят заголовки identity для реального запроса.
+        // Роль nginx auth_request: Bearer PAT уходит на /_internal/auth, обратно — заголовки identity.
         var authClient = fixture.CreateAnonymousClient();
         authClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", patValue);
         authClient.DefaultRequestHeaders.Add(
@@ -66,9 +63,8 @@ public sealed class McpEndpointContractTests(AppContractFixture fixture) : IClas
 
         Assert.Equal("bugget-api", mcpClient.ServerInfo.Name);
 
-        // Инструменты видны и по этой цепочке тоже. Что именно они отвечают —
-        // предмет McpReadToolsContractTests; здесь важно, что tools/list доезжает
-        // до клиента, пришедшего с PAT, а не отвечает ошибкой метода.
+        // Ответы инструментов — предмет McpReadToolsContractTests; здесь важно, что tools/list доезжает
+        // до клиента, пришедшего с PAT.
         var tools = await mcpClient.ListToolsAsync();
         Assert.Contains(tools, tool => tool.Name == "list_reports");
     }
@@ -85,10 +81,7 @@ public sealed class McpEndpointContractTests(AppContractFixture fixture) : IClas
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    /// <summary>
-    /// PAT заводится через порт, а не через HTTP-ручку выпуска: её контракт — предмет
-    /// PersonalAccessTokensContractTests, дублировать его здесь незачем.
-    /// </summary>
+    /// <summary>PAT заводится через порт: HTTP-ручку выпуска покрывает PersonalAccessTokensContractTests.</summary>
     private async Task<string> IssuePatAsync(UsersScenario scenario)
     {
         var generated = PersonalAccessTokenSecret.Generate();

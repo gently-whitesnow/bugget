@@ -410,6 +410,81 @@ namespace Bugget.Contracts.Reports.Generated
     }
 
     /// <summary>
+    /// Шаг воспроизведения и его файлы одним запросом.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BugStepWithAttachmentsUpload
+    {
+
+        /// <summary>
+        /// Текст шага.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("text")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(2048, MinimumLength = 1)]
+        public string Text { get; set; }
+
+        /// <summary>
+        /// Файлы шага. Имя поля формы повторяется для каждого файла.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("files")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.MinLength(1)]
+        public System.Collections.Generic.IReadOnlyList<byte[]> Files { get; set; } = new System.Collections.Generic.List<byte[]>();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// Комментарий и его файлы одним запросом.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CommentWithAttachmentsUpload
+    {
+
+        /// <summary>
+        /// Текст комментария.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("text")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(2048, MinimumLength = 1)]
+        public string Text { get; set; }
+
+        /// <summary>
+        /// Пропущенное поле трактуется как `internal`, как и в `CommentRequest`.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("audience")]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<CommentAudience>))]
+        public CommentAudience? Audience { get; set; }
+
+        /// <summary>
+        /// Файлы комментария. Имя поля формы повторяется для каждого файла.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("files")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.MinLength(1)]
+        public System.Collections.Generic.IReadOnlyList<byte[]> Files { get; set; } = new System.Collections.Generic.List<byte[]>();
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
     /// Новое имя вложения.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]

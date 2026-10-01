@@ -5,11 +5,7 @@ using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
 
-/// <summary>
-/// Контракт аналитики. Что попадает в выборку, проверяется в
-/// <see cref="AnalyticsControllerTests"/>; здесь — публичный периметр: статус,
-/// media type, разбор параметра <c>period</c> и его отражение в ответе.
-/// </summary>
+/// <summary>Публичный периметр аналитики: статус, media type, разбор <c>period</c>. Выборка — в <see cref="AnalyticsControllerTests"/>.</summary>
 [Collection("PostgresCollection")]
 public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
@@ -49,11 +45,9 @@ public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassF
         var response = await scenario.Client.GetAsync($"/v2/reports/{reportId}/analytics");
 
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
-        // `report_id` — канонический Int64 строкой (shared.yaml `Int64String`).
         Assert.Equal(reportId.ToString(CultureInfo.InvariantCulture), body.GetProperty("report_id").GetString());
 
-        // Разбивка приходит всеми четырьмя ключами, даже когда багов нет: фронт
-        // рисует по ним фиксированные колонки и на отсутствие ключа не рассчитывает.
+        // Все четыре ключа разбивки приходят и без багов: фронт рисует по ним фиксированные колонки.
         var byStatus = body.GetProperty("bugs_by_status");
         Assert.Equal(
             new[] { "fixed", "open", "rejected", "verified" },
@@ -62,14 +56,9 @@ public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassF
     }
 
     /// <summary>
-    /// Невалидный период — единственная ветка аналитики, где 400 собирает контроллер.
-    /// Причина берётся из публичного списка допустимых значений: текст исключения —
-    /// внутренняя деталь, и вдобавок он отражал бы обратно присланное клиентом значение.
+    /// Единственная ветка, где 400 собирает контроллер. Причина — из публичного списка значений: текст исключения
+    /// отражал бы присланное клиентом. Пустой <c>period</c> сюда не доезжает — это <c>model_state_validation_error</c>.
     /// </summary>
-    /// <remarks>
-    /// Пустой <c>period</c> сюда не входит: он не проходит валидацию модели и до
-    /// контроллера не доезжает — это ветка <c>model_state_validation_error</c>.
-    /// </remarks>
     [Theory(DisplayName = "Невалидный period: 400 без текста исключения и без эха ввода")]
     [InlineData("/v2/analytics/summary?period=<script>secret</script>")]
     [InlineData("/v2/analytics/responsible/user-1?period=<script>secret</script>")]
@@ -97,8 +86,7 @@ public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassF
     [Fact(DisplayName = "GET /v2/reports/{id}/analytics: нечисловой сегмент не совпадает с маршрутом — 404")]
     public async Task ReportAnalyticsWithNonNumericId()
     {
-        // Ограничение маршрута (:long) держит поведение «мусорный сегмент — это не наш
-        // путь». Без него запрос доехал бы до действия и вернул 400 на связывании.
+        // Ограничение маршрута (:long): мусорный сегмент — не наш путь, иначе был бы 400 на связывании.
         var scenario = ContractScenario.Create(fixture);
 
         var response = await scenario.Client.GetAsync("/v2/reports/not-a-number/analytics");
@@ -106,11 +94,7 @@ public sealed class AnalyticsContractTests(AppContractFixture fixture) : IClassF
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    /// <summary>
-    /// Период уходит на провод разобранным: в запросе <c>30d</c>, в ответе —
-    /// метка каталога (<c>last_30_days</c>) и границы окна. Фронт подписывает
-    /// график ответом, а не тем, что отправил.
-    /// </summary>
+    /// <summary>В запросе <c>30d</c>, в ответе — метка каталога и границы окна: фронт подписывает график ответом.</summary>
     private static void AssertPeriod(JsonElement body, string label)
     {
         var period = body.GetProperty("period");

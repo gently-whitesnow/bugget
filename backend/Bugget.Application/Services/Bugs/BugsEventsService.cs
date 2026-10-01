@@ -1,6 +1,5 @@
 using Bugget.Application.Commands.Bug;
 using Bugget.Application.Ports;
-using Bugget.Application.Services.Comments;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Bugs;
 using Bugget.Domain.Reports;

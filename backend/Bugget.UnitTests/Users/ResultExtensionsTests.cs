@@ -7,12 +7,8 @@ using Xunit;
 namespace Bugget.UnitTests.Users;
 
 /// <summary>
-/// Граница «результат бизнес-логики → HTTP-ответ» модуля users: кортеж
-/// <c>(значение, ошибка)</c> превращается в ActionResult (ADR-0004).
-///
-/// Проверяем ровно то, что видит фронт: статус, тело и подстановку пустого значения.
-/// Ветка ошибки отдаёт problem+json того же кода, что и сама ошибка, — полный каталог
-/// «код ошибки → статус» проверяется отдельно, в ProblemDetailsFactoryTests.
+/// Граница «результат бизнес-логики → HTTP-ответ» модуля users (ADR-0004): проверяем то, что видит фронт.
+/// Полный каталог «код ошибки → статус» проверяется отдельно, в ProblemDetailsFactoryTests.
 /// </summary>
 public sealed class ResultExtensionsTests
 {
@@ -81,10 +77,8 @@ public sealed class ResultExtensionsTests
         Assert.False(mapperCalled);
     }
 
-    /// <summary>
-    /// Успех без значения — не 204 и не null в теле: контракт обещает объект или массив,
-    /// поэтому наружу уходит пустой объект, а для коллекции — пустой массив.
-    /// </summary>
+    /// <summary>Успех без значения — не 204 и не null: контракт обещает объект или массив, поэтому наружу
+    /// уходит пустой объект, а для коллекции — пустой массив.</summary>
     [Fact]
     public async Task Missing_value_becomes_an_empty_contract_shape()
     {

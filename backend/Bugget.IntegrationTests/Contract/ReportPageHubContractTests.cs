@@ -9,12 +9,7 @@ using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
 
-/// <summary>
-/// Контракт SignalR-хаба страницы репорта. Фронт открывает его по
-/// <c>/api/app/workspaces/{id}/teams/{id}/v1/report-page-hub</c>, а до самого сокета
-/// делает HTTP-negotiate — именно он и проверяется: пропадёт путь или сменится форма
-/// ответа negotiate, и страница репорта перестанет обновляться вживую.
-/// </summary>
+/// <summary>Контракт SignalR-хаба: проверяется HTTP-negotiate — без него страница репорта не обновляется вживую.</summary>
 [Collection("PostgresCollection")]
 public sealed class ReportPageHubContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
@@ -25,18 +20,12 @@ public sealed class ReportPageHubContractTests(AppContractFixture fixture) : ICl
 
         var response = await scenario.Client.PostAsync("/v1/report-page-hub/negotiate?negotiateVersion=1", null);
 
-        // Ответ negotiate собирает сам SignalR; клиенту нужен connectionId и хотя бы
-        // один доступный транспорт — без них соединение не открыть.
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
         Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("connectionId").GetString()));
         Assert.NotEmpty(body.GetProperty("availableTransports").EnumerateArray().ToArray());
     }
 
-    /// <summary>
-    /// Хаб не закрыт [Authorize]: negotiate отвечает 200 и без identity-заголовков.
-    /// В бою до него доходят только запросы, прошедшие auth_request в nginx, —
-    /// тест фиксирует эту зависимость, чтобы её нельзя было потерять молча.
-    /// </summary>
+    // Хаб не закрыт [Authorize]: защита только auth_request в nginx — тест фиксирует эту зависимость.
     [Fact(DisplayName = "POST /v1/report-page-hub/negotiate без identity: 200, защита только на nginx")]
     public async Task NegotiateWithoutIdentity()
     {
@@ -47,12 +36,8 @@ public sealed class ReportPageHubContractTests(AppContractFixture fixture) : ICl
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    /// <summary>
-    /// Отказ метода хаба — такой же публичный провод, как событие, и до MAIN-69 он не был
-    /// снят ничем. Снимается настоящий completion error живого соединения, а не то, что
-    /// хаб бросает: рамку вокруг сообщения добавляет сам SignalR, и знать о ней контракт
-    /// обязан. Форма записана в <c>specs/contracts/events.yaml</c> (<c>methodError</c>).
-    /// </summary>
+    // Снимается настоящий completion error живого соединения: рамку вокруг сообщения добавляет
+    // сам SignalR. Форма записана в specs/contracts/events.yaml (methodError).
     [Fact(DisplayName = "Отказ метода хаба: payload {code, title} из общего каталога внутри рамки SignalR")]
     public async Task MethodFailureCarriesTheCatalogEnvelope()
     {
@@ -63,9 +48,8 @@ public sealed class ReportPageHubContractTests(AppContractFixture fixture) : ICl
         var exception = await Assert.ThrowsAsync<HubException>(
             () => connection.InvokeAsync("JoinReportGroupAsync", "404404404"));
 
-        // Источник истины по рамке — methodError.envelope в events.yaml, а не эта
-        // строка: гейт realtime-contract собирает префикс из контракта и требует, чтобы
-        // он встречался здесь дословно. Правка в одиночку — с любой из сторон — красная.
+        // Источник истины по рамке — methodError.envelope в events.yaml: гейт realtime-contract
+        // требует, чтобы префикс из контракта встречался здесь дословно.
         Assert.StartsWith(
             "An unexpected error occurred invoking 'JoinReportGroupAsync' on the server. RealtimeProblemException: ",
             exception.Message,
@@ -76,24 +60,18 @@ public sealed class ReportPageHubContractTests(AppContractFixture fixture) : ICl
 
         Assert.Equal("report_not_found", root.GetProperty("code").GetString());
         Assert.Equal("Репорт не найден", root.GetProperty("title").GetString());
-        // Ровно два поля: RFC-механики HTTP в сокете нет и быть не должно.
         Assert.Equal(2, root.EnumerateObject().Count());
     }
 
-    /// <summary>
-    /// Detailed errors отдают клиенту текст любого необработанного исключения в обход
-    /// фильтра границы. Проверяется настройка работающего хоста, а не строчка в коде.
-    /// </summary>
+    // Detailed errors отдают клиенту текст любого необработанного исключения в обход фильтра границы.
     [Fact(DisplayName = "У хаба выключены detailed errors")]
     public void DetailedErrorsAreOff()
     {
-        // Настройка глобальная: её задаёт AddSignalR, а не AddHubOptions<T>.
         var options = fixture.Services.GetRequiredService<IOptions<HubOptions>>().Value;
 
         Assert.False(options.EnableDetailedErrors);
     }
 
-    /// <summary>Наш слой — хвост после рамки, которую навесил SignalR.</summary>
     private static string PayloadOf(string message) =>
         message[(message.IndexOf(": ", StringComparison.Ordinal) + 2)..];
 
@@ -101,9 +79,7 @@ public sealed class ReportPageHubContractTests(AppContractFixture fixture) : ICl
         new HubConnectionBuilder()
             .WithUrl(new Uri(fixture.BaseAddress, "v1/report-page-hub"), options =>
             {
-                // У TestServer нет настоящего сокета: клиент ходит long polling'ом
-                // через его in-memory handler. Форма completion error от транспорта
-                // не зависит.
+                // У TestServer нет настоящего сокета — long polling через in-memory handler.
                 options.HttpMessageHandlerFactory = _ => fixture.CreateHandler();
                 options.Transports = HttpTransportType.LongPolling;
                 options.Headers.Add(ContractHeaders.UserId, scenario.UserId);

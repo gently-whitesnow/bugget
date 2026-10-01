@@ -9,10 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace Bugget.Api.Users.Controllers.TeamMembers;
 
-/// <summary>
-/// Участники команды. Маршруты и формы приходят из
-/// <c>specs/contracts/users/openapi.yaml</c> через <see cref="TeamMembersControllerBase"/>.
-/// </summary>
+/// <summary>Участники команды. Маршруты и формы — из <c>specs/contracts/users/openapi.yaml</c>.</summary>
 [ApiController]
 [Auth]
 [WorkspaceRequired]
@@ -21,9 +18,6 @@ public sealed class TeamMembersController(
     IOptions<TeamsOptions> teamsOptions,
     IOptions<SelfHostedOptions> selfHostedOptions) : TeamMembersControllerBase
 {
-    /// <summary>
-    /// Вступить в команду
-    /// </summary>
     public override async Task<IActionResult> JoinTeam(
         string workspaceId,
         int teamId,
@@ -34,9 +28,6 @@ public sealed class TeamMembersController(
         return Ok();
     }
 
-    /// <summary>
-    /// Получить участников команды
-    /// </summary>
     public override async Task<ActionResult<Bugget.Contracts.Users.Generated.TeamMembers>> ListTeamMembers(
         string workspaceId,
         int teamId,
@@ -47,9 +38,6 @@ public sealed class TeamMembersController(
         return members.ToView(sizeLimit).ToContract();
     }
 
-    /// <summary>
-    /// Выйти из команды
-    /// </summary>
     public override async Task<IActionResult> LeaveTeam(
         string workspaceId,
         int teamId,

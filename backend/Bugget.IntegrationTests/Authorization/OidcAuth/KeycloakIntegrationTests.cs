@@ -19,208 +19,7 @@ using MsOptions = Microsoft.Extensions.Options.Options;
 
 namespace Bugget.IntegrationTests.Authorization.OidcAuth;
 
-/// <summary>
-/// Shared Keycloak container fixture for all tests.
-/// </summary>
-public class KeycloakContainerFixture : IAsyncLifetime
-{
-    public IContainer Container { get; private set; } = null!;
-    public HttpClient HttpClient { get; private set; } = null!;
-    public string KeycloakUrl { get; private set; } = null!;
-
-    public const string Realm = "test-realm";
-    public const string ClientId = "test-client";
-    public const string ClientSecret = "test-secret";
-    public const string TestUsername = "testuser";
-    public const string TestPassword = "testpass";
-
-    public async Task InitializeAsync()
-    {
-        Container = new ContainerBuilder()
-            .WithImage("quay.io/keycloak/keycloak:26.0")
-            .WithCommand("start-dev")
-            .WithEnvironment("KEYCLOAK_ADMIN", "admin")
-            .WithEnvironment("KEYCLOAK_ADMIN_PASSWORD", "admin")
-            .WithPortBinding(8080, true)
-            // Строка «Listening on» в логе появляется раньше, чем admin-API начинает
-            // отвечать, поэтому ждём готовность именно по HTTP, а не паузой в тесте.
-            .WithWaitStrategy(Wait.ForUnixContainer()
-                .UntilMessageIsLogged("Listening on: http://0.0.0.0:8080")
-                .UntilHttpRequestIsSucceeded(request => request
-                    .ForPath("/realms/master/.well-known/openid-configuration")
-                    .ForPort(8080)))
-            .Build();
-
-        await Container.StartAsync();
-
-        var port = Container.GetMappedPublicPort(8080);
-        KeycloakUrl = $"http://localhost:{port}";
-
-        HttpClient = new HttpClient
-        {
-            BaseAddress = new Uri(KeycloakUrl),
-            Timeout = TimeSpan.FromSeconds(30)
-        };
-
-        // Setup realm, client, and user
-        await SetupKeycloakAsync();
-    }
-
-    public async Task DisposeAsync()
-    {
-        HttpClient.Dispose();
-        await Container.DisposeAsync();
-    }
-
-    private async Task SetupKeycloakAsync()
-    {
-        var adminToken = await GetAdminTokenAsync();
-        await CreateRealmAsync(adminToken);
-        await CreateClientAsync(adminToken);
-        await CreateUserAsync(adminToken);
-    }
-
-    public async Task<string> GetAdminTokenAsync()
-    {
-        var content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["grant_type"] = "password",
-            ["client_id"] = "admin-cli",
-            ["username"] = "admin",
-            ["password"] = "admin"
-        });
-
-        var response = await HttpClient.PostAsync("/realms/master/protocol/openid-connect/token", content);
-        response.EnsureSuccessStatusCode();
-
-        var json = await response.Content.ReadAsStringAsync();
-        var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(json);
-        return tokenResponse!.AccessToken!;
-    }
-
-    private async Task CreateRealmAsync(string adminToken)
-    {
-        var realm = new
-        {
-            realm = Realm,
-            enabled = true,
-            sslRequired = "none"
-        };
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/admin/realms");
-        request.Headers.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
-        request.Content = new StringContent(
-            JsonSerializer.Serialize(realm),
-            System.Text.Encoding.UTF8,
-            "application/json");
-
-        var response = await HttpClient.SendAsync(request);
-        if (response.StatusCode != HttpStatusCode.Created && response.StatusCode != HttpStatusCode.Conflict)
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Failed to create realm: {response.StatusCode} - {error}");
-        }
-    }
-
-    private async Task CreateClientAsync(string adminToken)
-    {
-        var client = new
-        {
-            clientId = ClientId,
-            enabled = true,
-            protocol = "openid-connect",
-            publicClient = false,
-            secret = ClientSecret,
-            directAccessGrantsEnabled = true,
-            standardFlowEnabled = true,
-            redirectUris = new[] { "*" },
-            webOrigins = new[] { "*" }
-        };
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/admin/realms/{Realm}/clients");
-        request.Headers.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
-        request.Content = new StringContent(
-            JsonSerializer.Serialize(client),
-            System.Text.Encoding.UTF8,
-            "application/json");
-
-        var response = await HttpClient.SendAsync(request);
-        if (response.StatusCode != HttpStatusCode.Created && response.StatusCode != HttpStatusCode.Conflict)
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Failed to create client: {response.StatusCode} - {error}");
-        }
-    }
-
-    private async Task CreateUserAsync(string adminToken)
-    {
-        // Create user with credentials in one request
-        var user = new
-        {
-            username = TestUsername,
-            email = "test@example.com",
-            firstName = "Test",
-            lastName = "User",
-            emailVerified = true,
-            enabled = true,
-            requiredActions = Array.Empty<string>(),
-            credentials = new[]
-            {
-                new
-                {
-                    type = "password",
-                    value = TestPassword,
-                    temporary = false
-                }
-            }
-        };
-
-        using var createRequest = new HttpRequestMessage(HttpMethod.Post, $"/admin/realms/{Realm}/users");
-        createRequest.Headers.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
-        createRequest.Content = new StringContent(
-            JsonSerializer.Serialize(user),
-            System.Text.Encoding.UTF8,
-            "application/json");
-
-        var createResponse = await HttpClient.SendAsync(createRequest);
-        if (createResponse.StatusCode != HttpStatusCode.Created && createResponse.StatusCode != HttpStatusCode.Conflict)
-        {
-            var error = await createResponse.Content.ReadAsStringAsync();
-            throw new Exception($"Failed to create user: {createResponse.StatusCode} - {error}");
-        }
-    }
-
-    public class TokenResponse
-    {
-        [System.Text.Json.Serialization.JsonPropertyName("access_token")]
-        public string? AccessToken { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("id_token")]
-        public string? IdToken { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("refresh_token")]
-        public string? RefreshToken { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("token_type")]
-        public string? TokenType { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("expires_in")]
-        public int ExpiresIn { get; set; }
-    }
-}
-
-[CollectionDefinition("Keycloak")]
-public class KeycloakCollection : ICollectionFixture<KeycloakContainerFixture>
-{
-}
-
-/// <summary>
-/// Integration tests with real Keycloak container.
-/// Tests the full OIDC flow: login → token exchange → user info.
-/// </summary>
+/// <summary>Integration tests with real Keycloak: login → token exchange → user info.</summary>
 [Collection("Keycloak")]
 public class KeycloakIntegrationTests
 {
@@ -236,10 +35,8 @@ public class KeycloakIntegrationTests
     [Fact]
     public async Task Keycloak_CanGetAdminToken()
     {
-        // Act
         var token = await _fixture.GetAdminTokenAsync();
 
-        // Assert
         Assert.False(string.IsNullOrEmpty(token));
         _output.WriteLine($"Got admin token: {token[..50]}...");
     }
@@ -247,10 +44,8 @@ public class KeycloakIntegrationTests
     [Fact]
     public async Task Keycloak_CanAuthenticateUser_WithPasswordGrant()
     {
-        // Act
         var tokenResponse = await GetUserTokenAsync();
 
-        // Assert
         Assert.NotNull(tokenResponse);
         Assert.False(string.IsNullOrEmpty(tokenResponse.AccessToken));
         Assert.False(string.IsNullOrEmpty(tokenResponse.IdToken));
@@ -260,15 +55,13 @@ public class KeycloakIntegrationTests
     [Fact]
     public async Task Keycloak_TokenContainsSubClaim()
     {
-        // Arrange
         var tokenResponse = await GetUserTokenAsync();
 
-        // Act - decode the id_token to get sub claim
+        // Decode the id_token to get sub claim
         var idTokenParts = tokenResponse.IdToken!.Split('.');
         var payload = Base64UrlDecode(idTokenParts[1]);
         var claims = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(payload);
 
-        // Assert
         Assert.NotNull(claims);
         Assert.True(claims!.ContainsKey("sub"));
         var sub = claims["sub"].GetString();
@@ -279,10 +72,8 @@ public class KeycloakIntegrationTests
     [Fact]
     public async Task Keycloak_CanGetUserInfo()
     {
-        // Arrange
         var tokenResponse = await GetUserTokenAsync();
 
-        // Act
         using var request = new HttpRequestMessage(HttpMethod.Get,
             $"/realms/{KeycloakContainerFixture.Realm}/protocol/openid-connect/userinfo");
         request.Headers.Authorization =
@@ -290,7 +81,6 @@ public class KeycloakIntegrationTests
 
         var response = await _fixture.HttpClient.SendAsync(request);
 
-        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         var userInfo = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(content);
@@ -303,11 +93,9 @@ public class KeycloakIntegrationTests
     [Fact]
     public async Task Keycloak_DiscoveryEndpointWorks()
     {
-        // Act
         var response = await _fixture.HttpClient.GetAsync(
             $"/realms/{KeycloakContainerFixture.Realm}/.well-known/openid-configuration");
 
-        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
         var disco = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(content);
@@ -323,7 +111,6 @@ public class KeycloakIntegrationTests
     [Fact]
     public async Task OidcTokenValidator_ValidatesKeycloakToken()
     {
-        // Arrange - get a real token from Keycloak
         var tokenResponse = await GetUserTokenAsync();
         var accessToken = tokenResponse.AccessToken!;
 
@@ -360,7 +147,6 @@ public class KeycloakIntegrationTests
 
         var tokenHandler = new JwtSecurityTokenHandler();
 
-        // Act - validate directly
         ClaimsPrincipal? principal = null;
         try
         {
@@ -372,7 +158,6 @@ public class KeycloakIntegrationTests
             throw;
         }
 
-        // Assert
         Assert.NotNull(principal);
 
         // Debug: print all claims
@@ -391,7 +176,6 @@ public class KeycloakIntegrationTests
     [Fact]
     public async Task OidcTokenValidator_RejectsInvalidToken()
     {
-        // Arrange
         var oidcOptions = MsOptions.Create(new OidcAuthOptions
         {
             Authority = $"{_fixture.KeycloakUrl}/realms/{KeycloakContainerFixture.Realm}",
@@ -401,21 +185,19 @@ public class KeycloakIntegrationTests
 
         var validator = new OidcTokenValidator(oidcOptions, NullLogger<OidcTokenValidator>.Instance);
 
-        // Act - try to validate a garbage token
+        // Try to validate a garbage token
         var principal = await validator.ValidateTokenAsync("invalid.token.here");
 
-        // Assert
         Assert.Null(principal);
     }
 
     [Fact]
     public async Task OidcTokenValidator_ValidatesIdToken()
     {
-        // Arrange - get a real token from Keycloak
         var tokenResponse = await GetUserTokenAsync();
         var idToken = tokenResponse.IdToken!;
 
-        // Create our validator - id_token has audience = client_id
+        // id_token has audience = client_id
         var oidcOptions = MsOptions.Create(new OidcAuthOptions
         {
             Authority = $"{_fixture.KeycloakUrl}/realms/{KeycloakContainerFixture.Realm}",
@@ -426,10 +208,8 @@ public class KeycloakIntegrationTests
 
         var validator = new OidcTokenValidator(oidcOptions, NullLogger<OidcTokenValidator>.Instance);
 
-        // Act - validate the id_token
         var principal = await validator.ValidateTokenAsync(idToken);
 
-        // Assert
         Assert.NotNull(principal);
         var subject = validator.GetSubject(principal);
         Assert.False(string.IsNullOrEmpty(subject));
@@ -455,7 +235,7 @@ public class KeycloakIntegrationTests
         {
             var error = await response.Content.ReadAsStringAsync();
             _output.WriteLine($"Token request failed: {response.StatusCode} - {error}");
-            throw new Exception($"Token request failed: {response.StatusCode} - {error}");
+            throw new InvalidOperationException($"Token request failed: {response.StatusCode} - {error}");
         }
 
         var json = await response.Content.ReadAsStringAsync();

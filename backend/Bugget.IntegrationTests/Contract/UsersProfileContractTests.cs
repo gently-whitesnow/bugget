@@ -7,9 +7,8 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Контракт модуля users в части профиля: сам пользователь, аватар, привязки
-/// провайдеров и Mattermost. Фронт зовёт эти пути с контекстом workspace/team
-/// (<c>usersPathWithContext</c>), поэтому и здесь они с ним.
+/// Контракт users в части профиля: пользователь, аватар, привязки провайдеров и Mattermost. Фронт зовёт эти пути
+/// с контекстом workspace/team (<c>usersPathWithContext</c>), поэтому и здесь они с ним.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class UsersProfileContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
@@ -28,10 +27,8 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
     [Fact(DisplayName = "GET .../users: нечисловые workspaceId/teamId в пути — ответ тот же, не 400")]
     public async Task GetUserWithNonNumericContext()
     {
-        // Сегменты контекста в этих путях ручка не использует: пользователь берётся
-        // из identity, а идентификаторы до contract-first вообще не связывались.
-        // Контракт описывает их строками — иначе мусор в сегменте начал бы отбиваться
-        // как 400 на связывании, чего раньше не было.
+        // Сегменты контекста ручка не использует (пользователь — из identity), и до contract-first они не связывались;
+        // контракт описывает их строками, иначе мусор в сегменте начал бы отбиваться 400, чего раньше не было.
         var scenario = await UsersScenario.CreateAsync(fixture);
 
         var response = await scenario.Client.GetAsync("/v1/workspaces/not-a-number/teams/also-not/users");
@@ -77,8 +74,7 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
             scenario.TeamPath("/users/autocomplete?searchString=&skip=0&take=10"));
 
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
-        // Команда по умолчанию общая на прогон, поэтому в выдаче есть и соседние
-        // пользователи: проверяется, что автодополнение видит вступившего.
+        // Команда по умолчанию общая на прогон, в выдаче есть соседи: проверяем, что автодополнение видит вступившего.
         var users = body.GetProperty("users").EnumerateArray().ToArray();
         Assert.True(body.GetProperty("total").GetInt32() >= users.Length);
         Assert.Contains(
@@ -102,8 +98,7 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
         var byId = await scenario.Client.GetAsync(scenario.TeamPath($"/users/{scenario.UserId}/avatar/content"));
         Assert.Equal(HttpStatusCode.OK, byId.StatusCode);
 
-        // Загрузка отвечает 200, снятие — 204: асимметрия на проводе, и фронт
-        // разбирает оба ответа как «тела нет».
+        // Загрузка отвечает 200, снятие — 204: асимметрия на проводе, фронт разбирает оба как «тела нет».
         var deleted = await scenario.Client.DeleteAsync(scenario.TeamPath("/users/avatar"));
         await ContractResponse.EmptyAsync(deleted, HttpStatusCode.NoContent);
     }
@@ -169,9 +164,7 @@ public sealed class UsersProfileContractTests(AppContractFixture fixture) : ICla
         await ContractResponse.EmptyAsync(response, HttpStatusCode.OK);
     }
 
-    /// <summary>
-    /// Ручки профиля отдают пользователя из identity, а не из сегментов пути.
-    /// </summary>
+    // Ручки профиля отдают пользователя из identity, а не из сегментов пути.
     private static void AssertIsSelf(JsonElement user, UsersScenario scenario)
     {
         Assert.Equal(scenario.UserId.ToString(CultureInfo.InvariantCulture), user.GetProperty("id").GetString());

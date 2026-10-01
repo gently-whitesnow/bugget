@@ -7,15 +7,9 @@ import {
 } from "@/shared/config";
 
 /**
- * Числовые enum'ы SignalR → значения провода.
- *
- * HTTP перешёл на строки `snake_case` (ADR-0013), realtime-контракт остался
- * числовым и меняется отдельным решением (ADR-0007). Шов между ними — здесь, а
- * не в компонентах: иначе на странице репорта одно и то же поле имело бы два
- * представления в зависимости от того, каким путём приехало.
- *
- * Порядок значений повторяет числа домена. Неизвестное число не подменяется
- * «ближайшим»: молча показать чужой статус хуже, чем упасть на шве.
+ * Числовые enum'ы SignalR (ADR-0007) → строковые значения провода (ADR-0013).
+ * Порядок повторяет числа домена. Неизвестное число не подменяется «ближайшим»:
+ * молча показать чужой статус хуже, чем упасть на шве.
  */
 const reportStatuses = [
   ReportStatuses.BACKLOG,
@@ -80,10 +74,7 @@ export const commentAudienceFromSocket = (value: number): CommentAudiences =>
 export const attachTypeFromSocket = (value: number): AttachmentTypes =>
   decode(attachmentTypes, value, "attachType");
 
-/**
- * Разведение вложений по владельцу: события всех трёх семейств приходят одной
- * формой, и адресат определяется только типом.
- */
+/** Все три семейства событий одной формы — адресата определяет только тип. */
 export const isCommentAttachment = (value: number): boolean =>
   attachTypeFromSocket(value) === AttachmentTypes.COMMENT;
 

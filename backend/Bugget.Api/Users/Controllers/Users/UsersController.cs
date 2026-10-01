@@ -11,15 +11,10 @@ using HttpProblemDetailsFactory = Bugget.Api.Http.ProblemDetailsFactory;
 
 namespace Bugget.Api.Users.Controllers;
 
-/// <summary>
-/// Профиль пользователя. Маршруты и формы приходят из
-/// <c>specs/contracts/users/openapi.yaml</c> через <see cref="UsersControllerBase"/>.
-/// </summary>
+/// <summary>Профиль пользователя; маршруты и формы — из <c>specs/contracts/users/openapi.yaml</c>.</summary>
 /// <remarks>
-/// Все ручки живут по адресу с контекстом
-/// <c>/v1/workspaces/{workspaceId}/teams/{teamId}/users/**</c> — по нему ходит фронт.
-/// Идентификаторы из пути не используются: пользователь всегда берётся из identity,
-/// поэтому <c>workspaceId</c> и <c>teamId</c> здесь игнорируются.
+/// Ручки живут под <c>/v1/workspaces/{workspaceId}/teams/{teamId}/users/**</c> (по нему ходит фронт), но
+/// <c>workspaceId</c> и <c>teamId</c> игнорируются: пользователь всегда берётся из identity.
 /// </remarks>
 [ApiController]
 [Auth]
@@ -27,9 +22,6 @@ public sealed class UsersController(
     IUsersService userService,
     IUserExternalLinksService externalLinksService) : UsersControllerBase
 {
-    /// <summary>
-    /// Получить пользователя
-    /// </summary>
     public override async Task<ActionResult<User>> GetUserInContext(
         string workspaceId,
         string teamId,
@@ -45,9 +37,6 @@ public sealed class UsersController(
         return Ok(user.ToUserView(identity.WorkspaceRole).ToContract());
     }
 
-    /// <summary>
-    /// Обновить данные пользователя
-    /// </summary>
     public override async Task<ActionResult<UserProfile>> PutUserInContext(
         string workspaceId,
         string teamId,
@@ -59,9 +48,6 @@ public sealed class UsersController(
         return updated.ToContract();
     }
 
-    /// <summary>
-    /// Удалить пользователя
-    /// </summary>
     public override async Task<IActionResult> DeleteUserInContext(
         string workspaceId,
         string teamId,
@@ -72,9 +58,6 @@ public sealed class UsersController(
         return Ok();
     }
 
-    /// <summary>
-    /// Получение пользователей по id
-    /// </summary>
     [WorkspaceRequired]
     public override async Task<ActionResult<ICollection<User>>> ListUsersInContext(
         string workspaceId,
@@ -96,13 +79,7 @@ public sealed class UsersController(
         return users.Select(e => e.ToUserView(user.WorkspaceRole).ToContract()).ToList();
     }
 
-    /// <summary>
-    /// Поиск пользователей по имени
-    /// </summary>
-    /// <remarks>
-    /// Диапазоны skip/take объявлены здесь: генератор minimum/maximum
-    /// query-параметров в атрибуты не переносит.
-    /// </remarks>
+    // skip/take ограничены здесь: генератор не переносит minimum/maximum query-параметров в атрибуты.
     [WorkspaceRequired]
     public override async Task<ActionResult<AutocompleteUsers>> AutocompleteUsersInContext(
         string workspaceId,
@@ -132,9 +109,6 @@ public sealed class UsersController(
         }.ToContract());
     }
 
-    /// <summary>
-    /// Список привязанных провайдеров текущего пользователя
-    /// </summary>
     public override async Task<ActionResult<ICollection<ExternalLink>>> GetExternalLinksInContext(
         string workspaceId,
         string teamId,
@@ -147,9 +121,7 @@ public sealed class UsersController(
             .ToList();
     }
 
-    /// <summary>
-    /// Отвязать провайдера (нельзя отвязать последний способ входа)
-    /// </summary>
+    /// <summary>Отвязать провайдера (нельзя отвязать последний способ входа).</summary>
     public override async Task<IActionResult> UnlinkProviderInContext(
         string workspaceId,
         string teamId,
@@ -172,9 +144,7 @@ public sealed class UsersController(
         return NoContent();
     }
 
-    /// <summary>
-    /// Мёрж аккаунтов: перенести данные sourceUser → текущий пользователь
-    /// </summary>
+    /// <summary>Мёрж аккаунтов: перенести данные sourceUser → текущий пользователь.</summary>
     public override async Task<IActionResult> MergeUsersInContext(
         string workspaceId,
         string teamId,
@@ -207,9 +177,6 @@ public sealed class UsersController(
         return Ok();
     }
 
-    /// <summary>
-    /// Привязать Mattermost аккаунт вручную
-    /// </summary>
     public override async Task<IActionResult> LinkMattermostInContext(
         string workspaceId,
         string teamId,
@@ -226,9 +193,6 @@ public sealed class UsersController(
         return NoContent();
     }
 
-    /// <summary>
-    /// Отвязать Mattermost аккаунт
-    /// </summary>
     public override async Task<IActionResult> UnlinkMattermostInContext(
         string workspaceId,
         string teamId,

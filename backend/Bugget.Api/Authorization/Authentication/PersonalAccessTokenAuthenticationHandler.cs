@@ -11,10 +11,7 @@ using Microsoft.Net.Http.Headers;
 
 namespace Bugget.Api.Authorization.Authentication;
 
-/// <summary>
-/// Bearer PAT (<c>bgt_pat_*</c>) для nginx <c>auth_request</c>. Identity — владелец токена;
-/// <see cref="AuthMethods.Pat"/> уходит в <c>Auth-Request-Auth-Method</c> для P0.
-/// </summary>
+/// <summary>Bearer PAT (<c>bgt_pat_*</c>) для nginx <c>auth_request</c>; identity — владелец токена, метод <see cref="AuthMethods.Pat"/>.</summary>
 public sealed class PersonalAccessTokenAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
@@ -27,11 +24,9 @@ public sealed class PersonalAccessTokenAuthenticationHandler(
     private const string BearerPrefix = "Bearer ";
 
     /// <summary>
-    /// Троттлинг по открытому префиксу предъявленного токена: считаются только
-    /// неудачи (проверка — до похода в БД, запись — после провала), поэтому
-    /// валидный токен агента окно не наполняет, сколько бы запросов он ни делал.
-    /// Переполненное окно режет и походы в БД за заведомым мусором. Statics
-    /// сознательно: хендлер создаётся на запрос, а окно должно жить дольше.
+    /// Троттлинг по открытому префиксу токена: считаются только неудачи, поэтому валидный
+    /// токен окно не наполняет; переполненное окно режет и походы в БД за мусором.
+    /// Static сознательно: хендлер создаётся на запрос, а окно должно жить дольше.
     /// </summary>
     private static readonly FixedWindowLimiter FailedAttempts =
         new(TimeProvider.System, limit: 10, window: TimeSpan.FromMinutes(5));

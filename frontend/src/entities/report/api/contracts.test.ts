@@ -11,13 +11,8 @@ import type {
 } from "./contracts";
 
 /**
- * Формы модуля `reports` выведены из контракта, поэтому проверять «совпадает ли
- * DTO с yaml» больше нечего — совпадение обеспечено выводом типа. Что проверять
- * нужно, так это сужения, которые фронт делает поверх контракта: у каждого есть
- * причина, и ни одно не должно съесть живое поле провода молча.
- *
- * Равенства держит `tsc --noEmit` (гейт `frontend-typecheck`); тест фиксирует
- * намерение и падает вместе с типами.
+ * Формы выведены из контракта; проверяются сужения фронта поверх него — ни одно
+ * не должно молча съесть живое поле. Равенства держит `tsc --noEmit`.
  */
 
 type Schemas = components["schemas"];
@@ -45,20 +40,14 @@ const commentIsWireComment: Equal<
   Camelized<Schemas["Comment"]>
 > = true;
 
-/**
- * Ответ создания и обновления комментария вложений не отдаёт: `CommentSummary`
- * отличается от `Comment` ровно отсутствием `attachments`.
- */
+/** `CommentSummary` — это `Comment` без `attachments`. */
 const commentSummaryHasNoAttachments: Equal<
   keyof CommentSummaryResponse,
   Exclude<keyof CommentResponse, "attachments">
 > = true;
 
-/**
- * Баг в сторе — тот же баг провода без `steps` (у шагов свой стор) плюс
- * клиентские поля. `reportId` здесь alias репорта, а не числовой `report_id`
- * провода: по нему баги группируются в сторе.
- */
+// Баг стора — баг провода без `steps` (у шагов свой стор) плюс клиентские поля.
+// `reportId` здесь alias репорта, а не числовой `report_id` провода.
 const storeBugKeepsEveryWireField: Equal<
   keyof BugClientEntity,
   Exclude<keyof BugResponse, "steps"> | "clientId" | "isLocalOnly"

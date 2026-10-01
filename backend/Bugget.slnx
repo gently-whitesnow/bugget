@@ -1,0 +1,15 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Bugget.Api/Bugget.Api.csproj" />
+  <Project Path="Bugget.Application/Bugget.Application.csproj" />
+  <Project Path="Bugget.Architecture.Tests/Bugget.Architecture.Tests.csproj" />
+  <Project Path="Bugget.Contracts/Bugget.Contracts.csproj" />
+  <Project Path="Bugget.Domain/Bugget.Domain.csproj" />
+  <Project Path="Bugget.Infrastructure/Bugget.Infrastructure.csproj" />
+  <Project Path="Bugget.IntegrationTests/Bugget.IntegrationTests.csproj" />
+  <Project Path="Bugget.UnitTests/Bugget.UnitTests.csproj" />
+</Solution>

@@ -8,19 +8,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Bugget.Api.Users.Controllers.Workspaces;
 
-/// <summary>
-/// Административные операции над рабочим пространством. Маршруты и формы приходят
-/// из <c>specs/contracts/users/openapi.yaml</c> через
-/// <see cref="WorkspacesAdminControllerBase"/>.
-/// </summary>
+/// <summary>Маршруты и формы — из <c>specs/contracts/users/openapi.yaml</c> через <see cref="WorkspacesAdminControllerBase"/>.</summary>
 [ApiController]
 [Auth(Roles = "admin")]
 [WorkspaceRequired]
 public sealed class WorkspacesAdminController(IWorkspacesService workspacesService) : WorkspacesAdminControllerBase
 {
-    /// <summary>
-    /// Переименовать рабочую область
-    /// </summary>
     public override Task<ActionResult<Workspace>> UpdateWorkspace(
         int workspaceId,
         WorkspaceUpdateRequest body,
@@ -32,13 +25,8 @@ public sealed class WorkspacesAdminController(IWorkspacesService workspacesServi
             .AsContractResultAsync(HttpContext, model => model.ToContract());
     }
 
-    /// <summary>
-    /// Удалить рабочую область
-    /// </summary>
-    /// <remarks>
-    /// Удаляется текущая область пользователя, а не та, что в пути: так было и до
-    /// contract-first, идентификатор в адресе оставлен ради формы URL.
-    /// </remarks>
+    // Удаляется текущая область пользователя, а не та, что в пути: так было и до
+    // contract-first, идентификатор в адресе оставлен ради формы URL.
     public override Task<IActionResult> DeleteWorkspace(
         string workspaceId,
         CancellationToken cancellationToken = default)

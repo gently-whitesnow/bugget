@@ -15,10 +15,8 @@ using Moq;
 namespace Bugget.UnitTests.Services.Reports;
 
 /// <summary>
-/// Подпись инициатора в уведомлении о смене ответственного. До kaiten 238350
-/// агент никогда не менял ответственного, и этот путь для него не открывался;
-/// теперь открывается — и обязан подписываться агентом, а не именем владельца
-/// токена (тот же принцип, что в подписи бага, kaiten 237718).
+/// Подпись инициатора в уведомлении о смене ответственного: с kaiten 238350 агент может менять ответственного
+/// и обязан подписываться агентом, а не именем владельца токена (как в подписи бага, kaiten 237718).
 /// </summary>
 public sealed class AgentPatchNotificationTests : IDisposable
 {
@@ -105,17 +103,14 @@ public sealed class AgentPatchNotificationTests : IDisposable
         MattermostUserId = mattermostUserId,
     };
 
-    /// <summary>
-    /// Отвечает на три запроса, которые делает <see cref="MattermostClient"/>
-    /// (кто я → личный канал → пост), и запоминает текст отправленного сообщения.
-    /// </summary>
+    /// <summary>Отвечает на три запроса <see cref="MattermostClient"/> (кто я → личный канал → пост) и запоминает текст сообщения.</summary>
     private sealed class CapturingHandler(List<string> sentMessages) : HttpMessageHandler
     {
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
-            if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath.EndsWith("/posts"))
+            if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath.EndsWith("/posts", StringComparison.Ordinal))
             {
                 var body = await request.Content!.ReadAsStringAsync(cancellationToken);
                 sentMessages.Add(JsonDocument.Parse(body).RootElement.GetProperty("message").GetString()!);

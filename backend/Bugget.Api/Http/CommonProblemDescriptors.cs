@@ -3,13 +3,8 @@ using Microsoft.AspNetCore.Http;
 namespace Bugget.Api.Http;
 
 /// <summary>
-/// Каталог дескрипторов, которые не принадлежат ни одному прикладному модулю: это
-/// ошибки самой границы — валидация модели, отказ аутентификации и авторизации,
-/// промах маршрутизации, неподходящий метод или media type, необработанное исключение.
-///
-/// Дескриптор здесь один на класс ошибки и не зависит от транспорта: HTTP-adapter
-/// строит из него RFC 9457, SignalR — свой payload. Модули собственных кодов на эти
-/// же классы не заводят (ADR-0008).
+/// Дескрипторы ошибок самой границы (валидация, аутентификация, маршрутизация, необработанное исключение).
+/// Один на класс ошибки и не зависит от транспорта; модули своих кодов на эти классы не заводят (ADR-0008).
 /// </summary>
 public static class CommonProblemDescriptors
 {
@@ -17,8 +12,7 @@ public static class CommonProblemDescriptors
     public static readonly ProblemDescriptor BadRequest = new("bad_request", "Некорректный запрос", StatusCodes.Status400BadRequest);
     public static readonly ProblemDescriptor Unauthorized = new("unauthorized", "Требуется аутентификация", StatusCodes.Status401Unauthorized);
     public static readonly ProblemDescriptor Forbidden = new("forbidden", "Доступ запрещён", StatusCodes.Status403Forbidden);
-    // Код и заголовок совпадают с доменным «объект не найден» намеренно: у клиента это
-    // одна и та же ветка, а два кода на один класс ошибки — это два каталога.
+    // Совпадает с доменным «объект не найден» намеренно: у клиента это одна ветка, два кода — два каталога.
     public static readonly ProblemDescriptor NotFound = new("not_found", "Объект не найден", StatusCodes.Status404NotFound);
     public static readonly ProblemDescriptor MethodNotAllowed = new("method_not_allowed", "Метод не поддерживается", StatusCodes.Status405MethodNotAllowed);
     public static readonly ProblemDescriptor UnsupportedMediaType = new("unsupported_media_type", "Неподдерживаемый тип содержимого", StatusCodes.Status415UnsupportedMediaType);
@@ -36,10 +30,8 @@ public static class CommonProblemDescriptors
     };
 
     /// <summary>
-    /// Дескриптор для ответа, который сформировал сам фреймворк и у которого нет ничего,
-    /// кроме статуса. Незнакомый статус не остаётся без кода: он получает выводимый из
-    /// статуса <c>http_&lt;status&gt;</c>, потому что ответ без стабильного кода клиенту
-    /// разбирать нечем.
+    /// Для ответа фреймворка, у которого есть только статус. Незнакомый статус получает
+    /// <c>http_&lt;status&gt;</c>: без стабильного кода клиенту разбирать ответ нечем.
     /// </summary>
     public static ProblemDescriptor ForStatus(int status) =>
         ByStatus.TryGetValue(status, out var descriptor)

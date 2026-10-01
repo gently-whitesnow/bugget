@@ -13,10 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Bugget.Api.Authorization.Controllers;
 
-/// <summary>
-/// Выход из системы. Маршрут и форма ответа приходят из
-/// <c>specs/contracts/authorization/openapi.yaml</c> через <see cref="AuthControllerBase"/>.
-/// </summary>
+/// <summary>Выход из системы. Маршрут и форма ответа — из <c>specs/contracts/authorization/openapi.yaml</c>.</summary>
 [ApiController]
 public class AuthController(
     IRefreshRevocationStore revocation,
@@ -24,9 +21,6 @@ public class AuthController(
     IRedirectService redirectService
     ) : AuthControllerBase
 {
-    /// <summary>
-    /// Метод разлогина.
-    /// </summary>
     [JwtAuth]
     public override async Task<ActionResult<LogoutResult>> Logout(CancellationToken cancellationToken = default)
     {
@@ -40,7 +34,6 @@ public class AuthController(
             await revocation.RevokeAsync(jti, RefreshTokenRevocation.RevokedUntil(exp));
         }
 
-        // чистим cookies
         HttpContext.Response.Cookies.Delete("access_token");
         HttpContext.Response.Cookies.Delete("refresh_token");
 

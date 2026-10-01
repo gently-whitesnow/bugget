@@ -11,24 +11,13 @@ using ModelContextProtocol.Protocol;
 namespace Bugget.Api.Mcp;
 
 /// <summary>
-/// Выдача содержимого вложения инструменту <c>get_attachment</c>: что именно и в
-/// каком виде уходит модели. Правила экономии токенов зашиты здесь, а не
-/// оставлены на усмотрение вызывающего:
-///
-/// - картинки — превью по умолчанию, оригинал только по явному флагу;
-/// - видео — байты не уходят никогда, только кадр-превью и ссылка для человека;
-/// - текст — как есть, без перекодировок, с пагинацией по символам.
-///
-/// Русский текст не конвертируется: наружу он уходит отдельным текстовым блоком
-/// JSON-RPC, а не внутри сериализованного JSON, поэтому экранирование
-/// <c>\uXXXX</c> ему не грозит вовсе.
+/// Содержимое вложения для <c>get_attachment</c>; правила экономии токенов зашиты здесь: картинки — превью,
+/// оригинал только по флагу; видео — байты не уходят никогда; текст — как есть, с пагинацией по символам.
+/// Русский текст уходит отдельным текстовым блоком JSON-RPC, поэтому экранирование \uXXXX ему не грозит.
 /// </summary>
 internal sealed class McpAttachmentContent(IAttachmentService attachmentService)
 {
-    /// <summary>
-    /// Потолок и умолчание страницы текста — в символах, потому что токены модель
-    /// платит за символы, а не за байты хранилища.
-    /// </summary>
+    /// <summary>Страница текста меряется в символах: токены модель платит за символы, а не за байты.</summary>
     public const int DefaultMaxChars = 20_000;
 
     public const int MaxMaxChars = 50_000;
@@ -97,11 +86,8 @@ internal sealed class McpAttachmentContent(IAttachmentService attachmentService)
         }
     }
 
-    /// <summary>
-    /// Текст читается целиком, чтобы честно посчитать <c>total_chars</c>: файл в
-    /// хранилище может лежать gzip'ом, и его длина в байтах о символах не говорит.
-    /// Потолок размера текстовых вложений держит загрузка, а не это чтение.
-    /// </summary>
+    /// <summary>Текст читается целиком ради честного <c>total_chars</c>: в хранилище он может лежать gzip'ом.
+    /// Потолок размера текстовых вложений держит загрузка, а не это чтение.</summary>
     private async Task<List<ContentBlock>> BuildTextAsync(
         UserIdentity user,
         string reportId,
@@ -202,12 +188,3 @@ internal sealed class McpAttachmentContent(IAttachmentService attachmentService)
         }
     }
 }
-
-/// <summary>
-/// Вложение вместе с координатами родителя в дереве репорта: сервисные методы
-/// чтения требуют bugId и идентификатор комментария либо шага.
-/// </summary>
-/// <param name="Attachment">Само вложение из дерева репорта.</param>
-/// <param name="BugId">Баг, в поддереве которого нашлось вложение.</param>
-/// <param name="ParentId">Комментарий или шаг; для вложения самого бага не используется.</param>
-internal sealed record LocatedAttachment(Attachment Attachment, int BugId, int ParentId);

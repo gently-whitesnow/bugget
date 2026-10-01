@@ -34,7 +34,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<IConnectionMultiplexer>(
             _ => ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable(Constants.RedisConnectionStringEnv)
-                                                                            ?? throw new ApplicationException($"Не задана строка подключения к Redis, env=[{Constants.RedisConnectionStringEnv}]")));
+                                                                            ?? throw new InvalidOperationException($"Не задана строка подключения к Redis, env=[{Constants.RedisConnectionStringEnv}]")));
 
         services.AddSingleton<IRefreshRevocationStore, TokenRevocationRedisClient>();
         services.AddSingleton<IRefreshRotationCache, RefreshRotationRedisCache>();

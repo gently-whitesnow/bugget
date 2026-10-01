@@ -15,15 +15,8 @@ import {
 } from "./settings";
 import type { SettingResult, SettingValuesBody } from "./settings";
 
-/**
- * Провод модуля `settings` после переезда на общую границу
- * `shared/api/operation.ts`.
- *
- * Механика вызова сменилась, публичный контракт — нет: тест смотрит на то, что
- * реально уходит в сеть (URL, метод, тело) и что доезжает до UI. Фикстуры
- * объявлены типами схем контракта, поэтому провод здесь не выдуман: лишний или
- * потерянный ключ — ошибка компиляции в гейте `frontend-typecheck`.
- */
+// Тест смотрит на реальный провод (URL, метод, тело). Фикстуры типизированы
+// схемами контракта: лишний или потерянный ключ — ошибка компиляции.
 
 const wireSections: components["schemas"]["SettingsSections"] = {
   workspace_sections: [
@@ -71,7 +64,6 @@ const wireSections: components["schemas"]["SettingsSections"] = {
   user_sections: [],
 };
 
-/** Ответ PUT-ручек: одна обновлённая настройка, snake_case. */
 const wireSetting: components["schemas"]["Setting"] = {
   id: "kaiten_url",
   title: "Адрес Kaiten",
@@ -120,12 +112,10 @@ const respondWithProblem = (status: number, data: unknown) => {
 
 const lastRequest = () => sent[sent.length - 1];
 
-/** Префикс, который навешивает интерсептор appApi на путь модуля. */
 const contextPrefix = "/api/app/workspaces/7/teams/11";
 
 beforeEach(() => {
   sent = [];
-  // Контекст задаётся явно: путь ручки собирает интерсептор appApi.
   setAppContext(7, 11);
 });
 
@@ -299,11 +289,8 @@ describe("обновление настройки", () => {
   });
 });
 
-/*
- * Ниже — проверки уровня типов: их держит `tsc --noEmit` в гейте frontend-typecheck.
- */
+// Проверки уровня типов держит `tsc --noEmit` (гейт frontend-typecheck).
 
-/** Строгое равенство типов: при расхождении `false` не присвоится `true`. */
 type Equal<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
     ? true
@@ -313,12 +300,7 @@ type Json200<O extends keyof operations> = Camelized<
   operations[O]["responses"][200]["content"]["application/json"]
 >;
 
-/*
- * Сигнатуры ручек выведены из операций контракта — второго представления тела,
- * сегментов и ответа рядом нет. Раньше это доказывалось через module-local
- * дескриптор (`settingsRoutes`, `SettingsMethod`); теперь связь «путь + метод →
- * операция» держит общая граница, и проверять остаётся сами ручки.
- */
+// Сигнатуры ручек выведены из операций контракта через общую границу.
 const sectionsReturnsOperationResponse: Equal<
   Awaited<ReturnType<typeof fetchSettingsSections>>,
   Json200<"Settings_GetSettingsSections">
@@ -353,7 +335,6 @@ const readDescriptionAsString = (setting: SettingResult): string =>
 
 describe("типизированная граница контракта", () => {
   it("сигнатуры ручек выведены из операций контракта", () => {
-    // Равенства держит `tsc --noEmit` (гейт frontend-typecheck); тест фиксирует намерение.
     expect([
       sectionsReturnsOperationResponse,
       workspaceTakesOperationBody,

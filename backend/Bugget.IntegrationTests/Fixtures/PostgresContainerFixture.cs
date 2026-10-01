@@ -10,17 +10,12 @@ namespace Bugget.IntegrationTests.Fixtures;
 
 public class PostgresContainerFixture : IAsyncLifetime
 {
-    public readonly PostgreSqlContainer Container =
+    public PostgreSqlContainer Container { get; } =
         new PostgreSqlBuilder()
-            // Версия та же, что в deploy/docker-compose.yml, и одна на все интеграционные
-            // проекты: тесты проверяют схему на той версии, с которой поставляется сборка,
-            // а второй образ в прогоне не нужен.
+            // Версия та же, что в deploy/docker-compose.yml: схема проверяется на версии поставки.
             .WithImage("postgres:17")
-            // Хостов в прогоне много: у каждого класса тестов свой WebApplicationFactory,
-            // а у каждого хоста — свой пул соединений Npgsql. После слияния тестовых
-            // проектов в один они делят один контейнер, и умолчание max_connections=100
-            // упиралось в «sorry, too many clients already». Лимит поднят только в тестах;
-            // deploy/docker-compose.yml не менялся.
+            // Хостов много, у каждого свой пул Npgsql, контейнер один: умолчание max_connections=100 давало
+            // «sorry, too many clients already». Лимит поднят только в тестах.
             .WithCommand(
                 "-c", "max_connections=500",
                 "-c", "idle_in_transaction_session_timeout=60s",
@@ -33,14 +28,10 @@ public class PostgresContainerFixture : IAsyncLifetime
 
         Environment.SetEnvironmentVariable("POSTGRES_CONNECTION_STRING", Container.GetConnectionString());
 
-        // Модуль users живёт в том же процессе, и его DbClient'ы резолвятся по ходу
-        // обработки запросов модуля reports (например, при создании бага). Без строки
-        // подключения такой запрос падает 500-й, поэтому схема users накатывается в тот же
-        // контейнер: в общем журнале DbUp имена скриптов у модулей не пересекаются
-        // (Bugget.DbUp.sql.* против Users.DbUp.sql.*), а таблицы — тем более.
+        // DbClient'ы users резолвятся в запросах reports (например, создание бага); без их схемы — 500.
+        // Контейнер общий: имена скриптов модулей в журнале DbUp не пересекаются.
         Environment.SetEnvironmentVariable("USERS_POSTGRES_CONNECTION_STRING", Container.GetConnectionString());
 
-        // Накатываем скрипты через DbUpService
         var dbUp = new DbUpService(NullLogger<DbUpService>.Instance);
         await dbUp.StartAsync(CancellationToken.None);
 

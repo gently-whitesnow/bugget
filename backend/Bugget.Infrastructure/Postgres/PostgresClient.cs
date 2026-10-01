@@ -11,9 +11,9 @@ namespace Bugget.Infrastructure.Postgres;
 /// </summary>
 public abstract class PostgresClient
 {
-    protected readonly NpgsqlDataSource DataSource;
+    protected NpgsqlDataSource DataSource { get; }
 
-    protected readonly JsonSerializerOptions JsonSerializerOptions = new()
+    protected JsonSerializerOptions JsonSerializerOptions { get; } = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
     };
@@ -27,6 +27,6 @@ public abstract class PostgresClient
     {
         DataSource = NpgsqlDataSource.Create(
             Environment.GetEnvironmentVariable(connectionStringEnvName)
-            ?? throw new ApplicationException($"Не задана строка подключения к Postgres, env=[{connectionStringEnvName}]"));
+            ?? throw new InvalidOperationException($"Не задана строка подключения к Postgres, env=[{connectionStringEnvName}]"));
     }
 }

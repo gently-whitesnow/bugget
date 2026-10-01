@@ -6,14 +6,8 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Read-инструменты MCP: <c>list_reports</c>, <c>get_report</c>,
-/// <c>search_reports</c>, <c>get_attachment</c>.
-///
-/// Данные заводятся через публичный REST того же хоста, а читаются настоящим
-/// MCP-клиентом по JSON-RPC: инструменты обязаны видеть ровно то, что видит по
-/// этой identity фронт, и ничего сверх. Форма ответа своя, компактная, но строки
-/// enum'ов — общие с REST, поэтому там, где важно именно совпадение, тест
-/// сравнивает два ответа между собой, а не с зашитым литералом.
+/// Read-инструменты MCP. Данные заводятся через публичный REST, читаются настоящим MCP-клиентом: инструменты видят
+/// ровно то, что фронт под этой identity. Строки enum'ов общие с REST — там тест сравнивает два ответа, а не литерал.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class McpReadToolsContractTests(AppContractFixture fixture)
@@ -29,9 +23,8 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
 
         var tools = (await client.ListToolsAsync()).Select(tool => tool.Name).ToArray();
 
-        // Точный список всей поверхности (read + write) держит
-        // McpWriteToolsContractTests: два точных списка расходились бы при каждом
-        // добавлении инструмента. Здесь — что read-четвёрка на месте.
+        // Точный список всей поверхности держит McpWriteToolsContractTests (два списка расходились бы);
+        // здесь — только что read-четвёрка на месте.
         Assert.Superset(
             new HashSet<string> { "get_attachment", "get_report", "list_reports", "search_reports" },
             tools.ToHashSet());
@@ -53,8 +46,7 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
         Assert.Equal("user", report.GetProperty("creator_type").GetString());
         Assert.Equal(1, report.GetProperty("bugs_count").GetInt32());
 
-        // Компактность — часть контракта инструмента, а не деталь реализации:
-        // содержимое багов и поля аналитики в списке не едут.
+        // Компактность — часть контракта инструмента: содержимое багов и поля аналитики в списке не едут.
         Assert.False(report.TryGetProperty("bugs", out _));
         Assert.False(report.TryGetProperty("is_excluded_from_analytics", out _));
     }
@@ -83,8 +75,7 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
         var attachment = Single(bug, "attachments");
         Assert.Equal(attachmentId, attachment.GetProperty("id").GetInt32());
 
-        // Ключ хранилища, mime и размер REST наружу не отдаёт — MCP не место, где
-        // это решение отменяется мимоходом.
+        // Ключ хранилища, mime и размер REST наружу не отдаёт — и MCP это решение не отменяет.
         Assert.False(attachment.TryGetProperty("mime_type", out _));
         Assert.False(attachment.TryGetProperty("storage_key", out _));
         Assert.False(attachment.TryGetProperty("length_bytes", out _));
@@ -140,8 +131,7 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
             Args(("reportId", reportId), ("attachmentId", attachmentId)));
         Assert.True(result.IsError != true, TextOf(result));
 
-        // Содержимое (P2d) едет отдельными блоками — его контракт держит
-        // McpAttachmentContentContractTests. Здесь — форма метаданных.
+        // Содержимое (P2d) держит McpAttachmentContentContractTests, здесь — форма метаданных.
         var attachment = JsonDocument.Parse(
             result.Content.OfType<TextContentBlock>().First().Text).RootElement;
 
@@ -180,8 +170,7 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
         var owner = ContractScenario.Create(fixture);
         var foreignReportId = await owner.CreateReportAsync();
 
-        // Тот же workspace, другая команда: разрешение идентификатора обязано
-        // упереться в creator_team_id, как и на REST-ручке репорта.
+        // Тот же workspace, другая команда: разрешение упирается в creator_team_id, как на REST-ручке.
         await using var client = await CreateMcpClientAsync(
             owner.WorkspaceId,
             $"{owner.TeamId}9",
@@ -201,8 +190,7 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
             "list_reports",
             Args(("reportStatuses", new[] { "почти-backlog" })));
 
-        // Сообщение должно подсказать модели допустимые значения, а не просто
-        // сказать «плохо» — иначе следующий вызов будет тем же самым.
+        // Сообщение должно подсказать модели допустимые значения, иначе следующий вызов будет тем же.
         Assert.Contains("backlog", text, StringComparison.Ordinal);
     }
 
@@ -227,10 +215,8 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
         CreateMcpClientAsync(scenario.WorkspaceId, scenario.TeamId, scenario.UserId);
 
     /// <summary>
-    /// Клиент MCP с identity-заголовками ровно того вида, что проставляет nginx
-    /// после успешного <c>auth_request</c>. Сам обмен PAT на заголовки проверяет
-    /// <see cref="McpEndpointContractTests"/>, здесь важен не он, а то, что видно
-    /// под этой identity.
+    /// Клиент MCP с identity-заголовками, какие ставит nginx после <c>auth_request</c>;
+    /// обмен PAT на заголовки проверяет <see cref="McpEndpointContractTests"/>.
     /// </summary>
     private async Task<McpClient> CreateMcpClientAsync(string workspaceId, string teamId, string userId)
     {
@@ -263,8 +249,7 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
         var result = await client.CallToolAsync(tool, arguments);
         var text = TextOf(result);
 
-        // IsError — bool?: на успехе сервер поле опускает (null), на отказе ставит
-        // true. Assert.False(null) в xUnit падает, хотя это как раз happy path.
+        // IsError — bool?: на успехе поле опущено (null), а Assert.False(null) в xUnit падает.
         Assert.True(
             result.IsError != true,
             $"{tool} вернул ошибку: {text}");
@@ -284,9 +269,7 @@ public sealed class McpReadToolsContractTests(AppContractFixture fixture)
             result.IsError == true,
             $"{tool} обязан был отказать, но ответил: {text}");
 
-        // Только флага мало: успех с опущенным isError (null) и отказ без
-        // флага выглядели бы одинаково. Текст отказа — сообщение, не JSON
-        // ответа инструмента.
+        // Только флага мало: успех с опущенным isError и отказ без флага выглядели бы одинаково.
         Assert.False(
             LooksLikeJsonObject(text),
             $"{tool} помечен ошибкой, но в content лежит JSON-ответ: {text}");

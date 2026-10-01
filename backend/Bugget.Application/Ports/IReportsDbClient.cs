@@ -32,37 +32,19 @@ public interface IReportsDbClient
 
     Task<int?> GetStatusInternalAsync(ITransactionScope scope, int reportId, CancellationToken ct = default);
 
-    /// <summary>
-    /// Tx-aware снимок репорта перед PATCH: `status`, `responsible_user_id`,
-    /// `past_responsible_user_id`, `creator_user_id`. Нужен драйверам effective-патча
-    /// — auto-status по смене responsible (T04) и agent-handoff по смене статуса
-    /// (kaiten 238350) — в той же транзакции, что и UPDATE. Возвращает <c>null</c>,
-    /// если репорт не найден.
-    /// </summary>
+    /// <summary>Снимок репорта перед PATCH в той же транзакции, что и UPDATE (auto-status, agent-handoff); <c>null</c> — не найден.</summary>
     Task<ReportPatchSnapshot?> GetPatchSnapshotAsync(
         ITransactionScope scope,
         int reportId,
         CancellationToken ct = default);
 
-    /// <summary>
-    /// Tx-aware fetch текущего <c>is_excluded_from_analytics</c> репорта.
-    /// Используется PATCH-эндпоинтом T11: до UPDATE проверяем, изменится ли флаг,
-    /// чтобы дедуплицировать domain event <c>excluded_from_analytics_toggled</c>
-    /// (TECHSPEC §4.5). Берёт <c>SELECT ... FOR UPDATE</c>, поэтому требуется scope.
-    /// <c>null</c> — репорт не найден.
-    /// </summary>
+    /// <summary>Берёт <c>SELECT ... FOR UPDATE</c> для дедупликации <c>excluded_from_analytics_toggled</c> (TECHSPEC §4.5); <c>null</c> — не найден.</summary>
     Task<bool?> GetIsExcludedFromAnalyticsAsync(
         ITransactionScope scope,
         int reportId,
         CancellationToken ct = default);
 
-    /// <summary>
-    /// Публичная (без транзакции) выборка текущего <c>is_excluded_from_analytics</c>.
-    /// Используется в нетранзакционной эмиссии <c>excluded_from_analytics_toggled</c>
-    /// (TECHSPEC §4.5): pre-fetch старого значения для дедупликации не должен
-    /// разделять транзакцию с PATCH-UPDATE, событие чисто аудит.
-    /// <c>null</c> — репорт не найден.
-    /// </summary>
+    /// <summary>Вариант без транзакции: событие — чистый аудит и не должно делить транзакцию с PATCH-UPDATE.</summary>
     Task<bool?> GetIsExcludedFromAnalyticsAsync(
         int reportId,
         CancellationToken ct = default);
@@ -74,11 +56,7 @@ public interface IReportsDbClient
         int limit,
         CancellationToken ct = default);
 
-    /// <summary>
-    /// Обновление полей репорта. Если <paramref name="scope"/> передан — операция
-    /// выполняется в его транзакции (для эмиссии domain events в той же транзакции,
-    /// что и UPDATE); если <c>null</c> — клиент открывает собственное соединение.
-    /// </summary>
+    /// <summary>Со <paramref name="scope"/> идёт в его транзакции (domain events вместе с UPDATE); без него — своё соединение.</summary>
     Task<ReportPatchResult> PatchReportAsync(
         int reportId,
         ReportPatchDto dto,

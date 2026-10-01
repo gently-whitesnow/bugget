@@ -1,4 +1,3 @@
-// API инстансы
 export {
   appApi,
   parseAppContextFromPath,
@@ -9,11 +8,9 @@ export {
   getSignalRConnectionId,
 } from "./instances";
 
-// Сборка query по именам из контракта
 export { buildQueryString } from "./buildQuery";
 export type { QueryValue } from "./buildQuery";
 
-// Граница «операция контракта → HTTP»
 export { createOperationRequest } from "./operation";
 export type {
   MethodsOf,
@@ -30,34 +27,24 @@ export * as reportsApi from "./reports";
 export { isWireInt64, wireInt64ToBigInt, compareWireInt64 } from "./wireInt64";
 export type { WireInt64 } from "./wireInt64";
 
-// Разбор ошибок API
 export { parseApiError } from "./parseApiError";
 export type { ApiError } from "./parseApiError";
 
-// Контракты
 export * from "./contracts";
 
-// Self-hosted API
 export * as selfHostedApi from "./selfHosted";
 
-// Операции модуля users — единственная транспортная граница этого модуля.
-// Имя `usersApi` теперь принадлежит им, а не axios-инстансу: инстанс из
-// публичного индекса убран, чтобы адрес модуля собирался только здесь.
+// Имя `usersApi` принадлежит операциям, а не axios-инстансу: инстанс из индекса
+// убран, чтобы адрес модуля собирался только здесь.
 export * as usersApi from "./users";
 
-// Операции модуля authorization — единственная транспортная граница этого модуля.
-// Имя `authorizationApi` принадлежит им, а не axios-инстансу: инстанс из
-// публичного индекса убран вместе с хелпером `authorizationPath`, чтобы адрес
-// модуля собирался только из контракта.
+// То же для `authorizationApi`: инстанс и хелпер `authorizationPath` убраны.
 export * as authorizationApi from "./authorization";
 
-// Операции модуля external — единственная транспортная граница этого модуля
 export * as externalApi from "./external";
 
-// Операции модуля settings — единственная транспортная граница этого модуля
 export * as settingsApi from "./settings";
 
-// Операции модуля analytics — единственная транспортная граница этого модуля
 export * as analyticsApi from "./analytics";
 export type {
   AnalyticsSummary,

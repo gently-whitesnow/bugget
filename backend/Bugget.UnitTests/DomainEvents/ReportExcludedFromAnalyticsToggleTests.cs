@@ -15,16 +15,9 @@ using Xunit;
 namespace Bugget.UnitTests.DomainEvents;
 
 /// <summary>
-/// T11 · TECHSPEC §4.5. PATCH `/v2/reports/{id}` с полем
-/// `is_excluded_from_analytics`. Контракт:
-/// <list type="bullet">
-///   <item>Изменение значения → domain event
-///         <c>bugget.report.excluded_from_analytics_toggled</c>
-///         с payload <c>{ is_excluded: bool }</c>.</item>
-///   <item>Patch с тем же значением → ни события, ни попытки эмиссии нет.</item>
-///   <item>Эмиссия идёт в той же транзакции, что и UPDATE (publisher
-///         вызывается со scope, который пробросил UnitOfWork).</item>
-/// </list>
+/// PATCH `/v2/reports/{id}` с `is_excluded_from_analytics` (TECHSPEC §4.5): изменение значения даёт событие
+/// <c>bugget.report.excluded_from_analytics_toggled</c> с payload <c>{ is_excluded: bool }</c>, то же значение —
+/// ни события, ни попытки эмиссии; эмиссия идёт в той же транзакции, что и UPDATE.
 /// </summary>
 public class ReportExcludedFromAnalyticsToggleTests
 {
@@ -115,7 +108,6 @@ public class ReportExcludedFromAnalyticsToggleTests
         using var doc = JsonDocument.Parse(evt.Payload);
         Assert.True(doc.RootElement.GetProperty("is_excluded").GetBoolean());
 
-        // UPDATE прошёл с тем же значением, что в DTO.
         db.Verify(x => x.PatchReportAsync(
             42,
             It.Is<ReportPatchDto>(d => d.IsExcludedFromAnalytics == true),

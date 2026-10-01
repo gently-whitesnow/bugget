@@ -13,7 +13,7 @@ namespace Bugget.IntegrationTests.Fixtures;
 /// </summary>
 public class RedisContainerFixture : IAsyncLifetime
 {
-    public readonly RedisContainer Container =
+    public RedisContainer Container { get; } =
         // Та же мажорная версия, что в deploy/docker-compose.yml.
         new RedisBuilder().WithImage("redis:8").Build();
 

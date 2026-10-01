@@ -19,20 +19,9 @@ import {
   creatorTypeFromSocket,
 } from "./socketEnums";
 
-/**
- * Адаптеры realtime-payload → сущность стора.
- *
- * Два контракта независимы: HTTP описан в `specs/contracts/reports/openapi.yaml`
- * и генерируется, SignalR — в `events.yaml` и не генерируется (ADR-0007).
- * Типизировать realtime-событие HTTP-схемой нельзя даже когда формы совпадают:
- * тогда правка OpenAPI молча меняла бы realtime-путь. Шов между ними живёт здесь
- * и разъезжается компиляцией, а не в рантайме у заказчика.
- *
- * Адаптеры перечисляют поля по именам намеренно: пропавшее у payload'а поле —
- * ошибка компиляции здесь, а не `undefined` в сторе. Enum'ы realtime остались
- * числовыми, поэтому те же адаптеры переводят их в значения провода
- * (`./socketEnums`) — второго представления статуса в сторе нет.
- */
+// Шов realtime → стор. SignalR (`events.yaml`) не генерируется и не типизируется
+// HTTP-схемой (ADR-0007): иначе правка OpenAPI молча меняла бы realtime-путь.
+// Поля перечислены по именам намеренно: пропавшее поле — ошибка компиляции.
 
 export const attachmentFromSocket = (
   payload: AttachmentSocketResponse
@@ -59,11 +48,8 @@ export const bugStepFromSocket = (payload: BugStepSocketResponse): BugStep => ({
     : null,
 });
 
-/**
- * Комментарий приезжает без вложений (`CommentSummaryDbModel`), поэтому в сторе
- * у него `attachments: null` — «с этим событием вложения не приезжали», а не «их
- * нет». Дальше их дописывают события вложений.
- */
+// Комментарий приезжает без вложений: `attachments: null` значит «с этим
+// событием не приезжали», а не «их нет»; их дописывают события вложений.
 export const commentFromSocket = (payload: CommentSocketResponse): Comment => ({
   id: payload.id,
   bugId: payload.bugId,
@@ -76,11 +62,7 @@ export const commentFromSocket = (payload: CommentSocketResponse): Comment => ({
   attachments: null,
 });
 
-/**
- * Обновление комментария. Событие тоже приходит без вложений, но здесь они уже
- * могут быть загружены, поэтому сохраняются: «не приехали с этим событием» — не
- * повод их потерять.
- */
+// Событие без вложений, но уже загруженные сохраняются.
 export const commentUpdateFromSocket = (
   existing: Comment,
   payload: CommentSocketResponse
@@ -89,9 +71,7 @@ export const commentUpdateFromSocket = (
   attachments: existing.attachments,
 });
 
-/**
- * Патч бага: статус приходит числом и может отсутствовать — «не менять».
- */
+/** Статус приходит числом и может отсутствовать — «не менять». */
 export const bugStatusPatchFromSocket = (
   value: number | null | undefined,
   current: BugClientEntity["status"]
@@ -109,11 +89,8 @@ export const reportLinkFromSocket = (
   updatedAt: payload.updatedAt,
 });
 
-/**
- * Баг из события создания. `reportId` берётся не из payload'а (его там нет), а из
- * открытого репорта: в сторе это alias, по которому баги группируются. Вложения,
- * комментарии и шаги событие не приносит — они приезжают своими событиями.
- */
+// `reportId` берётся из открытого репорта (в payload'е его нет): в сторе это
+// alias, по которому группируются баги. Вложенные коллекции едут своими событиями.
 export const bugFromSocket = (
   payload: CreateBugSocketResponse,
   reportId: string

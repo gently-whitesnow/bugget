@@ -9,15 +9,8 @@ import {
 import { type AnalyticsPeriod, defaultPeriod } from "@/shared/lib/time";
 
 /**
- * Effector-модель Разреза 4 (ответственный).
- *
- * - `$userIdStore` — выбранный пользователь (источник — URL ?user=...).
- * - `$periodStore` — выбранный период.
- * - `$selectedUserPreview` — id/name/imageUrl для рендера в Autosuggest:
- *   заполняется при выборе из дропдауна, либо одноразовым `fetchUsers`
- *   при восстановлении состояния из URL.
- * - `$responsibleStore` — последний успешный ответ
- *   /v2/analytics/responsible/{userId}.
+ * Effector-модель Разреза 4 (ответственный). `$selectedUserPreview` заполняется
+ * выбором из дропдауна либо одноразовым `fetchUsers` при восстановлении из URL.
  */
 
 export type SelectedUserPreview = {

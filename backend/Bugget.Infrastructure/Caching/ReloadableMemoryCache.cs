@@ -11,7 +11,7 @@ namespace Bugget.Infrastructure.Caching;
 [PublicAPI]
 public abstract class ReloadableMemoryCache<TKey, TValue> where TKey : notnull
 {
-    private int _initializedFlag = 0;
+    private int _initializedFlag;
     private readonly ILogger<ReloadableMemoryCache<TKey, TValue>> _logger;
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheEntryOptions;
@@ -81,7 +81,7 @@ public abstract class ReloadableMemoryCache<TKey, TValue> where TKey : notnull
     {
         try
         {
-            _logger.LogInformation($"{_typeName}.{nameof(TryReloadAsync)} started");
+            _logger.LogInformation("{TypeName}.TryReloadAsync started", _typeName);
             var pairs = await GetDataAsync(cancellationToken);
 
             foreach (var (key, val) in pairs)
@@ -89,17 +89,17 @@ public abstract class ReloadableMemoryCache<TKey, TValue> where TKey : notnull
                 _cache.Set(key, val, _cacheEntryOptions);
             }
 
-            _logger.LogInformation($"{_typeName}.{nameof(TryReloadAsync)} finished");
+            _logger.LogInformation("{TypeName}.TryReloadAsync finished", _typeName);
             return true;
         }
         catch (TaskCanceledException exception)
         {
-            _logger.LogInformation(exception, $"Invoking {_typeName}.{nameof(TryReloadAsync)} cancelled");
+            _logger.LogInformation(exception, "Invoking {TypeName}.TryReloadAsync cancelled", _typeName);
             return false;
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, $"Invoking {_typeName}.{nameof(TryReloadAsync)} failed");
+            _logger.LogError(exception, "Invoking {TypeName}.TryReloadAsync failed", _typeName);
             return false;
         }
     }
@@ -135,7 +135,7 @@ public abstract class ReloadableMemoryCache<TKey, TValue> where TKey : notnull
 
     private async Task InitializeAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation($"{_typeName}.{nameof(InitializeAsync)} started");
+        _logger.LogInformation("{TypeName}.InitializeAsync started", _typeName);
 
         if (await TryReloadAsync(cancellationToken))
         {
@@ -143,8 +143,8 @@ public abstract class ReloadableMemoryCache<TKey, TValue> where TKey : notnull
             {
                 return;
             }
-            _reloadableTask = Task.Run(() => RunReloadableTaskAsync(cancellationToken, _reloadInterval.Value), cancellationToken);
-            _logger.LogInformation($"{_typeName}.InitializeAsync finished");
+            _reloadableTask = Task.Run(() => RunReloadableTaskAsync(_reloadInterval.Value, cancellationToken), cancellationToken);
+            _logger.LogInformation("{TypeName}.InitializeAsync finished", _typeName);
             return;
         }
 
@@ -157,22 +157,22 @@ public abstract class ReloadableMemoryCache<TKey, TValue> where TKey : notnull
         {
             do
             {
-                _logger.LogInformation($"{_typeName}.{nameof(InitializeAsync)} returned false. Trying it again.");
+                _logger.LogInformation("{TypeName}.InitializeAsync returned false. Trying it again.", _typeName);
                 await Task.Delay(_dueInterval, cancellationToken);
             } while (await TryReloadAsync(cancellationToken) == false);
 
-            _logger.LogInformation($"{_typeName}.InitializeAsync finished");
+            _logger.LogInformation("{TypeName}.InitializeAsync finished", _typeName);
 
             if (_reloadInterval == null)
             {
                 return;
             }
 
-            await RunReloadableTaskAsync(cancellationToken, _reloadInterval.Value);
+            await RunReloadableTaskAsync(_reloadInterval.Value, cancellationToken);
         }, cancellationToken);
     }
 
-    private async Task RunReloadableTaskAsync(CancellationToken cancellationToken, TimeSpan reloadInterval)
+    private async Task RunReloadableTaskAsync(TimeSpan reloadInterval, CancellationToken cancellationToken)
     {
         _timer = new PeriodicTimer(reloadInterval);
 

@@ -4,11 +4,7 @@ using Xunit;
 
 namespace Bugget.UnitTests.Services.Analytics;
 
-/// <summary>
-/// PeriodResolver: маппинг строкового wire-ключа периода в окно [from; to) + ярлык.
-/// После R6 принимает <see cref="string"/>, а не enum — валидация значений
-/// делается здесь же; на невалидный input — <see cref="ArgumentException"/>.
-/// </summary>
+/// <summary>PeriodResolver: строковый wire-ключ периода → окно [from; to) + ярлык; на невалидный input — <see cref="ArgumentException"/>.</summary>
 public sealed class PeriodResolverTests
 {
     private static readonly DateTimeOffset Now =
@@ -71,9 +67,8 @@ public sealed class PeriodResolverTests
     }
 
     /// <summary>
-    /// Список допустимых значений публичен и попадает в тело ответа 400, поэтому он
-    /// обязан совпадать с тем, что резолвер реально принимает: разъехавшись, он начнёт
-    /// врать клиенту.
+    /// Список допустимых значений публичен и попадает в тело 400, поэтому обязан совпадать с тем, что резолвер
+    /// реально принимает: разъехавшись, он начнёт врать клиенту.
     /// </summary>
     [Fact]
     public void AllowedValues_matches_what_the_resolver_accepts()

@@ -25,7 +25,6 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное создание бага с минимальными параметрами")]
     public async Task CreateBugAsync_WithMinimalParameters_ShouldCreateBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bugDto = new BugDto
@@ -34,10 +33,8 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Expect = "Success message"
         };
 
-        // Act
         var result = await _bugsDbClient.CreateBugAsync(userId, report.Id, bugDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(bugDto.Receive, result.Receive);
@@ -45,13 +42,12 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
         Assert.Equal(userId, result.CreatorUserId);
         Assert.True(result.CreatedAt > DateTimeOffset.MinValue);
         Assert.True(result.UpdatedAt > DateTimeOffset.MinValue);
-        Assert.Equal(0, result.Status); // Начальный статус
+        Assert.Equal(0, result.Status);
     }
 
     [Fact(DisplayName = "Успешное создание бага с organizationId")]
     public async Task CreateBugAsync_WithOrganizationId_ShouldCreateBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var organizationId = $"org_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId, organizationId);
@@ -61,10 +57,8 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Expect = "Success response"
         };
 
-        // Act
         var result = await _bugsDbClient.CreateBugAsync(userId, report.Id, bugDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(bugDto.Receive, result.Receive);
@@ -76,7 +70,6 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное создание бага только с Receive")]
     public async Task CreateBugAsync_WithOnlyReceive_ShouldCreateBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bugDto = new BugDto
@@ -85,10 +78,8 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Expect = null
         };
 
-        // Act
         var result = await _bugsDbClient.CreateBugAsync(userId, report.Id, bugDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(bugDto.Receive, result.Receive);
@@ -99,7 +90,6 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное создание бага только с Expect")]
     public async Task CreateBugAsync_WithOnlyExpect_ShouldCreateBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bugDto = new BugDto
@@ -108,10 +98,8 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Expect = "Expected success"
         };
 
-        // Act
         var result = await _bugsDbClient.CreateBugAsync(userId, report.Id, bugDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Null(result.Receive);
@@ -122,17 +110,14 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Создание нескольких багов для одного репорта")]
     public async Task CreateBugAsync_MultipleBugsForOneReport_ShouldCreateSeparateBugs()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bugDto1 = new BugDto { Receive = "First bug", Expect = "First fix" };
         var bugDto2 = new BugDto { Receive = "Second bug", Expect = "Second fix" };
 
-        // Act
         var result1 = await _bugsDbClient.CreateBugAsync(userId, report.Id, bugDto1);
         var result2 = await _bugsDbClient.CreateBugAsync(userId, report.Id, bugDto2);
 
-        // Assert
         Assert.NotNull(result1);
         Assert.NotNull(result2);
         Assert.NotEqual(result1.Id, result2.Id);
@@ -145,7 +130,6 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Проверка что начальный статус бага равен 0")]
     public async Task CreateBugAsync_ShouldSetStatusToZero()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bugDto = new BugDto
@@ -154,10 +138,8 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Expect = "Test expectation"
         };
 
-        // Act
         var result = await _bugsDbClient.CreateBugAsync(userId, report.Id, bugDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(0, result.Status);
     }
@@ -165,7 +147,6 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Создание бага с длинным текстом Receive")]
     public async Task CreateBugAsync_WithLongReceive_ShouldCreateBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var longReceive = new string('a', 2048); // Максимальная длина
@@ -175,10 +156,8 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Expect = "Fix needed"
         };
 
-        // Act
         var result = await _bugsDbClient.CreateBugAsync(userId, report.Id, bugDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(longReceive, result.Receive);
@@ -187,7 +166,6 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Создание бага с длинным текстом Expect")]
     public async Task CreateBugAsync_WithLongExpect_ShouldCreateBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var longExpect = new string('b', 2048); // Максимальная длина
@@ -197,10 +175,8 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Expect = longExpect
         };
 
-        // Act
         var result = await _bugsDbClient.CreateBugAsync(userId, report.Id, bugDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.True(result.Id > 0);
         Assert.Equal(longExpect, result.Expect);
@@ -213,7 +189,6 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное обновление Receive бага")]
     public async Task PatchBugAsync_UpdateReceive_ShouldUpdateBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -222,21 +197,18 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Receive = "Updated receive text"
         };
 
-        // Act
         var result = await _bugsDbClient.PatchBugAsync(report.Id, bug.Id, patchDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(bug.Id, result.Id);
         Assert.Equal(patchDto.Receive, result.Receive);
-        Assert.Equal(bug.Expect, result.Expect); // Expect не изменился
+        Assert.Equal(bug.Expect, result.Expect);
         Assert.True(result.UpdatedAt > bug.UpdatedAt);
     }
 
     [Fact(DisplayName = "Успешное обновление Expect бага")]
     public async Task PatchBugAsync_UpdateExpect_ShouldUpdateBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -245,13 +217,11 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Expect = "Updated expect text"
         };
 
-        // Act
         var result = await _bugsDbClient.PatchBugAsync(report.Id, bug.Id, patchDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(bug.Id, result.Id);
-        Assert.Equal(bug.Receive, result.Receive); // Receive не изменился
+        Assert.Equal(bug.Receive, result.Receive);
         Assert.Equal(patchDto.Expect, result.Expect);
         Assert.True(result.UpdatedAt > bug.UpdatedAt);
     }
@@ -259,31 +229,27 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Успешное обновление Status бага")]
     public async Task PatchBugAsync_UpdateStatus_ShouldUpdateBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
         var patchDto = new BugPatchDto
         {
-            Status = 1 // Изменяем статус на 1
+            Status = 1
         };
 
-        // Act
         var result = await _bugsDbClient.PatchBugAsync(report.Id, bug.Id, patchDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(bug.Id, result.Id);
         Assert.Equal(1, result.Status);
-        Assert.Equal(bug.Receive, result.Receive); // Receive не изменился
-        Assert.Equal(bug.Expect, result.Expect); // Expect не изменился
+        Assert.Equal(bug.Receive, result.Receive);
+        Assert.Equal(bug.Expect, result.Expect);
         Assert.True(result.UpdatedAt > bug.UpdatedAt);
     }
 
     [Fact(DisplayName = "Успешное обновление всех полей бага")]
     public async Task PatchBugAsync_UpdateAllFields_ShouldUpdateBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -294,10 +260,8 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Status = 2
         };
 
-        // Act
         var result = await _bugsDbClient.PatchBugAsync(report.Id, bug.Id, patchDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(bug.Id, result.Id);
         Assert.Equal(patchDto.Receive, result.Receive);
@@ -309,7 +273,6 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Обновление бага с organizationId")]
     public async Task PatchBugAsync_WithOrganizationId_ShouldUpdateBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var organizationId = $"org_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId, organizationId);
@@ -319,10 +282,8 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Receive = "Updated with org"
         };
 
-        // Act
         var result = await _bugsDbClient.PatchBugAsync(report.Id, bug.Id, patchDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(bug.Id, result.Id);
         Assert.Equal(patchDto.Receive, result.Receive);
@@ -331,7 +292,6 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Обновление бага с пустыми строками")]
     public async Task PatchBugAsync_WithEmptyStrings_ShouldNotUpdateFields()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -342,10 +302,8 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
             Status = null
         };
 
-        // Act
         var result = await _bugsDbClient.PatchBugAsync(report.Id, bug.Id, patchDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(bug.Id, result.Id);
         // Проверяем что поля не изменились (значения остались прежними)
@@ -357,7 +315,6 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Обновление UpdatedAt при каждом патче")]
     public async Task PatchBugAsync_ShouldUpdateTimestamp()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
@@ -366,14 +323,12 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
         // Небольшая задержка для гарантии различия времени
         await Task.Delay(10);
 
-        // Act
         var result = await _bugsDbClient.PatchBugAsync(
             report.Id,
             bug.Id,
             new BugPatchDto { Receive = "New text" }
         );
 
-        // Assert
         Assert.True(result.UpdatedAt > initialUpdatedAt);
     }
 
@@ -384,15 +339,12 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение бага по reportId и bugId возвращает баг")]
     public async Task GetBugAsync_WithValidIds_ShouldReturnBug()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
 
-        // Act
         var result = await _bugsDbClient.GetBugAsync(report.Id, bug.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(bug.Id, result!.Id);
         Assert.Equal(bug.Receive, result.Receive);
@@ -406,31 +358,25 @@ public class BugsDbClientTests : IClassFixture<AppWithPostgresFixture>
     [Fact(DisplayName = "Получение бага с неверным reportId возвращает null")]
     public async Task GetBugAsync_WithWrongReportId_ShouldReturnNull()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var otherReport = await CreateTestReportAsync(userId);
         var bug = await CreateTestBugAsync(userId, report.Id);
 
-        // Act
         var result = await _bugsDbClient.GetBugAsync(otherReport.Id, bug.Id);
 
-        // Assert
         Assert.Null(result);
     }
 
     [Fact(DisplayName = "Получение несуществующего бага возвращает null")]
     public async Task GetBugAsync_NonExistentBug_ShouldReturnNull()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
         var nonExistentBugId = int.MaxValue;
 
-        // Act
         var result = await _bugsDbClient.GetBugAsync(report.Id, nonExistentBugId);
 
-        // Assert
         Assert.Null(result);
     }
 

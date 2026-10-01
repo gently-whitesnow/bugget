@@ -19,19 +19,11 @@ import type { AttachmentSocketResponse } from "@/shared/model";
 
 import { setBugsEvent } from "@/entities/report";
 
-/**
- * Сторы
- */
-
-// Стор для всех сущностей attachment c ключём по ID
+// Все attachment по id
 export const $attachmentsStore = createStore<Record<number, Attachment>>({});
 
-// Стор для маппинга id багов с attachment id
+// Id бага -> id его attachment
 export const $bugAttachmentsStore = createStore<Record<number, number[]>>({});
-
-/**
- * Эффекты
- */
 
 export const uploadAttachmentFx = createEffect<
   { reportId: string; bugId: number; attachType: AttachmentTypes; file: File },
@@ -108,10 +100,6 @@ export const renameAttachmentFx = createEffect<
   }
 });
 
-/**
- * События
- */
-
 export const uploadAttachmentEvent = createEvent<{
   reportId: string;
   bugId: number;
@@ -125,8 +113,8 @@ export const deleteAttachmentEvent = createEvent<{
   attachmentId: number;
 }>();
 
-// socket события: payload realtime-контракта, в сущность стора его переводит
-// адаптер `attachmentFromSocket` (ADR-0007).
+// Payload realtime-контракта; в сущность стора его переводит
+// `attachmentFromSocket` (ADR-0007).
 export const bugAttachmentCreatedSocketEvent =
   createEvent<AttachmentSocketResponse>();
 export const bugAttachmentChangedSocketEvent =
@@ -136,11 +124,6 @@ export const bugAttachmentDeletedSocketEvent = createEvent<{
   attachmentId: number;
 }>();
 
-/**
- * Логика
- */
-
-// заполняем attachments при загрузке багов из основного репорта
 $attachmentsStore.on(setBugsEvent, (state, { bugs }) => {
   const attachmentsById: Record<number, Attachment> = {};
   bugs.forEach((bug) => {
@@ -246,10 +229,6 @@ $bugAttachmentsStore.on(
   }
 );
 
-/**
- * Сэмплы
- */
-
 sample({
   clock: uploadAttachmentEvent,
   target: uploadAttachmentFx,
@@ -259,10 +238,6 @@ sample({
   clock: deleteAttachmentEvent,
   target: deleteAttachmentFx,
 });
-
-/**
- * Combined-сторы
- */
 
 export const $attachmentsData = combine(
   $attachmentsStore,

@@ -10,7 +10,6 @@ import {
 } from "@/shared/model";
 import { $initialReportStore } from "@/entities/report";
 
-// использование сокет соединения на странице репорта
 export const useReportPageSocket = () => {
   const [connection, connectionId, joinReport, leaveReport] = useUnit([
     $connection,
@@ -22,12 +21,9 @@ export const useReportPageSocket = () => {
   const reportId = initialReport?.id ?? null;
 
   /**
-   * Группа репорта — серверный список соединений, которым SignalR рассылает
-   * события этого репорта (комментарии, баги и т.д.). Вступаем в неё заново
-   * при каждой смене connectionId: при любом переподключении сервер выдаёт
-   * новый connectionId и забывает, в каких группах мы состояли, — без
-   * повторного join события репорта перестанут приходить. Поэтому эффект
-   * перезапускается по connectionId, а не по факту «соединение есть».
+   * При переподключении сервер выдаёт новый connectionId и забывает группы
+   * соединения, поэтому join повторяется по connectionId, иначе события
+   * репорта перестанут приходить.
    */
   useEffect(() => {
     if (!connection || !connectionId || reportId == null) return;

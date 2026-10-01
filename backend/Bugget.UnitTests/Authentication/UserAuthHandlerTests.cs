@@ -19,13 +19,11 @@ public class UserAuthHandlerTests
         DefaultHttpContext context,
         AuthHeadersOptions headersOptions)
     {
-        // Mock AuthenticationSchemeOptions
         var authSchemeOptions = new Mock<IOptionsMonitor<AuthenticationSchemeOptions>>();
         authSchemeOptions
             .Setup(o => o.Get(It.IsAny<string?>()))
             .Returns(new AuthenticationSchemeOptions());
 
-        // Mock AuthHeadersOptions
         var headersOptionsMonitor = new Mock<IOptionsMonitor<AuthHeadersOptions>>();
         headersOptionsMonitor
             .Setup(o => o.CurrentValue)
@@ -46,7 +44,6 @@ public class UserAuthHandlerTests
     [Fact]
     public async Task Succeeds_WhenAllHeadersAreValid()
     {
-        // Arrange
         var headersOptions = new AuthHeadersOptions
         {
             UserIdHeaderName = "X-User-Id",
@@ -64,10 +61,8 @@ public class UserAuthHandlerTests
         var usersClient = new Mock<IUsersClient>();
         var handler = CreateHandler(context, headersOptions);
 
-        // Act
         var result = await handler.AuthenticateAsync();
 
-        // Assert
         Assert.True(result.Succeeded);
         var claims = result.Principal!.Claims.ToDictionary(c => c.Type, c => c.Value);
         Assert.Equal("user-123", claims[ClaimTypes.NameIdentifier]);
@@ -83,9 +78,8 @@ public class UserAuthHandlerTests
         "а не 3 - \"Неинтерактивный клиент: запрос пришёл через PAT, а не браузерную JWT-сессию.\"")]
     public async Task AuthenticateAsync_ShouldDegradeActorToUser_WhenAuthMethodHeaderNameIsNotConfigured()
     {
-        // Arrange: конфигурация без AuthMethodHeaderName — форма прод-инцидента
-        // (bugget report 436, баг 2): nginx честно принёс Auth-Request-Auth-Method: pat,
-        // но хендлер не знает имени заголовка и молча теряет способ входа.
+        // Конфигурация без AuthMethodHeaderName — форма прод-инцидента (bugget report 436, баг 2): nginx принёс
+        // Auth-Request-Auth-Method: pat, но хендлер не знает имени заголовка и молча теряет способ входа.
         var headersOptions = new AuthHeadersOptions
         {
             UserIdHeaderName = "X-User-Id"
@@ -96,10 +90,9 @@ public class UserAuthHandlerTests
 
         var handler = CreateHandler(context, headersOptions);
 
-        // Act
         var result = await handler.AuthenticateAsync();
 
-        // Assert: аутентификация успешна, но claim нет — и атрибуция деградирует к User
+        // Аутентификация успешна, но claim нет — атрибуция деградирует к User
         Assert.True(result.Succeeded);
         Assert.Null(result.Principal!.FindFirst(AuthClaims.AuthMethod));
         Assert.Equal(Bugget.Domain.Common.CreatorType.User, result.Principal.GetIdentity().ActorCreatorType);
@@ -108,7 +101,7 @@ public class UserAuthHandlerTests
     [Fact]
     public async Task Fails_WhenUserHeaderConfiguredButMissing()
     {
-        // Arrange: only user header configured
+        // only user header configured
         var headersOptions = new AuthHeadersOptions
         {
             UserIdHeaderName = "X-User-Id"
@@ -117,10 +110,8 @@ public class UserAuthHandlerTests
 
         var handler = CreateHandler(context, headersOptions);
 
-        // Act
         var result = await handler.AuthenticateAsync();
 
-        // Assert
         Assert.False(result.Succeeded);
         Assert.Equal("User ID not found", result.Failure?.Message);
     }
@@ -128,16 +119,14 @@ public class UserAuthHandlerTests
     [Fact]
     public async Task Succeeds_WhenUserHeaderMissingButNotConfigured()
     {
-        // Arrange: no headers configured
+        // no headers configured
         var headersOptions = new AuthHeadersOptions();
         var context = new DefaultHttpContext();
 
         var handler = CreateHandler(context, headersOptions);
 
-        // Act
         var result = await handler.AuthenticateAsync();
 
-        // Assert
         Assert.True(result.Succeeded);
         Assert.Equal("default-user", result.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
     }
@@ -145,7 +134,6 @@ public class UserAuthHandlerTests
     [Fact]
     public async Task Fails_WhenTeamHeaderConfiguredButEmpty()
     {
-        // Arrange
         var headersOptions = new AuthHeadersOptions
         {
             UserIdHeaderName = "X-User-Id",
@@ -157,10 +145,8 @@ public class UserAuthHandlerTests
 
         var handler = CreateHandler(context, headersOptions);
 
-        // Act
         var result = await handler.AuthenticateAsync();
 
-        // Assert
         Assert.False(result.Succeeded);
         Assert.Equal("Team ID not found", result.Failure?.Message);
     }
@@ -168,7 +154,6 @@ public class UserAuthHandlerTests
     [Fact]
     public async Task Fails_WhenOrgHeaderConfiguredButEmpty()
     {
-        // Arrange
         var headersOptions = new AuthHeadersOptions
         {
             UserIdHeaderName = "X-User-Id",
@@ -180,10 +165,8 @@ public class UserAuthHandlerTests
 
         var handler = CreateHandler(context, headersOptions);
 
-        // Act
         var result = await handler.AuthenticateAsync();
 
-        // Assert
         Assert.False(result.Succeeded);
         Assert.Equal("Organization ID not found", result.Failure?.Message);
     }

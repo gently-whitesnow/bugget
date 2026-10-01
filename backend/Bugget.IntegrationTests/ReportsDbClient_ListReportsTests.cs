@@ -18,7 +18,6 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     private readonly IParticipantsDbClient _participantsDbClient;
     private readonly IAttachmentDbClient _attachmentDbClient;
 
-    // AttachType константы
     private const int AttachType_BugFact = 0;
     private const int AttachType_Comment = 2;
 
@@ -35,13 +34,10 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Список пустой - нет репортов")]
     public async Task ListReportsAsync_NoReports_ShouldReturnEmpty()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
 
-        // Act
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, userId, null, null, null, 0, 10);
 
-        // Assert
         Assert.Equal(0, total);
         Assert.Empty(reports);
     }
@@ -49,14 +45,11 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Получение одного репорта")]
     public async Task ListReportsAsync_OneReport_ShouldReturnOneReport()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
 
-        // Act
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, userId, null, null, null, 0, 10);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(report.Id, reports[0].Id);
@@ -66,16 +59,13 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Получение нескольких репортов")]
     public async Task ListReportsAsync_MultipleReports_ShouldReturnAll()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report1 = await CreateTestReportAsync(userId, title: "Report 1");
         var report2 = await CreateTestReportAsync(userId, title: "Report 2");
         var report3 = await CreateTestReportAsync(userId, title: "Report 3");
 
-        // Act
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, userId, null, null, null, 0, 10);
 
-        // Assert
         Assert.Equal(3, total);
         Assert.Equal(3, reports.Length);
         Assert.Contains(reports, r => r.Id == report1.Id);
@@ -86,18 +76,15 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Фильтрация по userId - возвращает только репорты пользователя")]
     public async Task ListReportsAsync_FilterByUserId_ShouldReturnUserReports()
     {
-        // Arrange
         var user1 = $"user_{Guid.NewGuid()}";
         var user2 = $"user_{Guid.NewGuid()}";
 
         var report1 = await CreateTestReportAsync(user1);
         var report2 = await CreateTestReportAsync(user1);
-        var report3 = await CreateTestReportAsync(user2); // Другой пользователь
+        var report3 = await CreateTestReportAsync(user2);
 
-        // Act
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, user1, null, null, null, 0, 10);
 
-        // Assert
         Assert.Equal(2, total);
         Assert.Equal(2, reports.Length);
         Assert.All(reports, r => Assert.Equal(user1, r.CreatorUserId));
@@ -107,19 +94,16 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Фильтрация по teamId - возвращает только репорты команды")]
     public async Task ListReportsAsync_FilterByTeamId_ShouldReturnTeamReports()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var team1 = $"team_{Guid.NewGuid()}";
         var team2 = $"team_{Guid.NewGuid()}";
 
         var report1 = await CreateTestReportAsync(userId, teamId: team1);
         var report2 = await CreateTestReportAsync(userId, teamId: team1);
-        var report3 = await CreateTestReportAsync(userId, teamId: team2); // Другая команда
+        var report3 = await CreateTestReportAsync(userId, teamId: team2);
 
-        // Act
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, null, team1, null, null, 0, 10);
 
-        // Assert
         Assert.Equal(2, total);
         Assert.Equal(2, reports.Length);
         Assert.All(reports, r => Assert.Equal(team1, r.CreatorTeamId));
@@ -129,19 +113,16 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Фильтрация по organizationId - возвращает только репорты организации")]
     public async Task ListReportsAsync_FilterByOrganizationId_ShouldReturnOrgReports()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var org1 = $"org_{Guid.NewGuid()}";
         var org2 = $"org_{Guid.NewGuid()}";
 
         var report1 = await CreateTestReportAsync(userId, organizationId: org1);
         var report2 = await CreateTestReportAsync(userId, organizationId: org1);
-        var report3 = await CreateTestReportAsync(userId, organizationId: org2); // Другая организация
+        var report3 = await CreateTestReportAsync(userId, organizationId: org2);
 
-        // Act
         var (total, reports) = await _reportsDbClient.ListReportsAsync(org1, null, null, null, null, 0, 10);
 
-        // Assert
         Assert.Equal(2, total);
         Assert.Equal(2, reports.Length);
         Assert.DoesNotContain(reports, r => r.Id == report3.Id);
@@ -150,18 +131,14 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Фильтрация по статусам")]
     public async Task ListReportsAsync_FilterByStatuses_ShouldReturnMatchingReports()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
-        var report1 = await CreateTestReportAsync(userId); // Status 0 (Backlog)
+        var report1 = await CreateTestReportAsync(userId);
         var report2 = await CreateTestReportAsync(userId);
 
-        // Изменяем статус второго репорта
         await _reportsDbClient.PatchReportAsync(report2.Id, new ReportPatchDto { Status = 1 });
 
-        // Act - Ищем только репорты со статусом 0
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, userId, null, new[] { 0 }, null, 0, 10);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(report1.Id, reports[0].Id);
@@ -171,27 +148,23 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Пагинация - skip и take работают корректно")]
     public async Task ListReportsAsync_Pagination_ShouldReturnCorrectPage()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             await CreateTestReportAsync(userId, title: $"Report {i}");
         }
 
-        // Act - Пропускаем 2 и берем 2
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, userId, null, null, null, 2, 2);
 
-        // Assert
-        Assert.Equal(5, total); // Всего 5 репортов
-        Assert.Equal(2, reports.Length); // Возвращено 2 репорта
+        Assert.Equal(5, total);
+        Assert.Equal(2, reports.Length);
     }
 
     [Fact(DisplayName = "Пагинация - последняя страница может быть неполной")]
     public async Task ListReportsAsync_LastPage_ShouldReturnRemainingReports()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
-        for (int i = 0; i < 7; i++)
+        for (var i = 0; i < 7; i++)
         {
             await CreateTestReportAsync(userId);
         }
@@ -199,7 +172,6 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
         // Act - Пропускаем 5, берем 5 (должно вернуть только 2)
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, userId, null, null, null, 5, 5);
 
-        // Assert
         Assert.Equal(7, total);
         Assert.Equal(2, reports.Length);
     }
@@ -207,39 +179,30 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Репорт с полным графом данных")]
     public async Task ListReportsAsync_CompleteGraph_ShouldReturnFullData()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
 
-        // Добавляем участника
         var participant = $"user_{Guid.NewGuid()}";
         await _participantsDbClient.AddParticipantIfNotExistAsync(report.Id, participant);
 
-        // Создаем баг с вложением
         var bug = await CreateTestBugAsync(userId, report.Id);
 
-        // Создаем комментарий с вложением
         var comment = await CreateTestCommentAsync(userId, bug.Id, "Test comment");
 
-        // Act
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, userId, null, null, null, 0, 10);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
 
         var result = reports[0];
 
-        // Проверяем участников
         Assert.Contains(participant, result.ParticipantsUserIds);
 
-        // Проверяем баги
         Assert.NotNull(result.Bugs);
         Assert.Single(result.Bugs);
         var bugResult = result.Bugs[0];
         Assert.Equal(bug.Id, bugResult.Id);
 
-        // Проверяем комментарии
         Assert.NotNull(bugResult.Comments);
         Assert.Single(bugResult.Comments);
         var commentResult = bugResult.Comments[0];
@@ -249,24 +212,19 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Несколько репортов с разными графами данных")]
     public async Task ListReportsAsync_MultipleReportsWithGraphs_ShouldGroupCorrectly()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
 
-        // Репорт 1 с одним багом
         var report1 = await CreateTestReportAsync(userId);
         var bug1 = await CreateTestBugAsync(userId, report1.Id, "Bug in Report 1");
         var comment1 = await CreateTestCommentAsync(userId, bug1.Id, "Comment in Report 1");
 
-        // Репорт 2 с двумя багами
         var report2 = await CreateTestReportAsync(userId);
         var bug2a = await CreateTestBugAsync(userId, report2.Id, "Bug 2A");
         var bug2b = await CreateTestBugAsync(userId, report2.Id, "Bug 2B");
         var comment2a = await CreateTestCommentAsync(userId, bug2a.Id, "Comment 2A");
 
-        // Act
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, userId, null, null, null, 0, 10);
 
-        // Assert
         Assert.Equal(2, total);
         Assert.Equal(2, reports.Length);
 
@@ -290,39 +248,32 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Репорт без багов имеет пустой массив багов")]
     public async Task ListReportsAsync_EmptyReport_ShouldReturnEmptyBugsArray()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         var report = await CreateTestReportAsync(userId);
 
-        // Act
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, userId, null, null, null, 0, 10);
 
-        // Assert
         Assert.Single(reports);
         var result = reports[0];
 
         Assert.NotNull(result.Bugs);
         Assert.Empty(result.Bugs);
         Assert.NotNull(result.ParticipantsUserIds);
-        // Примечание: ParticipantsUserIds может содержать создателя или других участников
     }
 
     [Fact(DisplayName = "Комбинированная фильтрация - userId и статусы")]
     public async Task ListReportsAsync_CombinedFilters_ShouldApplyAll()
     {
-        // Arrange
         var user1 = $"user_{Guid.NewGuid()}";
         var user2 = $"user_{Guid.NewGuid()}";
 
-        var report1 = await CreateTestReportAsync(user1); // user1, status 0
-        var report2 = await CreateTestReportAsync(user1); // user1, status 0
-        await _reportsDbClient.PatchReportAsync(report2.Id, new ReportPatchDto { Status = 1 }); // меняем на status 1
-        var report3 = await CreateTestReportAsync(user2); // user2, status 0
+        var report1 = await CreateTestReportAsync(user1);
+        var report2 = await CreateTestReportAsync(user1);
+        await _reportsDbClient.PatchReportAsync(report2.Id, new ReportPatchDto { Status = 1 });
+        var report3 = await CreateTestReportAsync(user2);
 
-        // Act - Ищем репорты user1 со статусом 0
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, user1, null, new[] { 0 }, null, 0, 10);
 
-        // Assert
         Assert.Equal(1, total);
         Assert.Single(reports);
         Assert.Equal(report1.Id, reports[0].Id);
@@ -333,7 +284,6 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Фильтр creatorTypes=[2] возвращает только tester-authored репорты")]
     public async Task ListReportsAsync_FilterByCreatorTypes_ShouldReturnOnlyMatching()
     {
-        // Arrange
         var orgId = $"org_{Guid.NewGuid()}";
         var userId = $"user_{Guid.NewGuid()}";
         var testerId = $"tester_{Guid.NewGuid()}";
@@ -342,10 +292,8 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
         var testerReport = await CreateTestReportAsync(testerId, organizationId: orgId);
         await SetReportCreatorTypeAsync(testerReport.Id, 2);
 
-        // Act — only tester
         var (totalTester, testerReports) = await _reportsDbClient.ListReportsAsync(orgId, null, null, null, new[] { 2 }, 0, 10);
 
-        // Assert
         Assert.Equal(1, totalTester);
         Assert.Single(testerReports);
         Assert.Equal(testerReport.Id, testerReports[0].Id);
@@ -353,7 +301,6 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
         // Act — only non-tester (User=0, System=1)
         var (totalNonTester, nonTesterReports) = await _reportsDbClient.ListReportsAsync(orgId, null, null, null, new[] { 0, 1 }, 0, 10);
 
-        // Assert
         Assert.Equal(1, totalNonTester);
         Assert.Single(nonTesterReports);
         Assert.Equal(userReport.Id, nonTesterReports[0].Id);
@@ -361,7 +308,6 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
         // Act — null filter returns both
         var (totalAll, allReports) = await _reportsDbClient.ListReportsAsync(orgId, null, null, null, null, 0, 10);
 
-        // Assert
         Assert.Equal(2, totalAll);
         Assert.Equal(2, allReports.Length);
     }
@@ -369,18 +315,15 @@ public class ReportsDbClient_ListReportsTests : IClassFixture<AppWithPostgresFix
     [Fact(DisplayName = "Take = 0 возвращает пустой массив, но правильный total")]
     public async Task ListReportsAsync_TakeZero_ShouldReturnEmptyWithCorrectTotal()
     {
-        // Arrange
         var userId = $"user_{Guid.NewGuid()}";
         await CreateTestReportAsync(userId);
         await CreateTestReportAsync(userId);
         await CreateTestReportAsync(userId);
 
-        // Act
         var (total, reports) = await _reportsDbClient.ListReportsAsync(null, userId, null, null, null, 0, 0);
 
-        // Assert
-        Assert.Equal(3, total); // Всего 3 репорта
-        Assert.Empty(reports); // Но не возвращено ни одного
+        Assert.Equal(3, total);
+        Assert.Empty(reports);
     }
 
     #region Helper Methods

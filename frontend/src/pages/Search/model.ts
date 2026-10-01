@@ -12,17 +12,14 @@ import type { ReportStatuses } from "@/shared/config";
 import { fetchUsers } from "@/entities/user";
 
 /**
- * Команда в фильтре — выбор в UI, а не объект с провода: страница держит от неё
- * только идентификатор для запроса и имя для подписи. Типом контракта её
- * описывать нечем — подсказки отдают команду целиком, а в фильтр попадает
- * ровно эта пара.
+ * Команда в фильтре — выбор в UI, а не объект с провода: от неё нужны только
+ * идентификатор для запроса и имя для подписи.
  */
 export type TeamFilter = { id: string; name: string };
 
 export const searchFx = createEffect<SearchRequestQueryParams, SearchResponse>(
   async (params: SearchRequestQueryParams) => {
-    // Пустые фильтры не уходят в URL — как и раньше; имена параметров теперь
-    // берутся из контракта (`Search_SearchReports`), а не набираются строками.
+    // Пустые фильтры не уходят в URL; имена параметров берутся из контракта.
     const result = await searchReports({
       query: params.query || undefined,
       sort: params.sort || undefined,
@@ -32,8 +29,7 @@ export const searchFx = createEffect<SearchRequestQueryParams, SearchResponse>(
       take: params.take,
       reportStatuses: params.reportStatuses,
     });
-    // `total` приходит каноном Int64String (строкой) — пустая выдача повторяет
-    // ту же форму, а не подменяет её числом.
+    // `total` — Int64String (строка); пустая выдача повторяет ту же форму.
     return result || { reports: [], total: "0" };
   }
 );
@@ -92,8 +88,7 @@ export const $searchResult = createStore<SearchResponse>({
   total: "0",
 })
   .on(searchFx.doneData, (state, newData) => {
-    // Проверяем, является ли это загрузкой дополнительных результатов
-    // Если skip > 0, значит это loadMore
+    // skip > 0 означает loadMore
     if (newData.reports.length > 0 && state.reports.length > 0) {
       return {
         total: newData.total,
@@ -111,7 +106,6 @@ export const $searchResult = createStore<SearchResponse>({
     updateTeamFilter,
   ]);
 
-// Загрузка пользователей
 export const fetchUsersFx = createEffect<string[], UserResponse[]>(
   async (userIds) => {
     if (userIds.length === 0) return [];
@@ -119,7 +113,6 @@ export const fetchUsersFx = createEffect<string[], UserResponse[]>(
   }
 );
 
-// стор для хранения пользователей по ID
 export const $usersStore = createStore<Record<string, UserResponse>>({}).on(
   fetchUsersFx.doneData,
   (state, users) => {
@@ -141,12 +134,10 @@ export const $allUserIdsStore = combine(
   (searchResult, userFilter) => {
     const allIds = new Set<string>();
 
-    // Добавляем ID пользователя из фильтра
     if (userFilter) {
       allIds.add(userFilter);
     }
 
-    // Добавляем ID пользователей из результатов поиска
     searchResult.reports?.forEach((report) => {
       if (report.responsibleUserId) allIds.add(report.responsibleUserId);
       if (report.creatorUserId) allIds.add(report.creatorUserId);
@@ -177,7 +168,6 @@ sample({
   target: searchFx,
 });
 
-// При изменении фильтров - запустить поиск
 sample({
   source: {
     query: $query,

@@ -18,13 +18,9 @@ namespace Bugget.Infrastructure.DbUp;
 
 public sealed class DbUpService(ILogger<DbUpService> logger) : IHostedService
 {
-    // Журнал `schemaversions` исторически хранил имена в namespace `Bugget.DbUp.sql.<file>`
-    // (когда все скрипты лежали в одной папке отдельного проекта Bugget.DbUp). Имена
-    // embedded-ресурсов с тех пор менялись дважды — при разделении на migrations/ и
-    // functions/ и при слиянии проектов в Bugget.Infrastructure, — поэтому в Pass 1 мы
-    // переименовываем их при записи в журнал: уже применённые миграции не должны
-    // запускаться повторно. Значение LegacyJournalNamespace править нельзя: оно лежит
-    // строками в боевом schemaversions.
+    // Журнал `schemaversions` хранит имена в старом namespace `Bugget.DbUp.sql.<file>`, а имена embedded-ресурсов
+    // с тех пор менялись дважды — поэтому в Pass 1 переименовываем их при записи в журнал, иначе применённые
+    // миграции запустятся повторно. LegacyJournalNamespace править нельзя: оно лежит строками в боевом журнале.
     private const string MigrationsNamespace = "Bugget.Infrastructure.DbUp.sql.migrations";
     private const string FunctionsNamespace = "Bugget.Infrastructure.DbUp.sql.functions";
     private const string LegacyJournalNamespace = "Bugget.DbUp.sql";
@@ -32,7 +28,7 @@ public sealed class DbUpService(ILogger<DbUpService> logger) : IHostedService
     public Task StartAsync(CancellationToken cancellationToken)
     {
         var connectionString = Environment.GetEnvironmentVariable(EnvironmentConstants.PostgresConnectionString)
-            ?? throw new ApplicationException($"Не задана строка подключения к Postgres, env=[{EnvironmentConstants.PostgresConnectionString}]");
+            ?? throw new InvalidOperationException($"Не задана строка подключения к Postgres, env=[{EnvironmentConstants.PostgresConnectionString}]");
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -51,9 +47,8 @@ public sealed class DbUpService(ILogger<DbUpService> logger) : IHostedService
     }
 
     /// <summary>
-    /// Движок первого прохода — миграции с журналом. Вынесен из <see cref="StartAsync"/>,
-    /// чтобы characterization обновления собирал ровно тот же движок, что и боевой запуск,
-    /// а не свою похожую копию.
+    /// Движок первого прохода — миграции с журналом. Вынесен из <see cref="StartAsync"/>, чтобы characterization
+    /// обновления собирал тот же движок, что и боевой запуск.
     /// </summary>
     internal static UpgradeEngine BuildMigrationsRunner(string connectionString) => DeployChanges.To
         .PostgresqlDatabase(connectionString)
@@ -93,29 +88,5 @@ public sealed class DbUpService(ILogger<DbUpService> logger) : IHostedService
 
         logger.LogInformation("DbUp {Pass} pass succeeded", passName);
         return true;
-    }
-}
-
-internal sealed class EmbeddedSqlScriptProvider(
-    Assembly assembly,
-    string resourceNamespace,
-    Func<string, string> renameForJournal) : IScriptProvider
-{
-    private readonly string _prefix = resourceNamespace + ".";
-
-    public IEnumerable<SqlScript> GetScripts(IConnectionManager connectionManager)
-    {
-        return assembly.GetManifestResourceNames()
-            .Where(name => name.StartsWith(_prefix, StringComparison.Ordinal)
-                           && name.EndsWith(".sql", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .Select(name =>
-            {
-                using var stream = assembly.GetManifestResourceStream(name)
-                    ?? throw new InvalidOperationException($"Embedded SQL resource {name} not found");
-                using var reader = new StreamReader(stream, Encoding.UTF8);
-                return new SqlScript(renameForJournal(name), reader.ReadToEnd());
-            })
-            .ToList();
     }
 }

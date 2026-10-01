@@ -9,10 +9,8 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Hardening PAT/MCP (X1): переполненное окно неудачных PAT-попыток отвечает 401
-/// не глядя в БД, а поток write-вызовов агента упирается в потолок. Ключи окон
-/// уникальны на тест (префикс мусорного токена, пользователь сценария), поэтому
-/// статические лимитеры процесса не пересекают тесты между собой.
+/// Hardening PAT/MCP (X1): переполненное окно неудачных PAT-попыток отвечает 401 не глядя в БД, write-вызовы агента упираются
+/// в потолок. Ключи окон уникальны на тест, поэтому статические лимитеры процесса тесты не пересекают.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class HardeningContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
@@ -32,8 +30,7 @@ public sealed class HardeningContractTests(AppContractFixture fixture) : IClassF
 
             var response = await client.GetAsync("/_internal/auth");
 
-            // И до, и после порога снаружи один и тот же 401: лимит не раскрывает
-            // перебирающему, что он замечен, — но каждый ответ обязан быть 401.
+            // До и после порога снаружи один и тот же 401: лимит не раскрывает перебирающему, что он замечен.
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 

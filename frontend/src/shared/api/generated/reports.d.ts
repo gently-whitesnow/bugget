@@ -233,6 +233,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/reports/{aliasId}/bugs/{bugId}/steps/with-attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Добавить шаг воспроизведения вместе с вложениями.
+         * @description Запись и её вложения создаются одной транзакцией: если хотя бы один файл
+         *     не прошёл проверку или не сохранился, не создаётся ничего, и другие
+         *     участники репорта не получают ни одного realtime-события (ADR-0015).
+         */
+        post: operations["BugSteps_CreateBugStepWithAttachments"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/reports/{aliasId}/bugs/{bugId}/steps/order": {
         parameters: {
             query?: never;
@@ -283,6 +305,28 @@ export interface paths {
         put?: never;
         /** Добавить комментарий к багу. */
         post: operations["Comments_CreateComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/reports/{aliasId}/bugs/{bugId}/comments/with-attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Добавить комментарий вместе с вложениями.
+         * @description Запись и её вложения создаются одной транзакцией: если хотя бы один файл
+         *     не прошёл проверку или не сохранился, не создаётся ничего, и другие
+         *     участники репорта не получают ни одного realtime-события (ADR-0015).
+         */
+        post: operations["Comments_CreateCommentWithAttachments"];
         delete?: never;
         options?: never;
         head?: never;
@@ -625,6 +669,22 @@ export interface components {
              * @description Содержимое файла.
              */
             file: string;
+        };
+        /** @description Шаг воспроизведения и его файлы одним запросом. */
+        BugStepWithAttachmentsUpload: {
+            /** @description Текст шага. */
+            text: string;
+            /** @description Файлы шага. Имя поля формы повторяется для каждого файла. */
+            files: string[];
+        };
+        /** @description Комментарий и его файлы одним запросом. */
+        CommentWithAttachmentsUpload: {
+            /** @description Текст комментария. */
+            text: string;
+            /** @description Пропущенное поле трактуется как `internal`, как и в `CommentRequest`. */
+            audience?: components["schemas"]["CommentAudience"] | null;
+            /** @description Файлы комментария. Имя поля формы повторяется для каждого файла. */
+            files: string[];
         };
         /** @description Новое имя вложения. */
         AttachmentRenameRequest: {
@@ -1714,6 +1774,41 @@ export interface operations {
             500: components["responses"]["InternalServerError"];
         };
     };
+    BugSteps_CreateBugStepWithAttachments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["BugStepWithAttachmentsUpload"];
+            };
+        };
+        responses: {
+            /** @description Шаг и все вложения сохранены. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BugStep"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
     BugSteps_UpdateBugStepsOrder: {
         parameters: {
             query?: never;
@@ -1845,6 +1940,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CommentSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    Comments_CreateCommentWithAttachments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description Адрес репорта в URL. Строка, а не число: это alias вида `<team>-<номер>`,
+                 *     по которому фронт строит ссылки.
+                 */
+                aliasId: components["parameters"]["AliasId"];
+                /** @description Идентификатор бага внутри репорта. */
+                bugId: components["parameters"]["BugId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["CommentWithAttachmentsUpload"];
+            };
+        };
+        responses: {
+            /** @description Комментарий и все вложения сохранены. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comment"];
                 };
             };
             400: components["responses"]["BadRequest"];

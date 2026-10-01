@@ -18,7 +18,3 @@ public static class RealtimeErrorPayload
     public static string Create(ProblemDescriptor descriptor) =>
         JsonSerializer.Serialize(new RealtimeError(descriptor.Code, descriptor.Title), Options);
 }
-
-/// <param name="Code">Стабильный машинный код — тот же, что в HTTP problem+json.</param>
-/// <param name="Title">Заголовок класса ошибки. Текста исключения здесь нет и быть не может.</param>
-public sealed record RealtimeError(string Code, string Title);

@@ -5,13 +5,10 @@ using Bugget.Api.Authorization.Extensions;
 namespace Bugget.UnitTests.Configuration;
 
 /// <summary>
-/// Атрибуция PAT-действий как agent держится на одном имени заголовка в трёх местах:
-/// PAT-схема пишет его в ответ auth_request (<see cref="HttpContextExtensions.AuthMethodHeaderName"/>),
-/// nginx переносит в запрос к приложению (auth-proxy-response.conf), приложение читает
-/// его по имени из ExternalSettings:Authentication:AuthMethodHeaderName. Выпадение
-/// любого конца молча деградирует creator_type к user — так уже случилось в проде,
-/// когда external_settings развёртывания потерял ключ (bugget report 436, баг 2).
-/// Тест держит эталонные конфиги репозитория согласованными с кодом.
+/// Атрибуция PAT-действий как agent держится на одном имени заголовка в трёх местах: PAT-схема пишет его в ответ auth_request
+/// (<see cref="HttpContextExtensions.AuthMethodHeaderName"/>), nginx переносит в запрос (auth-proxy-response.conf), приложение
+/// читает по ExternalSettings:Authentication:AuthMethodHeaderName. Выпадение любого конца молча деградирует creator_type
+/// к user — так уже было в проде (bugget report 436, баг 2). Тест держит эталонные конфиги согласованными с кодом.
 /// </summary>
 public sealed class AuthMethodHeaderContractTests
 {
@@ -68,7 +65,7 @@ public sealed class AuthMethodHeaderContractTests
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "ROOT.md")))
+            if (File.Exists(Path.Combine(directory.FullName, "AGENTS.md")))
             {
                 return directory.FullName;
             }

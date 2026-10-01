@@ -12,14 +12,9 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Граница fake-провайдера входа по окружению. Контроллер живёт в сборке хоста и
-/// попадает в application parts независимо от окружения: <c>AddFakeAuth</c>
-/// (backend/Bugget.Api/Modules/ModulesExtensions.cs:45) регистрирует только опции,
-/// а <c>IExternalAuthService</c> регистрируется безусловно
-/// (backend/Bugget.Api/Authorization/Extensions/ServiceCollectionExtensions.cs:68).
-/// В боевом контуре путь <c>/api/authorization/v1/*</c> проксируется без
-/// <c>auth_request</c> (deploy/nginx/snippets/locations/01-authorization-api.conf:1),
-/// поэтому единственной защитой маршрута была обязательная headers-policy
+/// Граница fake-провайдера входа по окружению. Контроллер попадает в application parts в любом окружении
+/// (<c>AddFakeAuth</c> регистрирует только опции), а nginx проксирует <c>/api/authorization/v1/*</c> без
+/// <c>auth_request</c>, поэтому единственной защитой маршрута была headers-policy
 /// <see cref="Bugget.Api.Authentication.ReportsModuleAuthorizationConvention"/>.
 /// </summary>
 [Collection("PostgresCollection")]
@@ -56,43 +51,5 @@ public sealed class FakeLoginEnvironmentBoundaryTests
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", previousEnvironment);
             Environment.SetEnvironmentVariable("APP_DOMAIN", previousAppDomain);
         }
-    }
-}
-
-/// <summary>
-/// Тот же хост, что у <see cref="AppContractFixture"/>, но в окружении Production.
-/// Не переиспользует общий хост намеренно: состав сервисов зависит от окружения,
-/// а общий экземпляр поднимается один раз в development.
-/// </summary>
-internal sealed class ProductionWebApplicationFactory : WebApplicationFactory<Program>
-{
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
-    {
-        builder.UseEnvironment("Production");
-
-        var fileStorageDirectory = Path.Combine(Path.GetTempPath(), "bugget-prod-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(fileStorageDirectory);
-        builder.UseSetting("FileStorageOptions:BaseDirectory", fileStorageDirectory);
-        builder.UseSetting("DomainOptions:BaseUrl", "http://localhost");
-
-        builder.UseSetting("ExternalSettings:Authentication:UserIdHeaderName", ContractHeaders.UserId);
-        builder.UseSetting("ExternalSettings:Authentication:TeamIdHeaderName", ContractHeaders.TeamId);
-        builder.UseSetting("ExternalSettings:Authentication:OrganizationIdHeaderName", ContractHeaders.WorkspaceId);
-        builder.UseSetting("ExternalSettings:Authentication:WorkspaceIdHeaderName", ContractHeaders.WorkspaceId);
-        builder.UseSetting("ExternalSettings:Authentication:WorkspaceRoleHeaderName", ContractHeaders.WorkspaceRole);
-
-        var keysDirectory = Path.Combine(Path.GetTempPath(), "bugget-prod-keys-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(keysDirectory);
-        builder.UseSetting("KeyStoreOptions:PemFilePath", Path.Combine(keysDirectory, "rsa_pairs.json"));
-
-        builder.ConfigureTestServices(services =>
-        {
-            services.RemoveAll<IHostedService>();
-            services.RemoveAll<IReportPageHubClient>();
-            services.AddSingleton<FakeReportPageHubClient>();
-            services.AddSingleton<IReportPageHubClient>(sp => sp.GetRequiredService<FakeReportPageHubClient>());
-            services.RemoveAll<ITaskQueue>();
-            services.AddSingleton<ITaskQueue>(sp => new SyncTaskQueue(sp));
-        });
     }
 }

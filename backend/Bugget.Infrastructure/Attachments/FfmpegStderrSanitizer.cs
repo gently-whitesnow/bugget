@@ -3,10 +3,8 @@ using System.Text.RegularExpressions;
 namespace Bugget.Infrastructure.Attachments;
 
 /// <summary>
-/// Приводит stderr ffmpeg к короткой причине без путей и имён файлов. Сырой stderr
-/// уезжает и в лог, и в текст исключения фоновой задачи, а внутри него лежат абсолютные
-/// пути временного каталога и исходное имя вложения пользователя (MAIN-240). Диагностика
-/// при этом нужна: причина отказа ffmpeg остаётся, теряются только идентифицирующие куски.
+/// Приводит stderr ffmpeg к короткой причине без путей и имён файлов: сырой stderr уезжает в лог и в текст исключения,
+/// а в нём абсолютные пути временного каталога и имя вложения пользователя (MAIN-240). Причина отказа сохраняется.
 /// </summary>
 public static partial class FfmpegStderrSanitizer
 {
@@ -14,10 +12,7 @@ public static partial class FfmpegStderrSanitizer
     private const int MaxReasonChars = 300;
     private const int MeaningfulTailLines = 3;
 
-    /// <summary>
-    /// Последние строки stderr — там ffmpeg пишет причину отказа; всё, что похоже на путь,
-    /// имя файла или адрес в памяти, заменяется плейсхолдером.
-    /// </summary>
+    /// <summary>Берёт последние строки stderr — там ffmpeg пишет причину отказа.</summary>
     public static string Summarize(string stderr, IReadOnlyList<string> arguments)
     {
         if (string.IsNullOrWhiteSpace(stderr))
@@ -49,10 +44,8 @@ public static partial class FfmpegStderrSanitizer
         return text;
     }
 
-    /// <summary>
-    /// Остаток чистим по форме: токен с разделителем каталогов или с расширением — это путь
-    /// или имя файла, а <c>0x...</c> — адрес, который только раздувает кардинальность лога.
-    /// </summary>
+    // Остаток чистим по форме: токен с разделителем каталогов или расширением — путь/имя файла,
+    // а 0x... — адрес, который только раздувает кардинальность лога.
     private static string RedactTokens(string text)
     {
         var tokens = text

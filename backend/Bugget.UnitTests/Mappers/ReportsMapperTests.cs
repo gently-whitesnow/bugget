@@ -9,10 +9,8 @@ using FluentAssertions;
 namespace Bugget.UnitTests.Mappers;
 
 /// <summary>
-/// Форма ответов зафиксирована contract-снимками, но снимок предъявляет только то,
-/// что оказалось в сиде: «коллекция не запрашивалась» и «коллекция пустая» через HTTP
-/// не различить, а `null` в LIST теперь и вовсе недостижим. Здесь проверяется само
-/// правило перекладки — обе ветки сразу.
+/// Contract-снимки предъявляют только то, что оказалось в сиде: «коллекция не запрашивалась» и «пустая» через HTTP
+/// не различить, а `null` в LIST недостижим. Здесь проверяется само правило перекладки — обе ветки сразу.
 /// </summary>
 public class ReportsMapperTests
 {
@@ -57,10 +55,7 @@ public class ReportsMapperTests
         summary.Has_preview.Should().BeTrue();
     }
 
-    /// <summary>
-    /// `has_preview` в публичной форме не nullable: в базе колонка допускает `NULL`,
-    /// наружу это уходит как «превью нет».
-    /// </summary>
+    // `has_preview` в публичной форме не nullable: `NULL` из базы уходит наружу как «превью нет».
     [Fact(DisplayName = "Вложение без признака превью отдаёт has_preview = false")]
     public void Attachment_without_preview_flag_is_false()
     {

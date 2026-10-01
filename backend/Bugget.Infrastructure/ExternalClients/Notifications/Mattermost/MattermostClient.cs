@@ -14,7 +14,7 @@ public class MattermostClient(IHttpClientFactory httpClientFactory)
 
     private readonly string? _botAccessToken =
         Environment.GetEnvironmentVariable(MattermostConstants.MattermostBotAccessTokenKey)
-        ?? throw new ApplicationException($"Не задан токен mattermost, env=[{MattermostConstants.MattermostBotAccessTokenKey}]");
+        ?? throw new InvalidOperationException($"Не задан токен mattermost, env=[{MattermostConstants.MattermostBotAccessTokenKey}]");
 
     private JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -25,12 +25,12 @@ public class MattermostClient(IHttpClientFactory httpClientFactory)
     public async Task<MattermostMessageResponse?> SendMessageAsync(string recipientId, string text, bool isDirectMessage = true,
         string? threadId = null)
     {
-        string channelId = recipientId;
+        var channelId = recipientId;
 
         if (isDirectMessage)
         {
             var channelResponse = await CreateDirectChannelAsync(recipientId);
-            channelId = channelResponse?.Id ?? throw new Exception("Не удалось создать или получить личный канал.");
+            channelId = channelResponse?.Id ?? throw new InvalidOperationException("Не удалось создать или получить личный канал.");
         }
 
         var messageRequest = new CreateMattermostMessageRequest
@@ -78,6 +78,6 @@ public class MattermostClient(IHttpClientFactory httpClientFactory)
         response.EnsureSuccessStatusCode();
 
         var user = await response.Content.ReadFromJsonAsync<UserResponse>(_jsonSerializerOptions);
-        return user?.Id ?? throw new Exception("Не удалось получить идентификатор пользователя бота.");
+        return user?.Id ?? throw new InvalidOperationException("Не удалось получить идентификатор пользователя бота.");
     }
 }

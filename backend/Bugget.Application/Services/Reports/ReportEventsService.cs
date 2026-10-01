@@ -2,7 +2,7 @@ using Bugget.Application.Commands.Report;
 using Bugget.Application.ExternalProducer.Context;
 using Bugget.Application.Mappers;
 using Bugget.Application.Ports;
-using Bugget.Application.Services.External;
+using Bugget.Application.Services.ExternalProducer;
 using Bugget.Domain.Authentication;
 using Bugget.Domain.Reports;
 

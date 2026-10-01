@@ -9,16 +9,8 @@ import {
 } from "./urls";
 import type { AttachmentContentRoute } from "./urls";
 
-/**
- * Адрес содержимого вложения уезжает в `src` картинки и в `fetch` за телом, а не
- * в axios. До миграции он собирался строкой в `shared/ui/FilePreview`.
- *
- * Проверяется две вещи. Первая — compile-time: все шесть шаблонов (оригинал и
- * превью каждого владельца) существуют в `paths` сгенерированного контракта,
- * причём превью берётся своим путём, а не дописанным суффиксом. Вторая — рантайм:
- * получившийся адрес совпал со старым дословно, включая хвостовой слэш у
- * оригинала.
- */
+// Compile-time: все шесть шаблонов — ключи `paths`, превью — свой путь.
+// Рантайм: адрес дословно совпал со старым, включая хвостовой слэш оригинала.
 
 beforeEach(() => {
   setAppContext(1, 2);
@@ -92,13 +84,8 @@ describe("адрес содержимого вложения", () => {
   });
 });
 
-/*
- * Проверки уровня типов: их держит `tsc --noEmit` в гейте frontend-typecheck.
- * Переименовали любой из шести путей в `specs/contracts/reports/openapi.yaml` —
- * красной становится сборка, а не только этот тест.
- */
+// Проверки уровня типов держит `tsc --noEmit` (гейт frontend-typecheck).
 
-/** Каждый шаблон обязан быть ключом `paths`, а не произвольной строкой. */
 const routesAreContractPaths: readonly (keyof paths)[] = [
   ATTACHMENT_CONTENT.bug.original,
   ATTACHMENT_CONTENT.bug.preview,
@@ -108,14 +95,9 @@ const routesAreContractPaths: readonly (keyof paths)[] = [
   ATTACHMENT_CONTENT.step.preview,
 ];
 
-/**
- * Превью — самостоятельный путь контракта: тип шаблона превью совпадает с ключом
- * `paths`, а не выводится из пути оригинала конкатенацией. Строка, собранная
- * склейкой, ключом `paths` не является, и присвоение ниже её бы не приняло.
- */
+// Превью — самостоятельный ключ `paths`: склеенную строку присвоение не примет.
 const previewIsOwnContractPath: keyof paths = ATTACHMENT_CONTENT.bug.preview;
 
-/** Публичный тип маршрута тоже сужен до ключей контракта. */
 const routeTypeIsContractBound: keyof paths = ATTACHMENT_CONTENT.comment
   .preview satisfies AttachmentContentRoute;
 

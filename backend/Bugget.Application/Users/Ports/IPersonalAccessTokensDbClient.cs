@@ -19,9 +19,7 @@ public interface IPersonalAccessTokensDbClient
     /// </summary>
     Task<PersonalAccessToken?> FindByHashAsync(byte[] tokenHash);
 
-    /// <summary>
-    /// Отзывает токен пользователя. <c>false</c> — токена нет, он чужой или уже отозван.
-    /// </summary>
+    /// <summary>Отзывает токен пользователя. <c>false</c> — токена нет, он чужой или уже отозван.</summary>
     Task<bool> RevokeAsync(long id, long userId);
 
     Task TouchLastUsedAsync(long id);

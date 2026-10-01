@@ -3,45 +3,20 @@ using System.Xml.Linq;
 namespace Bugget.Architecture.Tests;
 
 /// <summary>
-/// Один проект решения: как он объявлен в своём .csproj.
-/// </summary>
-/// <param name="Name">Имя проекта без расширения, оно же имя сборки: <c>Bugget.Application</c>.</param>
-/// <param name="Sdk">Значение атрибута Sdk: <c>Microsoft.NET.Sdk</c> или <c>Microsoft.NET.Sdk.Web</c>.</param>
-/// <param name="ProjectReferences">Имена проектов из ProjectReference — прямые рёбра графа.</param>
-/// <param name="PackageReferences">Имена пакетов из PackageReference — прямые внешние зависимости.</param>
-/// <param name="IsTestProject">Проект помечен IsTestProject.</param>
-public sealed record ProjectNode(
-    string Name,
-    string Sdk,
-    IReadOnlyList<string> ProjectReferences,
-    IReadOnlyList<string> PackageReferences,
-    bool IsTestProject);
-
-/// <summary>
-/// Граф проектов backend/, прочитанный с диска.
-///
-/// Правила уровня графа читают .csproj, а не скомпилированные сборки, намеренно:
-/// объявленная зависимость видна даже тогда, когда код ей ещё не пользуется. Это ловит
-/// сценарий «зависимость притащили заранее, использовать начнут в следующем PR».
-/// Правила уровня типов (кто на что ссылается в IL) живут в LayerDependencyRulesTests.
+/// Граф проектов backend/. Читаем .csproj, а не сборки, намеренно: объявленная зависимость видна,
+/// даже когда код ей ещё не пользуется. Правила уровня типов — в LayerDependencyRulesTests.
 /// </summary>
 public static class SolutionGraph
 {
-    /// <summary>Каталог backend/ — найден подъёмом от каталога сборки теста до Bugget.sln.</summary>
+    /// <summary>Каталог backend/ — найден подъёмом от каталога сборки теста до Bugget.slnx.</summary>
     public static string BackendRoot { get; } = FindBackendRoot();
 
-    /// <summary>Все проекты backend/, ключ — имя проекта.</summary>
     public static IReadOnlyDictionary<string, ProjectNode> Projects { get; } = LoadProjects(BackendRoot);
 
     /// <summary>
-    /// Ищет пути, по которым <paramref name="applicationProjects"/> добираются до пакета
-    /// драйвера БД — на любую глубину ProjectReference, а не только прямой ссылкой.
-    ///
-    /// Правило намеренно читает граф из словаря, а не из <see cref="Projects"/>: так его
-    /// можно прогнать на синтетическом графе и доказать, что оно действительно краснеет
-    /// (см. тест «правило транзитивной зависимости краснеет на подсунутом ребре»).
+    /// Пути от проектов до пакета драйвера БД на любую глубину ProjectReference. Граф берётся из словаря,
+    /// а не из <see cref="Projects"/>, чтобы правило можно было прогнать на синтетическом графе.
     /// </summary>
-    /// <returns>По строке на найденную утечку: <c>Bugget.Application → Bugget.Infrastructure → Npgsql</c>.</returns>
     public static IReadOnlyList<string> FindPersistenceDriverLeaks(
         IReadOnlyDictionary<string, ProjectNode> projects,
         IEnumerable<string> applicationProjects,
@@ -76,9 +51,7 @@ public static class SolutionGraph
         return [.. leaks.OrderBy(v => v, StringComparer.Ordinal)];
     }
 
-    /// <summary>
-    /// Ищет цикл в графе ProjectReference. Возвращает путь цикла (a → b → … → a) или null.
-    /// </summary>
+    /// <summary>Путь цикла в графе ProjectReference (a → b → … → a) или null.</summary>
     public static IReadOnlyList<string>? FindCycle()
     {
         var visited = new HashSet<string>();
@@ -132,7 +105,7 @@ public static class SolutionGraph
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null)
         {
-            if (File.Exists(Path.Combine(dir.FullName, "Bugget.sln")))
+            if (File.Exists(Path.Combine(dir.FullName, "Bugget.slnx")))
             {
                 return dir.FullName;
             }
@@ -141,7 +114,7 @@ public static class SolutionGraph
         }
 
         throw new InvalidOperationException(
-            $"Не нашёл backend/Bugget.sln подъёмом от {AppContext.BaseDirectory}. " +
+            $"Не нашёл backend/Bugget.slnx подъёмом от {AppContext.BaseDirectory}. " +
             "Архитектурные тесты читают .csproj с диска и запускаются из дерева репозитория.");
     }
 

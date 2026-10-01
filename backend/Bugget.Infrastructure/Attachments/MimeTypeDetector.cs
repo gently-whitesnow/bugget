@@ -17,13 +17,13 @@ public sealed class MimeTypeDetector : IMimeTypeDetector
         ArgumentNullException.ThrowIfNull(content);
 
         // Сохраняем позицию, если можем
-        long origPos = content.CanSeek ? content.Position : 0;
+        var origPos = content.CanSeek ? content.Position : 0;
 
         // Читаем в арендованный буфер
         var buffer = ArrayPool<byte>.Shared.Rent(DetectionBufferSize);
         try
         {
-            int bytesRead = await content.ReadAsync(buffer.AsMemory(0, DetectionBufferSize), ct);
+            var bytesRead = await content.ReadAsync(buffer.AsMemory(0, DetectionBufferSize), ct);
 
             // Сбрасываем позицию, если это возможно
             if (content.CanSeek)

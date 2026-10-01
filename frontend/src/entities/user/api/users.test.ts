@@ -3,13 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setAppContext } from "@/shared/api";
 
 /**
- * Разбор ключа аватара в адрес картинки — единственное, что осталось в этом слое
- * поверх операций контракта: свой профиль ходит за аватаром в отдельную ручку,
- * чужие пользователи — в ручку с идентификатором.
- *
- * Транспорт здесь не предмет проверки (его держит `shared/api/users`), поэтому
- * подменяются сами операции, а не адаптер axios: тест смотрит на то, во что
- * превращается ответ.
+ * Проверяется разбор ключа аватара в адрес картинки. Транспорт держит
+ * `shared/api/users`, поэтому подменяются операции, а не адаптер axios.
  */
 
 const getUser = vi.fn();
@@ -63,8 +58,7 @@ describe("текущий пользователь", () => {
     expect(result.imageUrl).toBe(
       `${contextPrefix}/users/avatar/content?v=avatars%2F7.png`
     );
-    // Ответ доезжает целиком: роль и привязка Mattermost больше не теряются по
-    // дороге — их форма выведена из контракта.
+    // Роль и привязка Mattermost доезжают целиком, не теряясь по дороге.
     expect(result.workspaceRole).toBe("admin");
     expect(result.mattermostUserId).toBeNull();
   });

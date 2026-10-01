@@ -4,16 +4,8 @@ using FluentAssertions;
 namespace Bugget.Architecture.Tests;
 
 /// <summary>
-/// Любой тип <c>Bugget.Api</c> — контроллер, хаб, фильтр, маппер, фоновый сервис —
-/// получает use-case прикладного слоя через интерфейс, объявленный в <c>Bugget.Application</c>,
-/// а не через конкретную реализацию. Правило смотрит на всю сборку, а не на суффикс
-/// <c>*Controller</c>: суффикс — соглашение об именовании, и новый хаб с concrete-сервисом
-/// в конструкторе проходил бы мимо гейта.
-///
-/// Единственное исключение — поимённый композиционный корень
-/// (<see cref="Quartet.CompositionRoot"/>), тот же список, что и в
-/// <see cref="CompositionRootRulesTests"/>: выбор реализации — работа этих типов.
-/// Ни суффикс, ни namespace исключения не дают.
+/// Любой тип <c>Bugget.Api</c> берёт use-case через интерфейс <c>Bugget.Application</c>, не через реализацию. Смотрим на всю
+/// сборку, а не на суффикс <c>*Controller</c>. Исключение — только поимённый <see cref="Quartet.CompositionRoot"/>.
 /// </summary>
 public class ApiDependencyRulesTests
 {
@@ -36,8 +28,7 @@ public class ApiDependencyRulesTests
     [Fact(DisplayName = "Правило DI Api краснеет на хабе с concrete application-сервисом")]
     public void Api_dependency_rule_is_provably_red_for_a_hub()
     {
-        // Прогоняем ту же функцию на сборке тестов, где заведён хаб-нарушитель. Его имя
-        // не заканчивается на Controller: до расширения правило такой тип не видело.
+        // Хаб-нарушитель из сборки тестов: имя не на Controller, прежнее правило его не видело.
         FindConcreteApplicationDependencies(typeof(ApiDependencyRulesTests).Assembly, [])
             .Should().Contain(
                 $"{typeof(CompositionFixtures.LeakingReportPageHub).FullName} → " +
@@ -47,8 +38,6 @@ public class ApiDependencyRulesTests
     [Fact(DisplayName = "Правило DI Api краснеет на Api-адаптере с любым именем")]
     public void Api_dependency_rule_is_provably_red_regardless_of_type_name()
     {
-        // Второй нарушитель без узнаваемого суффикса вообще: правило смотрит на сборку
-        // и конструктор, а не на имя типа.
         FindConcreteApplicationDependencies(typeof(ApiDependencyRulesTests).Assembly, [])
             .Should().Contain(
                 $"{typeof(CompositionFixtures.LeakingRealtimePublisher).FullName} → " +
@@ -58,9 +47,7 @@ public class ApiDependencyRulesTests
     [Fact(DisplayName = "Правило DI Api краснеет на MCP-tool-классе")]
     public void Api_dependency_rule_is_provably_red_for_an_mcp_tool()
     {
-        // Слой Mcp (P2a+) — обычные типы сборки Bugget.Api: tools обязаны брать
-        // use-case'ы через интерфейсы Application, отдельного правила для них нет,
-        // а покрытие существующим — вот оно.
+        // Слой Mcp (P2a+): отдельного правила для tools нет, их покрывает это же.
         FindConcreteApplicationDependencies(typeof(ApiDependencyRulesTests).Assembly, [])
             .Should().Contain(
                 $"{typeof(CompositionFixtures.LeakingMcpTool).FullName} → " +
@@ -81,12 +68,7 @@ public class ApiDependencyRulesTests
             .Should().NotContain(name => name.StartsWith(compositionRoot, StringComparison.Ordinal));
     }
 
-    /// <summary>
-    /// Пары «тип сборки → конкретный тип <c>Bugget.Application</c> в его конструкторе»
-    /// для всех неабстрактных типов, кроме перечисленных в <paramref name="compositionRoot"/>.
-    /// Отдельная функция, а не тело теста: ту же проверку прогоняют доказательства
-    /// красноты и зелёности.
-    /// </summary>
+    /// <summary>Отдельная функция, а не тело теста: её же прогоняют доказательства красноты и зелёности.</summary>
     private static string[] FindConcreteApplicationDependencies(
         Assembly assembly,
         IEnumerable<string> compositionRoot)

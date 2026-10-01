@@ -23,11 +23,8 @@ import {
 } from "./model";
 import { nextReconnectDelay } from "./retryPolicy";
 
-/**
- * Соединение закрылось окончательно (SignalR сдался или упал старт) — поднимаем
- * его заново. Без этого вкладка живёт с мёртвым сокетом до перезагрузки.
- * Пауза растёт с каждой попыткой, пока соединение не станет стабильным.
- */
+// Соединение закрылось окончательно — поднимаем заново с растущей паузой,
+// иначе вкладка живёт с мёртвым сокетом до перезагрузки.
 sample({
   clock: connectionClosed,
   source: { attempts: $revivalAttempts, isOnline: $isOnline },
@@ -44,11 +41,8 @@ sample({
   target: initSocketFx,
 });
 
-/**
- * Пользователь вернулся на вкладку или сеть поднялась — пробуем сразу, не
- * дожидаясь таймера: в фоне браузер душит setTimeout, и очередная попытка
- * может быть отложена на минуту.
- */
+// Возврат на вкладку или сети: пробуем сразу — в фоне браузер душит
+// setTimeout, и попытка может быть отложена на минуту.
 sample({
   clock: appWokeUp,
   source: { isOnline: $isOnline, isConnected: $isConnected },
@@ -72,7 +66,6 @@ sample({
   target: restartSocketFx,
 });
 
-/** Первый сигнал потери связи открывает единый двухминутный цикл восстановления. */
 sample({
   clock: connectionReconnecting,
   target: connectionRecoveryStarted,
@@ -102,11 +95,8 @@ sample({
   target: reconnectStuckDetected,
 });
 
-/**
- * Соединение поднялось после разрыва. Сбрасываем флаг не по connectionStarted,
- * а по самому connectionRestored — иначе чтение и сброс стора шли бы от одного
- * клока с неопределённым порядком.
- */
+// Флаг сбрасываем по connectionRestored, а не connectionStarted — иначе
+// чтение и сброс стора шли бы от одного клока с неопределённым порядком.
 sample({
   clock: connectionStarted,
   source: $wasDisconnected,

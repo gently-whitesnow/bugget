@@ -6,11 +6,8 @@ using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
 
-/// <summary>
-/// Контракт настроек (<c>/v1/*-settings-sections/**</c>), поиска по репортам
-/// (<c>/v1/reports/search</c>) и внешних источников (<c>/v1/external/**</c>).
-/// Пути живут в v1 и остаются в v1: фронт ходит именно по ним.
-/// </summary>
+/// <summary>Контракт настроек, поиска по репортам (<c>/v1/reports/search</c>) и внешних источников.
+/// Пути живут в v1 и остаются в v1: фронт ходит именно по ним.</summary>
 [Collection("PostgresCollection")]
 public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
@@ -23,9 +20,8 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
 
         var response = await scenario.Client.GetAsync("/v1/settings-sections");
 
-        // Три группы — рабочее пространство, команда, пользователь: фронт рисует по
-        // ним три раздела и не проверяет ключи на существование. Пользовательских
-        // процессоров в OSS-сборке нет, поэтому группа пустая, но присутствует.
+        // Фронт рисует три раздела и не проверяет ключи на существование; пользовательских процессоров
+        // в OSS-сборке нет, поэтому группа пустая, но присутствует.
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
         Assert.NotEmpty(body.GetProperty("workspace_sections").EnumerateArray().ToArray());
         Assert.NotEmpty(body.GetProperty("team_sections").EnumerateArray().ToArray());
@@ -75,17 +71,13 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
         Assert.Equal("use_report_linking", body.GetProperty("id").GetString());
 
-        // Булеву настройку сервер отдаёт своим представлением ("True"), а не тем,
-        // что прислал клиент, — фронт разбирает ответ без учёта регистра.
+        // Булеву настройку сервер отдаёт своим представлением ("True"), фронт разбирает без учёта регистра.
         Assert.Equal(
             new[] { "True" },
             body.GetProperty("values").EnumerateArray().Select(value => value.GetString()).ToArray());
     }
 
-    /// <summary>
-    /// Пользовательских процессоров настроек в OSS-сборке не зарегистрировано, поэтому
-    /// путь существует, но всегда отвечает 404 из общего каталога.
-    /// </summary>
+    /// <summary>Пользовательских процессоров в OSS-сборке нет: путь существует, но всегда отвечает 404.</summary>
     [Fact(DisplayName = "PUT /v1/user-settings-sections/{sectionId}/settings/{settingId}: секции нет")]
     public async Task UpdateUserSetting()
     {
@@ -116,12 +108,7 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
         Assert.Equal("ищем именно этот репорт", report.GetProperty("title").GetString());
     }
 
-    /// <summary>
-    /// Поиск — второй адрес той же формы списка (<c>ReportList</c>), и сужение
-    /// элемента списка обязано действовать и здесь. Проверяется на полном сиде и
-    /// поэлементно: ссылки, вложения бага и шаги лежат в базе, но в ответе поиска
-    /// их быть не должно, а комментарии — должны.
-    /// </summary>
+    /// <summary>Поиск — второй адрес той же формы <c>ReportList</c>: сужение элемента списка действует и здесь.</summary>
     [Fact(DisplayName = "GET /v1/reports/search: в элементе результата нет links, вложений бага и шагов")]
     public async Task SearchReportsOmitsKeysItDoesNotLoad()
     {
@@ -161,8 +148,7 @@ public sealed class SettingsAndSearchContractTests(AppContractFixture fixture) :
 
         var response = await scenario.Client.GetAsync("/v1/external/search?query=abc&skip=0&take=10");
 
-        // Внешние источники в тестовом контуре не настроены: путь живой и отдаёт
-        // пустую выдачу, а не ошибку, — фронт рисует по ней «ничего не найдено».
+        // Внешние источники в тестах не настроены: путь отдаёт пустую выдачу, а не ошибку.
         var body = await ContractResponse.JsonAsync(response, HttpStatusCode.OK);
         Assert.Equal("0", body.GetProperty("total").GetString());
         Assert.Empty(body.GetProperty("items").EnumerateArray().ToArray());

@@ -8,12 +8,8 @@ import type {
   ReportListItem,
 } from "./reports";
 
-/**
- * Ответ `GET /v2/reports` ровно в том виде, в каком он приходит по проводу —
- * snake_case, форма `ReportList` из контракта. Сверено со снимком
- * `v2.reports.list`: ни `links`, ни `bugs[].attachments`, ни `bugs[].steps`
- * в LIST больше нет.
- */
+// Ответ `GET /v2/reports` как на проводе (snake_case, `v2.reports.list`): ни
+// `links`, ни `bugs[].attachments`, ни `bugs[].steps` в LIST нет.
 const wireListResponse: components["schemas"]["ReportList"] = {
   total: "2",
   reports: [
@@ -59,7 +55,6 @@ const wireListResponse: components["schemas"]["ReportList"] = {
       ],
     },
     {
-      // Репорт без багов — пустая коллекция и `null` в creator_team_id.
       id: "43",
       title: "Пустой репорт",
       status: "test",
@@ -79,7 +74,6 @@ const wireListResponse: components["schemas"]["ReportList"] = {
 
 describe("формы списка репортов выведены из контракта", () => {
   it("интерсептор приводит провод к тем же ключам, что объявляет тип", () => {
-    // Ровно то, что делает case-conversion интерсептор в shared/api/instances/base.ts.
     const list = convertObjectToCamel(wireListResponse) as ListReportsResponse;
 
     // `total` — канон Int64String: строка с провода строкой и остаётся.
@@ -96,7 +90,6 @@ describe("формы списка репортов выведены из кон�
     const bug = report.bugs?.[0];
     expect(bug?.reportId).toBe(42);
     expect(bug?.creatorUserId).toBe("u-3");
-    // nullable-поля: заведён только receive, title и expect пришли как null
     expect(bug?.title).toBeNull();
     expect(bug?.expect).toBeNull();
     expect(bug?.comments?.[0].creatorUserId).toBe("u-1");
@@ -121,10 +114,8 @@ describe("формы списка репортов выведены из кон�
   });
 });
 
-/*
- * Ниже — проверки уровня типов: их держит `tsc --noEmit` в гейте frontend.
- * Каждый `@ts-expect-error` краснеет, если удалённый ключ вернётся в форму списка.
- */
+// Проверки уровня типов (`tsc --noEmit`): `@ts-expect-error` краснеет, если
+// удалённый ключ вернётся в форму списка.
 
 // @ts-expect-error `links` в элементе списка нет: LIST их не загружает
 const readLinks = (report: ReportListItem) => report.links;
@@ -135,7 +126,6 @@ const readBugAttachments = (bug: BugListItem) => bug.attachments;
 // @ts-expect-error `steps` у бага в списке нет
 const readBugSteps = (bug: BugListItem) => bug.steps;
 
-// То, что список действительно отдаёт, читается без ошибок.
 const readBugStatuses = (report: ReportListItem): BugStatuses[] =>
   report.bugs?.map((bug) => bug.status) ?? [];
 

@@ -5,9 +5,7 @@ using Xunit;
 
 namespace Bugget.IntegrationTests.Contract;
 
-/// <summary>
-/// Контракт багов и шагов воспроизведения: <c>/v2/reports/{aliasId}/bugs/**</c>.
-/// </summary>
+/// <summary>Контракт багов и шагов воспроизведения: <c>/v2/reports/{aliasId}/bugs/**</c>.</summary>
 [Collection("PostgresCollection")]
 public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
 {
@@ -41,11 +39,7 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
         await ContractResponse.ProblemAsync(response, "bug_must_have_one_field", HttpStatusCode.BadRequest);
     }
 
-    /// <summary>
-    /// Ответ на создание — `BugSummary`, и он тоже обязан отдавать оба ключа пары
-    /// `receive`/`expect`: бизнес-правило требует заполнить одно из двух, а не оба,
-    /// и незаполненное уходит наружу как `null`, а не исчезает из тела.
-    /// </summary>
+    // `BugSummary` обязан отдавать оба ключа `receive`/`expect`: незаполненное уходит как `null`, а не исчезает.
     [Fact(DisplayName = "POST .../bugs с одним заполненным полем: 201, второй ключ приходит null")]
     public async Task CreateBugWithOneFilledField()
     {
@@ -81,12 +75,8 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
         Assert.Equal("verified", body.GetProperty("status").GetString());
     }
 
-    /// <summary>
-    /// `patch_bug_internal` возвращает `receive`/`expect` как есть, а не «как передали»:
-    /// у бага с одним заполненным полем второе остаётся `NULL` (миграция 009 сняла
-    /// `NOT NULL` с обеих колонок). Ключ при этом присутствует со значением `null` —
-    /// отсюда `required` + `nullable` у `BugPatchResult`.
-    /// </summary>
+    // `patch_bug_internal` возвращает `receive`/`expect` как есть: миграция 009 сняла `NOT NULL`,
+    // отсюда `required` + `nullable` у `BugPatchResult`.
     [Fact(DisplayName = "PATCH .../bugs/{bugId} бага с одним заполненным полем: второй ключ приходит null")]
     public async Task PatchBugWithOneFilledField()
     {
@@ -106,11 +96,7 @@ public sealed class BugsContractTests(AppContractFixture fixture) : IClassFixtur
         Assert.Equal("только факт", body.GetProperty("receive").GetString());
     }
 
-    /// <summary>
-    /// Зеркало предыдущего сценария: незаполненным остаётся `receive`. Плюс проверка,
-    /// что PATCH второго поля его действительно заполняет, а не оставляет `null`, —
-    /// иначе «оба ключа всегда есть» держалось бы только на одной ветке.
-    /// </summary>
+    // Зеркало: пустым остаётся `receive`; плюс PATCH второго поля его действительно заполняет.
     [Fact(DisplayName = "PATCH .../bugs/{bugId} бага только с expect: receive приходит null и заполняется патчем")]
     public async Task PatchBugWithOnlyExpectFilled()
     {

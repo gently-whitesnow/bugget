@@ -5,9 +5,8 @@ using Microsoft.Extensions.Logging;
 namespace Bugget.Infrastructure.Attachments;
 
 /// <summary>
-/// Запуск ffmpeg как дочернего процесса под таймаутом. Здесь же живут две вещи,
-/// без которых потолок памяти не держится: убийство всего дерева процессов по
-/// таймауту или отмене и замер пикового RSS ребёнка (MAIN-188).
+/// Запуск ffmpeg дочерним процессом под таймаутом. Здесь же то, без чего потолок памяти не держится (MAIN-188):
+/// убийство всего дерева процессов по таймауту или отмене и замер пикового RSS ребёнка.
 /// </summary>
 public sealed class FfmpegProcessRunner(
     FfmpegService ffmpegService,
@@ -31,10 +30,7 @@ public sealed class FfmpegProcessRunner(
         await RunProcessAsync(ffmpegPath, arguments, timeout, ct);
     }
 
-    /// <summary>
-    /// Общая механика запуска: путь к исполняемому файлу приходит снаружи, чтобы
-    /// поведение по таймауту можно было проверить тестом без ffmpeg в системе.
-    /// </summary>
+    /// <summary>Путь к исполняемому файлу приходит снаружи, чтобы таймаут проверялся тестом без ffmpeg в системе.</summary>
     public async Task RunProcessAsync(
         string executablePath,
         IReadOnlyList<string> arguments,
@@ -73,7 +69,6 @@ public sealed class FfmpegProcessRunner(
                 metrics.RecordPeakChildRss(peakRss);
             }
 
-            // Дочитываем всегда: брошенное чтение осталось бы висеть на закрытом потоке.
             stderr = await DrainAsync(stderrTask);
         }
 
@@ -156,10 +151,7 @@ public sealed class FfmpegProcessRunner(
     private static string DescribeArguments(IReadOnlyList<string> arguments) =>
         string.Join(' ', arguments.Select(argument => Path.IsPathRooted(argument) ? "<path>" : argument));
 
-    /// <summary>
-    /// Пиковый RSS ребёнка. Process.PeakWorkingSet64 на Linux не поддержан, поэтому
-    /// подглядываем VmHWM в /proc, пока процесс жив; на других платформах метрики нет.
-    /// </summary>
+    /// <summary>Пиковый RSS ребёнка: PeakWorkingSet64 на Linux не поддержан, поэтому читаем VmHWM из /proc; иначе метрики нет.</summary>
     private static async Task<long> SamplePeakRssAsync(Process process, CancellationToken stop)
     {
         if (!OperatingSystem.IsLinux())

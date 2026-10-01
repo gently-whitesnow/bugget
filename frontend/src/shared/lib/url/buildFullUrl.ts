@@ -3,11 +3,7 @@
 // браузерный адрес вложения этим же хелпером.
 import { getAppContext } from "@/shared/api/instances";
 
-/**
- * Строит полный API URL с учетом workspace/team контекста
- * Используется для формирования URL к статическим ресурсам (например, картинки)
- * Использует origin страницы чтобы запросы шли через тот же прокси что и HTTP
- */
+// Origin страницы: запросы браузера за статикой идут через тот же прокси.
 export const buildFullApiUrl = (path: string): string => {
   const baseUrl = window.location.origin;
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
@@ -17,14 +13,9 @@ export const buildFullApiUrl = (path: string): string => {
     return `${baseUrl}/api/app/workspaces/${workspaceId}/teams/${teamId}${cleanPath}`;
   }
 
-  // Fallback - если контекст не установлен
   return `${baseUrl}/api/app${cleanPath}`;
 };
 
-/**
- * Строит полный URL для навигации внутри приложения
- * Учитывает режим работы и контекст workspace/team
- */
 export const buildFullAppUrl = (
   path: string,
   overrides?: {
@@ -41,13 +32,10 @@ export const buildFullAppUrl = (
     return `/teams/${teamId}${cleanPath}`;
   }
 
-  // Fallback
   return cleanPath;
 };
 
-/**
- * @deprecated Используй buildFullApiUrl или buildFullAppUrl
- */
+/** @deprecated Используй buildFullApiUrl или buildFullAppUrl */
 export const buildFullUrl = (baseUrl: string, path: string): string => {
   const baseUrlClean = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
   const cleanPath = path.startsWith("/") ? path : `/${path}`;

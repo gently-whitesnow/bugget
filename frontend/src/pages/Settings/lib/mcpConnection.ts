@@ -9,8 +9,7 @@ export type McpAppContext = {
 };
 
 /**
- * Workspace/team для MCP URL — тот же scope, что у PAT.
- * Сначала контекст приложения; если ещё не выставлен — из пути `/teams/:teamId`
+ * Scope как у PAT: контекст приложения, иначе путь `/teams/:teamId`
  * (self-hosted: workspace всегда 1).
  */
 export const resolveMcpAppContext = (
@@ -29,9 +28,6 @@ export const resolveMcpAppContext = (
   return toMcpAppContext(fromPath.workspaceId, fromPath.teamId);
 };
 
-/**
- * URL Streamable HTTP MCP для текущей пары workspace+team.
- */
 export const buildMcpEndpointUrl = (
   origin: string = typeof window !== "undefined" ? window.location.origin : "",
   pathname?: string
@@ -62,10 +58,7 @@ export const buildCursorMcpSnippet = (
     2
   );
 
-/**
- * Готовый фрагмент для Claude Code (`.mcp.json` / `~/.claude.json`).
- * Поле `type: "http"` обязательно — без него клиент ждёт stdio.
- */
+/** Фрагмент для Claude Code; без `type: "http"` клиент ждёт stdio. */
 export const buildClaudeCodeMcpSnippet = (
   url: string,
   token: string = MCP_TOKEN_PLACEHOLDER
@@ -86,10 +79,7 @@ export const buildClaudeCodeMcpSnippet = (
     2
   );
 
-/**
- * Сниппет для Codex (`~/.codex/config.toml`). Токен — в env, не в файле:
- * `export BUGGET_PAT='…'`.
- */
+/** Сниппет для Codex; токен — в env (`export BUGGET_PAT='…'`). */
 export const buildCodexMcpSnippet = (url: string): string =>
   [
     "[mcp_servers.bugget]",

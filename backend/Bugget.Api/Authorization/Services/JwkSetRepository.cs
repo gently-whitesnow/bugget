@@ -14,16 +14,7 @@ public sealed class JwkSetRepository : IJwkSetStorage
     private readonly ConcurrentDictionary<string, JsonWebKey> _keysById;
     private readonly JwkSetHolder _jwkSetHolder;
 
-    /// <summary>
-    /// Создает новый экземпляр <see cref="JwkSetRepository"/> из переданных пар ключей RSA.
-    /// </summary>
-    /// <param name="rsaKeyPairs">Перечисление пар ключей RSA, содержащих открытые и закрытые ключи.</param>
-    /// <returns>
-    /// Новый экземпляр <see cref="JwkSetRepository"/>, инициализированный набором JWK, созданным из пар ключей RSA.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">
-    /// Вызывается, если <paramref name="rsaKeyPairs"/> равен null или пуст.
-    /// </exception>
+    /// <summary>Строит набор JWK из открытых ключей пар RSA; пустой набор — ошибка.</summary>
     public static JwkSetRepository FromRsaKeyPairs(
         IEnumerable<RsaKeyPair> rsaKeyPairs)
     {

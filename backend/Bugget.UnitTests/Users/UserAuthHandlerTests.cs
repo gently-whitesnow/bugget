@@ -11,11 +11,7 @@ using Xunit;
 
 namespace Bugget.UnitTests.Users;
 
-/// <summary>
-/// Header-схема модуля users: сюда приходят <c>Auth-Request-*</c>, которые nginx взял из
-/// ответа <c>/_internal/auth</c>. Схема — единственное место, где эти заголовки становятся
-/// identity, поэтому проверяется и состав claims, и отказ, и реакция на незаданные имена.
-/// </summary>
+/// <summary>Header-схема users — единственное место, где <c>Auth-Request-*</c> от nginx становятся identity.</summary>
 public class UserAuthHandlerTests
 {
     private const string UserIdHeaderName = "Auth-Request-User-Id";
@@ -51,10 +47,7 @@ public class UserAuthHandlerTests
         Assert.Equal("User ID not found", result.Failure?.Message);
     }
 
-    /// <summary>
-    /// nginx подставляет пустую строку, когда в ответе <c>/_internal/auth</c> заголовка не было,
-    /// поэтому пробельный идентификатор — достижимое состояние, а не только опечатка в тесте.
-    /// </summary>
+    /// <summary>nginx подставляет пустую строку вместо отсутствующего заголовка: пробельный идентификатор — достижимое состояние.</summary>
     [Fact]
     public async Task Отказывает_когда_идентификатор_пользователя_из_пробелов()
     {
@@ -78,9 +71,8 @@ public class UserAuthHandlerTests
     }
 
     /// <summary>
-    /// Роль попадает в ответ <c>/_internal/auth</c> только вместе с найденным workspace, так что
-    /// её отсутствие штатно. Member здесь — не повышение прав: доступ к админским ручкам даёт
-    /// только <see cref="WorkspaceRole.Admin"/>.
+    /// Роль приходит только вместе с найденным workspace, её отсутствие штатно. Member — не повышение прав:
+    /// админские ручки открывает только <see cref="WorkspaceRole.Admin"/>.
     /// </summary>
     [Fact]
     public async Task Подставляет_member_когда_роль_не_пришла()
@@ -112,10 +104,7 @@ public class UserAuthHandlerTests
         Assert.Null(result.Principal!.FindFirst(AuthClaims.AuthMethod));
     }
 
-    /// <summary>
-    /// Имена заголовков приходят из конфигурации, и незаданное имя означает «эту часть identity
-    /// мы не принимаем». Иначе клиент назначал бы себе команду, пространство и способ входа сам.
-    /// </summary>
+    /// <summary>Незаданное имя заголовка = «эту часть identity не принимаем»: иначе клиент назначал бы её себе сам.</summary>
     [Fact]
     public async Task Игнорирует_заголовки_имена_которых_не_заданы()
     {

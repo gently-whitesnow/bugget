@@ -5,10 +5,8 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Контракт вложений. Семейств три — у бага, у комментария и у шага, — и у каждого
-/// свой набор путей. Правила у них одни (владелец в <c>entity_id</c>, тип в
-/// <c>attach_type</c>, картинка на выходе в webp), но проверяются на всех трёх:
-/// расходятся такие вещи молча.
+/// Контракт вложений трёх семейств — бага, комментария и шага. Правила одни (владелец в <c>entity_id</c>, тип в
+/// <c>attach_type</c>, картинка на выходе в webp), но проверяются на всех трёх: расходятся такие вещи молча.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClassFixture<AppContractFixture>
@@ -47,11 +45,8 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
     }
 
     /// <summary>
-    /// Вложения всех контекстов лежат в одной таблице и разводятся по владельцам
-    /// только значением `attach_type`, поэтому чужой тип не должен доезжать до
-    /// хранилища: иначе вложение бага всплыло бы у комментария или шага с тем же
-    /// идентификатором. `comment` и `bug_step` контракт знает, но у баговой ручки
-    /// они запрещены — это доменный отказ, а не ошибка разбора.
+    /// Вложения всех контекстов лежат в одной таблице и разводятся только по `attach_type`: чужой тип не должен
+    /// доезжать до хранилища. `comment` и `bug_step` у баговой ручки — доменный отказ, а не ошибка разбора.
     /// </summary>
     [Theory(DisplayName = "POST .../bugs/{bugId}/attachments с чужим attachType: 400 attachment_type_not_allowed")]
     [InlineData("comment")]
@@ -71,11 +66,7 @@ public sealed class AttachmentsContractTests(AppContractFixture fixture) : IClas
             HttpStatusCode.BadRequest);
     }
 
-    /// <summary>
-    /// Значение вне контракта до домена не доходит вовсе: разбор строгий, поэтому
-    /// и число старого провода, и другой регистр, и незнакомое слово одинаково
-    /// отвергаются связыванием.
-    /// </summary>
+    /// <summary>Значение вне контракта (число, другой регистр, незнакомое слово) отвергается ещё связыванием.</summary>
     [Theory(DisplayName = "POST .../bugs/{bugId}/attachments с недопустимым attachType: 400 validation_error")]
     [InlineData("0")]
     [InlineData("Fact")]

@@ -1,5 +1,6 @@
 using Bugget.Application.Ports;
 using Bugget.Domain.Attachments;
+using Bugget.Infrastructure.Transactions;
 using Dapper;
 
 namespace Bugget.Infrastructure.Postgres;
@@ -157,25 +158,36 @@ public sealed class AttachmentDbClient : PostgresClient, IAttachmentDbClient
         return result;
     }
 
+    private const string CreateAttachmentSql =
+        "SELECT * FROM public.create_attachment_internal(@entity_id, @attach_type, @storage_key, @storage_kind, @creator_user_id, @length_bytes, @file_name, @mime_type)";
+
     public async Task<Attachment> CreateAttachment(AttachmentCreate create)
     {
         await using var connection = await DataSource.OpenConnectionAsync();
 
-        return await connection.QuerySingleAsync<Attachment>(
-            "SELECT * FROM public.create_attachment_internal(@entity_id, @attach_type, @storage_key, @storage_kind, @creator_user_id, @length_bytes, @file_name, @mime_type)",
-            new
-            {
-                entity_id = create.EntityId,
-                attach_type = create.AttachType,
-                storage_key = create.StorageKey,
-                storage_kind = create.StorageKind,
-                creator_user_id = create.CreatorUserId,
-                length_bytes = create.LengthBytes,
-                file_name = create.FileName,
-                mime_type = create.MimeType,
-            }
-        );
+        return await connection.QuerySingleAsync<Attachment>(CreateAttachmentSql, ToCreateParameters(create));
     }
+
+    public Task<Attachment> CreateAttachmentAsync(ITransactionScope scope, AttachmentCreate create)
+    {
+        var (connection, tx) = scope.Unwrap();
+        return connection.QuerySingleAsync<Attachment>(new CommandDefinition(
+            CreateAttachmentSql,
+            ToCreateParameters(create),
+            transaction: tx));
+    }
+
+    private static object ToCreateParameters(AttachmentCreate create) => new
+    {
+        entity_id = create.EntityId,
+        attach_type = create.AttachType,
+        storage_key = create.StorageKey,
+        storage_kind = create.StorageKind,
+        creator_user_id = create.CreatorUserId,
+        length_bytes = create.LengthBytes,
+        file_name = create.FileName,
+        mime_type = create.MimeType,
+    };
 
     public async Task<Attachment?> DeleteBugAttachmentInternalAsync(int reportId, int bugId, int attachmentId)
     {

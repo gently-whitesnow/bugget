@@ -6,24 +6,23 @@ using Xunit;
 namespace Bugget.IntegrationTests.Contract;
 
 /// <summary>
-/// Инструменты создания через MCP: <c>create_report</c> и <c>create_bug</c>. Их
-/// добавили после MVP (kaiten 237700), чтобы найденный баг заводился тем же PAT,
-/// что и правки, а не выходом в неавторизованный CLI скилла. Клиент ходит с
-/// PAT-identity (<c>Auth-Request-Auth-Method: pat</c>): созданное обязано ложиться
-/// в историю как действие агента, а изоляция workspace/team — не слабее REST.
+/// MCP-инструменты <c>create_report</c> и <c>create_bug</c> (kaiten 237700). Клиент ходит с PAT-identity:
+/// созданное обязано ложиться в историю как действие агента, а изоляция workspace/team — не слабее REST.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class McpCreateToolsContractTests(AppContractFixture fixture)
     : IClassFixture<AppContractFixture>, IAsyncDisposable
 {
-    private readonly List<HttpClientTransport> _transports = [];
+    private McpPatClients? _mcp;
+
+    private McpPatClients Mcp => _mcp ??= new McpPatClients(fixture);
 
     [Fact(DisplayName = "create_report: репорт заведён по PAT и виден фронту как действие агента")]
     public async Task CreateReportIsAttributedToAgent()
     {
         var scenario = ContractScenario.Create(fixture);
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         var report = await CallAsync(client, "create_report", Args(("title", "баг нашёл агент")));
 
         var reportId = report.GetProperty("id").GetString()!;
@@ -43,7 +42,7 @@ public sealed class McpCreateToolsContractTests(AppContractFixture fixture)
         var scenario = ContractScenario.Create(fixture);
         var reportId = await scenario.CreateReportAsync();
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         var bug = await CallAsync(
             client,
             "create_bug",
@@ -71,7 +70,7 @@ public sealed class McpCreateToolsContractTests(AppContractFixture fixture)
         var scenario = ContractScenario.Create(fixture);
         var reportId = await scenario.CreateReportAsync();
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         var error = await AssertToolFailsAsync(client, "create_bug", Args(("reportId", reportId)));
 
         Assert.Contains("receive", error, StringComparison.Ordinal);
@@ -80,13 +79,11 @@ public sealed class McpCreateToolsContractTests(AppContractFixture fixture)
     [Fact(DisplayName = "create_bug только с title: отказ на границе инструмента, тем же правилом, что и домен")]
     public async Task CreateBugRejectsTitleOnly()
     {
-        // Домен (BugsService) требует receive или expect; одного title мало.
-        // Инструмент обязан отказать тем же критерием, а не пропустить вызов в
-        // сервис, где он упал бы менее понятной ошибкой.
+        // Домен (BugsService) требует receive или expect; инструмент обязан отказать тем же критерием.
         var scenario = ContractScenario.Create(fixture);
         var reportId = await scenario.CreateReportAsync();
 
-        await using var client = await CreateMcpClientAsync(scenario);
+        await using var client = await Mcp.CreateAsync(scenario);
         var error = await AssertToolFailsAsync(
             client,
             "create_bug",
@@ -94,7 +91,6 @@ public sealed class McpCreateToolsContractTests(AppContractFixture fixture)
 
         Assert.Contains("receive", error, StringComparison.Ordinal);
 
-        // Баг не завёлся: репорт остался пустым.
         var report = await ContractScenario.ReadJsonAsync(await scenario.Client.GetAsync($"/v2/reports/{reportId}"));
         Assert.Empty(report.GetProperty("bugs").EnumerateArray());
     }
@@ -106,7 +102,7 @@ public sealed class McpCreateToolsContractTests(AppContractFixture fixture)
         var reportId = await owner.CreateReportAsync();
         var stranger = ContractScenario.Create(fixture);
 
-        await using var client = await CreateMcpClientAsync(stranger);
+        await using var client = await Mcp.CreateAsync(stranger);
         var error = await AssertToolFailsAsync(
             client,
             "create_bug",
@@ -114,42 +110,11 @@ public sealed class McpCreateToolsContractTests(AppContractFixture fixture)
 
         Assert.False(string.IsNullOrEmpty(error));
 
-        // Репорт владельца не пополнился.
         var report = await ContractScenario.ReadJsonAsync(await owner.Client.GetAsync($"/v2/reports/{reportId}"));
         Assert.Empty(report.GetProperty("bugs").EnumerateArray());
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        foreach (var transport in _transports)
-        {
-            await transport.DisposeAsync();
-        }
-    }
-
-    private async Task<McpClient> CreateMcpClientAsync(ContractScenario scenario)
-    {
-        var transport = new HttpClientTransport(
-            new HttpClientTransportOptions
-            {
-                Endpoint = new Uri(fixture.BaseAddress, "/v1/mcp"),
-                AdditionalHeaders = new Dictionary<string, string>
-                {
-                    [ContractHeaders.UserId] = scenario.UserId,
-                    [ContractHeaders.TeamId] = scenario.TeamId,
-                    [ContractHeaders.WorkspaceId] = scenario.WorkspaceId,
-                    [ContractHeaders.WorkspaceRole] = "owner",
-                    [ContractHeaders.AuthMethod] = "pat",
-                },
-            },
-            fixture.CreateAnonymousClient(),
-            loggerFactory: null,
-            ownsHttpClient: true);
-
-        _transports.Add(transport);
-
-        return await McpClient.CreateAsync(transport);
-    }
+    public ValueTask DisposeAsync() => _mcp?.DisposeAsync() ?? ValueTask.CompletedTask;
 
     private static async Task<JsonElement> CallAsync(
         McpClient client, string tool, IReadOnlyDictionary<string, object?> arguments)

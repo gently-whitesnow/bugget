@@ -38,10 +38,7 @@ public partial class ModuleIsolationRulesTests
             string.Join("; ", violations));
     }
 
-    /// <summary>
-    /// Собирает объявления InternalsVisibleTo из .csproj (ItemGroup) и из исходников
-    /// (атрибут уровня сборки). Возвращает: проект-владелец, кому открыт доступ, где объявлено.
-    /// </summary>
+    // Собирает InternalsVisibleTo из .csproj (ItemGroup) и из исходников (атрибут уровня сборки).
     private static IEnumerable<(string DeclaringProject, string Target, string Source)> FindInternalsVisibleTo()
     {
         var backend = SolutionGraph.BackendRoot;

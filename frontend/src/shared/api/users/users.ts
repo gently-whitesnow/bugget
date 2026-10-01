@@ -2,8 +2,6 @@ import { request, requestInContext } from "./client";
 import type { Body, Query, Result } from "./client";
 import { mapUserResponse } from "./avatar";
 
-/* ── Профиль в контексте ───────────────────────────────────────────────────── */
-
 const USER_IN_CONTEXT = "/v1/workspaces/{workspaceId}/teams/{teamId}/users";
 const USERS_BATCH_LIST =
   "/v1/workspaces/{workspaceId}/teams/{teamId}/users/batch/list";
@@ -12,12 +10,8 @@ export type UserResult = Result<typeof USER_IN_CONTEXT, "get">;
 export type UpdateUserBody = Body<typeof USER_IN_CONTEXT, "put">;
 export type ListUsersResult = Result<typeof USERS_BATCH_LIST, "post">;
 
-/**
- * Короткая форма адреса: рабочее пространство и команда приходят аргументами.
- * Ручке они не нужны — контракт описывает оба сегмента как игнорируемые, — но
- * адрес обязан остаться прежним, поэтому значения подставляются как есть,
- * включая `undefined` у не готового к моменту вызова контекста.
- */
+// Сегменты ручка игнорирует, но адрес обязан остаться прежним: значения
+// подставляются как есть, включая `undefined` у не готового контекста.
 export const getUser = (
   workspaceId?: string | number,
   teamId?: string | number
@@ -42,11 +36,7 @@ export const listUsers = (
 export const listUsersInContext = (userIds: string[]) =>
   requestInContext(USERS_BATCH_LIST, "post", { body: userIds });
 
-/**
- * Пользователи по списку идентификаторов с разобранной ссылкой на аватар:
- * списки репортов, поиск и аналитика держат в сторе именно такую форму — им
- * нужен адрес картинки, а не ключ в хранилище.
- */
+/** Пользователи с разобранной ссылкой на аватар — форма, которую ждут сторы. */
 export const fetchUsers = async (
   userIds: string[]
 ): Promise<ListUsersResult> => {
@@ -56,8 +46,6 @@ export const fetchUsers = async (
   return users.map(mapUserResponse);
 };
 
-/* ── Подсказки по пользователям ────────────────────────────────────────────── */
-
 const USERS_AUTOCOMPLETE =
   "/v1/workspaces/{workspaceId}/teams/{teamId}/users/autocomplete";
 
@@ -66,8 +54,6 @@ export type AutocompleteUsersResult = Result<typeof USERS_AUTOCOMPLETE, "get">;
 
 export const autocompleteUsers = (query: AutocompleteUsersQuery) =>
   requestInContext(USERS_AUTOCOMPLETE, "get", { query });
-
-/* ── Способы входа и объединение аккаунтов ─────────────────────────────────── */
 
 const EXTERNAL_LINKS =
   "/v1/workspaces/{workspaceId}/teams/{teamId}/users/external-links";
@@ -86,8 +72,6 @@ export const unlinkProvider = (provider: string) =>
 
 export const mergeUsers = (body: MergeUsersBody) =>
   requestInContext(MERGE_USERS, "post", { body });
-
-/* ── Mattermost ────────────────────────────────────────────────────────────── */
 
 const MATTERMOST =
   "/v1/workspaces/{workspaceId}/teams/{teamId}/users/mattermost";

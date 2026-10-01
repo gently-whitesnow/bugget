@@ -6,7 +6,7 @@ openapi: 3.0.3
 # Служебная поверхность `/_internal/auth` в контракт не входит: её зовёт nginx
 # как auth_request, не фронт.
 #
-# Правится этот файл, а не .g.cs: перегенерация — scripts/quality/openapi-generate.sh.
+# Правится этот файл, а не .g.cs: перегенерация — scripts/contracts/openapi-generate.sh.
 
 info:
   title: Bugget Authorization API

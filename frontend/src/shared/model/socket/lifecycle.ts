@@ -10,17 +10,11 @@ import {
 const longSleepThresholdMs = 5 * 60_000;
 const watchdogIntervalMs = 20_000;
 
-/**
- * Насколько тик сторожа должен опоздать, чтобы счесть это сном машины.
- * В фоновой вкладке браузер и так растягивает интервал примерно до минуты,
- * поэтому берём заметно больший порог, чем это опоздание.
- */
+// Опоздание тика сторожа, считающееся сном машины. Порог выше минуты:
+// до неё браузер и сам растягивает интервал в фоновой вкладке.
 const timeJumpThresholdMs = 90_000;
 
-/**
- * Подписка на сигналы окружения, влияющие на живучесть сокета.
- * Возвращает функцию отписки.
- */
+/** Подписка на сигналы окружения; возвращает функцию отписки. */
 export const startSocketLifecycle = (): (() => void) => {
   const notifyWokeUp = scopeBind(appWokeUp, { safe: true });
   const notifyLongSleep = scopeBind(longSleepDetected, { safe: true });
@@ -58,11 +52,8 @@ export const startSocketLifecycle = (): (() => void) => {
   const handleOnline = () => notifyOnline();
   const handleOffline = () => notifyOffline();
 
-  /**
-   * Сторож на случай сна машины с активной вкладкой: ни visibilitychange, ни
-   * focus тогда не приходят, и без него засыпание осталось бы незамеченным.
-   * Ловим по опозданию тика — часы прыгают вперёд, пока таймеры стоят.
-   */
+  // Сон машины с активной вкладкой не даёт ни visibilitychange, ни focus.
+  // Ловим по опозданию тика — часы прыгают вперёд, пока таймеры стоят.
   let expectedTickAt = Date.now() + watchdogIntervalMs;
   const watchdogId = setInterval(() => {
     const currentTickAt = Date.now();

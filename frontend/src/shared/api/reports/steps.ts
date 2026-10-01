@@ -22,6 +22,17 @@ export const createBugStep = (
     body,
   });
 
+export const createBugStepWithAttachments = (
+  aliasId: string,
+  bugId: number,
+  text: string,
+  files: File[]
+) =>
+  request("/v2/reports/{aliasId}/bugs/{bugId}/steps/with-attachments", "post", {
+    path: { aliasId, bugId },
+    multipart: { text, files },
+  });
+
 export const patchBugStep = (
   aliasId: string,
   bugId: number,

@@ -55,7 +55,7 @@ public class ReportPageHubClient(IHubContext<ReportPageHub> hubContext) : IRepor
 
     public Task SendAttachmentCreateAsync(string groupKey, AttachmentSocketView attachmentSocketView, string? signalRConnectionId)
     {
-        string eventName = attachmentSocketView.AttachType switch
+        var eventName = attachmentSocketView.AttachType switch
         {
             (int)AttachType.Comment => "ReceiveCommentAttachmentCreate",
             (int)AttachType.BugStep => "ReceiveBugStepAttachmentCreate",
@@ -74,7 +74,7 @@ public class ReportPageHubClient(IHubContext<ReportPageHub> hubContext) : IRepor
 
     public Task SendAttachmentChangedAsync(string groupKey, AttachmentSocketView attachmentSocketView)
     {
-        string eventName = attachmentSocketView.AttachType switch
+        var eventName = attachmentSocketView.AttachType switch
         {
             (int)AttachType.Comment => "ReceiveCommentAttachmentChanged",
             (int)AttachType.BugStep => "ReceiveBugStepAttachmentChanged",
@@ -87,7 +87,7 @@ public class ReportPageHubClient(IHubContext<ReportPageHub> hubContext) : IRepor
 
     public Task SendAttachmentDeleteAsync(string groupKey, int id, int entityId, int attachType, string? signalRConnectionId)
     {
-        string eventName = attachType switch
+        var eventName = attachType switch
         {
             (int)AttachType.Comment => "ReceiveCommentAttachmentDelete",
             (int)AttachType.BugStep => "ReceiveBugStepAttachmentDelete",

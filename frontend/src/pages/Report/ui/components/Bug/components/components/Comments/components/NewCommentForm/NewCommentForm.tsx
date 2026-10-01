@@ -1,12 +1,8 @@
 import { memo, useState, useCallback } from "react";
 import { useUnit } from "effector-react";
 
-import { createWithAttachments } from "@/pages/Report/lib";
-import {
-  createCommentAttachmentFx,
-  createCommentFx,
-  deleteCommentEvent,
-} from "@/pages/Report/model-comment";
+import { composerText } from "@/pages/Report/lib";
+import { createCommentFx } from "@/pages/Report/model-comment";
 import { $authUserStore } from "@/entities/user";
 import { $usersStore } from "@/entities/report";
 import { Avatar, ComposerInput } from "@/shared/ui";
@@ -25,8 +21,6 @@ const NewCommentForm = memo((props: Props) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createComment = useUnit(createCommentFx);
-  const addAttachment = useUnit(createCommentAttachmentFx);
-  const deleteComment = useUnit(deleteCommentEvent);
   const currentUser = useUnit($authUserStore);
   const users = useUnit($usersStore);
   const avatarUrl = currentUser?.id
@@ -38,34 +32,24 @@ const NewCommentForm = memo((props: Props) => {
       if (!text.trim() && files.length === 0) return false;
 
       setIsSubmitting(true);
-      const currentText = text;
 
       try {
-        const sent = await createWithAttachments({
-          text: currentText,
+        await createComment({
+          reportId,
+          bugId,
+          text: composerText(text),
+          audience: CommentAudiences.INTERNAL,
           files,
-          create: (commentText) =>
-            createComment({
-              reportId,
-              bugId,
-              text: commentText,
-              audience: CommentAudiences.INTERNAL,
-            }),
-          upload: (commentId, file) =>
-            addAttachment({ reportId, bugId, commentId, file }),
-          remove: (commentId) => deleteComment({ reportId, bugId, commentId }),
         });
-
-        if (sent) setText("");
-        return sent;
-      } catch (error) {
-        console.error("Ошибка при создании комментария:", error);
+        setText("");
+        return true;
+      } catch {
         return false;
       } finally {
         setIsSubmitting(false);
       }
     },
-    [text, reportId, bugId, createComment, addAttachment, deleteComment]
+    [text, reportId, bugId, createComment]
   );
 
   return (

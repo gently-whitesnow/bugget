@@ -5,9 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Bugget.Infrastructure.ExternalClients.Kaiten;
 
-/// <summary>
-/// Сервис для lazy загрузки и перезагрузки кэша досок Kaiten по workspace.
-/// </summary>
+/// <summary>Lazy загрузка и перезагрузка кэша досок Kaiten по workspace.</summary>
 public sealed class KaitenBoardsLoaderService(
     KaitenClientFactory clientFactory,
     KaitenBoardsProvider boardsProvider,
@@ -16,9 +14,7 @@ public sealed class KaitenBoardsLoaderService(
 {
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _loadLocks = new();
 
-    /// <summary>
-    /// Загружает кэш досок для workspace, если ещё не загружен.
-    /// </summary>
+    /// <summary>Загружает кэш досок для workspace, если ещё не загружен.</summary>
     public async Task EnsureLoadedAsync(string workspaceId)
     {
         if (boardsProvider.HasCache(workspaceId))
@@ -29,9 +25,7 @@ public sealed class KaitenBoardsLoaderService(
         await LoadBoardsAsync(workspaceId);
     }
 
-    /// <summary>
-    /// Инвалидирует кэш для workspace без перезагрузки.
-    /// </summary>
+    /// <summary>Инвалидирует кэш для workspace без перезагрузки.</summary>
     public void InvalidateCache(string workspaceId)
     {
         boardsProvider.InvalidateCache(workspaceId);

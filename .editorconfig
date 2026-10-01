@@ -1,0 +1,133 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+tab_width = 4
+trim_trailing_whitespace = true
+
+[*.{csproj,slnx,props,targets,json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+# Preserve intentional Markdown hard line breaks.
+trim_trailing_whitespace = false
+
+[*.cs]
+# IDE0055 makes the formatting options below part of `dotnet build`, not just
+# editor hints. TreatWarningsAsErrors in Directory.Build.props makes violations
+# blocking in every project.
+dotnet_diagnostic.IDE0055.severity = warning
+
+# Keep imports deterministic and outside file-scoped namespaces. IDE0005 reports on
+# build only when Directory.Build.props sets GenerateDocumentationFile, so every
+# <param> block must then be complete (CS1573) and public API documented (CS1591).
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace
+dotnet_diagnostic.IDE0005.severity = warning
+dotnet_diagnostic.IDE0065.severity = warning
+
+# Prefer one obvious shape for control flow and namespaces.
+csharp_prefer_braces = true
+csharp_style_namespace_declarations = file_scoped
+dotnet_style_require_accessibility_modifiers = for_non_interface_members
+dotnet_diagnostic.IDE0011.severity = warning
+dotnet_diagnostic.IDE0040.severity = warning
+dotnet_diagnostic.IDE0161.severity = warning
+
+# `var` keeps declarations focused on the name and value when the compiler
+# already knows the exact type.
+csharp_style_var_for_built_in_types = true
+csharp_style_var_when_type_is_apparent = true
+csharp_style_var_elsewhere = true
+dotnet_diagnostic.IDE0007.severity = warning
+
+# Stable formatting removes diff noise for people and coding agents.
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_switch_labels = true
+# A braced case block already carries its own indentation; indenting its contents
+# again buries the code that matters two levels deep.
+csharp_indent_case_contents_when_block = false
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = true
+
+# Naming is enforced for product code below. Private mutable fields deliberately
+# use camelCase; constants and static readonly fields use PascalCase.
+dotnet_diagnostic.IDE1006.severity = warning
+
+# Sentence-style xUnit names carry underscores, and CA1707 has no per-path form that
+# the harness would accept: a rule is either on for the repository or off for it.
+# This switch is repository-wide, printed by warning-suppressions.dotnet on every
+# run; delete it when tests follow product naming.
+dotnet_diagnostic.CA1707.severity = none
+
+dotnet_naming_rule.interfaces_start_with_i.symbols = interfaces
+dotnet_naming_rule.interfaces_start_with_i.style = interface_name
+dotnet_naming_rule.interfaces_start_with_i.severity = warning
+
+dotnet_naming_rule.types_are_pascal_case.symbols = types
+dotnet_naming_rule.types_are_pascal_case.style = pascal_case
+dotnet_naming_rule.types_are_pascal_case.severity = warning
+
+dotnet_naming_rule.members_are_pascal_case.symbols = members
+dotnet_naming_rule.members_are_pascal_case.style = pascal_case
+dotnet_naming_rule.members_are_pascal_case.severity = warning
+
+dotnet_naming_rule.constants_are_pascal_case.symbols = constants
+dotnet_naming_rule.constants_are_pascal_case.style = pascal_case
+dotnet_naming_rule.constants_are_pascal_case.severity = warning
+
+dotnet_naming_rule.static_readonly_fields_are_pascal_case.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_fields_are_pascal_case.style = pascal_case
+dotnet_naming_rule.static_readonly_fields_are_pascal_case.severity = warning
+
+dotnet_naming_rule.private_fields_are_camel_case.symbols = private_fields
+dotnet_naming_rule.private_fields_are_camel_case.style = camel_case
+dotnet_naming_rule.private_fields_are_camel_case.severity = warning
+
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+
+dotnet_naming_symbols.types.applicable_kinds = class, struct, enum, delegate
+
+dotnet_naming_symbols.members.applicable_kinds = property, event, method
+
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
+
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
+
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+dotnet_naming_style.interface_name.required_prefix = I
+dotnet_naming_style.interface_name.capitalization = pascal_case
+
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+
+dotnet_naming_style.camel_case.capitalization = camel_case
+
+[tests/**/*.cs]
+# Sentence-style xUnit names are the executable specification: an explicit naming
+# rule for public test methods, not a silenced diagnostic.
+dotnet_naming_rule.test_methods_are_sentences.symbols = test_methods
+dotnet_naming_rule.test_methods_are_sentences.style = sentence_case
+dotnet_naming_rule.test_methods_are_sentences.severity = warning
+
+dotnet_naming_symbols.test_methods.applicable_kinds = method
+dotnet_naming_symbols.test_methods.applicable_accessibilities = public
+
+dotnet_naming_style.sentence_case.capitalization = first_word_upper
+dotnet_naming_style.sentence_case.word_separator = _

@@ -24,7 +24,7 @@ public static class SanitizeHelper
             return null; // must be absolute local path
         }
 
-        if (decoded.StartsWith("//"))
+        if (decoded.StartsWith("//", StringComparison.Ordinal))
         {
             return null; // no protocol-relative
         }

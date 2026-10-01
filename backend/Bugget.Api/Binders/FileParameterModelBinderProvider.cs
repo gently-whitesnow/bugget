@@ -19,18 +19,30 @@ internal sealed class FileParameterModelBinderProvider : IModelBinderProvider
         ArgumentNullException.ThrowIfNull(context);
 
         var type = context.Metadata.ModelType;
-        if (type.Name != "FileParameter")
+        if (IsFileParameter(type))
+        {
+            return CreateFactory(type) is { } single ? new FileParameterModelBinder(single) : null;
+        }
+
+        var elementType = context.Metadata.ElementType;
+        if (elementType is null || !IsFileParameter(elementType) || !type.IsAssignableFrom(elementType.MakeArrayType()))
         {
             return null;
         }
 
+        return CreateFactory(elementType) is { } many ? new FileParameterCollectionModelBinder(elementType, many) : null;
+    }
+
+    private static bool IsFileParameter(Type type) => type.Name == "FileParameter";
+
+    private static Func<Stream, string, string, object>? CreateFactory(Type type)
+    {
         var constructor = type.GetConstructor([typeof(Stream), typeof(string), typeof(string)]);
         if (constructor is null)
         {
             return null;
         }
 
-        return new FileParameterModelBinder((data, fileName, contentType) =>
-            constructor.Invoke([data, fileName, contentType]));
+        return (data, fileName, contentType) => constructor.Invoke([data, fileName, contentType]);
     }
 }

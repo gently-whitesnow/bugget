@@ -3,9 +3,8 @@ using System.Reflection;
 namespace Bugget.Architecture.Tests;
 
 /// <summary>
-/// Пять проектов целевой раскладки (ADR-0001) и их сборки — одно место, куда смотрят
-/// все правила. Якорь каждого проекта — его <c>AssemblyMarker</c>: ссылка компилируемая,
-/// поэтому переименование проекта ломает тесты сразу, а не молча выключает правило.
+/// Пять проектов целевой раскладки (ADR-0001). Якорь проекта — компилируемый <c>AssemblyMarker</c>:
+/// переименование проекта ломает тесты сразу, а не молча выключает правило.
 /// </summary>
 public static class Quartet
 {
@@ -22,11 +21,8 @@ public static class Quartet
     public static readonly Assembly ApiAsm = typeof(global::Bugget.Api.AssemblyMarker).Assembly;
 
     /// <summary>
-    /// Композиционный корень: поимённый список типов <c>Bugget.Api</c>, которым разрешено
-    /// видеть <c>Bugget.Infrastructure</c>. Именно список, а не суффикс <c>*Extensions</c>:
-    /// суффикс — соглашение об именовании, и любой новый класс с таким именем молча получал
-    /// бы право тянуть инфраструктуру мимо портов. Строка сюда добавляется вместе с новой
-    /// точкой сборки контейнера и видна в диффе.
+    /// Типы <c>Bugget.Api</c>, которым разрешено видеть <c>Bugget.Infrastructure</c>. Поимённый список, а не
+    /// суффикс <c>*Extensions</c>: иначе любой новый класс с таким именем молча тянул бы инфраструктуру мимо портов.
     /// </summary>
     public static readonly string[] CompositionRoot =
     [
@@ -35,11 +31,7 @@ public static class Quartet
         "Bugget.Api.Authorization.Extensions.ServiceCollectionExtensions",
     ];
 
-    /// <summary>
-    /// Имена сборок, на которые ссылается <paramref name="assembly"/> и которых нет
-    /// в белом списке. Отдельная функция, а не тело теста: ту же проверку прогоняет
-    /// доказательство красноты на синтетическом списке ссылок.
-    /// </summary>
+    /// <summary>Ссылки сборки вне белого списка. Отдельная функция: её же прогоняет доказательство красноты.</summary>
     public static string[] FindDisallowedReferences(
         string project,
         IEnumerable<string> referenced,
@@ -61,7 +53,6 @@ public static class Quartet
         ];
     }
 
-    /// <summary>Имена сборок, на которые ссылается сборка проекта.</summary>
     public static string[] ReferencesOf(Assembly assembly) =>
         [.. assembly.GetReferencedAssemblies().Select(reference => reference.Name ?? string.Empty)];
 }

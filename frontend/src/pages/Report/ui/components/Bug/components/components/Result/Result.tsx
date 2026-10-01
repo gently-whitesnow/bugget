@@ -128,7 +128,7 @@ const Result = ({
   };
 
   const handlePaste = useCallback(
-    (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    (event: ClipboardEvent) => {
       if (disabled) return;
 
       const files = getClipboardFiles(event.clipboardData);

@@ -16,6 +16,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.13",
+    "@lezer/highlight": "^1.2.5",
+    "@lezer/markdown": "^1.7.2",
     "@microsoft/signalr": "^8.0.7",
     "@tailwindcss/typography": "^0.5.16",
     "axios": "^1.13.6",

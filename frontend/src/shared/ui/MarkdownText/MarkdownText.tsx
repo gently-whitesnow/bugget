@@ -1,3 +1,4 @@
+import { memo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
@@ -62,4 +63,6 @@ const MarkdownText = ({ text, className = "" }: Props) => (
   </div>
 );
 
-export default MarkdownText;
+// Разбор markdown чистый по тексту, а перерисовки родителя частые: без memo он
+// пересчитывается на каждое нажатие в соседнем поле.
+export default memo(MarkdownText);

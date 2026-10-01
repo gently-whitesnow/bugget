@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ComponentProps } from "react";
+import { lazy, memo, Suspense, type ComponentProps } from "react";
 
 // react-markdown с плагинами — около 37 KB gzip: грузим, только когда текст показывают.
 const MarkdownText = lazy(() => import("./MarkdownText"));
@@ -16,4 +16,4 @@ const LazyMarkdownText = ({ text, className = "" }: Props) => (
   </Suspense>
 );
 
-export default LazyMarkdownText;
+export default memo(LazyMarkdownText);

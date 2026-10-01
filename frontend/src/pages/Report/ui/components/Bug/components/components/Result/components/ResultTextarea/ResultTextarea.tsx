@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -7,6 +8,7 @@ import {
   type MouseEvent,
 } from "react";
 import { resultMaxLength } from "@/shared/config";
+import { useStableBoxHeight } from "./useStableBoxHeight";
 import { MarkdownText, MarkdownTextarea } from "@/shared/ui";
 
 type Props = {
@@ -18,6 +20,8 @@ type Props = {
   onInput: (value: string) => void;
   onPaste?: (event: React.ClipboardEvent<HTMLTextAreaElement>) => void;
   onAttachFile?: () => void;
+  /** Владелец показывает подсказку о клавишах, пока поле правят. */
+  onEditingChange?: (isEditing: boolean) => void;
 };
 
 const boxClassName =
@@ -33,69 +37,43 @@ const ResultTextarea = ({
   onInput,
   onPaste,
   onAttachFile,
+  onEditingChange,
 }: Props) => {
   // Store существующего бага обновляется только после сохранения — до него показываем черновик.
   const [draft, setDraft] = useState(value);
   const [isEditing, setIsEditing] = useState(autoFocus);
   const editorRef = useRef<HTMLTextAreaElement>(null);
-  const sourceRef = useRef<HTMLTextAreaElement>(null);
-  const renderedRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
-  // Один и тот же текст занимает разную высоту разметкой и исходником: коробка берёт
-  // большую из двух, иначе она прыгает на фокусе и расфокусе.
-  const [boxHeight, setBoxHeight] = useState<string>();
+  const { height, sourceRef, renderedRef, keepHeightOf } = useStableBoxHeight(
+    draft,
+    isEditing
+  );
 
   useEffect(() => {
     setDraft(value);
   }, [value]);
 
-  useLayoutEffect(() => {
-    const source = sourceRef.current;
-    const rendered = renderedRef.current;
-    if (!source || !rendered) {
-      // Текст стёрли целиком: мерить нечего, а прошлая высота держала бы пустое поле.
-      if (!draft.trim()) setBoxHeight(undefined);
-      return;
-    }
-
-    const measure = () => {
-      const styles = getComputedStyle(source);
-      // scrollHeight включает паддинги, но не бордер.
-      const border = source.offsetHeight - source.clientHeight;
-      const frame =
-        border +
-        parseFloat(styles.paddingTop) +
-        parseFloat(styles.paddingBottom);
-      const height = Math.max(
-        source.scrollHeight + border,
-        rendered.getBoundingClientRect().height + frame
-      );
-      setBoxHeight(`${Math.ceil(height)}px`);
-    };
-
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-
-    // Разметка приезжает отдельным чанком и меняет высоту уже после первого замера.
-    const observer = new ResizeObserver(measure);
-    observer.observe(rendered);
-    return () => observer.disconnect();
-  }, [draft, isEditing]);
-
   // Esc возвращает фокус на коробку: иначе он уходит в начало страницы и Tab идёт не оттуда.
-  const [returnFocus, setReturnFocus] = useState(false);
+  const returnFocusRef = useRef(false);
 
   useLayoutEffect(() => {
-    if (isEditing || !returnFocus) return;
+    if (isEditing || !returnFocusRef.current) return;
+    returnFocusRef.current = false;
     boxRef.current?.focus();
-    setReturnFocus(false);
-  }, [isEditing, returnFocus]);
+  }, [isEditing]);
+
+  const hintId = useId();
+
+  const changeEditing = (next: boolean) => {
+    setIsEditing(next);
+    onEditingChange?.(next);
+  };
 
   const startEditing = () => {
-    // Живой замер коробки: он точнее расчётного, если разметка ещё не домерялась.
-    const height = boxRef.current?.getBoundingClientRect().height;
-    if (height) setBoxHeight(`${Math.ceil(height)}px`);
-    setIsEditing(true);
+    if (isEditing) return;
+    // Живой замер коробки точнее расчётного, если разметка ещё не домерялась.
+    keepHeightOf(boxRef.current);
+    changeEditing(true);
   };
 
   if (isEditing || !draft.trim()) {
@@ -113,28 +91,32 @@ const ResultTextarea = ({
         }}
         onBlur={(next) => {
           setDraft(next);
-          setIsEditing(false);
+          changeEditing(false);
           onBlur(next);
         }}
         onPaste={onPaste}
-        onAttachFile={onAttachFile}
-        onCancel={() => {
-          setReturnFocus(true);
-          // blur сохраняет результат и закрывает редактор — Esc ничего не отменяет.
-          editorRef.current?.blur();
+        actions={{
+          // Результат — длинный текст с разметкой, поэтому Enter переносит строку,
+          // а ⌘Enter снимает фокус: сохранение висит на blur.
+          submitOn: "modEnter",
+          onSubmit: () => editorRef.current?.blur(),
+          onCancel: () => {
+            returnFocusRef.current = true;
+            // blur сохраняет результат и закрывает редактор — Esc ничего не отменяет.
+            editorRef.current?.blur();
+          },
+          onAttachFile,
         }}
-        // Результат — длинный текст с разметкой, поэтому Enter переносит строку,
-        // а ⌘Enter снимает фокус: сохранение висит на blur.
-        submitOnEnter={false}
-        onSubmit={() => (document.activeElement as HTMLElement | null)?.blur()}
         rows={3}
-        minHeight={boxHeight}
+        minHeight={height}
         className={`${boxClassName} focus:outline-none focus:ring-primary focus:ring-offset-0`}
       />
     );
   }
 
   const handleClick = (event: MouseEvent<HTMLDivElement>) => {
+    // По ссылке переходят, а не правят текст под ней.
+    if ((event.target as HTMLElement).closest("a")) return;
     // Выделение текста мышью — не повод открывать редактор.
     if (window.getSelection()?.toString()) return;
     event.preventDefault();
@@ -151,15 +133,20 @@ const ResultTextarea = ({
     <div
       ref={boxRef}
       tabIndex={0}
-      aria-label={`Редактировать: ${placeholder}`}
+      aria-label={placeholder}
+      aria-describedby={hintId}
       // Каретки в просмотре нет, поэтому фокус с клавиатуры показывает кольцо из DESIGN.
       className={`relative ${boxClassName} h-auto cursor-text focus-visible:ring-2 focus-visible:ring-primary/25`}
-      style={boxHeight ? { minHeight: boxHeight } : undefined}
+      style={height ? { minHeight: height } : undefined}
       // Без этого клик сперва подсвечивает коробку, и подсветка мигает при подмене на поле.
       onMouseDown={(event) => event.preventDefault()}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
+      {/* Роль кнопки поставить нельзя — внутри ссылки, поэтому подсказываем текстом. */}
+      <span id={hintId} className="sr-only">
+        Нажмите Enter, чтобы редактировать.
+      </span>
       {/* Невидимая копия поля: по ней меряется высота исходника, вёрстку она не двигает. */}
       <textarea
         ref={sourceRef}

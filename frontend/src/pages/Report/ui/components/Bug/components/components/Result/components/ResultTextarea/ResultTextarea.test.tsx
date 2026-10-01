@@ -41,9 +41,7 @@ describe("ResultTextarea", () => {
   it("opens source on click and returns to view on blur", async () => {
     const { onBlur } = setup("**важно**");
 
-    fireEvent.click(
-      screen.getByLabelText("Редактировать: Опишите результат...")
-    );
+    fireEvent.click(screen.getByLabelText("Опишите результат..."));
     const textarea = queryTextarea() as HTMLTextAreaElement;
     expect(textarea.value).toBe("**важно**");
     expect(document.activeElement).toBe(textarea);
@@ -74,9 +72,7 @@ describe("ResultTextarea", () => {
 
   it("does not keep the height of erased text", () => {
     setup("**важно**");
-    fireEvent.click(
-      screen.getByLabelText("Редактировать: Опишите результат...")
-    );
+    fireEvent.click(screen.getByLabelText("Опишите результат..."));
     const textarea = queryTextarea() as HTMLTextAreaElement;
     fireEvent.focus(textarea);
     expect(textarea.style.minHeight).not.toBe("");
@@ -86,13 +82,21 @@ describe("ResultTextarea", () => {
     expect(textarea.style.minHeight).toBe("max(7.5rem, 0px)");
   });
 
+  it("tells how to start editing", () => {
+    setup("текст");
+
+    const box = screen.getByLabelText("Опишите результат...");
+    const hint = document.getElementById(box.getAttribute("aria-describedby")!);
+
+    expect(hint?.textContent).toBe("Нажмите Enter, чтобы редактировать.");
+  });
+
   it("opens source on Enter", () => {
     setup("text");
 
-    fireEvent.keyDown(
-      screen.getByLabelText("Редактировать: Опишите результат..."),
-      { key: "Enter" }
-    );
+    fireEvent.keyDown(screen.getByLabelText("Опишите результат..."), {
+      key: "Enter",
+    });
 
     expect(queryTextarea()).not.toBeNull();
   });

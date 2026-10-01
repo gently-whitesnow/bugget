@@ -1,3 +1,4 @@
+export { useAutoHeight } from "./useAutoHeight";
 export { useFavicon } from "./useFavicon";
 export { useHeaderVisibility } from "./useHeaderVisibility";
 export { useFilePicker } from "./useFilePicker";

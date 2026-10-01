@@ -5,16 +5,14 @@ const MarkdownText = lazy(() => import("./MarkdownText"));
 
 type Props = ComponentProps<typeof MarkdownText>;
 
-const LazyMarkdownText = ({ text, className = "", ...props }: Props) => (
+const LazyMarkdownText = ({ text, className = "" }: Props) => (
   <Suspense
     fallback={
       // Пока чанк грузится, текст виден как есть: без пустого места и прыжка вёрстки.
-      <div className={`whitespace-pre-wrap ${className}`.trim()} {...props}>
-        {text}
-      </div>
+      <div className={`whitespace-pre-wrap ${className}`.trim()}>{text}</div>
     }
   >
-    <MarkdownText text={text} className={className} {...props} />
+    <MarkdownText text={text} className={className} />
   </Suspense>
 );
 

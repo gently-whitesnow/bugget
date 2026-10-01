@@ -33,10 +33,8 @@ const InlineTextEdit = ({
       <MarkdownTextarea
         value={value}
         onInput={setValue}
-        onSubmit={onSave}
-        onCancel={onCancel}
+        actions={{ onSubmit: onSave, onCancel, onAttachFile }}
         onPaste={onPaste}
-        onAttachFile={onAttachFile}
         className="textarea textarea-bordered w-full focus:outline-none"
         rows={rows}
         placeholder={placeholder}

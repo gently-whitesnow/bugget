@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { appHotkeys, formatHotkey } from "@/shared/lib/keyboard";
 import { Attachment } from "@/entities/report";
 
 import { useUnit } from "effector-react";
@@ -112,6 +113,7 @@ const Result = ({
   );
 
   const openFilePicker = useFilePicker(onAttachmentUpload);
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleRemovePendingAttachment = (index: number) => {
     setPendingAttachments((prev) => prev.filter((_, i) => i !== index));
@@ -150,6 +152,7 @@ const Result = ({
         <Title text={title} color={`var(--color-${colorType})`} />
       </div>
       <ResultTextarea
+        onEditingChange={setIsEditing}
         placeholder={`Опишите ${title}...`}
         value={value || ""}
         onBlur={onBlur}
@@ -159,6 +162,13 @@ const Result = ({
         onAttachFile={disabled ? undefined : openFilePicker}
       />
       <div className="flex flex-col gap-2">
+        {/* Правило Enter тут своё, поэтому напоминаем его прямо во время правки. */}
+        {isEditing && (
+          <p className="text-xs text-base-content/60">
+            Enter — новая строка, {formatHotkey(appHotkeys.saveResult)} —
+            сохранить
+          </p>
+        )}
         {pendingAttachments.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {pendingAttachments.map((attachment, index) => (

@@ -1,4 +1,3 @@
-import type { HTMLAttributes } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
@@ -6,7 +5,8 @@ import "./MarkdownText.css";
 
 type Props = {
   text: string;
-} & HTMLAttributes<HTMLDivElement>;
+  className?: string;
+};
 
 const linkClassName =
   "break-all text-info underline underline-offset-2 transition-colors hover:text-primary";
@@ -21,8 +21,6 @@ const components: Components = {
       target="_blank"
       rel="noopener noreferrer"
       className={linkClassName}
-      // Клик по ссылке не должен открывать редактирование карточки под ней.
-      onClick={(event) => event.stopPropagation()}
     >
       {children}
     </a>
@@ -35,7 +33,6 @@ const components: Components = {
         target="_blank"
         rel="noopener noreferrer"
         className={linkClassName}
-        onClick={(event) => event.stopPropagation()}
       >
         {alt || src}
       </a>
@@ -57,8 +54,8 @@ const components: Components = {
 };
 
 /** Отрисовка markdown из полей репорта. Сырой HTML не исполняется, опасные URL вырезаются. */
-const MarkdownText = ({ text, className = "", ...props }: Props) => (
-  <div className={`markdown-text ${className}`.trim()} {...props}>
+const MarkdownText = ({ text, className = "" }: Props) => (
+  <div className={`markdown-text ${className}`.trim()}>
     <ReactMarkdown remarkPlugins={remarkPlugins} components={components}>
       {text}
     </ReactMarkdown>

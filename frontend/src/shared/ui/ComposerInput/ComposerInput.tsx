@@ -169,10 +169,11 @@ const ComposerInput = ({
         <MarkdownTextarea
           value={value}
           onInput={onChange}
-          onSubmit={handleSubmit}
-          onAttachFile={
-            enableAttachments && !isDisabled ? handleFileSelect : undefined
-          }
+          actions={{
+            onSubmit: handleSubmit,
+            onAttachFile:
+              enableAttachments && !isDisabled ? handleFileSelect : undefined,
+          }}
           onPaste={handlePaste}
           placeholder={placeholder}
           className="textarea textarea-bordered resize-none min-h-auto flex-1 focus:outline-none"

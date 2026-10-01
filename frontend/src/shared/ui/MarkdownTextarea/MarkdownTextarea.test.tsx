@@ -46,7 +46,7 @@ describe("MarkdownTextarea", () => {
 
   it("submits current text on Enter", () => {
     const onSubmit = vi.fn();
-    render(<MarkdownTextarea value="" onSubmit={onSubmit} />);
+    render(<MarkdownTextarea value="" actions={{ onSubmit }} />);
     const textarea = getTextarea();
     fireEvent.change(textarea, { target: { value: "text" } });
 
@@ -58,7 +58,7 @@ describe("MarkdownTextarea", () => {
 
   it("breaks line on Option+Enter even with submit", () => {
     const onSubmit = vi.fn();
-    render(<MarkdownTextarea value="- a" onSubmit={onSubmit} />);
+    render(<MarkdownTextarea value="- a" actions={{ onSubmit }} />);
     const textarea = getTextarea();
     textarea.setSelectionRange(3, 3);
 
@@ -70,7 +70,7 @@ describe("MarkdownTextarea", () => {
 
   it("calls onCancel on Escape", () => {
     const onCancel = vi.fn();
-    render(<MarkdownTextarea value="" onCancel={onCancel} />);
+    render(<MarkdownTextarea value="" actions={{ onCancel }} />);
 
     fireEvent.keyDown(getTextarea(), { key: "Escape", code: "Escape" });
 
@@ -82,7 +82,7 @@ describe("MarkdownTextarea", () => {
     render(
       <MarkdownTextarea
         value=""
-        onSubmit={onSubmit}
+        actions={{ onSubmit }}
         onKeyDown={(event) => event.preventDefault()}
       />
     );
@@ -124,7 +124,7 @@ describe("MarkdownTextarea", () => {
 
     expect(fireEvent.keyDown(getTextarea(), key)).toBe(true);
 
-    rerender(<MarkdownTextarea value="" onAttachFile={onAttachFile} />);
+    rerender(<MarkdownTextarea value="" actions={{ onAttachFile }} />);
     expect(fireEvent.keyDown(getTextarea(), key)).toBe(false);
     expect(onAttachFile).toHaveBeenCalledTimes(1);
   });

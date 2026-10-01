@@ -150,6 +150,14 @@ const Result = ({
     <div className="bug-result" onBlur={handleResultBlur}>
       <div className="flex items-center gap-2">
         <Title text={title} color={`var(--color-${colorType})`} />
+        {/* Правило Enter тут своё. Подсказка живёт в строке заголовка: строкой ниже она
+            сдвигала бы всю карточку на время правки. */}
+        {isEditing && (
+          <span className="ml-auto hidden truncate text-xs text-base-content/60 sm:inline">
+            Enter — новая строка, {formatHotkey(appHotkeys.saveResult)} —
+            сохранить
+          </span>
+        )}
       </div>
       <ResultTextarea
         onEditingChange={setIsEditing}
@@ -162,13 +170,6 @@ const Result = ({
         onAttachFile={disabled ? undefined : openFilePicker}
       />
       <div className="flex flex-col gap-2">
-        {/* Правило Enter тут своё, поэтому напоминаем его прямо во время правки. */}
-        {isEditing && (
-          <p className="text-xs text-base-content/60">
-            Enter — новая строка, {formatHotkey(appHotkeys.saveResult)} —
-            сохранить
-          </p>
-        )}
         {pendingAttachments.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {pendingAttachments.map((attachment, index) => (

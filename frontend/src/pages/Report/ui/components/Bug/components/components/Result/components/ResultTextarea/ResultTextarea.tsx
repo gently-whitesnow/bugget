@@ -6,6 +6,7 @@ import {
   useState,
   type KeyboardEvent,
   type MouseEvent,
+  type RefObject,
 } from "react";
 import { resultMaxLength } from "@/shared/config";
 import { useStableBoxHeight } from "./useStableBoxHeight";
@@ -24,8 +25,31 @@ type Props = {
   onEditingChange?: (isEditing: boolean) => void;
 };
 
+/** Копия поля для замера высоты исходника: вёрстку не двигает, фокус не ловит. */
+const HiddenSource = ({
+  ref,
+  text,
+}: {
+  ref: RefObject<HTMLTextAreaElement | null>;
+  text: string;
+}) => (
+  <textarea
+    ref={ref}
+    value={text}
+    readOnly
+    aria-hidden
+    tabIndex={-1}
+    className={`${boxClassName} pointer-events-none invisible absolute inset-x-0 top-0 resize-none overflow-hidden`}
+  />
+);
+
 const boxClassName =
   "w-full self-stretch textarea textarea-bordered text-sm bg-base-100 px-4 py-2 min-h-[7.5rem]";
+
+// Копия для замера: ширина текста как в коробке, но без вертикальных полей и бордера —
+// их добавляет сам замер, иначе рамка посчиталась бы дважды.
+const measureClassName =
+  "pointer-events-none invisible absolute inset-x-0 top-0 px-4 text-sm";
 
 /** Без фокуса результат отрисован, по клику или Enter открывается исходный markdown. */
 const ResultTextarea = ({
@@ -44,10 +68,8 @@ const ResultTextarea = ({
   const [isEditing, setIsEditing] = useState(autoFocus);
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
-  const { height, sourceRef, renderedRef, keepHeightOf } = useStableBoxHeight(
-    draft,
-    isEditing
-  );
+  const { height, sourceRef, renderedRef, keepHeightOf, measuredText } =
+    useStableBoxHeight(draft, isEditing);
 
   useEffect(() => {
     setDraft(value);
@@ -64,6 +86,12 @@ const ResultTextarea = ({
 
   const hintId = useId();
 
+  // Поле в правке — это и есть исходник: отдаём его замерам вместо отдельной копии.
+  const setEditorRefs = (node: HTMLTextAreaElement | null) => {
+    editorRef.current = node;
+    sourceRef.current = node;
+  };
+
   const changeEditing = (next: boolean) => {
     setIsEditing(next);
     onEditingChange?.(next);
@@ -78,39 +106,52 @@ const ResultTextarea = ({
 
   if (isEditing || !draft.trim()) {
     return (
-      <MarkdownTextarea
-        ref={editorRef}
-        value={draft}
-        placeholder={placeholder}
-        autoFocus={isEditing}
-        maxLength={maxLength}
-        onFocus={startEditing}
-        onInput={(next) => {
-          setDraft(next);
-          onInput(next);
-        }}
-        onBlur={(next) => {
-          setDraft(next);
-          changeEditing(false);
-          onBlur(next);
-        }}
-        onPaste={onPaste}
-        actions={{
-          // Результат — длинный текст с разметкой, поэтому Enter переносит строку,
-          // а ⌘Enter снимает фокус: сохранение висит на blur.
-          submitOn: "modEnter",
-          onSubmit: () => editorRef.current?.blur(),
-          onCancel: () => {
-            returnFocusRef.current = true;
-            // blur сохраняет результат и закрывает редактор — Esc ничего не отменяет.
-            editorRef.current?.blur();
-          },
-          onAttachFile,
-        }}
-        rows={3}
-        minHeight={height}
-        className={`${boxClassName} focus:outline-none focus:ring-primary focus:ring-offset-0`}
-      />
+      // Сетка на одну строку: поле тянется на всю ячейку, замеры лежат поверх невидимыми.
+      <div className="relative grid self-stretch">
+        {/* Разметки в правке нет, поэтому меряем её по невидимой копии: иначе коробка
+            подрастает на расфокусе, когда появляется настоящая. Исходник меряем по
+            самому полю — копия ему не нужна. */}
+        <div
+          ref={renderedRef}
+          aria-hidden
+          className={`${measureClassName} flow-root`}
+        >
+          <MarkdownText text={measuredText} />
+        </div>
+        <MarkdownTextarea
+          ref={setEditorRefs}
+          value={draft}
+          placeholder={placeholder}
+          autoFocus={isEditing}
+          maxLength={maxLength}
+          onFocus={startEditing}
+          onInput={(next) => {
+            setDraft(next);
+            onInput(next);
+          }}
+          onBlur={(next) => {
+            setDraft(next);
+            changeEditing(false);
+            onBlur(next);
+          }}
+          onPaste={onPaste}
+          actions={{
+            // Результат — длинный текст с разметкой, поэтому Enter переносит строку,
+            // а ⌘Enter снимает фокус: сохранение висит на blur.
+            submitOn: "modEnter",
+            onSubmit: () => editorRef.current?.blur(),
+            onCancel: () => {
+              returnFocusRef.current = true;
+              // blur сохраняет результат и закрывает редактор — Esc ничего не отменяет.
+              editorRef.current?.blur();
+            },
+            onAttachFile,
+          }}
+          rows={3}
+          minHeight={height}
+          className={`${boxClassName} focus:outline-none focus:ring-primary focus:ring-offset-0`}
+        />
+      </div>
     );
   }
 
@@ -147,15 +188,7 @@ const ResultTextarea = ({
       <span id={hintId} className="sr-only">
         Нажмите Enter, чтобы редактировать.
       </span>
-      {/* Невидимая копия поля: по ней меряется высота исходника, вёрстку она не двигает. */}
-      <textarea
-        ref={sourceRef}
-        value={draft}
-        readOnly
-        aria-hidden
-        tabIndex={-1}
-        className={`${boxClassName} pointer-events-none invisible absolute inset-x-0 top-0 resize-none overflow-hidden`}
-      />
+      <HiddenSource ref={sourceRef} text={draft} />
       {/* flow-root: без него отступы разметки выходят за замеряемый блок. */}
       <div ref={renderedRef} className="flow-root">
         <MarkdownText text={draft} />

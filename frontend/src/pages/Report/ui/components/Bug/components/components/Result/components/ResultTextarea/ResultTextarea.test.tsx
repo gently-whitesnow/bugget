@@ -82,6 +82,31 @@ describe("ResultTextarea", () => {
     expect(textarea.style.minHeight).toBe("max(7.5rem, 0px)");
   });
 
+  it("measures the source by a copy with the box metrics", async () => {
+    // Замер высоты верен, только пока копия и коробка собраны из одних классов:
+    // разъедутся паддинг или размер шрифта — высота поедет молча.
+    setup("**важно**");
+
+    const box = screen.getByLabelText("Опишите результат...");
+    const copy = box.querySelector("textarea[aria-hidden]")!;
+    const metrics = (element: Element) =>
+      [...element.classList].filter((name) =>
+        /^(px|py|text-|min-h|w-full|textarea)/.test(name)
+      );
+
+    expect(metrics(copy)).toEqual(metrics(box));
+  });
+
+  it("measures the source by the field itself while editing", () => {
+    setup("");
+    const textarea = queryTextarea() as HTMLTextAreaElement;
+
+    // В правке копии исходника нет: поле и есть исходник.
+    expect(
+      textarea.parentElement?.querySelector("textarea[aria-hidden]")
+    ).toBeNull();
+  });
+
   it("tells how to start editing", () => {
     setup("текст");
 

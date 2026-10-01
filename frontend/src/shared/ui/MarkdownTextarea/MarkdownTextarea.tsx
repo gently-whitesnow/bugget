@@ -114,6 +114,7 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
       onSubmit: onSubmit ? handleSubmit : undefined,
       submitOnEnter: submitOn === "enter",
       onAttachFile,
+      maxLength,
     });
 
     const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {

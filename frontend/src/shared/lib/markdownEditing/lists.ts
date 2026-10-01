@@ -15,7 +15,6 @@ const currentLine = (value: string, position: number) => {
   return { start, text: value.slice(start, lineEndOf(value, position)) };
 };
 
-/** Пункт списка, в том числе внутри цитаты. */
 const parseListLine = (line: string): ParsedLine | null => {
   const parsed = parseLine(line);
   return isListItem(parsed) ? parsed : null;
@@ -24,10 +23,7 @@ const parseListLine = (line: string): ParsedLine | null => {
 export const isInListItem = ({ value, start }: TextSnapshot): boolean =>
   parseListLine(currentLine(value, start).text) !== null;
 
-/**
- * Перенос строки с продолжением списка или цитаты. null — строка не в списке,
- * нужен обычный перенос.
- */
+/** null — строка не в списке, владельцу нужен обычный перенос. */
 export const continueList = ({
   value,
   start,
@@ -46,7 +42,6 @@ export const continueList = ({
             String(marker.number + 1)
           )
         : parsed.markerText;
-    // Новый пункт задачи всегда пустой: отметку ставит человек, а не перенос строки.
     const nextTask = parsed.task ? "[ ] " : "";
     nextPrefix = parsed.quote + parsed.indentText + nextMarker + nextTask;
   } else if (parsed.quote) {
@@ -94,13 +89,9 @@ const findItemAbove = (
   return null;
 };
 
-/** Ширина маркера с пробелами после него — на столько вкладывается дочерний пункт. */
 const markerWidth = (item: ParsedLine): number => item.markerText.length;
 
-/**
- * Tab / Shift+Tab. Пункт списка вкладывается под соседа выше на ширину его маркера —
- * иначе CommonMark не распознает вложенность у нумерованного списка.
- */
+/** Пункт вкладывается на ширину маркера соседа: так вложенность видит CommonMark. */
 export const shiftIndent = (
   { value, start, end }: TextSnapshot,
   direction: "in" | "out"
@@ -120,14 +111,13 @@ export const shiftIndent = (
     const newIndent = nextIndent(allLines, i, direction);
     const item = isListItem(parsed) ? parsed : null;
     const marker = item && renumber(allLines, i, newIndent, item);
-    // Маркер переписан — считаем позиции от него целиком, иначе от одного отступа.
     const indent = parsed.quote + " ".repeat(newIndent);
     const change: LineChange =
       item && marker
         ? {
-            text: indent + marker + line.slice(item.prefixLength),
+            text: indent + marker + item.task + line.slice(item.prefixLength),
             oldPrefix: item.prefixLength,
-            newPrefix: indent.length + marker.length,
+            newPrefix: indent.length + marker.length + item.task.length,
           }
         : {
             text: indent + line.slice(oldIndentLength),
@@ -142,10 +132,7 @@ export const shiftIndent = (
   return changed ? replaceLines(value, from, to, changes, start, end) : null;
 };
 
-/**
- * Номер пункта на новом уровне: вложенный список начинается заново с 1, а на прежнем
- * уровне пункт продолжает нумерацию соседа сверху. null — маркер менять не нужно.
- */
+/** Вложенный список начинается с 1, на прежнем уровне — следующим за соседом сверху. */
 const renumber = (
   lines: string[],
   index: number,

@@ -7,9 +7,8 @@ import type { TextEdit, TextSnapshot } from "./types";
 
 export type MarkdownCommand = {
   id: string;
-  /** Подпись в шпаргалке. */
   label: string;
-  /** Первое — основное; остальные равноправны, если браузер занял основное. */
+  /** Равноправные сочетания: основное может быть занято браузером. */
   hotkeys: Hotkey[];
   run: (snapshot: TextSnapshot) => TextEdit | null;
 };
@@ -77,7 +76,6 @@ export const markdownCommands: MarkdownCommand[] = [
   {
     id: "quote",
     label: "Цитата",
-    // ⇧⌘. — тот же символ «>», что и маркер цитаты: запасное на случай занятого ⇧⌘9.
     hotkeys: [
       { code: "Digit9", mod: true, shift: true },
       { code: "Period", mod: true, shift: true },
@@ -93,10 +91,7 @@ export type MarkdownKeyAction =
   /** Сочетание наше, но править нечего: событие всё равно не отдаём браузеру. */
   | { type: "preventDefault" };
 
-/**
- * Чем поле отвечает на Enter: отправкой, отправкой только с ⌘ (длинный текст с
- * разметкой) или ничем — тогда Enter просто переносит строку.
- */
+/** Чем поле отвечает на Enter: отправкой, отправкой только с ⌘ или переносом строки. */
 export type SubmitMode = "enter" | "modEnter" | "none";
 
 type KeyEvent = Pick<
@@ -106,7 +101,6 @@ type KeyEvent = Pick<
 
 type Options = {
   submit: SubmitMode;
-  /** Есть вложения: ⌘U открывает выбор файла. */
   canAttach?: boolean;
   isApple: boolean;
 };
@@ -140,7 +134,6 @@ export const resolveMarkdownKey = (
         : null;
     }
     if (lineBreak) return { type: "edit", edit: newline(snapshot) };
-    // ⇧⌥Enter — не наше сочетание, отдаём браузеру.
     if (event.shiftKey) return null;
     return submit === "enter"
       ? { type: "submit" }
@@ -148,8 +141,8 @@ export const resolveMarkdownKey = (
   }
 
   if (event.key === "Tab" && !mod && !foreignMod && !event.altKey) {
-    // Tab меняет вложенность, пока её есть куда менять: на первом пункте списка и вне
-    // списка он уводит фокус. Иначе появляется третье состояние «нажал, ничего не было».
+    // Tab уводит фокус, когда вложенность менять некуда: иначе появляется третье
+    // состояние «нажал, ничего не было».
     if (!isInListItem(snapshot)) return null;
     const edit = shiftIndent(snapshot, event.shiftKey ? "out" : "in");
     return edit ? { type: "edit", edit } : null;

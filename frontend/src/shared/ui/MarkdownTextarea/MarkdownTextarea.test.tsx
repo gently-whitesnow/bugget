@@ -117,6 +117,25 @@ describe("MarkdownTextarea", () => {
     expect(textarea.value).toBe("see docs");
   });
 
+  it("does not let formatting exceed maxLength", () => {
+    // Бекенд отклонит текст, выросший на символы разметки, поэтому правка не применяется.
+    const onInput = vi.fn();
+    render(
+      <MarkdownTextarea
+        value={"a".repeat(64)}
+        maxLength={64}
+        onInput={onInput}
+      />
+    );
+    const textarea = getTextarea();
+    textarea.setSelectionRange(0, 64);
+
+    fireEvent.keyDown(textarea, { key: "b", code: "KeyB", ctrlKey: true });
+
+    expect(textarea.value.length).toBe(64);
+    expect(onInput).not.toHaveBeenCalled();
+  });
+
   it("opens file picker on ⌘U only when attachments are supported", () => {
     const onAttachFile = vi.fn();
     const { rerender } = render(<MarkdownTextarea value="" />);

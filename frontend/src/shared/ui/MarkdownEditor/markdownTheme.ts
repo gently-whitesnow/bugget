@@ -51,9 +51,10 @@ const fieldLook = EditorView.theme({
     caretColor: "var(--color-base-content)",
   },
   ".cm-line": { padding: "0" },
-  // Воздух между блоками, как в отрисовке.
-  ".cm-line.cm-md-heading": { marginTop: "0.75em" },
-  ".cm-line.cm-md-heading:first-child": { marginTop: "0" },
+  // Воздух между блоками — padding, а не margin: CodeMirror считает высоту строки по
+  // её client rect, и внешний отступ он не видит. С margin клик попадает мимо строки.
+  ".cm-line.cm-md-heading": { paddingTop: "0.75em" },
+  ".cm-line.cm-md-heading:first-child": { paddingTop: "0" },
   ".cm-line.cm-md-quote": {
     borderLeft:
       "2px solid color-mix(in oklab, var(--color-base-content) 20%, transparent)",

@@ -5,6 +5,8 @@ export const appHotkeys = {
   search: { code: "KeyK", mod: true },
   searchSlash: { code: "Slash" },
   attachFile: { code: "KeyU", mod: true },
+  /** Сохранение длинного текста: Enter там переносит строку. */
+  saveResult: { code: "Enter", mod: true },
   help: { code: "Slash", mod: true },
   helpQuestion: { code: "Slash", shift: true },
 } satisfies Record<string, Hotkey>;

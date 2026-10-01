@@ -1,11 +1,7 @@
 import type { RefObject } from "react";
 import { X } from "lucide-react";
-import {
-  appHotkeys,
-  formatHotkey,
-  markdownCommands,
-  type Hotkey,
-} from "@/shared/lib/keyboard";
+import { appHotkeys, formatHotkey, type Hotkey } from "@/shared/lib/keyboard";
+import { markdownCommands } from "@/shared/lib/markdownEditing";
 
 type Props = {
   ref: RefObject<HTMLDialogElement | null>;

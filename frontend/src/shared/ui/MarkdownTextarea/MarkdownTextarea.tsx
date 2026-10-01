@@ -8,11 +8,23 @@ import {
   type CSSProperties,
   type KeyboardEvent,
 } from "react";
+import { useAutoHeight } from "@/shared/lib/hooks";
 import {
   applyTextEdit,
   linkFromPaste,
   useMarkdownHotkeys,
-} from "@/shared/lib/keyboard";
+} from "@/shared/lib/markdownEditing";
+
+type KeyboardActions = {
+  /** ⌘Enter, а с submitOn "enter" — и обычный Enter. */
+  onSubmit?: (value: string) => void;
+  /** По умолчанию отправляет и Enter; "modEnter" оставляет Enter под перенос строки. */
+  submitOn?: "enter" | "modEnter";
+  /** Esc. Без него поле просто теряет фокус. */
+  onCancel?: () => void;
+  /** ⌘U. Без него сочетание достаётся браузеру. */
+  onAttachFile?: () => void;
+};
 
 type Props = {
   value: string;
@@ -31,14 +43,8 @@ type Props = {
   onFocus?: () => void;
   onPaste?: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
-  /** Enter и ⌘Enter. Без него Enter переносит строку. */
-  onSubmit?: (value: string) => void;
-  /** false — отправляет только ⌘Enter: для длинных текстов Enter нужен под перенос. */
-  submitOnEnter?: boolean;
-  /** Esc. Без него поле просто теряет фокус. */
-  onCancel?: () => void;
-  /** ⌘U. Без него сочетание достаётся браузеру. */
-  onAttachFile?: () => void;
+  /** Что поле умеет по клавишам: отправка, отмена, вложение. */
+  actions?: KeyboardActions;
 };
 
 /** Поле с исходным markdown: разметка видна как есть, форматирование — с клавиатуры. */
@@ -59,10 +65,7 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
       onFocus,
       onPaste,
       onKeyDown,
-      onSubmit,
-      submitOnEnter = true,
-      onCancel,
-      onAttachFile,
+      actions = {},
     },
     ref
   ) => {
@@ -81,19 +84,7 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
     const lastEmittedRef = useRef(value);
 
     const baseMinHeight = minHeight ?? `${rows * 2.5}rem`;
-
-    // Растим min-height, а не height: владелец может растянуть поле выше текста (self-stretch).
-    const adjustHeight = useCallback(() => {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-      // Ноль, а не auto: у растянутого поля auto даёт высоту ячейки, а не текста.
-      textarea.style.height = "0px";
-      textarea.style.minHeight = "0px";
-      // scrollHeight не включает бордер: без поправки последняя строка обрезается.
-      const border = textarea.offsetHeight - textarea.clientHeight;
-      textarea.style.minHeight = `max(${baseMinHeight}, ${textarea.scrollHeight + border}px)`;
-      textarea.style.height = "";
-    }, [baseMinHeight]);
+    const adjustHeight = useAutoHeight(textareaRef, baseMinHeight);
 
     useLayoutEffect(() => {
       const textarea = textareaRef.current;
@@ -112,13 +103,16 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
       textarea.setSelectionRange(textarea.value.length, textarea.value.length);
     }, [autoFocus]);
 
+    const { onSubmit, submitOn = "enter", onCancel, onAttachFile } = actions;
+
+    // Значение берём из DOM, а не из пропа: владелец может обновлять его только на blur.
     const handleSubmit = useCallback(() => {
       onSubmit?.(textareaRef.current?.value ?? "");
     }, [onSubmit]);
 
     const handleMarkdownKeys = useMarkdownHotkeys({
       onSubmit: onSubmit ? handleSubmit : undefined,
-      submitOnEnter,
+      submitOnEnter: submitOn === "enter",
       onAttachFile,
     });
 

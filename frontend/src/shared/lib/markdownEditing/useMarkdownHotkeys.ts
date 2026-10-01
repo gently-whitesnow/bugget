@@ -1,7 +1,15 @@
 import { useCallback, type KeyboardEvent } from "react";
-import { isApplePlatform } from "../hotkey";
+import { isApplePlatform } from "@/shared/lib/keyboard";
 import { applyTextEdit } from "./applyTextEdit";
-import { resolveMarkdownKey } from "./keymap";
+import { resolveMarkdownKey, type SubmitMode } from "./keymap";
+
+const resolveSubmitMode = (
+  hasSubmit: boolean,
+  submitOnEnter: boolean
+): SubmitMode => {
+  if (!hasSubmit) return "none";
+  return submitOnEnter ? "enter" : "modEnter";
+};
 
 type Options = {
   /** Без onSubmit Enter переносит строку, с ним — отправляет. */
@@ -30,8 +38,7 @@ export const useMarkdownHotkeys = ({
           end: textarea.selectionEnd,
         },
         {
-          canSubmit: Boolean(onSubmit),
-          submitOnEnter,
+          submit: resolveSubmitMode(Boolean(onSubmit), submitOnEnter),
           canAttach: Boolean(onAttachFile),
           isApple: isApplePlatform(),
         }

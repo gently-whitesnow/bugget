@@ -5,43 +5,24 @@ import {
   replaceLines,
   type LineChange,
 } from "./lineRange";
+import { isListItem, parseLine, type ParsedLine } from "./line";
 import type { TextEdit, TextSnapshot } from "./types";
 
-const listItemPattern = /^([ \t]*)(?:([-*+])|(\d{1,9})([.)]))( +)(\[[ xX]\] )?/;
-const quotePrefixPattern = /^(?:[ \t]*> ?)+/;
 const indentStep = "  ";
-
-type ListItem = {
-  indent: number;
-  markerWidth: number;
-  /** null — маркированный пункт. */
-  number: number | null;
-  delimiter: string;
-  /** Длина «отступ + маркер + пробелы» — всё, что стоит до текста пункта. */
-  prefixLength: number;
-};
-
-const parseListItem = (line: string): ListItem | null => {
-  const match = listItemPattern.exec(line);
-  if (!match) return null;
-  const [, indent, bullet, number, delimiter, spaces] = match;
-  const marker = bullet ?? `${number}${delimiter}`;
-  return {
-    indent: indent.length,
-    markerWidth: marker.length + spaces.length,
-    number: number ? Number(number) : null,
-    delimiter: delimiter ?? "",
-    prefixLength: indent.length + marker.length + spaces.length,
-  };
-};
 
 const currentLine = (value: string, position: number) => {
   const start = lineStartOf(value, position);
   return { start, text: value.slice(start, lineEndOf(value, position)) };
 };
 
+/** Пункт списка, в том числе внутри цитаты. */
+const parseListLine = (line: string): ParsedLine | null => {
+  const parsed = parseLine(line);
+  return isListItem(parsed) ? parsed : null;
+};
+
 export const isInListItem = ({ value, start }: TextSnapshot): boolean =>
-  listItemPattern.test(currentLine(value, start).text);
+  parseListLine(currentLine(value, start).text) !== null;
 
 /**
  * Перенос строки с продолжением списка или цитаты. null — строка не в списке,
@@ -53,27 +34,31 @@ export const continueList = ({
   end,
 }: TextSnapshot): TextEdit | null => {
   const line = currentLine(value, start);
-  let prefix: string;
-  let nextPrefix: string;
+  const parsed = parseLine(line.text);
+  const marker = parsed.marker;
 
-  const item = listItemPattern.exec(line.text);
-  const quote = quotePrefixPattern.exec(line.text);
-  if (item) {
-    const [full, indent, bullet, number, delimiter, spaces, task] = item;
-    prefix = full;
-    const marker = bullet ?? `${Number(number) + 1}${delimiter}`;
-    nextPrefix = `${indent}${marker}${spaces}${task ? "[ ] " : ""}`;
-  } else if (quote) {
-    prefix = quote[0];
-    nextPrefix = quote[0];
+  let nextPrefix: string;
+  if (marker && marker.kind !== "heading") {
+    const nextMarker =
+      marker.kind === "ordered"
+        ? parsed.markerText.replace(
+            String(marker.number),
+            String(marker.number + 1)
+          )
+        : parsed.markerText;
+    // Новый пункт задачи всегда пустой: отметку ставит человек, а не перенос строки.
+    const nextTask = parsed.task ? "[ ] " : "";
+    nextPrefix = parsed.quote + parsed.indentText + nextMarker + nextTask;
+  } else if (parsed.quote) {
+    nextPrefix = parsed.quote;
   } else {
     return null;
   }
 
-  if (start - line.start < prefix.length) return null;
+  if (start - line.start < parsed.prefixLength) return null;
 
   // Перенос на пустом пункте завершает список, как в GitHub и Notion.
-  if (start === end && !line.text.slice(prefix.length).trim()) {
+  if (start === end && !parsed.content.trim()) {
     return {
       from: line.start,
       to: line.start + line.text.length,
@@ -93,22 +78,24 @@ export const continueList = ({
   };
 };
 
-const leadingSpaces = (line: string): number =>
-  line.length - line.trimStart().length;
-
 /** Ближайший пункт выше с отступом не больше заданного; абзац без отступа обрывает список. */
 const findItemAbove = (
   lines: string[],
   index: number,
-  accepts: (item: ListItem) => boolean
-): ListItem | null => {
+  accepts: (item: ParsedLine) => boolean
+): ParsedLine | null => {
   for (let i = index - 1; i >= 0; i--) {
-    const item = parseListItem(lines[i]);
+    const item = parseListLine(lines[i]);
     if (item && accepts(item)) return item;
-    if (!item && lines[i].trim() && leadingSpaces(lines[i]) === 0) return null;
+    if (!item && lines[i].trim() && parseLine(lines[i]).indent === 0) {
+      return null;
+    }
   }
   return null;
 };
+
+/** Ширина маркера с пробелами после него — на столько вкладывается дочерний пункт. */
+const markerWidth = (item: ParsedLine): number => item.markerText.length;
 
 /**
  * Tab / Shift+Tab. Пункт списка вкладывается под соседа выше на ширину его маркера —
@@ -127,23 +114,25 @@ export const shiftIndent = (
   const changes: LineChange[] = [];
   for (let i = firstIndex; i < firstIndex + count; i++) {
     const line = allLines[i];
-    const oldIndent = leadingSpaces(line);
+    const parsed = parseLine(line);
+    // Отступ пишем пробелами: тронутая строка нормализуется, чужие табы не трогаем.
+    const oldIndentLength = parsed.quote.length + parsed.indentText.length;
     const newIndent = nextIndent(allLines, i, direction);
-    const item = parseListItem(line);
+    const item = isListItem(parsed) ? parsed : null;
     const marker = item && renumber(allLines, i, newIndent, item);
     // Маркер переписан — считаем позиции от него целиком, иначе от одного отступа.
+    const indent = parsed.quote + " ".repeat(newIndent);
     const change: LineChange =
       item && marker
         ? {
-            text:
-              " ".repeat(newIndent) + marker + line.slice(item.prefixLength),
+            text: indent + marker + line.slice(item.prefixLength),
             oldPrefix: item.prefixLength,
-            newPrefix: newIndent + marker.length,
+            newPrefix: indent.length + marker.length,
           }
         : {
-            text: " ".repeat(newIndent) + line.slice(oldIndent),
-            oldPrefix: oldIndent,
-            newPrefix: newIndent,
+            text: indent + line.slice(oldIndentLength),
+            oldPrefix: oldIndentLength,
+            newPrefix: indent.length,
           };
     changed ||= change.text !== line;
     allLines[i] = change.text;
@@ -161,21 +150,23 @@ const renumber = (
   lines: string[],
   index: number,
   newIndent: number,
-  item: ListItem
+  item: ParsedLine
 ): string | null => {
-  if (item.number === null) return null;
+  if (item.marker?.kind !== "ordered") return null;
+  const { number, delimiter } = item.marker;
 
   const sibling = findItemAbove(lines, index, (it) => it.indent <= newIndent);
+  const siblingMarker = sibling?.marker;
   const nextNumber =
-    sibling && sibling.indent === newIndent && sibling.number !== null
-      ? sibling.number + 1
+    sibling && sibling.indent === newIndent && siblingMarker?.kind === "ordered"
+      ? siblingMarker.number + 1
       : 1;
-  if (nextNumber === item.number) return null;
+  if (nextNumber === number) return null;
 
   const spaces = " ".repeat(
-    item.markerWidth - String(item.number).length - item.delimiter.length
+    markerWidth(item) - String(number).length - delimiter.length
   );
-  return `${nextNumber}${item.delimiter}${spaces}`;
+  return `${nextNumber}${delimiter}${spaces}`;
 };
 
 const nextIndent = (
@@ -184,10 +175,11 @@ const nextIndent = (
   direction: "in" | "out"
 ): number => {
   const line = lines[index];
-  const indent = leadingSpaces(line);
+  const parsed = parseLine(line);
+  const indent = parsed.indent;
   if (!line.trim()) return indent;
 
-  const item = parseListItem(line);
+  const item = isListItem(parsed) ? parsed : null;
   if (!item) {
     return direction === "in"
       ? indent + indentStep.length
@@ -197,7 +189,7 @@ const nextIndent = (
   if (direction === "in") {
     const sibling = findItemAbove(lines, index, (it) => it.indent <= indent);
     return sibling && sibling.indent === indent
-      ? sibling.indent + sibling.markerWidth
+      ? sibling.indent + markerWidth(sibling)
       : indent;
   }
   const parent = findItemAbove(lines, index, (it) => it.indent < indent);

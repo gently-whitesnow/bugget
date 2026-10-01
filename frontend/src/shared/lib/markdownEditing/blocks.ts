@@ -5,6 +5,7 @@ import {
   replaceLines,
   type LineChange,
 } from "./lineRange";
+import { parseLine, type LineMarker } from "./line";
 import type { TextEdit, TextSnapshot } from "./types";
 
 export type LineFormat =
@@ -12,25 +13,15 @@ export type LineFormat =
   | { kind: "bulletList" }
   | { kind: "orderedList" };
 
-// lead — цитаты и отступ: они остаются на месте, меняется только маркер после них.
-const linePattern =
-  /^((?:[ \t]*> ?)*[ \t]*)(#{1,6} |[-*+] (?:\[[ xX]\] )?|\d{1,9}[.)] )?/;
-
-const parseLine = (line: string) => {
-  const match = linePattern.exec(line)!;
-  const lead = match[1];
-  const marker = match[2] ?? "";
-  return { lead, marker, content: line.slice(lead.length + marker.length) };
-};
-
-const hasFormat = (marker: string, format: LineFormat): boolean => {
+const hasFormat = (marker: LineMarker | null, format: LineFormat): boolean => {
+  if (!marker) return false;
   switch (format.kind) {
     case "heading":
-      return marker === `${"#".repeat(format.level)} `;
+      return marker.kind === "heading" && marker.level === format.level;
     case "bulletList":
-      return /^[-*+] /.test(marker);
+      return marker.kind === "bullet";
     case "orderedList":
-      return /^\d+[.)] /.test(marker);
+      return marker.kind === "ordered";
   }
 };
 
@@ -64,12 +55,15 @@ export const toggleLineFormat = (
   );
 
   let ordinal = 1;
-  const changes: LineChange[] = parsed.map(({ lead, marker, content }, i) => {
-    const oldPrefix = lead.length + marker.length;
+  const changes: LineChange[] = parsed.map((line, i) => {
+    // Цитата и отступ остаются на месте: меняется только маркер после них.
+    const lead = line.quote + line.indentText;
+    const oldPrefix = lead.length + line.markerText.length;
     if (!targets.has(i)) {
       return { text: lines[i], oldPrefix, newPrefix: oldPrefix };
     }
     const nextMarker = isActive ? "" : markerFor(format, ordinal++);
+    const content = line.task + line.content;
     return {
       text: lead + nextMarker + content,
       oldPrefix,

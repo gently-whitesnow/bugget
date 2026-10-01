@@ -35,6 +35,11 @@ describe("continueList", () => {
     expect(run("- a\n- |", continueList)).toBe("- a\n|");
   });
 
+  it("continues a list inside a quote", () => {
+    expect(run("> - пункт|", continueList)).toBe("> - пункт\n> - |");
+    expect(run("> 1. раз|", continueList)).toBe("> 1. раз\n> 2. |");
+  });
+
   it("returns null outside of list", () => {
     expect(run("plain|", continueList)).toBe("<no edit>");
   });
@@ -86,6 +91,12 @@ describe("shiftIndent", () => {
 
   it("outdents to parent level", () => {
     expect(outdent("1. a\n   - b|")).toBe("1. a\n- b|");
+  });
+
+  it("counts a tab as four columns and writes the indent back as spaces", () => {
+    // Таб — четыре колонки, значит пункт уже вложен: Tab уровень не меняет.
+    expect(indent("- a\n\t- b|")).toBe("- a\n    - b|");
+    expect(outdent("- a\n\t- b|")).toBe("- a\n- b|");
   });
 
   it("indents selected plain lines by two spaces", () => {

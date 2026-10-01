@@ -13,24 +13,27 @@ export const useHotkey = (
   handler: () => void,
   { enabled = true, inEditable = false }: Options = {}
 ) => {
+  // Слушатель вешаем один раз и читаем свежие значения из ref: иначе пришлось бы
+  // сравнивать массив сочетаний в зависимостях эффекта.
   const handlerRef = useRef(handler);
   handlerRef.current = handler;
-  const list = Array.isArray(hotkeys) ? hotkeys : [hotkeys];
-  const key = JSON.stringify(list);
+  const hotkeysRef = useRef(hotkeys);
+  hotkeysRef.current = hotkeys;
 
   useEffect(() => {
     if (!enabled) return;
-    const parsed: Hotkey[] = JSON.parse(key);
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing) return;
       if (!inEditable && isEditableTarget(event.target)) return;
-      if (!parsed.some((hotkey) => matchesHotkey(event, hotkey))) return;
+      const current = hotkeysRef.current;
+      const list = Array.isArray(current) ? current : [current];
+      if (!list.some((hotkey) => matchesHotkey(event, hotkey))) return;
       event.preventDefault();
       handlerRef.current();
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [enabled, inEditable, key]);
+  }, [enabled, inEditable]);
 };

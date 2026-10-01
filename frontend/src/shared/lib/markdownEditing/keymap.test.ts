@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { resolveMarkdownKey } from "./keymap";
+import { resolveMarkdownKey, type SubmitMode } from "./keymap";
+
+type Options = { submit?: SubmitMode; canAttach?: boolean; isApple?: boolean };
 import { render, snap } from "./testUtils";
 
 type Key = {
@@ -14,12 +16,7 @@ type Key = {
 const press = (
   marked: string,
   key: Key,
-  {
-    canSubmit = false,
-    submitOnEnter = true,
-    canAttach = false,
-    isApple = true,
-  } = {}
+  { submit = "none", canAttach = false, isApple = true }: Options = {}
 ) => {
   const snapshot = snap(marked);
   const action = resolveMarkdownKey(
@@ -32,7 +29,7 @@ const press = (
       ...key,
     },
     snapshot,
-    { canSubmit, submitOnEnter, canAttach, isApple }
+    { submit, canAttach, isApple }
   );
   if (action?.type === "edit") return render(snapshot, action.edit);
   return action?.type ?? null;
@@ -41,7 +38,7 @@ const press = (
 describe("resolveMarkdownKey", () => {
   describe("Enter", () => {
     it("submits on Enter and ⌘Enter when submit is available", () => {
-      const options = { canSubmit: true };
+      const options: Options = { submit: "enter" };
       expect(press("a|", { key: "Enter" }, options)).toBe("submit");
       expect(press("a|", { key: "Enter", metaKey: true }, options)).toBe(
         "submit"
@@ -49,7 +46,7 @@ describe("resolveMarkdownKey", () => {
     });
 
     it("breaks line on Shift+Enter and Option+Enter", () => {
-      const options = { canSubmit: true };
+      const options: Options = { submit: "enter" };
       expect(press("a|", { key: "Enter", shiftKey: true }, options)).toBe(
         "a\n|"
       );
@@ -66,7 +63,7 @@ describe("resolveMarkdownKey", () => {
     });
 
     it("breaks line on Enter and submits on ⌘Enter when submitOnEnter is off", () => {
-      const options = { canSubmit: true, submitOnEnter: false };
+      const options: Options = { submit: "modEnter" };
       expect(press("a|", { key: "Enter" }, options)).toBe("a\n|");
       expect(press("- x|", { key: "Enter" }, options)).toBe("- x\n- |");
       expect(press("a|", { key: "Enter", metaKey: true }, options)).toBe(
@@ -75,7 +72,7 @@ describe("resolveMarkdownKey", () => {
     });
 
     it("uses Ctrl as modifier outside Apple platforms", () => {
-      const options = { canSubmit: true, isApple: false };
+      const options: Options = { submit: "enter", isApple: false };
       expect(press("a|", { key: "Enter", ctrlKey: true }, options)).toBe(
         "submit"
       );
@@ -100,7 +97,7 @@ describe("resolveMarkdownKey", () => {
     });
 
     it("consumes Tab in list even when nothing changes", () => {
-      expect(press("- a|", { key: "Tab" })).toBe("consume");
+      expect(press("- a|", { key: "Tab" })).toBe("preventDefault");
     });
   });
 
@@ -138,7 +135,7 @@ describe("resolveMarkdownKey", () => {
 
     it("consumes shortcut that has nothing to edit", () => {
       expect(press("a{  }", { key: "b", code: "KeyB", metaKey: true })).toBe(
-        "consume"
+        "preventDefault"
       );
     });
   });

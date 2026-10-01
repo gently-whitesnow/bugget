@@ -1,5 +1,5 @@
-import { appHotkeys } from "../appHotkeys";
-import { matchesHotkey, type Hotkey } from "../hotkey";
+import { appHotkeys } from "@/shared/lib/keyboard";
+import { matchesHotkey, type Hotkey } from "@/shared/lib/keyboard";
 import { toggleCodeBlock, toggleLineFormat, toggleQuote } from "./blocks";
 import { toggleInlineFormat, toggleLink } from "./inline";
 import { continueList, isInListItem, shiftIndent } from "./lists";
@@ -90,8 +90,14 @@ export type MarkdownKeyAction =
   | { type: "edit"; edit: TextEdit }
   | { type: "submit" }
   | { type: "attach" }
-  /** Сочетание наше, но править нечего: браузеру его всё равно не отдаём. */
-  | { type: "consume" };
+  /** Сочетание наше, но править нечего: событие всё равно не отдаём браузеру. */
+  | { type: "preventDefault" };
+
+/**
+ * Чем поле отвечает на Enter: отправкой, отправкой только с ⌘ (длинный текст с
+ * разметкой) или ничем — тогда Enter просто переносит строку.
+ */
+export type SubmitMode = "enter" | "modEnter" | "none";
 
 type KeyEvent = Pick<
   KeyboardEvent,
@@ -99,10 +105,7 @@ type KeyEvent = Pick<
 >;
 
 type Options = {
-  /** Есть отправка: ⌘Enter отправляет. */
-  canSubmit: boolean;
-  /** Отправлять и по обычному Enter. Для длинных текстов выключают: там Enter переносит. */
-  submitOnEnter?: boolean;
+  submit: SubmitMode;
   /** Есть вложения: ⌘U открывает выбор файла. */
   canAttach?: boolean;
   isApple: boolean;
@@ -124,7 +127,7 @@ const newline = (snapshot: TextSnapshot): TextEdit => {
 export const resolveMarkdownKey = (
   event: KeyEvent,
   snapshot: TextSnapshot,
-  { canSubmit, submitOnEnter = true, canAttach = false, isApple }: Options
+  { submit, canAttach = false, isApple }: Options
 ): MarkdownKeyAction | null => {
   const mod = isApple ? event.metaKey : event.ctrlKey;
   const foreignMod = isApple ? event.ctrlKey : event.metaKey;
@@ -132,13 +135,14 @@ export const resolveMarkdownKey = (
   if (event.key === "Enter" && !foreignMod) {
     const lineBreak = event.shiftKey !== event.altKey;
     if (mod) {
-      return canSubmit && !event.shiftKey && !event.altKey
+      return submit !== "none" && !event.shiftKey && !event.altKey
         ? { type: "submit" }
         : null;
     }
     if (lineBreak) return { type: "edit", edit: newline(snapshot) };
+    // ⇧⌥Enter — не наше сочетание, отдаём браузеру.
     if (event.shiftKey) return null;
-    return canSubmit && submitOnEnter
+    return submit === "enter"
       ? { type: "submit" }
       : { type: "edit", edit: newline(snapshot) };
   }
@@ -148,7 +152,7 @@ export const resolveMarkdownKey = (
     // «когда печатается отступ, а когда уходит фокус» невозможно запомнить.
     if (!isInListItem(snapshot)) return null;
     const edit = shiftIndent(snapshot, event.shiftKey ? "out" : "in");
-    return edit ? { type: "edit", edit } : { type: "consume" };
+    return edit ? { type: "edit", edit } : { type: "preventDefault" };
   }
 
   if (canAttach && matchesHotkey(event, appHotkeys.attachFile, isApple)) {
@@ -160,5 +164,5 @@ export const resolveMarkdownKey = (
   );
   if (!command) return null;
   const edit = command.run(snapshot);
-  return edit ? { type: "edit", edit } : { type: "consume" };
+  return edit ? { type: "edit", edit } : { type: "preventDefault" };
 };

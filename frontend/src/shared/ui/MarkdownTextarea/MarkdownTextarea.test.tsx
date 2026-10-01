@@ -136,6 +136,26 @@ describe("MarkdownTextarea", () => {
     expect(onInput).not.toHaveBeenCalled();
   });
 
+  it("does not let list continuation exceed maxLength", () => {
+    render(<MarkdownTextarea value="- a" maxLength={3} />);
+    const textarea = getTextarea();
+    textarea.setSelectionRange(3, 3);
+
+    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", altKey: true });
+
+    expect(textarea.value).toBe("- a");
+  });
+
+  it("leaves paste to the browser when a link does not fit maxLength", () => {
+    render(<MarkdownTextarea value={"a".repeat(64)} maxLength={64} />);
+    const textarea = getTextarea();
+    textarea.setSelectionRange(0, 4);
+
+    // Событие не отменено — браузер вставит текст сам и обрежет его по лимиту.
+    expect(pasteText(textarea, "https://ati.su")).toBe(true);
+    expect(textarea.value).toBe("a".repeat(64));
+  });
+
   it("opens file picker on ⌘U only when attachments are supported", () => {
     const onAttachFile = vi.fn();
     const { rerender } = render(<MarkdownTextarea value="" />);

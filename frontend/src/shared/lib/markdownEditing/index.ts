@@ -1,4 +1,4 @@
-export { applyTextEdit } from "./applyTextEdit";
+export { applyTextEdit, fitsMaxLength } from "./applyTextEdit";
 export { linkFromPaste } from "./inline";
 export { markdownCommands, resolveMarkdownKey } from "./keymap";
 export type { MarkdownKeyAction, SubmitMode } from "./keymap";

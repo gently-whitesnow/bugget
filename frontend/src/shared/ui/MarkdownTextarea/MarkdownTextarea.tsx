@@ -11,6 +11,7 @@ import {
 import { useAutoHeight } from "@/shared/lib/hooks";
 import {
   applyTextEdit,
+  fitsMaxLength,
   linkFromPaste,
   useMarkdownHotkeys,
 } from "@/shared/lib/markdownEditing";
@@ -150,10 +151,11 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, Props>(
         },
         event.clipboardData.getData("text/plain")
       );
-      if (!edit) return;
+      // Ссылка в лимит не влезла — вставку отдаём браузеру: он обрежет текст сам.
+      if (!edit || !fitsMaxLength(textarea.value, edit, maxLength)) return;
 
       event.preventDefault();
-      applyTextEdit(textarea, edit);
+      applyTextEdit(textarea, edit, maxLength);
     };
 
     return (

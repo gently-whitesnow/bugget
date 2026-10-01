@@ -72,6 +72,8 @@ describe("shiftIndent", () => {
     expect(indent("1. parent\n2. [x] done|")).toBe(
       "1. parent\n   1. [x] done|"
     );
+    expect(indent("- parent\n- [ ] todo|")).toBe("- parent\n  - [ ] todo|");
+    expect(outdent("1. a\n   1. [x] done|")).toBe("1. a\n2. [x] done|");
   });
 
   it("continues numbering of the level it returns to", () => {

@@ -2,7 +2,6 @@ import { useCallback, type KeyboardEvent } from "react";
 import { isApplePlatform } from "@/shared/lib/keyboard";
 import { applyTextEdit } from "./applyTextEdit";
 import { resolveMarkdownKey, type SubmitMode } from "./keymap";
-import type { TextEdit } from "./types";
 
 const resolveSubmitMode = (
   hasSubmit: boolean,
@@ -19,15 +18,8 @@ type Options = {
   submitOnEnter?: boolean;
   /** ⌘U — выбор файла для вложения. */
   onAttachFile?: () => void;
-  /** Предел длины текста: разметка не должна его переполнять. */
+  /** Лимит поля: правка, которая его переполняет, не применяется. */
   maxLength?: number;
-};
-
-/** Правка влезает в лимит: иначе бекенд отклонит текст, выросший на символы разметки. */
-const fits = (value: string, edit: TextEdit, maxLength?: number): boolean => {
-  if (maxLength === undefined) return true;
-  const next = value.length - (edit.to - edit.from) + edit.insert.length;
-  return next <= maxLength;
 };
 
 export const useMarkdownHotkeys = ({
@@ -59,11 +51,8 @@ export const useMarkdownHotkeys = ({
       event.preventDefault();
       if (action.type === "submit") onSubmit?.();
       if (action.type === "attach") onAttachFile?.();
-      if (
-        action.type === "edit" &&
-        fits(textarea.value, action.edit, maxLength)
-      ) {
-        applyTextEdit(textarea, action.edit);
+      if (action.type === "edit") {
+        applyTextEdit(textarea, action.edit, maxLength);
       }
     },
     [onSubmit, submitOnEnter, onAttachFile, maxLength]

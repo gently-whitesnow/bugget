@@ -21,7 +21,6 @@
     "axios": "^1.13.6",
     "daisyui": "^5.0.9",
     "date-fns": "^4.1.0",
-    "dompurify": "^3.3.1",
     "effector": "^23.3.0",
     "effector-react": "^23.3.0",
     "lucide-react": "^0.483.0",

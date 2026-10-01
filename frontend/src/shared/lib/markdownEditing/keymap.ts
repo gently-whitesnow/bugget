@@ -148,11 +148,11 @@ export const resolveMarkdownKey = (
   }
 
   if (event.key === "Tab" && !mod && !foreignMod && !event.altKey) {
-    // Отступ только в списке: во всех остальных случаях Tab уводит фокус, иначе правило
-    // «когда печатается отступ, а когда уходит фокус» невозможно запомнить.
+    // Tab меняет вложенность, пока её есть куда менять: на первом пункте списка и вне
+    // списка он уводит фокус. Иначе появляется третье состояние «нажал, ничего не было».
     if (!isInListItem(snapshot)) return null;
     const edit = shiftIndent(snapshot, event.shiftKey ? "out" : "in");
-    return edit ? { type: "edit", edit } : { type: "preventDefault" };
+    return edit ? { type: "edit", edit } : null;
   }
 
   if (canAttach && matchesHotkey(event, appHotkeys.attachFile, isApple)) {

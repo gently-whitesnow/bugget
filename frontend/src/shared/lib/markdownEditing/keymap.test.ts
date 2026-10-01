@@ -96,8 +96,10 @@ describe("resolveMarkdownKey", () => {
       expect(press("{plain\ntext}", { key: "Tab" })).toBeNull();
     });
 
-    it("consumes Tab in list even when nothing changes", () => {
-      expect(press("- a|", { key: "Tab" })).toBe("preventDefault");
+    it("gives Tab back when nesting cannot change", () => {
+      // Первый пункт вкладывать некуда, пустой пункт — тоже: пусть уводит фокус.
+      expect(press("- a|", { key: "Tab" })).toBeNull();
+      expect(press("- a\n- b|", { key: "Tab", shiftKey: true })).toBeNull();
     });
   });
 

@@ -8,7 +8,7 @@ import {
   fetchBootstrapFx,
   joinTeamFx,
   joinWorkspaceFx,
-} from "@/shared/model";
+} from "./bootstrap";
 import {
   buildAuthRedirectUrl,
   clearLoginNextFromSession,

@@ -11,7 +11,7 @@ import {
 } from "../../../../../model";
 import type { KaitenBoard } from "../../../../../model/types";
 import { SettingLabel } from "../SettingLabel";
-import { CustomSettingProps } from ".";
+import type { CustomSettingProps } from "./types";
 
 const keyOf = (arr: string[]) => arr.join("|");
 

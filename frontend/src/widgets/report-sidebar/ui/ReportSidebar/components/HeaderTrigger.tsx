@@ -1,6 +1,6 @@
 import { SlidersHorizontal } from "lucide-react";
 
-import { useReportSidebar } from "../useReportSidebar";
+import { useReportSidebar } from "../context/useReportSidebar";
 
 const HeaderTrigger = () => {
   const { isMobileSidebarOpen, openMobileSidebar } = useReportSidebar();

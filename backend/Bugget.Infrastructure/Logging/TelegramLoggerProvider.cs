@@ -18,6 +18,11 @@ public sealed class TelegramLoggerProvider : ILoggerProvider
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _senderLoop;
 
+    // Состояние отправки трогает только SenderLoopAsync: читатель очереди один.
+    private readonly Random _random = new();
+    private DateTimeOffset _nextAllowed = DateTimeOffset.MinValue;
+    private TimeSpan _backoff;
+
     public TelegramLoggerProvider(string serviceName, TelegramLoggingOptions options)
     {
         _serviceName = string.IsNullOrWhiteSpace(serviceName)
@@ -61,40 +66,15 @@ public sealed class TelegramLoggerProvider : ILoggerProvider
     private async Task SenderLoopAsync()
     {
         var endpoint = $"https://api.telegram.org/bot{_options.BotToken}/sendMessage";
-        var nextAllowed = DateTimeOffset.MinValue;
-        var rnd = new Random();
-        var backoff = _options.RetryBaseDelay;
+        _backoff = _options.RetryBaseDelay;
 
         try
         {
             var batch = new List<string>(64);
-            var read = _queue.Reader;
 
             while (!_cts.IsCancellationRequested)
             {
-                var batchWindowTask = Task.Delay(_options.BatchWindow, _cts.Token);
-
-                batch.Clear();
-                while (await read.WaitToReadAsync(_cts.Token))
-                {
-                    while (read.TryRead(out var line))
-                    {
-                        batch.Add(line);
-                        if (batch.Count >= 200)
-                        {
-                            break;
-                        }
-                    }
-                    break;
-                }
-
-                while (!batchWindowTask.IsCompleted && read.TryRead(out var more))
-                {
-                    batch.Add(more);
-                }
-                try
-                { await batchWindowTask; }
-                catch { /* ignore */ }
+                await ReadBatchAsync(batch);
 
                 if (batch.Count == 0)
                 {
@@ -102,82 +82,108 @@ public sealed class TelegramLoggerProvider : ILoggerProvider
                 }
 
                 var now = DateTimeOffset.UtcNow;
-                if (now < nextAllowed)
+                if (now < _nextAllowed)
                 {
-                    await Task.Delay(nextAllowed - now, _cts.Token);
+                    await Task.Delay(_nextAllowed - now, _cts.Token);
                 }
 
-                var payloads = BuildPayloads(batch, _options.MaxMessageLength);
-
-                foreach (var payload in payloads)
+                foreach (var payload in BuildPayloads(batch, _options.MaxMessageLength))
                 {
-                    var content = new FormUrlEncodedContent(new Dictionary<string, string>
-                    {
-                        ["chat_id"] = _options.ChatId!,
-                        ["text"] = payload
-                    });
-
-                    HttpResponseMessage? resp = null;
-                    try
-                    {
-                        resp = await _http.PostAsync(endpoint, content, _cts.Token);
-
-                        if ((int)resp.StatusCode == 429)
-                        {
-                            // Уважаем retry_after из тела
-                            var body = await resp.Content.ReadAsStringAsync(_cts.Token);
-                            var retry = TryParseRetryAfterSeconds(body) ?? 1;
-                            nextAllowed = DateTimeOffset.UtcNow.AddSeconds(retry);
-                            backoff = _options.RetryBaseDelay;
-                            continue;
-                        }
-
-                        if (!resp.IsSuccessStatusCode)
-                        {
-                            var jitter = TimeSpan.FromMilliseconds(backoff.TotalMilliseconds * rnd.NextDouble());
-                            var delay = backoff + jitter;
-                            if (delay > _options.RetryMaxDelay)
-                            {
-                                delay = _options.RetryMaxDelay;
-                            }
-
-                            await Task.Delay(delay, _cts.Token);
-
-                            var next = TimeSpan.FromMilliseconds(backoff.TotalMilliseconds * 2);
-                            backoff = next <= _options.RetryMaxDelay ? next : _options.RetryMaxDelay;
-
-                            continue;
-                        }
-
-                        backoff = _options.RetryBaseDelay;
-                        nextAllowed = DateTimeOffset.UtcNow + _options.MinDelayBetweenSends;
-                    }
-                    catch
-                    {
-                        // Не падаем — просто ждём бэкофф и продолжаем
-                        var jitter = TimeSpan.FromMilliseconds(backoff.TotalMilliseconds * rnd.NextDouble());
-                        var delay = backoff + jitter;
-                        if (delay > _options.RetryMaxDelay)
-                        {
-                            delay = _options.RetryMaxDelay;
-                        }
-
-                        try
-                        { await Task.Delay(delay, _cts.Token); }
-                        catch { }
-                        var next = TimeSpan.FromMilliseconds(backoff.TotalMilliseconds * 2);
-                        backoff = next <= _options.RetryMaxDelay ? next : _options.RetryMaxDelay;
-                    }
-                    finally
-                    {
-                        content.Dispose();
-                        resp?.Dispose();
-                    }
+                    await SendPayloadAsync(endpoint, payload);
                 }
             }
         }
         catch (OperationCanceledException) { /* shutdown */ }
         catch { /* never throw out of loop */ }
+    }
+
+    private async Task ReadBatchAsync(List<string> batch)
+    {
+        var read = _queue.Reader;
+        var batchWindowTask = Task.Delay(_options.BatchWindow, _cts.Token);
+
+        batch.Clear();
+        while (await read.WaitToReadAsync(_cts.Token))
+        {
+            while (read.TryRead(out var line))
+            {
+                batch.Add(line);
+                if (batch.Count >= 200)
+                {
+                    break;
+                }
+            }
+            break;
+        }
+
+        while (!batchWindowTask.IsCompleted && read.TryRead(out var more))
+        {
+            batch.Add(more);
+        }
+        try
+        { await batchWindowTask; }
+        catch { /* ignore */ }
+    }
+
+    private async Task SendPayloadAsync(string endpoint, string payload)
+    {
+        var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["chat_id"] = _options.ChatId!,
+            ["text"] = payload
+        });
+
+        HttpResponseMessage? resp = null;
+        try
+        {
+            resp = await _http.PostAsync(endpoint, content, _cts.Token);
+
+            if ((int)resp.StatusCode == 429)
+            {
+                // Уважаем retry_after из тела
+                var body = await resp.Content.ReadAsStringAsync(_cts.Token);
+                var retry = TryParseRetryAfterSeconds(body) ?? 1;
+                _nextAllowed = DateTimeOffset.UtcNow.AddSeconds(retry);
+                _backoff = _options.RetryBaseDelay;
+                return;
+            }
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                await Task.Delay(NextBackoffDelay(), _cts.Token);
+                return;
+            }
+
+            _backoff = _options.RetryBaseDelay;
+            _nextAllowed = DateTimeOffset.UtcNow + _options.MinDelayBetweenSends;
+        }
+        catch
+        {
+            // Не падаем — просто ждём бэкофф и продолжаем
+            var delay = NextBackoffDelay();
+            try
+            { await Task.Delay(delay, _cts.Token); }
+            catch { }
+        }
+        finally
+        {
+            content.Dispose();
+            resp?.Dispose();
+        }
+    }
+
+    private TimeSpan NextBackoffDelay()
+    {
+        var jitter = TimeSpan.FromMilliseconds(_backoff.TotalMilliseconds * _random.NextDouble());
+        var delay = _backoff + jitter;
+        if (delay > _options.RetryMaxDelay)
+        {
+            delay = _options.RetryMaxDelay;
+        }
+
+        var next = TimeSpan.FromMilliseconds(_backoff.TotalMilliseconds * 2);
+        _backoff = next <= _options.RetryMaxDelay ? next : _options.RetryMaxDelay;
+        return delay;
     }
 
     private static bool TryExtractRetryAfter(JsonElement root, out int seconds)

@@ -1,5 +1,10 @@
 import { createEffect, createEvent, createStore, sample } from "effector";
 import {
+  patchOwnerAttachments,
+  withoutAttachment,
+  withRenamedAttachment,
+} from "./model-owner-attachments";
+import {
   createComment,
   updateComment,
   deleteComment,
@@ -387,41 +392,23 @@ $commentsByBugId
   })
   .on(
     deleteCommentAttachmentFx.doneData,
-    (state, { bugId, commentId, attachmentId }) => {
-      const existingComments = state[bugId] || [];
-      return {
-        ...state,
-        [bugId]: existingComments.map((comment) =>
-          comment.id === commentId
-            ? {
-                ...comment,
-                attachments: (comment.attachments || []).filter(
-                  (a) => a.id !== attachmentId
-                ),
-              }
-            : comment
-        ),
-      };
-    }
+    (state, { bugId, commentId, attachmentId }) =>
+      patchOwnerAttachments(
+        state,
+        bugId,
+        commentId,
+        withoutAttachment(attachmentId)
+      )
   )
   .on(
     renameCommentAttachmentFx.doneData,
-    (state, { bugId, commentId, attachment }) => {
-      const existingComments = state[bugId] || [];
-      return {
-        ...state,
-        [bugId]: existingComments.map((comment) =>
-          comment.id === commentId
-            ? {
-                ...comment,
-                attachments: (comment.attachments || []).map((item) =>
-                  item.id === attachment.id ? { ...item, ...attachment } : item
-                ),
-              }
-            : comment
-        ),
-      };
-    }
+    (state, { bugId, commentId, attachment }) =>
+      patchOwnerAttachments(
+        state,
+        bugId,
+        commentId,
+        withRenamedAttachment(attachment)
+      )
   )
   .on(
     deleteCommentAttachmentSocketEvent,

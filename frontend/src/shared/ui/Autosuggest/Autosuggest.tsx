@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 
 import type { AutocompleteEntity } from "./types";
 import useKeyboardNav from "./useKeyboardNav";
-import SuggestionList from "./components/SuggestionList";
+import SuggestionList from "./SuggestionList";
 import Avatar from "../Avatar/Avatar";
 
 import "./Autosuggest.css";

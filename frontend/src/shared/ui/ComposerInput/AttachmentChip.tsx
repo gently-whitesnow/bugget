@@ -9,7 +9,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { PendingAttachment } from "../types";
+import { PendingAttachment } from "./types";
 
 const fileExtensionPattern = /\.[^./\\]+$/;
 

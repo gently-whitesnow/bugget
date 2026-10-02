@@ -1,7 +1,6 @@
 import { useUnit } from "effector-react";
 import { useEffect, useRef, useState } from "react";
-import { joinWorkspaceFx } from "@/shared/model";
-import { useSelfHostedAutoJoin } from "@/shared/lib/selfHostedAutoJoin";
+import { joinWorkspaceFx, useSelfHostedAutoJoin } from "@/shared/model";
 
 export const WorkspaceJoin = () => {
   const [joinWorkspace, joinPending] = useUnit([

@@ -2,7 +2,6 @@ export * from "./bugAnchor";
 export * from "./bugStepAnchor";
 export * from "./commentAnchor";
 export * from "./composerText";
-export * from "./domain";
 export * from "./nestedEntityAnchor";
 export * from "./useCopyAnchorLink";
 export * from "./useCopyEntityAnchorLink";

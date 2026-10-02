@@ -1,6 +1,7 @@
+export { useAutoHeight } from "./useAutoHeight";
 export { useFavicon } from "./useFavicon";
 export { useHeaderVisibility } from "./useHeaderVisibility";
+export { useFilePicker } from "./useFilePicker";
 export { usePasteFile } from "./usePasteFile";
-export { useLinkPreview } from "./useLinkPreview";
 export { useScrollToHash } from "./useScrollToHash";
 export { useSocketEvent } from "./useSocketEvent";

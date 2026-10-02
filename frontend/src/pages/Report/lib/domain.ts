@@ -1,4 +1,4 @@
-import { normalizeUrl } from "@/shared/lib/markdown";
+import { normalizeUrl } from "@/shared/lib/url";
 
 /** Нестандартные пути к фавиконам; ключ — домен без www. */
 const knownFavicons: Record<string, string[]> = {

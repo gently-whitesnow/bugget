@@ -2,7 +2,11 @@ import { memo, useState, useMemo, useCallback } from "react";
 import { Bot, Link, Pencil, Trash2 } from "lucide-react";
 import { useUnit } from "effector-react";
 import ActionDropdown, { ActionItem } from "@/shared/ui/ActionDropdown";
-import { usePasteFile, getCommentTimeDisplay } from "@/shared/lib";
+import {
+  useFilePicker,
+  usePasteFile,
+  getCommentTimeDisplay,
+} from "@/shared/lib";
 import { $authUserStore } from "@/entities/user";
 import {
   deleteCommentEvent,
@@ -11,7 +15,7 @@ import {
   deleteCommentAttachmentFx,
   renameCommentAttachmentFx,
 } from "@/pages/Report/model-comment";
-import { Avatar, FilePreview, AutoLinkText, InlineTextEdit } from "@/shared/ui";
+import { Avatar, FilePreview, MarkdownText, InlineTextEdit } from "@/shared/ui";
 import { $usersStore, Attachment } from "@/entities/report";
 import {
   getHighlightClasses,
@@ -121,15 +125,9 @@ const Comment = memo((props: Props) => {
   });
 
   const { handlePaste } = usePasteFile({
-    onFileUpload: (file) => {
-      return addAttachment({
-        reportId,
-        bugId,
-        commentId: id,
-        file,
-      });
-    },
+    onFileUpload: handleUploadAttachment,
   });
+  const openFilePicker = useFilePicker(handleUploadAttachment);
 
   const actionItems: ActionItem[] = useMemo(() => {
     const items: ActionItem[] = [
@@ -200,16 +198,14 @@ const Comment = memo((props: Props) => {
               onSave={handleUpdate}
               onCancel={() => setIsEditing(false)}
               onPaste={handlePaste}
+              onAttachFile={openFilePicker}
               rows={1}
               placeholder="Введите текст комментария... (Enter для сохранения)"
               autoFocus
               maxLength={commentMaxLength}
             />
           ) : (
-            <AutoLinkText
-              text={text}
-              className="whitespace-pre-wrap break-words text-base-content text-sm"
-            />
+            <MarkdownText text={text} className="text-base-content text-sm" />
           )}
         </div>
         <div className="mt-2">

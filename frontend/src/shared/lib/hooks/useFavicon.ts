@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getFaviconUrls } from "../domain";
+import { getFaviconUrls } from "../url/domain";
 
 // Перебирает варианты URL фавикона (с www и без), отдаёт первый загрузившийся.
 export const useFavicon = (

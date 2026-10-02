@@ -11,7 +11,7 @@ type UsePasteFileOptions = {
 
 export const usePasteFile = ({ onFileUpload }: UsePasteFileOptions) => {
   const handlePaste = useCallback(
-    (event: React.ClipboardEvent<HTMLDivElement>) => {
+    (event: React.ClipboardEvent<HTMLElement>) => {
       const files = getClipboardFiles(event.clipboardData);
       const clipboardText = event.clipboardData?.getData("text/plain") ?? "";
       const curlFile = createCurlAttachmentFile(clipboardText);

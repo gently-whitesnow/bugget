@@ -3,8 +3,8 @@ import { GripVertical, Link, Pencil, Trash2 } from "lucide-react";
 import { useUnit } from "effector-react";
 import ActionDropdown, { ActionItem } from "@/shared/ui/ActionDropdown";
 
-import { AutoLinkText, InlineTextEdit, FilePreview } from "@/shared/ui";
-import { usePasteFile } from "@/shared/lib";
+import { MarkdownText, InlineTextEdit, FilePreview } from "@/shared/ui";
+import { useFilePicker, usePasteFile } from "@/shared/lib";
 import { $authUserStore } from "@/entities/user";
 import {
   getBugStepAnchorHref,
@@ -93,6 +93,8 @@ const BugStepItem = ({
     return Promise.resolve();
   };
 
+  const openFilePicker = useFilePicker(handleUploadAttachment);
+
   const handleDeleteAttachment = (attachmentId: number) => {
     if (reportId) {
       deleteAttachment({
@@ -174,14 +176,15 @@ const BugStepItem = ({
               onSave={handleSave}
               onCancel={() => setIsEditing(false)}
               onPaste={handlePaste}
+              onAttachFile={openFilePicker}
               autoFocus
               maxLength={bugStepMaxLength}
             />
           ) : (
             <div className="">
-              <AutoLinkText
+              <MarkdownText
                 text={step.text}
-                className="whitespace-pre-wrap break-words text-base-content text-sm leading-none"
+                className="text-base-content text-sm leading-none"
               />
             </div>
           )}

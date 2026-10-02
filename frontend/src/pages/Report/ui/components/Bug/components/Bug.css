@@ -10,3 +10,12 @@
 .bug-card-actions {
   grid-column: 1 / -1;
 }
+
+/* Заголовок, поле и вложения результата — строки общей сетки карточки: поля фактического
+   и ожидаемого результата в одном ряду получают одну высоту без JS. */
+.bug-result {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0.5rem;
+}

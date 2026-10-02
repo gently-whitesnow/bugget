@@ -1,6 +1,7 @@
-import { KeyboardEvent, useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { ArrowUp, Paperclip } from "lucide-react";
 import MarkdownTextarea from "@/shared/ui/MarkdownTextarea";
+import { appHotkeys, ariaHotkey, formatHotkey } from "@/shared/lib/keyboard";
 import {
   copyToClipboard,
   createCurlAttachmentFile,
@@ -37,7 +38,6 @@ const ComposerInput = ({
   enableAttachments = false,
   maxLength,
 }: Props) => {
-  const textareaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nextAttachmentIdRef = useRef(0);
   const attachmentsRef = useRef<PendingAttachment[]>([]);
@@ -78,15 +78,6 @@ const ComposerInput = ({
       });
     };
   }, []);
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (!isSendDisabled && !disabled && !isSubmitting) {
-        handleSend();
-      }
-    }
-  };
 
   const handleSend = async () => {
     const sent = await onSend(attachments.map(getFileForUpload));
@@ -141,7 +132,7 @@ const ComposerInput = ({
   };
 
   const handlePaste = useCallback(
-    (event: React.ClipboardEvent<HTMLDivElement>) => {
+    (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
       if (!enableAttachments) return;
 
       const files = getClipboardFiles(event.clipboardData);
@@ -168,14 +159,21 @@ const ComposerInput = ({
 
   const isDisabled = disabled || isSubmitting;
 
+  const handleSubmit = () => {
+    if (!isDisabled && !sendButtonDisabled) handleSend();
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-2 items-center">
         <MarkdownTextarea
-          ref={textareaRef}
           value={value}
           onInput={onChange}
-          onKeyDown={handleKeyDown}
+          actions={{
+            onSubmit: handleSubmit,
+            onAttachFile:
+              enableAttachments && !isDisabled ? handleFileSelect : undefined,
+          }}
           onPaste={handlePaste}
           placeholder={placeholder}
           className="textarea textarea-bordered resize-none min-h-auto flex-1 focus:outline-none"
@@ -189,7 +187,9 @@ const ComposerInput = ({
             className="btn btn-primary p-2 btn-circle"
             onClick={handleSend}
             disabled={isDisabled || sendButtonDisabled}
-            title="Отправить"
+            title="Отправить (Enter)"
+            aria-label="Отправить"
+            aria-keyshortcuts="Enter"
           >
             <ArrowUp />
           </button>
@@ -200,7 +200,9 @@ const ComposerInput = ({
                 className="btn btn-ghost p-2 btn-circle text-base-content/70 hover:text-base-content"
                 onClick={handleFileSelect}
                 disabled={isDisabled}
-                title="Прикрепить файл"
+                title={`Прикрепить файл (${formatHotkey(appHotkeys.attachFile)})`}
+                aria-label="Прикрепить файл"
+                aria-keyshortcuts={ariaHotkey(appHotkeys.attachFile)}
               >
                 <Paperclip className="w-5 h-5" />
               </button>

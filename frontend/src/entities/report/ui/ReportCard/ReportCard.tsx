@@ -4,7 +4,7 @@ import {
   type ReportStatuses,
 } from "@/shared/config";
 import { useNavigate } from "react-router";
-import { buildFullAppUrl } from "@/shared/lib/buildFullUrl";
+import { buildFullAppUrl } from "@/shared/lib/url";
 import { Bug, MessageCircle } from "lucide-react";
 
 // Универсальный тип для поддержки разных версий ReportResponse

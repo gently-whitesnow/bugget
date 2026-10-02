@@ -1,4 +1,5 @@
-import { forwardRef, useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { appHotkeys, formatHotkey } from "@/shared/lib/keyboard";
 import { Attachment } from "@/entities/report";
 
 import { useUnit } from "effector-react";
@@ -6,7 +7,11 @@ import { $authUserStore } from "@/entities/user";
 
 import { AttachmentChip, FilePreview } from "@/shared/ui";
 import type { AttachmentTypes } from "@/shared/config";
-import { createCurlAttachmentFile, getClipboardFiles } from "@/shared/lib";
+import {
+  createCurlAttachmentFile,
+  getClipboardFiles,
+  useFilePicker,
+} from "@/shared/lib";
 import { PendingAttachment } from "@/shared/ui";
 import Title from "./components/Title/Title";
 import ResultTextarea from "./components/ResultTextarea/ResultTextarea";
@@ -40,124 +45,133 @@ const getFileForUpload = (attachment: PendingAttachment) => {
   });
 };
 
-const Result = forwardRef<HTMLDivElement, Props>(
-  (
-    {
-      title,
-      value,
-      onBlur,
-      colorType,
-      autoFocus = false,
-      attachments = [],
-      reportId,
-      bugId,
-      attachType,
-      onAttachmentUpload,
-      onAttachmentDelete,
-      onAttachmentRename,
-      onInput,
-      disabled = false,
+const Result = ({
+  title,
+  value,
+  onBlur,
+  colorType,
+  autoFocus = false,
+  attachments = [],
+  reportId,
+  bugId,
+  attachType,
+  onAttachmentUpload,
+  onAttachmentDelete,
+  onAttachmentRename,
+  onInput,
+  disabled = false,
+}: Props) => {
+  const currentUser = useUnit($authUserStore);
+  const nextAttachmentIdRef = useRef(0);
+  const [pendingAttachments, setPendingAttachments] = useState<
+    PendingAttachment[]
+  >([]);
+
+  const createPendingAttachment = useCallback(
+    (file: File, kind: PendingAttachment["kind"] = "file") => ({
+      id: nextAttachmentIdRef.current++,
+      file,
+      name: file.name,
+      kind,
+    }),
+    []
+  );
+
+  const addPendingCurlAttachment = useCallback(
+    (file: File) => {
+      if (disabled) return;
+
+      const nextAttachment = createPendingAttachment(file, "curl");
+      setPendingAttachments((prev) => [...prev, nextAttachment]);
     },
-    ref
-  ) => {
-    const currentUser = useUnit($authUserStore);
-    const nextAttachmentIdRef = useRef(0);
-    const [pendingAttachments, setPendingAttachments] = useState<
-      PendingAttachment[]
-    >([]);
+    [createPendingAttachment, disabled]
+  );
 
-    const createPendingAttachment = useCallback(
-      (file: File, kind: PendingAttachment["kind"] = "file") => ({
-        id: nextAttachmentIdRef.current++,
-        file,
-        name: file.name,
-        kind,
-      }),
-      []
+  const uploadPendingAttachments = useCallback(() => {
+    if (disabled || pendingAttachments.length === 0) return;
+
+    pendingAttachments
+      .map(getFileForUpload)
+      .forEach((file) => onAttachmentUpload(file));
+    setPendingAttachments([]);
+  }, [disabled, onAttachmentUpload, pendingAttachments]);
+
+  const handleResultBlur = useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      if (event.currentTarget.contains(event.relatedTarget)) return;
+
+      uploadPendingAttachments();
+    },
+    [uploadPendingAttachments]
+  );
+
+  const handleAttachmentUpload = useCallback(
+    (file: File) => {
+      onAttachmentUpload(file);
+    },
+    [onAttachmentUpload]
+  );
+
+  const openFilePicker = useFilePicker(onAttachmentUpload);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleRemovePendingAttachment = (index: number) => {
+    setPendingAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRenamePendingAttachment = (id: number, name: string) => {
+    setPendingAttachments((prev) =>
+      prev.map((attachment) =>
+        attachment.id === id ? { ...attachment, name } : attachment
+      )
     );
+  };
 
-    const addPendingCurlAttachment = useCallback(
-      (file: File) => {
-        if (disabled) return;
+  const handlePaste = useCallback(
+    (event: ClipboardEvent) => {
+      if (disabled) return;
 
-        const nextAttachment = createPendingAttachment(file, "curl");
-        setPendingAttachments((prev) => [...prev, nextAttachment]);
-      },
-      [createPendingAttachment, disabled]
-    );
+      const files = getClipboardFiles(event.clipboardData);
+      const clipboardText = event.clipboardData?.getData("text/plain") ?? "";
+      const curlFile = createCurlAttachmentFile(clipboardText);
 
-    const uploadPendingAttachments = useCallback(() => {
-      if (disabled || pendingAttachments.length === 0) return;
+      if (!curlFile && files.length === 0) return;
 
-      pendingAttachments
-        .map(getFileForUpload)
-        .forEach((file) => onAttachmentUpload(file));
-      setPendingAttachments([]);
-    }, [disabled, onAttachmentUpload, pendingAttachments]);
+      event.preventDefault();
+      files.forEach((file) => onAttachmentUpload(file));
+      if (curlFile) {
+        addPendingCurlAttachment(curlFile);
+      }
+    },
+    [addPendingCurlAttachment, disabled, onAttachmentUpload]
+  );
 
-    const handleResultBlur = useCallback(
-      (event: React.FocusEvent<HTMLDivElement>) => {
-        if (event.currentTarget.contains(event.relatedTarget)) return;
-
-        uploadPendingAttachments();
-      },
-      [uploadPendingAttachments]
-    );
-
-    const handleAttachmentUpload = useCallback(
-      (file: File) => {
-        onAttachmentUpload(file);
-      },
-      [onAttachmentUpload]
-    );
-
-    const handleRemovePendingAttachment = (index: number) => {
-      setPendingAttachments((prev) => prev.filter((_, i) => i !== index));
-    };
-
-    const handleRenamePendingAttachment = (id: number, name: string) => {
-      setPendingAttachments((prev) =>
-        prev.map((attachment) =>
-          attachment.id === id ? { ...attachment, name } : attachment
-        )
-      );
-    };
-
-    const handlePaste = useCallback(
-      (event: React.ClipboardEvent<HTMLDivElement>) => {
-        if (disabled) return;
-
-        const files = getClipboardFiles(event.clipboardData);
-        const clipboardText = event.clipboardData?.getData("text/plain") ?? "";
-        const curlFile = createCurlAttachmentFile(clipboardText);
-
-        if (!curlFile && files.length === 0) return;
-
-        event.preventDefault();
-        files.forEach((file) => onAttachmentUpload(file));
-        if (curlFile) {
-          addPendingCurlAttachment(curlFile);
-        }
-      },
-      [addPendingCurlAttachment, disabled, onAttachmentUpload]
-    );
-
-    return (
-      <div className={`rounded-r-lg flex flex-col`} onBlur={handleResultBlur}>
-        <div className="flex items-center gap-2 mb-2">
-          <Title text={title} color={`var(--color-${colorType})`} />
-        </div>
-        <ResultTextarea
-          ref={ref}
-          placeholder={`Опишите ${title}...`}
-          value={value || ""}
-          onBlur={onBlur}
-          autoFocus={autoFocus}
-          onInput={onInput}
-          onPaste={handlePaste}
-        />
+  return (
+    <div className="bug-result" onBlur={handleResultBlur}>
+      <div className="flex items-center gap-2">
+        <Title text={title} color={`var(--color-${colorType})`} />
+        {/* Правило Enter тут своё. Подсказка живёт в строке заголовка: строкой ниже она
+            сдвигала бы всю карточку на время правки. */}
+        {isEditing && (
+          <span className="ml-auto hidden truncate text-xs text-base-content/60 sm:inline">
+            Enter — новая строка, {formatHotkey(appHotkeys.saveResult)} —
+            сохранить
+          </span>
+        )}
+      </div>
+      <ResultTextarea
+        onEditingChange={setIsEditing}
+        placeholder={`Опишите ${title}...`}
+        value={value || ""}
+        onBlur={onBlur}
+        autoFocus={autoFocus}
+        onInput={onInput}
+        onPaste={handlePaste}
+        onAttachFile={disabled ? undefined : openFilePicker}
+      />
+      <div className="flex flex-col gap-2">
         {pendingAttachments.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             {pendingAttachments.map((attachment, index) => (
               <AttachmentChip
                 key={attachment.id}
@@ -186,8 +200,8 @@ const Result = forwardRef<HTMLDivElement, Props>(
           />
         )}
       </div>
-    );
-  }
-);
+    </div>
+  );
+};
 
 export default Result;

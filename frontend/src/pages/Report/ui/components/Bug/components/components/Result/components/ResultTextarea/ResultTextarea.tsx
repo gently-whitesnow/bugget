@@ -1,48 +1,56 @@
-import { forwardRef } from "react";
 import { resultMaxLength } from "@/shared/config";
-import { MarkdownTextarea } from "@/shared/ui";
+import MarkdownEditor from "@/shared/ui/MarkdownEditor";
 
 type Props = {
   value: string;
   placeholder: string;
   autoFocus: boolean;
-  rows?: number;
   maxLength?: number;
   onBlur: (value: string) => void;
   onInput: (value: string) => void;
-  onPaste?: (event: React.ClipboardEvent<HTMLDivElement>) => void;
+  onPaste?: (event: ClipboardEvent) => void;
+  onAttachFile?: () => void;
+  onEditingChange?: (isEditing: boolean) => void;
 };
 
-const ResultTextarea = forwardRef<HTMLDivElement, Props>(
-  (
-    {
-      value,
-      placeholder,
-      autoFocus,
-      maxLength = resultMaxLength,
-      onBlur,
-      onInput,
-      onPaste,
-    },
-    ref
-  ) => {
-    return (
-      <MarkdownTextarea
-        ref={ref}
-        value={value}
-        placeholder={placeholder}
-        autoFocus={autoFocus}
-        maxLength={maxLength}
-        onBlur={onBlur}
-        onInput={onInput}
-        onPaste={onPaste}
-        rows={3}
-        className="w-full textarea textarea-bordered text-sm resize-none bg-base-100 overflow-y-hidden min-h-[2.5rem] px-4 py-2 whitespace-pre-wrap break-words focus:outline-none focus:ring-primary focus:ring-offset-0 empty:before:content-[attr(data-placeholder)] empty:before:text-base-content/40"
-      />
-    );
-  }
-);
+const boxClassName =
+  "w-full self-stretch textarea textarea-bordered text-sm bg-base-100 px-4 py-2 min-h-[7.5rem]";
 
-ResultTextarea.displayName = "ResultTextarea";
+/**
+ * Одна поверхность: разметка видна прямо в тексте, поэтому режимов просмотра и правки
+ * больше нет — и нечему прыгать при фокусе.
+ */
+const ResultTextarea = ({
+  value,
+  placeholder,
+  autoFocus,
+  maxLength = resultMaxLength,
+  onBlur,
+  onInput,
+  onPaste,
+  onAttachFile,
+  onEditingChange,
+}: Props) => (
+  <MarkdownEditor
+    value={value}
+    placeholder={placeholder}
+    autoFocus={autoFocus}
+    maxLength={maxLength}
+    onInput={onInput}
+    onPaste={onPaste}
+    onFocus={() => onEditingChange?.(true)}
+    onBlur={(next) => {
+      onEditingChange?.(false);
+      onBlur(next);
+    }}
+    actions={{
+      // Результат — длинный текст с разметкой: Enter переносит строку, сохраняет ⌘Enter.
+      submitOn: "modEnter",
+      onSubmit: onBlur,
+      onAttachFile,
+    }}
+    className={`${boxClassName} cursor-text overflow-hidden`}
+  />
+);
 
 export default ResultTextarea;

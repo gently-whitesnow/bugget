@@ -1,5 +1,3 @@
-import { useEffect, useRef } from "react";
-
 import { useStoreMap, useUnit } from "effector-react";
 
 import {
@@ -53,8 +51,6 @@ const Bug = ({ bug, totalBugsCount }: Props) => {
     deleteAttachmentEvent,
     renameAttachmentFx,
   });
-  const receiveTextareaRef = useRef<HTMLDivElement>(null);
-  const expectTextareaRef = useRef<HTMLDivElement>(null);
   const statusMeta = bugStatusMap[bug.status];
 
   const allAttachments = useStoreMap({
@@ -67,38 +63,13 @@ const Bug = ({ bug, totalBugsCount }: Props) => {
     },
   });
 
-  const adjustTextareaHeights = () => {
-    const receiveTextarea = receiveTextareaRef.current;
-    const expectTextarea = expectTextareaRef.current;
-
-    if (receiveTextarea && expectTextarea) {
-      receiveTextarea.style.height = "auto";
-      expectTextarea.style.height = "auto";
-
-      const receiveHeight = receiveTextarea.scrollHeight;
-      const expectHeight = expectTextarea.scrollHeight;
-
-      const maxHeight = Math.max(receiveHeight, expectHeight);
-
-      receiveTextarea.style.height = `${maxHeight}px`;
-      expectTextarea.style.height = `${maxHeight}px`;
-    }
-  };
-
-  // Синхронизация высоты текстовых полей
-  useEffect(() => {
-    adjustTextareaHeights();
-  }, [bug.receive, bug.expect, newBug?.receive, newBug?.expect]);
-
   const handleReceiveInput = (value: string) => {
-    adjustTextareaHeights();
     if (bug.isLocalOnly) {
       handleTemporaryBugChange(BugResultTypes.RECEIVE, value);
     }
   };
 
   const handleExpectInput = (value: string) => {
-    adjustTextareaHeights();
     if (bug.isLocalOnly) {
       handleTemporaryBugChange(BugResultTypes.EXPECT, value);
     }
@@ -206,7 +177,6 @@ const Bug = ({ bug, totalBugsCount }: Props) => {
       />
 
       <Result
-        ref={receiveTextareaRef}
         title="фактический результат"
         value={bug.isLocalOnly ? newBug?.receive || "" : bug.receive || ""}
         onBlur={handleReceiveBlur}
@@ -224,7 +194,6 @@ const Bug = ({ bug, totalBugsCount }: Props) => {
       />
 
       <Result
-        ref={expectTextareaRef}
         title="ожидаемый результат"
         value={bug.isLocalOnly ? newBug?.expect || "" : bug.expect || ""}
         onBlur={handleExpectBlur}

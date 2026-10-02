@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Bugget.Domain.DomainEvents;
 
@@ -45,7 +46,7 @@ public static class ReportExcludedEventFactory
         {
             WorkspaceId = workspaceId,
             AggregateType = BuggetAggregateTypes.Report,
-            AggregateId = reportId.ToString(),
+            AggregateId = reportId.ToString(CultureInfo.InvariantCulture),
             EventType = BuggetEventTypes.ReportExcludedFromAnalyticsToggled,
             Payload = payload,
             ActorUserId = actorUserId,

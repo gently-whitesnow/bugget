@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Bugget.Api.Authorization;
@@ -117,7 +118,7 @@ public sealed class PersonalAccessTokenAuthenticationHandlerTests
 
         Assert.True(result.Succeeded);
         Assert.Equal(AuthMethods.Pat, result.Principal!.FindFirstValue(AuthClaims.AuthMethod));
-        Assert.Equal(token.UserId.ToString(), context.Response.Headers["Auth-Request-User-Id"].ToString());
+        Assert.Equal(token.UserId.ToString(CultureInfo.InvariantCulture), context.Response.Headers["Auth-Request-User-Id"].ToString());
         Assert.Equal("7", context.Response.Headers["Auth-Request-Workspace-Id"].ToString());
         Assert.Equal("8", context.Response.Headers["Auth-Request-Team-Id"].ToString());
         Assert.Equal("owner", context.Response.Headers["Auth-Request-Workspace-Role"].ToString());

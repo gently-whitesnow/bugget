@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Bugget.Application.Commands.Comment;
 using Bugget.Application.DomainEvents;
@@ -123,7 +124,7 @@ public sealed class CommentsService(
         {
             WorkspaceId = BugsService.ResolveWorkspaceId(resolvedReport.CreatorTeamId, user.OrganizationId),
             AggregateType = BuggetAggregateTypes.Comment,
-            AggregateId = summary.Id.ToString(),
+            AggregateId = summary.Id.ToString(CultureInfo.InvariantCulture),
             EventType = BuggetEventTypes.CommentCreated,
             Payload = payload,
             ActorUserId = user.Id,

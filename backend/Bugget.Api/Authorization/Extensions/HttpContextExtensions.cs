@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using Bugget.Api.Authorization.Authentication;
 using Bugget.Api.Authorization.Models;
@@ -45,7 +46,7 @@ public static class HttpContextExtensions
 
     public static void SetAuthHeaders(this HttpContext ctx, UserContext user, string authMethod = AuthMethods.Jwt)
     {
-        ctx.Response.Headers["Auth-Request-User-Id"] = user.User.Id.ToString();
+        ctx.Response.Headers["Auth-Request-User-Id"] = user.User.Id.ToString(CultureInfo.InvariantCulture);
         ctx.Response.Headers[AuthMethodHeaderName] = authMethod;
 
         var logger = ctx.RequestServices?.GetService<ILogger<HttpContext>>();
@@ -68,7 +69,7 @@ public static class HttpContextExtensions
             if (workspace != null)
             {
                 logger?.LogInformation("SetAuthHeaders: Found workspace {WorkspaceId} with role {Role}", wid, workspace.Role);
-                ctx.Response.Headers["Auth-Request-Workspace-Id"] = wid.ToString();
+                ctx.Response.Headers["Auth-Request-Workspace-Id"] = wid.Value.ToString(CultureInfo.InvariantCulture);
                 ctx.Response.Headers["Auth-Request-Workspace-Role"] = workspace.Role;
 
                 // Если указан team ID, проверяем, что команда принадлежит этому workspace
@@ -77,7 +78,7 @@ public static class HttpContextExtensions
                     // Проверяем, что команда существует в этом workspace
                     if (workspace.TeamIds.Contains(tid.Value))
                     {
-                        ctx.Response.Headers["Auth-Request-Team-Id"] = tid.ToString();
+                        ctx.Response.Headers["Auth-Request-Team-Id"] = tid.Value.ToString(CultureInfo.InvariantCulture);
                         logger?.LogInformation("SetAuthHeaders: Set team ID {TeamId}", tid);
                     }
                     else

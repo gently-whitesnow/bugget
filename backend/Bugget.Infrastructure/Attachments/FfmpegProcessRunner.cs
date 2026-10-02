@@ -41,7 +41,7 @@ public sealed class FfmpegProcessRunner(
         deadline.CancelAfter(timeout);
 
         logger.LogDebug(
-            "Running {executable} with timeout {timeoutSeconds}s: {args}",
+            "Running {Executable} with timeout {TimeoutSeconds}s: {Args}",
             Path.GetFileName(executablePath),
             timeout.TotalSeconds.ToString("0", CultureInfo.InvariantCulture),
             DescribeArguments(arguments));
@@ -78,7 +78,7 @@ public sealed class FfmpegProcessRunner(
             // пользователя, а исключение фоновой задачи целиком уходит в общий лог TaskQueue.
             var reason = FfmpegStderrSanitizer.Summarize(stderr, arguments);
             logger.LogError(
-                "FFmpeg failed with exit code {exitCode}. Args: {args}. Reason: {reason}",
+                "FFmpeg failed with exit code {ExitCode}. Args: {Args}. Reason: {Reason}",
                 process.ExitCode, DescribeArguments(arguments), reason);
             throw new InvalidOperationException($"FFmpeg failed with exit code {process.ExitCode}. {reason}");
         }

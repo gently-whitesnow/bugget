@@ -189,20 +189,15 @@ dotnet_diagnostic.IDE0007.severity = warning
 # Выключено на весь репозиторий: конфликт имён с ключевыми словами VB нас не касается.
 dotnet_diagnostic.CA1716.severity = none
 # latest-Recommended включает правила, которые для этого кода шум, а не дефект:
-# LoggerMessage-делегаты (CA1848), культура в ToString/Parse (CA1305), суффиксы и
-# имена типов в идентификаторах (CA1711, CA1720), регистр плейсхолдеров лога (CA1727).
+# LoggerMessage-делегаты (CA1848), суффиксы и имена типов в идентификаторах (CA1711, CA1720).
 dotnet_diagnostic.CA1848.severity = none
-dotnet_diagnostic.CA1305.severity = none
 dotnet_diagnostic.CA1711.severity = none
 dotnet_diagnostic.CA1720.severity = none
-dotnet_diagnostic.CA1727.severity = none
 # Имена тестов — snake_case (идиома xUnit); правило одно на репозиторий, чтобы не заводить посекционных послаблений.
 dotnet_diagnostic.CA1707.severity = none
 # Все срабатывания — литеральные массивы в тестовых assert'ах, выполняемые один раз; автофикс правила падает.
 dotnet_diagnostic.CA1861.severity = none
-# Program из top-level statements обязан быть глобальным: на него ссылается WebApplicationFactory<Program>.
-dotnet_diagnostic.CA1050.severity = none
-# Владельцы SemaphoreSlim/PeriodicTimer — синглтоны на время жизни процесса; Dispose при остановке гонится с ещё не отпущенными лизингами.
+# SemaphoreSlim без AvailableWaitHandle не держит неуправляемых ресурсов, а таймер ReloadableMemoryCache освобождается в StopAsync.
 dotnet_diagnostic.CA1001.severity = none
-# XML-документация включена ради сгенерированных из OpenAPI типов (ADR-0005); на рукописном публичном API она не обязательна.
+# XML-документацию Bugget.Api читает Swagger ради сгенерированных из OpenAPI контроллеров (ADR-0005), в Domain и Contracts она держит проверку cref; рукописному публичному API она не обязательна.
 dotnet_diagnostic.CS1591.severity = none

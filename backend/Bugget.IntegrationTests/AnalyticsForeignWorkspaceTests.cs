@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -184,7 +185,7 @@ public sealed class AnalyticsForeignWorkspaceTests
             SELECT COUNT(*)::int FROM public.domain_events
             WHERE aggregate_id = @aggId
               AND event_type = 'bugget.report.excluded_from_analytics_toggled';",
-            new { aggId = reportId.ToString() });
+            new { aggId = reportId.ToString(CultureInfo.InvariantCulture) });
         Assert.Equal(1, eventCount);
     }
 }

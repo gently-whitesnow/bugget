@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bugget.Api.Extensions;
 using Bugget.Api.Generated.Users;
 using Bugget.Api.Users.Authentication;
@@ -36,14 +37,14 @@ public sealed class WorkspacesController(IWorkspacesService workspacesService) :
             Workspaces = workspaces.Select(e =>
             new WorkspaceView
             {
-                Id = e.Id.ToString(),
+                Id = e.Id.ToString(CultureInfo.InvariantCulture),
                 Name = e.Name,
                 CreatedAt = e.CreatedAt,
                 UpdatedAt = e.UpdatedAt,
                 Teams = e.Teams?.Select(t =>
                 new TeamView
                 {
-                    Id = t.Id.ToString(),
+                    Id = t.Id.ToString(CultureInfo.InvariantCulture),
                     Name = t.Name,
                     CreatedAt = t.CreatedAt,
                     UpdatedAt = t.UpdatedAt
@@ -51,14 +52,14 @@ public sealed class WorkspacesController(IWorkspacesService workspacesService) :
             }).ToArray(),
             TeamsMember = teamsMember?.Select(m => new TeamMemberView
             {
-                TeamId = m.TeamId.ToString(),
-                UserId = m.UserId.ToString(),
+                TeamId = m.TeamId.ToString(CultureInfo.InvariantCulture),
+                UserId = m.UserId.ToString(CultureInfo.InvariantCulture),
                 CreatedAt = m.CreatedAt
             }).ToArray(),
             WorkspacesMember = workspacesMember?.Select(m => new WorkspaceMemberView
             {
-                WorkspaceId = m.WorkspaceId.ToString(),
-                UserId = m.UserId.ToString(),
+                WorkspaceId = m.WorkspaceId.ToString(CultureInfo.InvariantCulture),
+                UserId = m.UserId.ToString(CultureInfo.InvariantCulture),
                 Role = m.Role,
                 CreatedAt = m.CreatedAt
             }).ToArray()

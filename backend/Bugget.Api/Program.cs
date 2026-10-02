@@ -3,6 +3,8 @@ using Bugget.Api.Logging;
 using Bugget.Api.Modules;
 using Serilog;
 
+namespace Bugget.Api;
+
 public class Program
 {
     public static async Task Main(string[] args)

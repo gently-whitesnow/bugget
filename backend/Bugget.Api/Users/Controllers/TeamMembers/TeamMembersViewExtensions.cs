@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bugget.Api.Users.Controllers.Workspaces;
 using Bugget.Domain.Users;
 
@@ -11,8 +12,8 @@ public static class TeamMembersViewExtensions
         {
             Members = members.Select(m => new TeamMemberView
             {
-                TeamId = m.TeamId.ToString(),
-                UserId = m.UserId.ToString(),
+                TeamId = m.TeamId.ToString(CultureInfo.InvariantCulture),
+                UserId = m.UserId.ToString(CultureInfo.InvariantCulture),
                 CreatedAt = m.CreatedAt
             }).ToArray(),
             SizeLimit = sizeLimit

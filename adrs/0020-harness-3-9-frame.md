@@ -19,7 +19,8 @@ Accepted. Дополняет ADR-0016.
 - `adrs.shape` — 45 находок: шапка ADR не в форме harness, нестандартные H2, ADR-0005 на 2200 слов;
 - `dependencies.typescript` — пять циклов каталогов, `duplication.typescript` — четыре повтора;
 - `functions.csharp` — `SenderLoopAsync` на 100 строк при лимите 80;
-- `warning-suppressions.dotnet` — одиннадцать выключений без объявленной причины;
+- `warning-suppressions.dotnet` — одиннадцать выключений без объявленной причины, у CA1050
+  причина ещё и неверная: `Program` не из top-level statements;
 - `complexity.typescript` — средняя достижимость 32.16 файла при дефолте 8.0, ядро из двух файлов.
 
 ## Решение
@@ -39,7 +40,9 @@ Accepted. Дополняет ADR-0016.
 - дубли: удалена мёртвая копия `pages/Home/ui/components`, `domain.ts` остался один
   в `shared/lib/url`, правка вложений шага и комментария — общий `model-owner-attachments.ts`;
 - `SenderLoopAsync` разбит на чтение пачки, отправку и расчёт бэкоффа;
-- причины выключений перенесены из `backend/.editorconfig` в
+- CA1050, CA1305 и CA1727 исправлены в коде и больше не выключены: `Program` живёт
+  в `Bugget.Api`, форматирование и разбор чисел идут с `InvariantCulture`, плейсхолдеры
+  логов — в PascalCase; причины оставшихся восьми выключений объявлены в
   `settings.warning-suppressions.dotnet.repositoryWide`;
 - ADR приведены к форме `adrs.shape`, шаблон переименован в `.template.md`, из ADR-0005
   выделены ADR-0018 и ADR-0019.

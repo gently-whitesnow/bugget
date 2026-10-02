@@ -196,9 +196,9 @@ public sealed class VideoOptimizeWriter(
         }
 
         logger.LogInformation(
-            "Video optimization profile: concurrency={concurrency}, encoder_threads={encoderThreads}, " +
-            "decoder_threads={decoderThreads}, filter_threads={filterThreads}, timeout={timeoutSeconds}s, " +
-            "crf={crf}, preset={preset}, width={width}",
+            "Video optimization profile: concurrency={Concurrency}, encoder_threads={EncoderThreads}, " +
+            "decoder_threads={DecoderThreads}, filter_threads={FilterThreads}, timeout={TimeoutSeconds}s, " +
+            "crf={Crf}, preset={Preset}, width={Width}",
             transcodeGate.MaxConcurrency,
             settings.VideoEncoderThreads,
             settings.VideoDecoderThreads,
@@ -238,7 +238,7 @@ public sealed class VideoOptimizeWriter(
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to delete temp file {path}", path);
+            logger.LogWarning(ex, "Failed to delete temp file {Path}", path);
         }
     }
 
@@ -258,7 +258,7 @@ public sealed class VideoOptimizeWriter(
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to delete temp directory {path}", path);
+            logger.LogWarning(ex, "Failed to delete temp directory {Path}", path);
         }
     }
 }

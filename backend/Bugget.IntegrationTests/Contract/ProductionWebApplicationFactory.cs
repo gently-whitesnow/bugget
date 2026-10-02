@@ -1,4 +1,5 @@
 using System.Net;
+using Bugget.Api;
 using Bugget.Application.Ports;
 using Bugget.IntegrationTests.Fixtures;
 using Microsoft.AspNetCore.Hosting;

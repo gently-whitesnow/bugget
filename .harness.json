@@ -118,15 +118,7 @@
       "repositoryWide": [
         {
           "id": "CA1001",
-          "reason": "владельцы SemaphoreSlim/PeriodicTimer — синглтоны на время жизни процесса; Dispose при остановке гонится с ещё не отпущенными лизингами"
-        },
-        {
-          "id": "CA1050",
-          "reason": "Program из top-level statements обязан быть глобальным: на него ссылается WebApplicationFactory<Program>"
-        },
-        {
-          "id": "CA1305",
-          "reason": "культура в ToString/Parse: в этом коде шум latest-Recommended, а не дефект"
+          "reason": "SemaphoreSlim без AvailableWaitHandle не держит неуправляемых ресурсов, а таймер ReloadableMemoryCache освобождается в StopAsync"
         },
         {
           "id": "CA1707",
@@ -134,7 +126,7 @@
         },
         {
           "id": "CA1711",
-          "reason": "суффиксы в именах типов: в этом коде шум latest-Recommended, а не дефект"
+          "reason": "суффиксы Collection/Queue/EventHandler: xUnit-коллекции и TaskQueue названы по смыслу: в этом коде шум latest-Recommended, а не дефект"
         },
         {
           "id": "CA1716",
@@ -142,11 +134,7 @@
         },
         {
           "id": "CA1720",
-          "reason": "имена типов в идентификаторах: в этом коде шум latest-Recommended, а не дефект"
-        },
-        {
-          "id": "CA1727",
-          "reason": "регистр плейсхолдеров лога: в этом коде шум latest-Recommended, а не дефект"
+          "reason": "ReportAliasMode.Guid — буквальное значение режима \"guid\": в этом коде шум latest-Recommended, а не дефект"
         },
         {
           "id": "CA1848",
@@ -158,7 +146,7 @@
         },
         {
           "id": "CS1591",
-          "reason": "XML-документация включена ради сгенерированных из OpenAPI типов (ADR-0005); на рукописном публичном API она не обязательна"
+          "reason": "XML-документацию Bugget.Api читает Swagger ради сгенерированных из OpenAPI контроллеров (ADR-0005), в Domain и Contracts она держит проверку cref; рукописному публичному API она не обязательна"
         }
       ]
     }

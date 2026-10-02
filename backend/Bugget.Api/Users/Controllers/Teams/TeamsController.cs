@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Bugget.Api.Generated.Users;
 using Bugget.Api.Users.Authentication;
 using Bugget.Api.Users.Controllers.Teams;
@@ -37,7 +38,7 @@ public sealed class TeamsController(ITeamsService teamsService) : TeamsControlle
         var teams = await teamsService.ListTeamsAsync(workspaceId, parsedIds);
         return teams.Select(t => new TeamView
         {
-            Id = t.Id.ToString(),
+            Id = t.Id.ToString(CultureInfo.InvariantCulture),
             Name = t.Name,
             CreatedAt = t.CreatedAt,
             UpdatedAt = t.UpdatedAt
@@ -70,7 +71,7 @@ public sealed class TeamsController(ITeamsService teamsService) : TeamsControlle
         {
             Teams = teams.Select(t => new TeamView
             {
-                Id = t.Id.ToString(),
+                Id = t.Id.ToString(CultureInfo.InvariantCulture),
                 Name = t.Name,
                 CreatedAt = t.CreatedAt,
                 UpdatedAt = t.UpdatedAt

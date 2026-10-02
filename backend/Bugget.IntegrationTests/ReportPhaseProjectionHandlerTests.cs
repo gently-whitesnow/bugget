@@ -1,4 +1,5 @@
 using System.Data;
+using System.Globalization;
 using System.Security.Claims;
 using System.Text.Json;
 using Bugget.Application.Commands.Report;
@@ -254,7 +255,7 @@ public sealed class ReportPhaseProjectionHandlerTests : IClassFixture<AppWithPos
         // чтобы не зависеть от внутренностей auto-driver'а: CreateReportAsync проставляет
         // responsible_user_id = creator, поэтому driver на смену responsible не сработал бы.
         var result = await reportsService.PatchReportAsync(
-            report.Id.ToString(),
+            report.Id.ToString(CultureInfo.InvariantCulture),
             user,
             new ReportPatchDto { Status = (int)ReportStatus.Test });
         Assert.True(result.Error is null, $"PATCH не прошёл: {result.Error}");
@@ -286,7 +287,7 @@ public sealed class ReportPhaseProjectionHandlerTests : IClassFixture<AppWithPos
               FROM public.domain_events
               WHERE aggregate_type = 'report' AND aggregate_id = @id
               ORDER BY id",
-            new { id = reportId.ToString() });
+            new { id = reportId.ToString(CultureInfo.InvariantCulture) });
         return rows.ToList();
     }
 
@@ -369,7 +370,7 @@ RETURNING id;";
         {
             workspace_id = "ws_test",
             aggregate_type = BuggetAggregateTypes.Report,
-            aggregate_id = reportId.ToString(),
+            aggregate_id = reportId.ToString(CultureInfo.InvariantCulture),
             event_type = eventType,
             event_version = (short)1,
             payload,

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using Bugget.Application.Services.Attachments;
 using Bugget.Domain.Attachments;
 using Bugget.Infrastructure.Attachments;
@@ -46,7 +47,7 @@ public sealed class FfmpegProcessRunnerTests
 
             started.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(30));
 
-            var grandchildPid = int.Parse(File.ReadAllText(pidFile).Trim());
+            var grandchildPid = int.Parse(File.ReadAllText(pidFile).Trim(), CultureInfo.InvariantCulture);
             await WaitUntilGoneAsync(grandchildPid);
             IsAlive(grandchildPid).Should().BeFalse("внук обязан умереть вместе с деревом");
         }

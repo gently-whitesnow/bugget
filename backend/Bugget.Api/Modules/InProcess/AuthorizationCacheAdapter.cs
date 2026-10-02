@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bugget.Api.Authorization.Interfaces;
 using Bugget.Application.Authorization;
 using Bugget.Application.Authorization.Ports;
@@ -16,7 +17,7 @@ public sealed class AuthorizationCacheAdapter(IUserCache userCache) : IUserCache
 {
     public async Task InvalidateUserCacheAsync(long userId)
     {
-        var userIdStr = userId.ToString();
+        var userIdStr = userId.ToString(CultureInfo.InvariantCulture);
 
         var cached = await userCache.GetUserAsync(userIdStr);
 

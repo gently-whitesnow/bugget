@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Bugget.Application.Commands.Bug;
 using Bugget.Application.Commands.Report;
@@ -66,7 +67,7 @@ public class DomainEventEmissionTests : IClassFixture<AppWithPostgresFixture>
             {
                 WorkspaceId = orgId,
                 AggregateType = BuggetAggregateTypes.Bug,
-                AggregateId = bug.Id.ToString(),
+                AggregateId = bug.Id.ToString(CultureInfo.InvariantCulture),
                 EventType = BuggetEventTypes.BugCreated,
                 Payload = payload,
                 ActorUserId = userId,
@@ -123,7 +124,7 @@ public class DomainEventEmissionTests : IClassFixture<AppWithPostgresFixture>
             {
                 WorkspaceId = orgId,
                 AggregateType = BuggetAggregateTypes.Bug,
-                AggregateId = bug.Id.ToString(),
+                AggregateId = bug.Id.ToString(CultureInfo.InvariantCulture),
                 EventType = BuggetEventTypes.BugStatusChanged,
                 Payload = payload,
                 ActorUserId = userId,
@@ -138,7 +139,7 @@ public class DomainEventEmissionTests : IClassFixture<AppWithPostgresFixture>
             @"SELECT event_type, payload::text AS payload
               FROM public.domain_events
               WHERE workspace_id=@w AND aggregate_id=@a AND event_type=@e",
-            new { w = orgId, a = bug.Id.ToString(), e = BuggetEventTypes.BugStatusChanged })).ToList();
+            new { w = orgId, a = bug.Id.ToString(CultureInfo.InvariantCulture), e = BuggetEventTypes.BugStatusChanged })).ToList();
 
         Assert.Single(rows);
         using var payloadJson = JsonDocument.Parse(rows[0].payload);
@@ -177,7 +178,7 @@ public class DomainEventEmissionTests : IClassFixture<AppWithPostgresFixture>
             {
                 WorkspaceId = orgId,
                 AggregateType = BuggetAggregateTypes.Comment,
-                AggregateId = comment.Id.ToString(),
+                AggregateId = comment.Id.ToString(CultureInfo.InvariantCulture),
                 EventType = BuggetEventTypes.CommentCreated,
                 Payload = payload,
                 ActorUserId = userId,

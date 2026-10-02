@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -50,7 +51,7 @@ public class ConfigureJwtBearerOptions(
                 return false;
             }
 
-            expUtc = DateTimeOffset.FromUnixTimeSeconds(long.Parse(expClaim));
+            expUtc = DateTimeOffset.FromUnixTimeSeconds(long.Parse(expClaim, CultureInfo.InvariantCulture));
             return expUtc <= DateTimeOffset.UtcNow.Add(window);
         }
         catch

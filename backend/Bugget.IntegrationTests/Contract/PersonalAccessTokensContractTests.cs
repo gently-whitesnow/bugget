@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -100,7 +101,7 @@ public sealed class PersonalAccessTokensContractTests(AppContractFixture fixture
     public async Task CreateWithoutTeamIsNotFound()
     {
         var userId = await UsersScenario.CreateUserAsync(fixture);
-        var client = fixture.CreateAuthorizedClient("0", "0", userId.ToString());
+        var client = fixture.CreateAuthorizedClient("0", "0", userId.ToString(CultureInfo.InvariantCulture));
 
         var response = await client.PostAsJsonAsync(
             $"/v1/workspaces/0/teams/0{TokensPath}",

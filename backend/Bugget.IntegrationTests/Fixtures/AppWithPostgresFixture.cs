@@ -1,4 +1,5 @@
 using System;
+using Bugget.Api;
 using Bugget.Application.Ports;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

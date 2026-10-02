@@ -97,6 +97,70 @@
     "commits": {
       "language": "ru",
       "requireSetup": true
+    },
+    "complexity.typescript": {
+      "averageReachableFiles": 32.2,
+      "largestCyclicGroupSize": 0
+    },
+    "adrs.shape": {
+      "wordLimit": 1000,
+      "fencedLineLimit": 10,
+      "tableRowLimit": 12
+    },
+    "duplication.typescript": {
+      "windowLines": 30,
+      "minimumTokens": 90
+    },
+    "functions.csharp": {
+      "ownLines": 80
+    },
+    "warning-suppressions.dotnet": {
+      "repositoryWide": [
+        {
+          "id": "CA1001",
+          "reason": "владельцы SemaphoreSlim/PeriodicTimer — синглтоны на время жизни процесса; Dispose при остановке гонится с ещё не отпущенными лизингами"
+        },
+        {
+          "id": "CA1050",
+          "reason": "Program из top-level statements обязан быть глобальным: на него ссылается WebApplicationFactory<Program>"
+        },
+        {
+          "id": "CA1305",
+          "reason": "культура в ToString/Parse: в этом коде шум latest-Recommended, а не дефект"
+        },
+        {
+          "id": "CA1707",
+          "reason": "имена тестов — snake_case по идиоме xUnit; правило одно на репозиторий без посекционных послаблений"
+        },
+        {
+          "id": "CA1711",
+          "reason": "суффиксы в именах типов: в этом коде шум latest-Recommended, а не дефект"
+        },
+        {
+          "id": "CA1716",
+          "reason": "конфликт имён с ключевыми словами VB проект не касается"
+        },
+        {
+          "id": "CA1720",
+          "reason": "имена типов в идентификаторах: в этом коде шум latest-Recommended, а не дефект"
+        },
+        {
+          "id": "CA1727",
+          "reason": "регистр плейсхолдеров лога: в этом коде шум latest-Recommended, а не дефект"
+        },
+        {
+          "id": "CA1848",
+          "reason": "LoggerMessage-делегаты: в этом коде шум latest-Recommended, а не дефект"
+        },
+        {
+          "id": "CA1861",
+          "reason": "все срабатывания — литеральные массивы в тестовых assert'ах, выполняемые один раз; автофикс правила падает"
+        },
+        {
+          "id": "CS1591",
+          "reason": "XML-документация включена ради сгенерированных из OpenAPI типов (ADR-0005); на рукописном публичном API она не обязательна"
+        }
+      ]
     }
   },
   "policy": {
@@ -123,7 +187,7 @@
     "central-packages.dotnet": "required",
     "solution-format.dotnet": "required",
     "editorconfig.dotnet": "required",
-    "warning-suppressions.dotnet": "advisory",
+    "warning-suppressions.dotnet": "required",
     "frame.tests.unit": "required",
     "frame.tests.integration": "required",
     "frame.tests.architecture": "required",
@@ -131,6 +195,11 @@
     "frame.lint": "required",
     "frame.build": "required",
     "frame.typecheck": "required",
-    "frame.verify": "required"
+    "frame.verify": "required",
+    "complexity.typescript": "required",
+    "adrs.shape": "required",
+    "dependencies.typescript": "required",
+    "duplication.typescript": "required",
+    "functions.csharp": "required"
   }
 }

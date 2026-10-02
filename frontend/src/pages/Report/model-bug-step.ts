@@ -1,4 +1,9 @@
 import { createEffect, createEvent, createStore, sample } from "effector";
+import {
+  patchOwnerAttachments,
+  withoutAttachment,
+  withRenamedAttachment,
+} from "./model-owner-attachments";
 
 import {
   createBugStep,
@@ -287,41 +292,23 @@ $bugStepsStore
   )
   .on(
     deleteBugStepAttachmentFx.doneData,
-    (state, { bugId, stepId, attachmentId }) => {
-      const existingSteps = state[bugId] || [];
-      return {
-        ...state,
-        [bugId]: existingSteps.map((step) =>
-          step.id === stepId
-            ? {
-                ...step,
-                attachments: (step.attachments || []).filter(
-                  (a) => a.id !== attachmentId
-                ),
-              }
-            : step
-        ),
-      };
-    }
+    (state, { bugId, stepId, attachmentId }) =>
+      patchOwnerAttachments(
+        state,
+        bugId,
+        stepId,
+        withoutAttachment(attachmentId)
+      )
   )
   .on(
     renameBugStepAttachmentFx.doneData,
-    (state, { bugId, stepId, attachment }) => {
-      const existingSteps = state[bugId] || [];
-      return {
-        ...state,
-        [bugId]: existingSteps.map((step) =>
-          step.id === stepId
-            ? {
-                ...step,
-                attachments: (step.attachments || []).map((item) =>
-                  item.id === attachment.id ? { ...item, ...attachment } : item
-                ),
-              }
-            : step
-        ),
-      };
-    }
+    (state, { bugId, stepId, attachment }) =>
+      patchOwnerAttachments(
+        state,
+        bugId,
+        stepId,
+        withRenamedAttachment(attachment)
+      )
   )
   .on(createBugStepSocketEvent, (state, payload) => {
     const mappedStep = bugStepFromSocket(payload);

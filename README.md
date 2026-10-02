@@ -66,10 +66,12 @@ harness check                                     # рамка репозито�
 [harness](https://github.com/gently-whitesnow/harness-cli) — CLI, который проверяет сам
 репозиторий: связность и циклы зависимостей, дубли, долю комментариев, подавленные
 диагностики, настройки сборки .NET, документацию и формат коммитов. Тесты и сборку он не
-запускает — за них отвечает `verify.sh`. Установка и подготовка клона:
+запускает — за них отвечает `verify.sh`. Версия запинена полем `version` в `.harness.json`:
+бинарь другой версии отвечает кодом 2, поэтому ставится ровно она. Установка и подготовка клона:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/gently-whitesnow/harness-cli/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/gently-whitesnow/harness-cli/master/install.sh \
+  | HARNESS_VERSION="$(jq -r .version .harness.json)" sh
 export PATH="$HOME/.local/bin:$PATH"
 harness setup    # хук commit-msg и шаблон сообщения коммита, один раз на клон
 harness guide    # как работать с рамкой: цикл check → explain, exit-коды, коммиты

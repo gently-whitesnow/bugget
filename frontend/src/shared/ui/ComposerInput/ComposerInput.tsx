@@ -7,7 +7,7 @@ import {
   createCurlAttachmentFile,
   getClipboardFiles,
 } from "@/shared/lib";
-import AttachmentChip from "./components/AttachmentChip";
+import AttachmentChip from "./AttachmentChip";
 import { PendingAttachment } from "./types";
 
 const imageFileNamePattern = /\.(jpe?g|png|gif|webp)$/i;

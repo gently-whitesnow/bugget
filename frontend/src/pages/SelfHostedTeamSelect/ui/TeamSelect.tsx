@@ -6,9 +6,9 @@ import {
   fetchBootstrapFx,
   joinTeamFx,
   createTeamFx,
+  useSelfHostedAutoJoin,
 } from "@/shared/model";
 import type { TeamResponse } from "@/shared/api";
-import { useSelfHostedAutoJoin } from "@/shared/lib/selfHostedAutoJoin";
 import { BootstrapStatus } from "@/shared/config";
 
 export const TeamSelect = () => {

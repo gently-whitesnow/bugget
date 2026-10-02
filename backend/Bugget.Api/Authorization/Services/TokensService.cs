@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -31,14 +32,14 @@ public sealed class TokensService(
     {
         // 1) Валидация refresh (БЕЗ проверки revoked) + извлечение JTI/EXP
         var principal = await ValidateRefreshTokenWithoutRevocationCheckAsync(refreshToken);
-        if (principal.FindFirstValue(ClaimTypes.NameIdentifier) != userId.ToString())
+        if (principal.FindFirstValue(ClaimTypes.NameIdentifier) != userId.ToString(CultureInfo.InvariantCulture))
         {
             throw new SecurityTokenException("userId mismatch");
         }
 
         var oldJti = principal.FindFirstValue(JwtRegisteredClaimNames.Jti)!;
         var exp = DateTimeOffset.FromUnixTimeSeconds(
-            long.Parse(principal.FindFirstValue(JwtRegisteredClaimNames.Exp)!));
+            long.Parse(principal.FindFirstValue(JwtRegisteredClaimNames.Exp)!, CultureInfo.InvariantCulture));
 
         // 2) Проверка revoked ПЕРЕД ревокацией
         if (await revocation.IsRevokedAsync(oldJti))
@@ -94,7 +95,7 @@ public sealed class TokensService(
         var jti = Guid.NewGuid().ToString("N");
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString(CultureInfo.InvariantCulture)),
             new Claim(JwtRegisteredClaimNames.Jti, jti)
         };
 

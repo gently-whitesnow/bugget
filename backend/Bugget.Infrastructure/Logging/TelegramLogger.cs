@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -56,7 +57,7 @@ internal sealed class TelegramLogger(
         Exception? ex)
     {
         var sb = new StringBuilder();
-        var ts = DateTimeOffset.Now.ToString("HH:mm:ss");
+        var ts = DateTimeOffset.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
 
         sb.Append('[').Append(ts).Append("] ")
           .Append(serviceName.ToUpperInvariant()).Append(' ')

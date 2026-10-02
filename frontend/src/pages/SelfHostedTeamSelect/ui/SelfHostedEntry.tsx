@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { useSelfHostedAutoJoin } from "@/shared/lib/selfHostedAutoJoin";
+import { useSelfHostedAutoJoin } from "@/shared/model";
 
 type Props = {
   defaultTeamId: string | number;

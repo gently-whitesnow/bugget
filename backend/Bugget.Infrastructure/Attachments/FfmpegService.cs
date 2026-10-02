@@ -39,14 +39,14 @@ public sealed class FfmpegService(IOptions<OptimizatorSettings> options, ILogger
             var ffmpegPath = GetExecutablePath(ffmpegDirectory);
             if (!File.Exists(ffmpegPath))
             {
-                logger.LogInformation("Downloading FFmpeg to {path}", ffmpegDirectory);
+                logger.LogInformation("Downloading FFmpeg to {Path}", ffmpegDirectory);
                 await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official, ffmpegDirectory);
             }
 
             FFmpeg.SetExecutablesPath(ffmpegDirectory);
             _ffmpegReady = true;
             Version = await ReadVersionAsync(ffmpegPath, ct);
-            logger.LogInformation("FFmpeg ready at {path}, version {version}", ffmpegPath, Version ?? "unknown");
+            logger.LogInformation("FFmpeg ready at {Path}, version {Version}", ffmpegPath, Version ?? "unknown");
         }
         catch (Exception ex)
         {

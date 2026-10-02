@@ -491,7 +491,7 @@ public sealed class AttachmentService(
         : keyGen.GetOriginalKey(user.OrganizationId, reportIdContext.ReportId, entityId, Path.GetExtension(fileMeta.FileName).ToLowerInvariant());
         await fileStorageClient.WriteAsync(storageKey, fileStream, ct);
 
-        logger.LogInformation("Attachment saved: {@FileName} to {tmpPath}",
+        logger.LogInformation("Attachment saved: {@FileName} to {StorageKey}",
         fileMeta.FileName, storageKey);
 
         // 4) Формируем модель для БД

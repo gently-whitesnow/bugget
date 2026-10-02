@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bugget.Application.ExternalSearch.Models;
 
 namespace Bugget.Infrastructure.ExternalClients.Kaiten.Models;
@@ -10,7 +11,7 @@ public sealed class KaitenSearchItem : IExternalSearchItem
 
     public static KaitenSearchItem FromCard(KaitenCardResponse card) => new()
     {
-        Id = card.Id.ToString(),
+        Id = card.Id.ToString(CultureInfo.InvariantCulture),
         Text = card.Title,
     };
 }

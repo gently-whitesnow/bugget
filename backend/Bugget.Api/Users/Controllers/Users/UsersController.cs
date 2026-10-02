@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Bugget.Api.Generated.Users;
 using Bugget.Api.Http;
 using Bugget.Api.Users.Authentication;
@@ -101,7 +102,7 @@ public sealed class UsersController(
         {
             Users = users.Select(e => new Bugget.Application.Users.Results.Users.AutocompleteUserView
             {
-                Id = e.Id.ToString(),
+                Id = e.Id.ToString(CultureInfo.InvariantCulture),
                 Name = e.Name,
                 ImageUrl = e.ImageUrl
             }),

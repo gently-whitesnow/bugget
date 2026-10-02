@@ -8,7 +8,7 @@ namespace Bugget.Api.Mappers;
 
 /// <summary>
 /// Домен/View → Contracts модуля reports. Формы повторяют то, что уходило фронту до contract-first (снимки в
-/// <c>Bugget.IntegrationTests/Contract/Snapshots</c>); осознанное сужение — вложения и элемент списка (ADR-0005).
+/// <c>Bugget.IntegrationTests/Contract/Snapshots</c>); осознанное сужение — вложения и элемент списка (ADR-0019).
 /// Хоп через ViewModel сохранён: те же ViewModel уходят в SignalR-хаб, схлопывать — вместе с контрактом realtime.
 /// </summary>
 internal static class ReportsMapper
@@ -63,7 +63,7 @@ internal static class ReportsMapper
     };
 
     /// <remarks>LIST отдаёт свою форму, а не <see cref="Report"/>: ссылки, вложения багов и шаги список
-    /// не загружает, раньше они уходили наружу только как null (ADR-0005).</remarks>
+    /// не загружает, раньше они уходили наружу только как null (ADR-0019).</remarks>
     public static ReportListItem ToListContract(this ReportViewModel view) => new()
     {
         Id = view.Id,
@@ -201,7 +201,7 @@ internal static class ReportsMapper
     };
 
     /// <remarks>Единственная публичная форма вложения в модуле; поля хранилища (storage_key, mime_type и т.п.)
-    /// наружу не уходят — ADR-0005.</remarks>
+    /// наружу не уходят — ADR-0019.</remarks>
     public static AttachmentSummary ToSummaryContract(this DomainModel.Attachments.Attachment model) => new()
     {
         Id = model.Id,

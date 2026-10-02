@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Bugget.Api;
 using Bugget.Application.Ports;
 using Bugget.Domain.Bugs;
 using Bugget.Domain.Reports;

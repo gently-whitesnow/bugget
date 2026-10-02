@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Bugget.Domain.DomainEvents;
 using Bugget.Domain.Reports;
@@ -40,7 +41,7 @@ public static class ReportStatusEventFactory
         {
             WorkspaceId = workspaceId,
             AggregateType = BuggetAggregateTypes.Report,
-            AggregateId = reportId.ToString(),
+            AggregateId = reportId.ToString(CultureInfo.InvariantCulture),
             EventType = BuggetEventTypes.ReportStatusChanged,
             Payload = payload,
             ActorUserId = actorUserId,

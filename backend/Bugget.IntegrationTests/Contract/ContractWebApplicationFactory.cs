@@ -1,3 +1,4 @@
+using Bugget.Api;
 using Bugget.Application.Ports;
 using Bugget.Application.Users.Workspaces;
 using Bugget.IntegrationTests.Fixtures;

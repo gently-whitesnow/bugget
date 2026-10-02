@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bugget.Api.Authorization;
 using Bugget.Api.Authorization.Abstractions;
 using Bugget.Api.Authorization.Interfaces;
@@ -56,7 +57,7 @@ public sealed class AuthorizationUsersClientAdapter(
         var existing = await externalLinksService.FindUserByProviderAndExternalIdAsync(provider, externalId);
         if (existing is not null)
         {
-            return (false, "external_id_taken", existing.Value.ToString());
+            return (false, "external_id_taken", existing.Value.ToString(CultureInfo.InvariantCulture));
         }
 
         await externalLinksService.AddLinkAsync(userId, provider, externalId, email);

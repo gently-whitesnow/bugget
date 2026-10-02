@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Threading.Tasks;
 using Bugget.Api.Authorization.Abstractions;
 using Bugget.Api.Authorization.Interfaces;
@@ -12,7 +13,7 @@ public sealed class UsersService(IUsersClient usersClient, IUserCache userCache,
 {
     public async Task<UserContext?> GetUserAsync(long id)
     {
-        var cachedUser = await userCache.GetUserAsync(id.ToString());
+        var cachedUser = await userCache.GetUserAsync(id.ToString(CultureInfo.InvariantCulture));
         if (cachedUser != null)
         {
             return cachedUser;
@@ -24,7 +25,7 @@ public sealed class UsersService(IUsersClient usersClient, IUserCache userCache,
             return null;
         }
 
-        await userCache.SetUserAsync(result.Value!, id.ToString());
+        await userCache.SetUserAsync(result.Value!, id.ToString(CultureInfo.InvariantCulture));
 
         return result.Value;
     }
@@ -48,7 +49,7 @@ public sealed class UsersService(IUsersClient usersClient, IUserCache userCache,
 
         // Also cache by numeric userId so that InvalidateUserCacheAsync(userId)
         // can find the entry and discover the externalId for cleanup
-        await userCache.SetUserAsync(result.Value!, result.Value!.User.Id.ToString());
+        await userCache.SetUserAsync(result.Value!, result.Value!.User.Id.ToString(CultureInfo.InvariantCulture));
 
         return result.Value;
     }

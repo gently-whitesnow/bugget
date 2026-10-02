@@ -12,7 +12,7 @@ import {
 } from "@/entities/report";
 import { SidebarContainer } from "@/shared/ui";
 import { useResponsibleInvite } from "./hooks/useResponsibleInvite";
-import { useReportSidebar } from "./useReportSidebar";
+import { useReportSidebar } from "./context/useReportSidebar";
 import Content from "./components/Content";
 
 import "./ReportSidebar.css";

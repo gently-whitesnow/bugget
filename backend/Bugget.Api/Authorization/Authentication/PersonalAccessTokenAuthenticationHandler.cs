@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Bugget.Api.Authorization.Extensions;
@@ -112,7 +113,7 @@ public sealed class PersonalAccessTokenAuthenticationHandler(
     {
         var identity = new ClaimsIdentity(
             [
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString(CultureInfo.InvariantCulture)),
                 new Claim(AuthClaims.AuthMethod, AuthMethods.Pat)
             ],
             Scheme.Name,

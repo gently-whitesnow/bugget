@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Bugget.Application.Commands.Bug;
 using Bugget.Application.DomainEvents;
@@ -53,7 +54,7 @@ public sealed class BugsService(
             {
                 WorkspaceId = ResolveWorkspaceId(resolvedReport.CreatorTeamId, user.OrganizationId),
                 AggregateType = BuggetAggregateTypes.Bug,
-                AggregateId = summary.Id.ToString(),
+                AggregateId = summary.Id.ToString(CultureInfo.InvariantCulture),
                 EventType = BuggetEventTypes.BugCreated,
                 Payload = payload,
                 ActorUserId = user.Id,
@@ -106,7 +107,7 @@ public sealed class BugsService(
                 {
                     WorkspaceId = ResolveWorkspaceId(resolvedReport.CreatorTeamId, user.OrganizationId),
                     AggregateType = BuggetAggregateTypes.Bug,
-                    AggregateId = bugId.ToString(),
+                    AggregateId = bugId.ToString(CultureInfo.InvariantCulture),
                     EventType = BuggetEventTypes.BugStatusChanged,
                     Payload = payload,
                     ActorUserId = user.Id,

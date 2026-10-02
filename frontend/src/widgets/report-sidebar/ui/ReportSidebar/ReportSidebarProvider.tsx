@@ -1,6 +1,6 @@
 import { ReactNode, useCallback, useEffect, useState } from "react";
 
-import { ReportSidebarContext } from "./ReportSidebarContext";
+import { ReportSidebarContext } from "./context/ReportSidebarContext";
 
 type Props = {
   children: ReactNode;

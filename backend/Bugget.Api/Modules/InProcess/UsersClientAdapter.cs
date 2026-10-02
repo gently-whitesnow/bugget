@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bugget.Application.Ports;
 using Bugget.Application.Users.Interfaces;
 using Bugget.Domain;
@@ -41,7 +42,7 @@ public sealed class UsersClientAdapter(IUsersService usersService) : IUsersClien
         }
 
         var users = await usersService.ListUsersAsync([.. parseable], null);
-        var byId = users.ToDictionary(u => u.Id.ToString(), u => u);
+        var byId = users.ToDictionary(u => u.Id.ToString(CultureInfo.InvariantCulture), u => u);
 
         return raw.Select(id => byId.TryGetValue(id, out var user) ? Map(id, user) : Unknown(id));
     }

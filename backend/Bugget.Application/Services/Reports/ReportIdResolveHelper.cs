@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bugget.Application.Options;
 
 namespace Bugget.Application.Services.Reports;
@@ -46,11 +47,11 @@ public sealed class ReportIdResolveHelper
     {
         if (aliasOptions.AliasMode == ReportAliasMode.Team && teamReportId.HasValue)
         {
-            return teamReportId.Value.ToString();
+            return teamReportId.Value.ToString(CultureInfo.InvariantCulture);
         }
 
         return aliasOptions.AliasMode == ReportAliasMode.Guid
             ? publicId.ToString()
-            : reportId.ToString();
+            : reportId.ToString(CultureInfo.InvariantCulture);
     }
 }

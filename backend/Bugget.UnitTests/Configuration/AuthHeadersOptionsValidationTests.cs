@@ -1,3 +1,4 @@
+using Bugget.Api;
 using Bugget.Api.Extensions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

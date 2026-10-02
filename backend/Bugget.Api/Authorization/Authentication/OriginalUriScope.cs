@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Bugget.Api.Authorization.Authentication;
@@ -19,10 +20,10 @@ internal static partial class OriginalUriScope
         var teamMatch = TeamIdRegex().Match(originalUri);
 
         int? workspaceId = workspaceMatch.Success
-            ? int.Parse(workspaceMatch.Groups["wid"].Value)
+            ? int.Parse(workspaceMatch.Groups["wid"].Value, CultureInfo.InvariantCulture)
             : null;
         int? teamId = teamMatch.Success
-            ? int.Parse(teamMatch.Groups["tid"].Value)
+            ? int.Parse(teamMatch.Groups["tid"].Value, CultureInfo.InvariantCulture)
             : null;
 
         return (workspaceId, teamId);

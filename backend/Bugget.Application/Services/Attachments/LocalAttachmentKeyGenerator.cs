@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bugget.Application.Interfaces;
 
 namespace Bugget.Application.Services.Attachments;
@@ -17,14 +18,14 @@ public sealed class LocalAttachmentKeyGenerator : IAttachmentKeyGenerator
         if (organizationId == null)
         {
             // Формируем путь вида: temp/{reportId}/{entityId}/{guid}{extension}
-            return Path.Combine("temp", reportId.ToString(), entityId.ToString(),
+            return Path.Combine("temp", reportId.ToString(CultureInfo.InvariantCulture), entityId.ToString(CultureInfo.InvariantCulture),
                             Guid.NewGuid().ToString() + extension)
                    .Replace(Path.DirectorySeparatorChar, '/');
         }
         else
         {
             // Формируем путь вида: temp/{organizationId}/{reportId}/{entityId}/{guid}{extension}
-            return Path.Combine("temp", organizationId, reportId.ToString(), entityId.ToString(),
+            return Path.Combine("temp", organizationId, reportId.ToString(CultureInfo.InvariantCulture), entityId.ToString(CultureInfo.InvariantCulture),
                             Guid.NewGuid().ToString() + extension)
                    .Replace(Path.DirectorySeparatorChar, '/');
         }
@@ -41,14 +42,14 @@ public sealed class LocalAttachmentKeyGenerator : IAttachmentKeyGenerator
         if (organizationId == null)
         {
             // Формируем путь вида: {reportId}/{entityId}/{guid}{extension}
-            return Path.Combine(reportId.ToString(), entityId.ToString(),
+            return Path.Combine(reportId.ToString(CultureInfo.InvariantCulture), entityId.ToString(CultureInfo.InvariantCulture),
                             Guid.NewGuid().ToString() + extension)
                    .Replace(Path.DirectorySeparatorChar, '/');
         }
         else
         {
             // Формируем путь вида: {organizationId}/{reportId}/{entityId}/{guid}{extension}
-            return Path.Combine(organizationId, reportId.ToString(), entityId.ToString(),
+            return Path.Combine(organizationId, reportId.ToString(CultureInfo.InvariantCulture), entityId.ToString(CultureInfo.InvariantCulture),
                             Guid.NewGuid().ToString() + extension)
                    .Replace(Path.DirectorySeparatorChar, '/');
         }

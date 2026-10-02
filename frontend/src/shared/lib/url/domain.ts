@@ -1,6 +1,6 @@
 import { normalizeUrl } from "./normalizeUrl";
 
-// Нестандартные пути к фавиконам; ключ — домен без www.
+/** Нестандартные пути к фавиконам; ключ — домен без www. */
 const knownFavicons: Record<string, string[]> = {
   "figma.com": [
     "https://static.figma.com/app/icon/1/favicon.png",
@@ -8,6 +8,7 @@ const knownFavicons: Record<string, string[]> = {
   ],
 };
 
+/** Имя домена для отображения: www.figma.com -> figma. */
 export const extractDomainName = (url: string): string => {
   try {
     const urlObj = new URL(url);
@@ -28,7 +29,7 @@ export const extractDomainName = (url: string): string => {
   }
 };
 
-/** Домен из URL без www — для единообразия ключей. */
+/** Домен без www: https://www.figma.com/... -> figma.com. */
 export const getNormalizedDomain = (url: string): string | null => {
   try {
     const urlObj = new URL(url);
@@ -45,16 +46,21 @@ export const getNormalizedDomain = (url: string): string | null => {
   }
 };
 
+/** Создаёт URL, даже если протокол не указан. */
 const ensureUrl = (raw: string): URL => {
   return new URL(normalizeUrl(raw));
 };
 
+/**
+ * Кандидаты фавикона по приоритету: knownFavicons, затем /favicon.ico и
+ * /favicon.png на исходном хосте, на домене без www либо на www-домене.
+ */
 export const getFaviconUrls = (url: string): string[] => {
   try {
     const urlObj = ensureUrl(url);
     const protocol = urlObj.protocol || "https:";
     const hostname = urlObj.hostname;
-    const normalizedDomain = getNormalizedDomain(url) ?? hostname;
+    const normalizedDomain = getNormalizedDomain(urlObj.href) ?? hostname;
 
     const candidates: string[] = [];
 

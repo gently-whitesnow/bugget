@@ -1,18 +1,9 @@
-import { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { SelectMenu, SelectTrigger } from "../SelectPrimitives";
-import StatusOptionContent from "./components/StatusOptionContent";
-import StatusOptionRow from "./components/StatusOptionRow";
-
-export type StatusOption<T> = {
-  value: T;
-  label: string;
-  description?: string;
-  icon: LucideIcon;
-  iconClassName: string;
-  activeClassName: string;
-};
+import StatusOptionContent from "./StatusOptionContent";
+import StatusOptionRow from "./StatusOptionRow";
+import type { StatusOption } from "./types";
 
 type Props<T> = {
   status: T;

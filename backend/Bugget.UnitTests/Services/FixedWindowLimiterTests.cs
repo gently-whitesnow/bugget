@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bugget.Application.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Time.Testing;
@@ -7,7 +8,7 @@ namespace Bugget.UnitTests.Services;
 
 public sealed class FixedWindowLimiterTests
 {
-    private readonly FakeTimeProvider _time = new(DateTimeOffset.Parse("2026-08-07T12:00:00Z"));
+    private readonly FakeTimeProvider _time = new(DateTimeOffset.Parse("2026-08-07T12:00:00Z", CultureInfo.InvariantCulture));
 
     [Fact]
     public void TryAcquire_AllowsUpToLimitPerWindow()

@@ -3,49 +3,37 @@ import { continueList, isInListItem, shiftIndent } from "./lists";
 import { run, snap } from "./testUtils";
 
 describe("continueList", () => {
-  it("continues bullet list", () => {
-    expect(run("- one|", continueList)).toBe("- one\n- |");
-  });
-
-  it("increments ordered list number and keeps delimiter", () => {
-    expect(run("9) nine|", continueList)).toBe("9) nine\n10) |");
-  });
-
-  it("keeps indentation of nested item", () => {
-    expect(run("- a\n  - b|", continueList)).toBe("- a\n  - b\n  - |");
-  });
-
-  it("continues task list with unchecked box", () => {
-    expect(run("- [x] done|", continueList)).toBe("- [x] done\n- [ ] |");
-  });
-
-  it("continues quote", () => {
-    expect(run("> quoted|", continueList)).toBe("> quoted\n> |");
-  });
-
-  it("splits item when cursor is in the middle", () => {
-    expect(run("- ab|cd", continueList)).toBe("- ab\n- |cd");
-  });
-
-  it("replaces selection with new item", () => {
-    expect(run("- a{bc}", continueList)).toBe("- a\n- |");
-  });
-
-  it("exits list on empty item", () => {
-    expect(run("- a\n- |", continueList)).toBe("- a\n|");
-  });
-
-  it("continues a list inside a quote", () => {
-    expect(run("> - пункт|", continueList)).toBe("> - пункт\n> - |");
-    expect(run("> 1. раз|", continueList)).toBe("> 1. раз\n> 2. |");
-  });
-
-  it("returns null outside of list", () => {
-    expect(run("plain|", continueList)).toBe("<no edit>");
-  });
-
-  it("returns null when cursor is inside marker", () => {
-    expect(run("-| a", continueList)).toBe("<no edit>");
+  it.each([
+    ["continues bullet list", "- one|", "- one\n- |"],
+    [
+      "increments ordered list number and keeps delimiter",
+      "9) nine|",
+      "9) nine\n10) |",
+    ],
+    ["keeps indentation of nested item", "- a\n  - b|", "- a\n  - b\n  - |"],
+    [
+      "continues task list with unchecked box",
+      "- [x] done|",
+      "- [x] done\n- [ ] |",
+    ],
+    ["continues quote", "> quoted|", "> quoted\n> |"],
+    ["splits item when cursor is in the middle", "- ab|cd", "- ab\n- |cd"],
+    ["replaces selection with new item", "- a{bc}", "- a\n- |"],
+    ["exits list on empty item", "- a\n- |", "- a\n|"],
+    [
+      "continues a bullet list inside a quote",
+      "> - пункт|",
+      "> - пункт\n> - |",
+    ],
+    [
+      "continues an ordered list inside a quote",
+      "> 1. раз|",
+      "> 1. раз\n> 2. |",
+    ],
+    ["returns null outside of list", "plain|", "<no edit>"],
+    ["returns null when cursor is inside marker", "-| a", "<no edit>"],
+  ])("%s", (_name, marked, expected) => {
+    expect(run(marked, continueList)).toBe(expected);
   });
 });
 

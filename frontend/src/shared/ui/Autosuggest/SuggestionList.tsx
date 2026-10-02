@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
-import Avatar from "../../Avatar/Avatar";
-import type { AutocompleteEntity } from "../types";
+import Avatar from "../Avatar/Avatar";
+import type { AutocompleteEntity } from "./types";
 
 type Props = {
   items: AutocompleteEntity[];

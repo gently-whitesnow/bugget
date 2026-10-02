@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Bugget.Application.DomainEvents;
 using Bugget.Application.Interfaces;
@@ -113,7 +114,7 @@ public class AttachmentEventsService(
             {
                 WorkspaceId = BugsService.ResolveWorkspaceId(reportIdContext.TeamId, user.OrganizationId),
                 AggregateType = BuggetAggregateTypes.Attachment,
-                AggregateId = attachment.Id.ToString(),
+                AggregateId = attachment.Id.ToString(CultureInfo.InvariantCulture),
                 EventType = BuggetEventTypes.AttachmentCreated,
                 Payload = payload,
                 ActorUserId = comment.CreatorUserId,

@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 
-import type { StatusOption } from "../EntityStatusSelect";
+import type { StatusOption } from "./types";
 import StatusOptionContent from "./StatusOptionContent";
 
 type Props<T> = {

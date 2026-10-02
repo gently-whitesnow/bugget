@@ -76,12 +76,20 @@ const build = (view: EditorView): DecorationSet => {
       enter: (node) => {
         const lineClass = lineClasses[node.name];
         if (lineClass) {
-          const line = view.state.doc.lineAt(node.from);
-          builder.add(
-            line.from,
-            line.from,
-            Decoration.line({ class: lineClass })
-          );
+          // Цитата занимает несколько строк, и полоска нужна каждой: класс вешается
+          // на все строки узла, а не только на ту, где он начался.
+          for (
+            let position = node.from;
+            position <= node.to;
+            position = view.state.doc.lineAt(position).to + 1
+          ) {
+            const line = view.state.doc.lineAt(position);
+            builder.add(
+              line.from,
+              line.from,
+              Decoration.line({ class: lineClass })
+            );
+          }
           return;
         }
 

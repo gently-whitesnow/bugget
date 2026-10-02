@@ -1,5 +1,5 @@
 {
-  "version": "latest",
+  "version": "3.9.2",
   "architecture": {
     "standard": "sliced-dotnet/1"
   },

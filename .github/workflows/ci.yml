@@ -125,8 +125,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Ставится ровно та версия, что запинена в .harness.json: другой бинарь отвечает кодом 2.
       - name: Install harness
-        run: curl -fsSL https://raw.githubusercontent.com/gently-whitesnow/harness-cli/master/install.sh | sh
+        run: |
+          HARNESS_VERSION="$(jq -r .version .harness.json)"
+          export HARNESS_VERSION
+          curl -fsSL https://raw.githubusercontent.com/gently-whitesnow/harness-cli/master/install.sh | sh
 
       - name: Harness check
         run: ~/.local/bin/harness check --verbose

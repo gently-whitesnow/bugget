@@ -1,4 +1,5 @@
 using Bugget.Api.Mcp;
+using ModelContextProtocol.Server;
 
 namespace Bugget.Api.Extensions;
 
@@ -6,6 +7,10 @@ namespace Bugget.Api.Extensions;
 /// по fan-out, и каждый новый using там раздувает снимок.</summary>
 internal static class McpServiceCollectionExtensions
 {
+    // Инструкция зависит от процесса команды (например, как называть ветки), поэтому живёт в конфиге
+    // установки, а не в коде; не задана — сервер инструкцию не отдаёт.
+    private const string ServerInstructionsKey = "MCP_SERVER_INSTRUCTIONS";
+
     public static IServiceCollection AddMcp(this IServiceCollection services)
     {
         // Имя сервера задано явно: default берётся из entry assembly, а клиенты MCP показывают его пользователю.
@@ -20,6 +25,16 @@ internal static class McpServiceCollectionExtensions
             .WithHttpTransport()
             .WithTools<ReportsReadTools>()
             .WithTools<ReportsWriteTools>();
+        services
+            .AddOptions<McpServerOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+            {
+                var instructions = configuration[ServerInstructionsKey];
+                if (!string.IsNullOrWhiteSpace(instructions))
+                {
+                    options.ServerInstructions = instructions;
+                }
+            });
 
         return services;
     }

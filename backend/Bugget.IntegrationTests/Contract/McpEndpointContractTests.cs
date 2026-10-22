@@ -63,6 +63,8 @@ public sealed class McpEndpointContractTests(AppContractFixture fixture) : IClas
 
         Assert.Equal("bugget-api", mcpClient.ServerInfo.Name);
 
+        Assert.Equal(AppContractFixture.McpServerInstructions, mcpClient.ServerInstructions);
+
         // Ответы инструментов — предмет McpReadToolsContractTests; здесь важно, что tools/list доезжает
         // до клиента, пришедшего с PAT.
         var tools = await mcpClient.ListToolsAsync();

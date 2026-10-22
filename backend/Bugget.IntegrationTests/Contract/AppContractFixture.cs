@@ -21,11 +21,14 @@ public sealed class AppContractFixture
 
     private readonly Lazy<ContractWebApplicationFactory> _app = SharedApp;
 
+    public const string McpServerInstructions = "Инструкция MCP-сервера из конфига установки.";
+
     /// <summary>Окружение выставляется до создания хоста: Program читает его раньше настройки хоста.</summary>
     static AppContractFixture()
     {
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "development");
         Environment.SetEnvironmentVariable("APP_DOMAIN", "http://localhost");
+        Environment.SetEnvironmentVariable("MCP_SERVER_INSTRUCTIONS", McpServerInstructions);
     }
 
     public IServiceProvider Services => _app.Value.Services;

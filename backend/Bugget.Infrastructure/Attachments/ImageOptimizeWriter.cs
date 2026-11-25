@@ -37,7 +37,7 @@ public sealed class ImageOptimizeWriter(
         }
 
         // 2) Декодируем и ориентируем
-        using var image = await Image.LoadAsync<Rgba32>(originalStream, ct);
+        using var image = await Image.LoadAsync<Rgba32>(AttachmentImageDecoding.Options, originalStream, ct);
         image.Mutate(ctx =>
         {
             ctx.AutoOrient();

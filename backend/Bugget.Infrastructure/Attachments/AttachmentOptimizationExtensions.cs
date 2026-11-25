@@ -2,7 +2,6 @@ using Bugget.Application.Ports;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using SixLabors.ImageSharp;
 
 namespace Bugget.Infrastructure.Attachments;
 
@@ -23,11 +22,6 @@ public static class AttachmentOptimizationExtensions
             .Bind(configuration.GetSection(nameof(OptimizatorSettings)))
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<OptimizatorSettings>, OptimizatorSettingsValidator>();
-
-        // Настройка декодера картинок: параллелизм по числу ядер и непрерывные буферы —
-        // раньше это стояло в Program, рядом с остальной композицией хоста.
-        Configuration.Default.MaxDegreeOfParallelism = Environment.ProcessorCount;
-        Configuration.Default.PreferContiguousImageBuffers = true;
 
         return services
             .AddSingleton<ImageOptimizeWriter>()

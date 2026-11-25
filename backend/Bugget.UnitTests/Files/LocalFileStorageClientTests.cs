@@ -65,5 +65,56 @@ public sealed class LocalFileStorageClientTests : IDisposable
         var act = () => _client.WriteAsync("file.txt", new MemoryStream([2]));
 
         await act.Should().ThrowAsync<IOException>();
+        File.ReadAllBytes(Path.Combine(_baseDirectory, "file.txt")).Should().Equal(1);
+    }
+
+    [Fact(DisplayName = "Оборванная запись не оставляет файл, и ключ можно записать снова")]
+    public async Task FailedWriteRemovesPartialFile()
+    {
+        var act = () => _client.WriteAsync("file.bin", new FailingStream(bytesBeforeFailure: 100_000));
+
+        await act.Should().ThrowAsync<IOException>().WithMessage("source broke");
+        File.Exists(Path.Combine(_baseDirectory, "file.bin")).Should().BeFalse();
+
+        await _client.WriteAsync("file.bin", new MemoryStream([1, 2, 3]));
+        File.ReadAllBytes(Path.Combine(_baseDirectory, "file.bin")).Should().Equal(1, 2, 3);
+    }
+
+    private sealed class FailingStream(int bytesBeforeFailure) : Stream
+    {
+        private int _left = bytesBeforeFailure;
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (_left == 0)
+            {
+                throw new IOException("source broke");
+            }
+
+            var read = Math.Min(count, _left);
+            _left -= read;
+            return read;
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }

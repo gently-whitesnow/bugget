@@ -8,8 +8,8 @@ namespace Bugget.Infrastructure.Attachments;
 
 public static class AttachmentImageDecoding
 {
-    // ImageSharp выбирает декодер по содержимому, а не по MIME: TIFF или BMP под видом PNG
-    // дошли бы до их декодеров. Оставлены только форматы из AttachmentConstants.ImageMimeTypes.
+    // Второй рубеж после белого списка MIME: libmagic и ImageSharp распознают формат каждый по-своему,
+    // и собранный файл, который libmagic считает PNG, без этого дошёл бы до декодера TIFF.
     public static readonly DecoderOptions Options = new()
     {
         Configuration = new Configuration(

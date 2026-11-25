@@ -42,7 +42,7 @@ public sealed class FileStorageGate
         {
             return await task.WaitAsync(_timeout, ct);
         }
-        catch (Exception e) when (e is TimeoutException or OperationCanceledException && !task.IsCompleted)
+        catch (Exception e) when (e is TimeoutException or OperationCanceledException)
         {
             _ = task.ContinueWith(
                 static completed => (completed.Result as IDisposable)?.Dispose(),

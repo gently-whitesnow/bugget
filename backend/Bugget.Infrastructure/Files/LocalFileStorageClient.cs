@@ -30,7 +30,7 @@ public sealed class LocalFileStorageClient : IFileStorageClient
             content.Position = 0;
         }
 
-        await using var outFs = await _gate.RunAsync(() =>
+        var outFs = await _gate.RunAsync(() =>
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             return new GatedFileStream(
@@ -38,7 +38,19 @@ public sealed class LocalFileStorageClient : IFileStorageClient
                 length: 0,
                 _gate);
         }, ct);
-        await content.CopyToAsync(outFs, ct);
+
+        try
+        {
+            await using (outFs)
+            {
+                await content.CopyToAsync(outFs, ct);
+            }
+        }
+        catch
+        {
+            await DeletePartialAsync(path);
+            throw;
+        }
     }
 
     public async Task<Stream> ReadAsync(string storageKey, CancellationToken ct = default)
@@ -66,6 +78,18 @@ public sealed class LocalFileStorageClient : IFileStorageClient
                 File.Delete(path);
             }
         }, ct);
+    }
+
+    // Недописанный файл не дал бы записать ключ снова (CreateNew). Не удалось удалить — наверх уходит исходная ошибка.
+    private async Task DeletePartialAsync(string path)
+    {
+        try
+        {
+            await _gate.RunAsync(() => File.Delete(path));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or TimeoutException)
+        {
+        }
     }
 
     private string GetPath(string storageKey) =>

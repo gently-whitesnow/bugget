@@ -1,12 +1,11 @@
 namespace Bugget.Infrastructure.Files;
 
 /// <summary>
-/// Поток файла из хранилища, у которого каждое чтение, запись и закрытие идут через <see cref="FileStorageGate"/>.
+/// Поток файла из хранилища, у которого каждое чтение и запись идут через <see cref="FileStorageGate"/>.
 /// </summary>
 internal sealed class GatedFileStream(FileStream inner, long length, FileStorageGate gate) : Stream
 {
     private long _length = length;
-    private bool _innerDisposed;
 
     public override bool CanRead => inner.CanRead;
     public override bool CanSeek => inner.CanSeek;
@@ -56,23 +55,11 @@ internal sealed class GatedFileStream(FileStream inner, long length, FileStorage
 
     public override void Flush() => FlushAsync(CancellationToken.None).GetAwaiter().GetResult();
 
-    public override async ValueTask DisposeAsync()
-    {
-        if (!_innerDisposed)
-        {
-            _innerDisposed = true;
-            await gate.RunAsync(inner.Dispose);
-        }
-
-        await base.DisposeAsync();
-    }
-
     protected override void Dispose(bool disposing)
     {
-        if (disposing && !_innerDisposed)
+        if (disposing)
         {
-            _innerDisposed = true;
-            gate.RunAsync(inner.Dispose).GetAwaiter().GetResult();
+            inner.Dispose();
         }
 
         base.Dispose(disposing);

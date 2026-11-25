@@ -34,7 +34,9 @@ public static class ServiceCollectionExtensions
         services.Configure<TeamsOptions>(configuration.GetSection(nameof(TeamsOptions)));
         services.Configure<WorkspacesOptions>(configuration.GetSection(nameof(WorkspacesOptions)));
         // Своя секция и named options: дефолтный FileStorageOptions в этом процессе занят вложениями reports.
-        services.Configure<FileStorageOptions>(FileStorageServiceKey, configuration.GetSection("UsersFileStorageOptions"));
+        services.AddOptions<FileStorageOptions>(FileStorageServiceKey)
+            .Bind(configuration.GetSection("UsersFileStorageOptions"))
+            .ValidateOnStart();
         services.Configure<SelfHostedOptions>(configuration.GetSection(nameof(SelfHostedOptions)));
         return services;
     }

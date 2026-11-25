@@ -42,7 +42,10 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<FileStorageOptions>(configuration.GetSection(nameof(FileStorageOptions)));
+        services.AddOptions<FileStorageOptions>()
+            .Bind(configuration.GetSection(nameof(FileStorageOptions)))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<FileStorageOptions>, FileStorageOptionsValidator>();
         services.AddOptions<AuthHeadersOptions>()
             .Bind(configuration.GetSection("ExternalSettings:Authentication"))
             .Validate(

@@ -1,10 +1,6 @@
 namespace Bugget.Infrastructure.Files;
 
-/// <summary>
-/// Пропускает блокирующие вызовы к хранилищу файлов через ограниченное число слотов и с таймаутом.
-/// Зависший системный вызов отменить нельзя: он держит поток и слот до своего завершения,
-/// поэтому залипшее хранилище занимает не больше <c>maxConcurrentOperations</c> потоков пула.
-/// </summary>
+// Зависший системный вызов не отменить: слот держится до его завершения, а не до таймаута.
 public sealed class FileStorageGate
 {
     private readonly SemaphoreSlim _slots;
@@ -21,11 +17,7 @@ public sealed class FileStorageGate
         _slots = new SemaphoreSlim(maxConcurrentOperations, maxConcurrentOperations);
     }
 
-    /// <summary>
-    /// Выполняет <paramref name="operation"/> в пуле потоков.
-    /// Кидает <see cref="TimeoutException"/>, если за таймаут не нашлось слота или операция не завершилась.
-    /// Результат брошенной по таймауту операции освобождается, когда она всё-таки завершится.
-    /// </summary>
+    /// <summary>Результат брошенной по таймауту операции освобождается, когда она всё-таки завершится.</summary>
     public async Task<T> RunAsync<T>(Func<T> operation, CancellationToken ct = default)
     {
         if (!await _slots.WaitAsync(_timeout, ct))

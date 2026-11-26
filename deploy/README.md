@@ -80,7 +80,31 @@ Prometheus-конвейер: `bugget_video_optimize_queued`, `bugget_video_optim
 ## Публикация образов
 
 Workflow'ы `publish-backend`, `publish-frontend`, `publish-nginx-self-hosted` запускаются вручную
-(`workflow_dispatch`) и принимают версию вида `v1.2.3`. Версия без суффикса собирается под
-amd64 + arm64 и получает тег `latest`, с суффиксом — только amd64.
+(`workflow_dispatch`) и принимают версию `vX.Y.Z` или `vX.Y.Z-<суффикс>`; суффикс — из
+`[a-zA-Z0-9._]`, дефис внутри не пройдёт проверку. У backend и frontend нумерация своя.
+
+| Версия | Откуда | Сборка |
+| --- | --- | --- |
+| `v4.6.2` | только `main` | amd64 + arm64, тег `latest`; это релиз |
+| `v4.6.2-file_storage_timeout` | ветка PR | только amd64, без `latest`; образ для проверки, в релиз не идёт |
+
+Как выбрать номер: от последней чистой версии образа — исправление поднимает patch, новая
+возможность — minor, несовместимый HTTP-контракт — major. Суффикс называет суть изменения. Занятые
+версии видны по прошлым запускам:
+
+```sh
+gh run list --workflow publish-backend.yml
+gh run view <id> --log | grep -m1 VERSION=
+```
+
+Сборка — после зелёного CI в PR (`gh pr checks <номер>`):
+
+```sh
+gh workflow run publish-backend.yml --ref <main или ветка PR> -f version=<версия>
+gh run watch <id> --exit-status
+```
+
+Образ готов, когда run закончился `success`: `ghcr.io/gently-whitesnow/bugget-api:<версия>`
+(frontend — `bugget-ui`). Версию с суффиксом после влития PR заменяет чистая, собранная из `main`.
 
 Несовместимые frontend/backend образы выкладываются и откатываются согласованной парой.
